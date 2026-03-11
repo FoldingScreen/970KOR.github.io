@@ -4,7 +4,7 @@
 
 <head>
 <meta charset="UTF-8">
-<title>970KOR 파티 모집</title>
+<title>970KOR 바이킹의 역습</title>
 
 <style>
 
@@ -12,6 +12,11 @@ body{
 font-family:sans-serif;
 text-align:center;
 margin-top:50px;
+}
+
+ul{
+list-style:none;
+padding:0;
 }
 
 input,select{
@@ -32,18 +37,19 @@ margin:5px;
 
 <h1>970KOR 바이킹의 역습</h1>
 
+<h3>닉네임 로그인</h3>
+
+<input id="nickname" placeholder="닉네임">
+<button onclick="login()">로그인</button>
+
 <h3>파티 생성</h3>
 
 <input id="partyName" placeholder="파티 이름">
 
 <select id="limit">
-
-<option value="2">2명</option>
-<option value="3">3명</option>
 <option value="4">4명</option>
-<option value="5">5명</option>
 <option value="6">6명</option>
-
+<option value="8">8명</option>
 </select>
 
 <button onclick="createParty()">파티 생성</button>
@@ -69,6 +75,21 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+let nickname=""
+
+window.login=function(){
+
+nickname=document.getElementById("nickname").value
+
+if(nickname===""){
+alert("닉네임 입력")
+return
+}
+
+alert("로그인 완료 : "+nickname)
+
+}
+
 window.createParty = async function(){
 
 let name=document.getElementById("partyName").value
@@ -82,7 +103,8 @@ return
 await addDoc(collection(db,"parties"),{
 
 name:name,
-members:0,
+leader:nickname,
+members:[],
 limit:limit
 
 })
@@ -94,7 +116,6 @@ loadParties()
 async function loadParties(){
 
 let list=document.getElementById("partyList")
-
 list.innerHTML=""
 
 const querySnapshot = await getDocs(collection(db,"parties"))
@@ -105,9 +126,17 @@ let data=p.data()
 
 let li=document.createElement("li")
 
+let members=data.members||[]
+
 li.innerHTML=`
-${data.name} (${data.members}/${data.limit})
-<button onclick="joinParty('${p.id}',${data.members})">지원</button>
+<b>${data.name}</b> (${members.length}/${data.limit})
+
+<div>멤버: ${members.join(", ")}</div>
+
+<button onclick="joinParty('${p.id}')">지원</button>
+<button onclick="leaveParty('${p.id}')">지원취소</button>
+
+<hr>
 `
 
 list.appendChild(li)
@@ -116,22 +145,58 @@ list.appendChild(li)
 
 }
 
-window.joinParty = async function(id,members){
-
-if(members>=8){
-alert("정원 초과")
-return
-}
+window.joinParty = async function(id){
 
 const ref=doc(db,"parties",id)
 
-await updateDoc(ref,{
+const querySnapshot = await getDocs(collection(db,"parties"))
 
-members:members+1
+querySnapshot.forEach(async(p)=>{
+
+if(p.id===id){
+
+let data=p.data()
+let members=data.members||[]
+
+if(members.includes(nickname)){
+alert("이미 참가")
+return
+}
+
+members.push(nickname)
+
+await updateDoc(ref,{members:members})
+
+loadParties()
+
+}
 
 })
 
+}
+
+window.leaveParty = async function(id){
+
+const ref=doc(db,"parties",id)
+
+const querySnapshot = await getDocs(collection(db,"parties"))
+
+querySnapshot.forEach(async(p)=>{
+
+if(p.id===id){
+
+let data=p.data()
+let members=data.members||[]
+
+members=members.filter(m=>m!==nickname)
+
+await updateDoc(ref,{members:members})
+
 loadParties()
+
+}
+
+})
 
 }
 
