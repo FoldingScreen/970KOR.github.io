@@ -32,11 +32,6 @@ margin:10px;
 font-size:16px;
 }
 
-#login button{
-width:160px;
-padding:10px;
-}
-
 #main{
 display:none;
 }
@@ -45,7 +40,6 @@ display:none;
 position:fixed;
 top:15px;
 right:20px;
-font-size:14px;
 background:white;
 padding:6px 12px;
 border-radius:6px;
@@ -81,23 +75,9 @@ flex:1;
 overflow-y:auto;
 }
 
-.gridMy{
-display:grid;
-grid-template-columns:1fr;
-gap:12px;
-}
-
-.gridOpen{
-display:grid;
-grid-template-columns:repeat(4,1fr);
-gap:12px;
-}
-
-.gridClosed{
-display:grid;
-grid-template-columns:repeat(3,1fr);
-gap:12px;
-}
+.gridMy{display:grid;gap:12px;}
+.gridOpen{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.gridClosed{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
 
 .partyCard{
 border:1px solid #ccc;
@@ -124,25 +104,14 @@ justify-content:space-between;
 
 .cardButtons{
 display:flex;
-flex-wrap:wrap;
 justify-content:center;
 gap:5px;
 margin-top:10px;
+flex-wrap:wrap;
 }
 
 .openStatus{color:green;}
 .closedStatus{color:red;}
-
-.adminPanel{
-margin-top:10px;
-}
-
-.adminPanel button{
-background:#ffe3e3;
-border-color:#ff8a8a;
-}
-
-/* 모바일 */
 
 @media (max-width:900px){
 
@@ -164,22 +133,6 @@ grid-template-columns:repeat(2,1fr);
 
 .gridClosed{
 grid-template-columns:1fr;
-}
-
-.partyCard{
-font-size:16px;
-padding:16px;
-}
-
-#login input{
-width:80%;
-max-width:320px;
-font-size:18px;
-}
-
-#login button{
-width:60%;
-max-width:200px;
 }
 
 .topbar{
@@ -222,16 +175,14 @@ justify-content:flex-end;
 <input id="partyName" placeholder="파티 이름">
 
 <select id="limit">
-<option value="2">2명</option>
-<option value="3">3명</option>
-<option value="4">4명</option>
-<option value="5">5명</option>
-<option value="6">6명</option>
+<option value="2">2</option>
+<option value="3">3</option>
+<option value="4">4</option>
+<option value="5">5</option>
+<option value="6">6</option>
 </select>
 
 <button onclick="createParty()">파티 생성</button>
-
-<div id="adminPanel" class="adminPanel"></div>
 
 <div class="layout">
 
@@ -299,43 +250,10 @@ const app=initializeApp(firebaseConfig);
 const db=getFirestore(app);
 
 let nickname="";
-const master="병풍";
-let admins=[];
-
-/* 관리자 로드 */
-
-async function loadAdmins(){
-
-const snap=await getDocs(collection(db,"admins"));
-
-admins=[];
-
-snap.forEach(d=>{
-admins.push(d.id);
-});
-
-}
 
 function isAdmin(){
-
-return nickname===master || admins.includes(nickname);
-
+return nickname==="병풍";
 }
-
-/* 자동 로그인 */
-
-window.onload=async function(){
-
-const saved=localStorage.getItem("nickname");
-
-await loadAdmins();
-
-if(saved){
-nickname=saved;
-showMain();
-}
-
-};
 
 window.login=async function(){
 
@@ -358,6 +276,8 @@ localStorage.setItem("nickname",nickname);
 
 showMain();
 
+startRealtime();
+
 };
 
 function showMain(){
@@ -367,47 +287,17 @@ document.getElementById("main").style.display="block";
 
 document.getElementById("userLabel").innerText="👤 "+nickname;
 
-if(nickname===master){
-
-document.getElementById("adminPanel").innerHTML=`
-
-<input id="adminName" placeholder="운영진 닉네임">
-<button onclick="addAdmin()">운영진 추가</button>
-<button onclick="deleteAllParties()">전체 파티 삭제</button>
-
-`;
-
 }
 
-}
+window.logout=async function(){
 
-/* 운영진 추가 */
+await deleteDoc(doc(db,"users",nickname));
 
-window.addAdmin=async function(){
+localStorage.removeItem("nickname");
 
-const name=document.getElementById("adminName").value;
-
-await setDoc(doc(db,"admins",name),{});
-
-alert("운영진 추가");
+location.reload();
 
 };
-
-/* 전체 삭제 */
-
-window.deleteAllParties=async function(){
-
-if(!confirm("모든 파티 삭제?")) return;
-
-const snap=await getDocs(collection(db,"parties"));
-
-snap.forEach(async p=>{
-await deleteDoc(doc(db,"parties",p.id));
-});
-
-};
-
-/* 파티 생성 */
 
 window.createParty=async function(){
 
@@ -438,13 +328,19 @@ limit:limit
 
 };
 
-/* 파티 표시 */
+function startRealtime(){
+
+onSnapshot(collection(db,"parties"),snapshot=>{
+render(snapshot);
+});
+
+}
+
+function render(snapshot){
 
 const myGrid=document.getElementById("myParty");
 const openGrid=document.getElementById("openParty");
 const closedGrid=document.getElementById("closedParty");
-
-onSnapshot(collection(db,"parties"),snapshot=>{
 
 myGrid.innerHTML="";
 openGrid.innerHTML="";
@@ -463,13 +359,13 @@ if(members.includes(nickname)){
 card.classList.add("myParty");
 }
 
-let deleteBtn="";
-
-if(data.leader===nickname || isAdmin()){
-deleteBtn=`<button onclick="deleteParty('${docSnap.id}')">삭제</button>`;
-}
-
 const membersHTML=members.map(m=>{
+
+let display=m;
+
+if(m===nickname){
+display="⭐ "+m;
+}
 
 let kick="";
 
@@ -477,9 +373,33 @@ if((data.leader===nickname || isAdmin()) && m!==data.leader){
 kick=`<button onclick="kickMember('${docSnap.id}','${m}')">❌</button>`;
 }
 
-return `<div>${m} ${kick}</div>`;
+return `<div>${display} ${kick}</div>`;
 
 }).join("");
+
+let buttons="";
+
+if(data.leader===nickname){
+
+buttons=`<button onclick="deleteParty('${docSnap.id}')">삭제</button>`;
+
+}
+else if(members.includes(nickname)){
+
+buttons=`<button onclick="leaveParty('${docSnap.id}')">지원취소</button>`;
+
+}
+else{
+
+if(!isFull){
+buttons=`<button onclick="joinParty('${docSnap.id}')">지원</button>`;
+}
+
+}
+
+if(isAdmin() && data.leader!==nickname){
+buttons+=` <button onclick="deleteParty('${docSnap.id}')">삭제</button>`;
+}
 
 card.innerHTML=`
 
@@ -505,11 +425,7 @@ ${membersHTML}
 
 <div class="cardButtons">
 
-${!isFull?`<button onclick="joinParty('${docSnap.id}')">지원</button>`:""}
-
-<button onclick="leaveParty('${docSnap.id}')">취소</button>
-
-${deleteBtn}
+${buttons}
 
 </div>
 
@@ -527,25 +443,7 @@ openGrid.appendChild(card);
 
 });
 
-});
-
-/* 강퇴 */
-
-window.kickMember=async function(partyId,member){
-
-const ref=doc(db,"parties",partyId);
-
-const snap=await getDoc(ref);
-
-let data=snap.data();
-
-let members=data.members.filter(m=>m!==member);
-
-await updateDoc(ref,{members});
-
-};
-
-/* 참가 */
+}
 
 window.joinParty=async function(id){
 
@@ -576,9 +474,9 @@ await updateDoc(ref,{members:data.members});
 
 };
 
-/* 탈퇴 */
-
 window.leaveParty=async function(id){
+
+if(!confirm("파티 지원을 취소하시겠습니까?")) return;
 
 const ref=doc(db,"parties",id);
 
@@ -590,23 +488,27 @@ await updateDoc(ref,{members});
 
 };
 
-/* 삭제 */
+window.kickMember=async function(id,member){
 
-window.deleteParty=async function(id){
+if(!confirm(member+" 님을 파티에서 내보내시겠습니까?")) return;
 
-if(confirm("파티 삭제?")){
-await deleteDoc(doc(db,"parties",id));
-}
+const ref=doc(db,"parties",id);
+
+const snap=await getDoc(ref);
+
+let data=snap.data();
+
+let members=data.members.filter(m=>m!==member);
+
+await updateDoc(ref,{members});
 
 };
 
-window.logout=async function(){
+window.deleteParty=async function(id){
 
-await deleteDoc(doc(db,"users",nickname));
+if(!confirm("이 파티를 삭제하시겠습니까?")) return;
 
-localStorage.removeItem("nickname");
-
-location.reload();
+await deleteDoc(doc(db,"parties",id));
 
 };
 
