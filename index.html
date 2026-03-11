@@ -34,6 +34,8 @@ top:15px;
 right:20px;
 }
 
+/* 드롭다운 */
+
 .dropdown{
 display:inline-block;
 position:relative;
@@ -47,13 +49,13 @@ border:1px solid #ccc;
 right:0;
 }
 
-.dropdownContent button{
-display:block;
-width:150px;
-}
-
 .dropdown:hover .dropdownContent{
 display:block;
+}
+
+.dropdownContent button{
+display:block;
+width:160px;
 }
 
 /* 대시보드 */
@@ -74,34 +76,15 @@ flex-direction:column;
 justify-content:space-between;
 }
 
-.cardMy{
-background:#fff3b0;
-}
-
-.cardOpen{
-background:#e8f8e8;
-}
-
-.cardClosed{
-background:#eeeeee;
-}
+.cardMy{background:#fff3b0;}
+.cardOpen{background:#e8f8e8;}
+.cardClosed{background:#eeeeee;}
 
 /* 버튼 */
 
-.btnJoin{
-background:#4CAF50;
-color:white;
-}
-
-.btnLeave{
-background:#777;
-color:white;
-}
-
-.btnDelete{
-background:#e74c3c;
-color:white;
-}
+.btnJoin{background:#4CAF50;color:white;}
+.btnLeave{background:#777;color:white;}
+.btnDelete{background:#e74c3c;color:white;}
 
 /* 레이아웃 */
 
@@ -109,10 +92,6 @@ color:white;
 display:flex;
 gap:30px;
 margin-top:30px;
-}
-
-.column{
-flex:1;
 }
 
 .gridOpen{
@@ -155,6 +134,20 @@ overflow:auto;
 
 .userJoin{color:green;}
 .userNot{color:#333;}
+
+/* 실행취소 */
+
+#undoBar{
+position:fixed;
+bottom:20px;
+left:50%;
+transform:translateX(-50%);
+background:#333;
+color:white;
+padding:10px 20px;
+border-radius:6px;
+display:none;
+}
 
 </style>
 
@@ -205,38 +198,31 @@ overflow:auto;
 
 <div class="layout">
 
-<div class="column">
-
+<div>
 <h3>⭐ 나의 파티</h3>
 <div id="myParty" class="gridMy"></div>
-
 </div>
 
-<div class="column">
-
+<div>
 <h3 id="openTitle">🟢 모집중</h3>
 <div id="openParty" class="gridOpen"></div>
-
 </div>
 
-<div class="column">
-
+<div>
 <h3 id="closedTitle">🔴 모집완료</h3>
 <div id="closedParty" class="gridClosed"></div>
-
 </div>
 
 </div>
 
 </div>
 
-<!-- 사용자 목록 모달 -->
+<!-- 사용자 모달 -->
 
 <div id="userModal" class="modal">
 <div class="modalContent">
 
 <h3>전체 사용자</h3>
-
 <div id="userList"></div>
 
 <br>
@@ -244,6 +230,10 @@ overflow:auto;
 <button onclick="closeUsers()">닫기</button>
 
 </div>
+</div>
+
+<div id="undoBar">
+작업 완료 <button onclick="undo()">실행취소</button>
 </div>
 
 <script type="module">
@@ -276,12 +266,12 @@ const app=initializeApp(firebaseConfig);
 const db=getFirestore(app);
 
 let nickname="";
-let admins=[];
 let allUsers=[];
 let partyUsers=[];
+let undoAction=null;
 
 function isAdmin(){
-return nickname==="병풍" || admins.includes(nickname);
+return nickname==="병풍";
 }
 
 /* 로그인 */
@@ -300,8 +290,6 @@ await setDoc(ref,{created:Date.now()});
 
 nickname=name;
 
-localStorage.setItem("nickname",nickname);
-
 showMain();
 
 startRealtime();
@@ -317,17 +305,15 @@ document.getElementById("main").style.display="block";
 
 document.getElementById("userLabel").innerText="👤 "+nickname;
 
-if(nickname==="병풍"){
+if(isAdmin()){
 document.getElementById("adminMenu").innerHTML=
 
 `<div class="dropdown">
 <button>운영 ▼</button>
 <div class="dropdownContent">
-
 <button onclick="resetParties()">전체 파티 초기화</button>
 <button onclick="addAdmin()">운영진 지정</button>
 <button onclick="forceKick()">강제 탈퇴</button>
-
 </div>
 </div>`;
 }
@@ -337,10 +323,7 @@ document.getElementById("adminMenu").innerHTML=
 /* 로그아웃 */
 
 window.logout=function(){
-
-localStorage.removeItem("nickname");
 location.reload();
-
 };
 
 /* 파티 생성 */
@@ -349,21 +332,6 @@ window.createParty=async function(){
 
 const name=document.getElementById("partyName").value;
 const limit=parseInt(document.getElementById("limit").value);
-
-const snap=await getDocs(collection(db,"parties"));
-
-let blocked=false;
-
-snap.forEach(p=>{
-let d=p.data();
-if(d.leader===nickname) blocked=true;
-if(d.members.includes(nickname)) blocked=true;
-});
-
-if(blocked){
-alert("이미 파티 참여중");
-return;
-}
 
 await addDoc(collection(db,"parties"),{
 name:name,
@@ -384,11 +352,9 @@ const usersSnap=await getDocs(collection(db,"users"));
 allUsers=[];
 
 usersSnap.forEach(u=>{
-
 if(!u.id.startsWith("테스트")){
 allUsers.push(u.id);
 }
-
 });
 
 onSnapshot(collection(db,"parties"),snapshot=>{
@@ -417,19 +383,59 @@ snapshot.forEach(docSnap=>{
 
 const data=docSnap.data();
 const members=data.members;
-
 const isFull=members.length>=data.limit;
 
 members.forEach(m=>{
-
 if(!m.startsWith("테스트")){
 totalUsers.add(m);
 }
-
 });
 
 if(isFull) closedCount++;
 else openCount++;
+
+const card=document.createElement("div");
+
+let cls="partyCard";
+
+if(members.includes(nickname)) cls+=" cardMy";
+else if(isFull) cls+=" cardClosed";
+else cls+=" cardOpen";
+
+card.className=cls;
+
+const date=new Date(data.created);
+
+const time=
+(date.getMonth()+1)+"/"+
+date.getDate()+" "+
+date.getHours()+":"+
+String(date.getMinutes()).padStart(2,"0");
+
+const memberHTML=members.map(m=>{
+
+let name=m;
+
+if(m===nickname) name="⭐ "+m;
+if(m===data.leader) name="👑 "+name;
+
+return `<div>${name}</div>`;
+
+}).join("");
+
+card.innerHTML=`
+
+<b>${data.name}</b>
+<div>${time}</div>
+<br>
+${members.length}/${data.limit}
+<div>${memberHTML}</div>
+
+`;
+
+if(members.includes(nickname)) myGrid.appendChild(card);
+else if(isFull) closedGrid.appendChild(card);
+else openGrid.appendChild(card);
 
 });
 
@@ -437,7 +443,7 @@ partyUsers=[...totalUsers];
 
 const notJoin=allUsers.filter(u=>!partyUsers.includes(u));
 
-document.getElementById("dashboard").innerHTML=
+document.getElementById("dashboard").innerText=
 
 "총 인원 "+allUsers.length+
 " | 참여 "+partyUsers.length+
@@ -448,7 +454,7 @@ document.getElementById("closedTitle").innerText="🔴 모집완료 ("+closedCou
 
 }
 
-/* 전체 목록 */
+/* 사용자 목록 */
 
 window.showUsers=function(){
 
@@ -473,7 +479,32 @@ window.closeUsers=function(){
 document.getElementById("userModal").style.display="none";
 }
 
-/* 운영 기능 */
+/* 실행취소 */
+
+function showUndo(action){
+
+undoAction=action;
+
+document.getElementById("undoBar").style.display="block";
+
+setTimeout(()=>{
+undoAction=null;
+document.getElementById("undoBar").style.display="none";
+},10000);
+
+}
+
+window.undo=function(){
+
+if(undoAction){
+undoAction();
+}
+
+document.getElementById("undoBar").style.display="none";
+
+}
+
+/* 운영 */
 
 window.resetParties=async function(){
 
@@ -481,8 +512,22 @@ if(!confirm("전체 파티 초기화하시겠습니까?")) return;
 
 const snap=await getDocs(collection(db,"parties"));
 
+let backup=[];
+
+snap.forEach(p=>{
+backup.push({id:p.id,data:p.data()});
+});
+
 snap.forEach(async p=>{
 await deleteDoc(doc(db,"parties",p.id));
+});
+
+showUndo(async ()=>{
+
+for(let p of backup){
+await setDoc(doc(db,"parties",p.id),p.data);
+}
+
 });
 
 }
@@ -509,12 +554,11 @@ if(!confirm("정말 탈퇴 처리하시겠습니까?")) return;
 
 await deleteDoc(doc(db,"users",name));
 
-alert("탈퇴 처리 완료");
+alert("탈퇴 완료");
 
 }
 
 </script>
 
 </body>
-
 </html>
