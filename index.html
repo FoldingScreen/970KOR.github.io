@@ -11,7 +11,7 @@
 body{
 font-family:sans-serif;
 text-align:center;
-margin-top:50px;
+margin-top:60px;
 }
 
 ul{
@@ -29,18 +29,40 @@ padding:10px 20px;
 margin:5px;
 }
 
+#main{
+display:none;
+}
+
+.party{
+border:1px solid #ccc;
+padding:10px;
+margin:10px auto;
+width:300px;
+}
+
 </style>
 
 </head>
 
 <body>
 
-<h1>970KOR 바이킹의 역습</h1>
+<!-- 로그인 화면 -->
 
-<h3>닉네임 로그인</h3>
+<div id="login">
+
+<h2>970KOR 로그인</h2>
 
 <input id="nickname" placeholder="닉네임">
+
 <button onclick="login()">로그인</button>
+
+</div>
+
+<!-- 메인 화면 -->
+
+<div id="main">
+
+<h1>970KOR 바이킹의 역습</h1>
 
 <h3>파티 생성</h3>
 
@@ -56,12 +78,14 @@ margin:5px;
 
 <h2>파티 목록</h2>
 
-<ul id="partyList"></ul>
+<div id="partyList"></div>
+
+</div>
 
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBu2RrQn8cAwwWaLtw5O8Omwn4-NzHWuc0",
@@ -86,7 +110,10 @@ alert("닉네임 입력")
 return
 }
 
-alert("로그인 완료 : "+nickname)
+document.getElementById("login").style.display="none"
+document.getElementById("main").style.display="block"
+
+loadParties()
 
 }
 
@@ -104,7 +131,7 @@ await addDoc(collection(db,"parties"),{
 
 name:name,
 leader:nickname,
-members:[],
+members:[nickname],
 limit:limit
 
 })
@@ -123,23 +150,29 @@ const querySnapshot = await getDocs(collection(db,"parties"))
 querySnapshot.forEach((p)=>{
 
 let data=p.data()
-
-let li=document.createElement("li")
-
 let members=data.members||[]
 
-li.innerHTML=`
-<b>${data.name}</b> (${members.length}/${data.limit})
+let div=document.createElement("div")
+div.className="party"
 
-<div>멤버: ${members.join(", ")}</div>
+div.innerHTML=`
+
+<b>${data.name}</b> (${members.length}/${data.limit})  
+<br>파티장 : ${data.leader}
+
+<br><br>멤버 : ${members.join(", ") || "없음"}
+
+<br><br>
 
 <button onclick="joinParty('${p.id}')">지원</button>
+
 <button onclick="leaveParty('${p.id}')">지원취소</button>
 
-<hr>
+${data.leader===nickname ? `<button onclick="deleteParty('${p.id}')">파티 삭제</button>` : ""}
+
 `
 
-list.appendChild(li)
+list.appendChild(div)
 
 })
 
@@ -160,6 +193,11 @@ let members=data.members||[]
 
 if(members.includes(nickname)){
 alert("이미 참가")
+return
+}
+
+if(members.length>=data.limit){
+alert("정원 초과")
 return
 }
 
@@ -200,7 +238,17 @@ loadParties()
 
 }
 
-window.onload=loadParties
+window.deleteParty = async function(id){
+
+if(confirm("파티 삭제?")){
+
+await deleteDoc(doc(db,"parties",id))
+
+loadParties()
+
+}
+
+}
 
 </script>
 
