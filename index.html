@@ -6,11 +6,10 @@
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
 <title>970KOR 바이킹의 역습</title>
 
 <style>
-
-/* 기본 */
 
 body{
 font-family:sans-serif;
@@ -18,7 +17,7 @@ margin:20px;
 text-align:center;
 }
 
-/* 로그인 화면 */
+/* 로그인 */
 
 #login{
 display:flex;
@@ -47,7 +46,7 @@ padding:8px;
 display:none;
 }
 
-/* 상단 사용자 */
+/* 상단 */
 
 .topbar{
 position:fixed;
@@ -60,17 +59,26 @@ border-radius:6px;
 box-shadow:0 0 5px rgba(0,0,0,0.1);
 }
 
-/* 입력 */
-
-input,select{
-padding:8px;
-margin:5px;
-}
+/* 버튼 공통 */
 
 button{
-padding:8px 14px;
-margin:5px;
+padding:8px 12px;
+margin:3px;
 cursor:pointer;
+border:1px solid #999;
+background:#f5f5f5;
+border-radius:4px;
+}
+
+/* 관리자 버튼 */
+
+.adminPanel{
+margin-top:10px;
+}
+
+.adminPanel button{
+background:#ffe3e3;
+border:1px solid #ff8a8a;
 }
 
 /* 레이아웃 */
@@ -81,8 +89,6 @@ gap:30px;
 align-items:flex-start;
 margin-top:30px;
 }
-
-/* 컬럼 */
 
 .column{
 display:flex;
@@ -108,7 +114,6 @@ flex:2;
 .scroll{
 flex:1;
 overflow-y:auto;
-padding-right:4px;
 }
 
 /* 그리드 */
@@ -138,9 +143,15 @@ min-height:120px;
 
 .partyCard{
 border:1px solid #ccc;
-border-radius:8px;
+border-radius:6px;
 padding:12px;
 background:#f8f8f8;
+
+display:flex;
+flex-direction:column;
+justify-content:space-between;
+
+min-height:170px;
 }
 
 .myParty{
@@ -162,6 +173,16 @@ color:#444;
 margin-top:4px;
 }
 
+/* 버튼 줄 */
+
+.cardButtons{
+display:flex;
+justify-content:center;
+flex-wrap:wrap;
+gap:5px;
+margin-top:8px;
+}
+
 .empty{
 color:#888;
 margin-top:20px;
@@ -181,12 +202,7 @@ height:auto;
 }
 
 .scroll{
-max-height:none;
 overflow-y:visible;
-}
-
-.gridMy{
-grid-template-columns:1fr;
 }
 
 .gridOpen{
@@ -203,11 +219,9 @@ padding:16px;
 }
 
 button{
-font-size:15px;
-padding:10px 14px;
+font-size:14px;
+padding:10px 12px;
 }
-
-/* 로그인 모바일 */
 
 #login input{
 width:80%;
@@ -223,6 +237,14 @@ font-size:18px;
 padding:12px;
 }
 
+.topbar{
+position:static;
+margin-bottom:10px;
+display:flex;
+justify-content:flex-end;
+font-size:13px;
+}
+
 }
 
 </style>
@@ -230,8 +252,6 @@ padding:12px;
 </head>
 
 <body>
-
-<!-- 로그인 -->
 
 <div id="login">
 
@@ -242,8 +262,6 @@ padding:12px;
 <button onclick="login()">로그인</button>
 
 </div>
-
-<!-- 메인 -->
 
 <div id="main">
 
@@ -270,6 +288,8 @@ padding:12px;
 </select>
 
 <button onclick="createParty()">파티 생성</button>
+
+<div id="adminPanel" class="adminPanel"></div>
 
 <div class="layout">
 
@@ -337,6 +357,7 @@ const app=initializeApp(firebaseConfig);
 const db=getFirestore(app);
 
 let nickname="";
+const admin="병풍";
 
 /* 자동 로그인 */
 
@@ -390,6 +411,19 @@ document.getElementById("main").style.display="block";
 
 document.getElementById("userLabel").innerText="👤 "+nickname;
 
+/* 관리자 버튼 */
+
+if(nickname===admin){
+
+document.getElementById("adminPanel").innerHTML=`
+
+<button onclick="deleteAllParties()">전체 파티 삭제</button>
+<button onclick="resetDatabase()">DB 초기화</button>
+
+`;
+
+}
+
 }
 
 /* 로그아웃 */
@@ -441,6 +475,34 @@ createdAt:Date.now()
 
 };
 
+/* 관리자 기능 */
+
+window.deleteAllParties=async function(){
+
+if(!confirm("모든 파티 삭제?")) return;
+
+const snapshot=await getDocs(collection(db,"parties"));
+
+snapshot.forEach(async p=>{
+await deleteDoc(doc(db,"parties",p.id));
+});
+
+};
+
+window.resetDatabase=async function(){
+
+if(!confirm("DB 초기화?")) return;
+
+const parties=await getDocs(collection(db,"parties"));
+
+parties.forEach(async p=>{
+await deleteDoc(doc(db,"parties",p.id));
+});
+
+};
+
+/* 파티 표시 */
+
 const myGrid=document.getElementById("myParty");
 const openGrid=document.getElementById("openParty");
 const closedGrid=document.getElementById("closedParty");
@@ -465,22 +527,21 @@ if(members.includes(nickname)){
 card.classList.add("myParty");
 }
 
-const time=new Date(data.createdAt);
-
-const timeText=time.toLocaleTimeString([],{
-hour:"2-digit",
-minute:"2-digit"
-});
-
 const status=isFull
 ? `<div class="status closedStatus">🔴 모집완료</div>`
 : `<div class="status openStatus">🟢 모집중</div>`;
 
+let deleteButton="";
+
+if(data.leader===nickname || nickname===admin){
+deleteButton=`<button onclick="deleteParty('${docSnap.id}')">삭제</button>`;
+}
+
 card.innerHTML=`
 
-<b>${data.name}</b>
+<div>
 
-<br>생성 : ${timeText}
+<b>${data.name}</b>
 
 <br>파티장 : ${data.leader}
 
@@ -489,18 +550,20 @@ ${status}
 <br>${members.length}/${data.limit}
 
 <div class="members">
-${members.join(", ") || "멤버 없음"}
+${members.join(", ")}
 </div>
 
-<br>
+</div>
+
+<div class="cardButtons">
 
 ${!isFull ? `<button onclick="joinParty('${docSnap.id}')">지원</button>` : ""}
 
-<button onclick="leaveParty('${docSnap.id}')">지원취소</button>
+<button onclick="leaveParty('${docSnap.id}')">취소</button>
 
-${data.leader===nickname
-? `<button onclick="deleteParty('${docSnap.id}')">삭제</button>`
-: ""}
+${deleteButton}
+
+</div>
 
 `;
 
@@ -516,19 +579,9 @@ openGrid.appendChild(card);
 
 });
 
-if(myGrid.innerHTML===""){
-myGrid.innerHTML='<div class="empty">파티 없음</div>';
-}
-
-if(openGrid.innerHTML===""){
-openGrid.innerHTML='<div class="empty">모집중 파티 없음</div>';
-}
-
-if(closedGrid.innerHTML===""){
-closedGrid.innerHTML='<div class="empty">모집완료 파티 없음</div>';
-}
-
 });
+
+/* 참가 */
 
 window.joinParty=async function(id){
 
@@ -543,7 +596,7 @@ already=true;
 });
 
 if(already){
-alert("이미 다른 파티에 참여중입니다.");
+alert("이미 다른 파티 참여중");
 return;
 }
 
@@ -564,6 +617,8 @@ await updateDoc(ref,{members:data.members});
 
 };
 
+/* 탈퇴 */
+
 window.leaveParty=async function(id){
 
 const ref=doc(db,"parties",id);
@@ -577,6 +632,8 @@ members=members.filter(m=>m!==nickname);
 await updateDoc(ref,{members});
 
 };
+
+/* 삭제 */
 
 window.deleteParty=async function(id){
 
