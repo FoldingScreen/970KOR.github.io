@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 
 <html>
-
 <head>
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>970KOR 바이킹의 역습</title>
+<title>970KOR 바이킹</title>
 
 <style>
 
@@ -17,6 +16,8 @@ margin:20px;
 text-align:center;
 }
 
+/* 로그인 */
+
 #login{
 display:flex;
 flex-direction:column;
@@ -25,27 +26,34 @@ justify-content:center;
 height:100vh;
 }
 
-#login input{
-width:260px;
-padding:10px;
-margin:10px;
-font-size:16px;
-}
-
-#main{
-display:none;
-}
-
 /* 상단 */
 
 .topbar{
 position:fixed;
 top:15px;
 right:20px;
+}
+
+.dropdown{
+display:inline-block;
+position:relative;
+}
+
+.dropdownContent{
+display:none;
+position:absolute;
 background:white;
-padding:6px 12px;
-border-radius:6px;
-box-shadow:0 0 5px rgba(0,0,0,0.1);
+border:1px solid #ccc;
+right:0;
+}
+
+.dropdownContent button{
+display:block;
+width:150px;
+}
+
+.dropdown:hover .dropdownContent{
+display:block;
 }
 
 /* 대시보드 */
@@ -55,67 +63,44 @@ margin-top:10px;
 font-size:14px;
 }
 
-#userListBtn{
-font-size:12px;
-padding:4px 8px;
-margin-left:10px;
+/* 카드 */
+
+.partyCard{
+border-radius:6px;
+padding:12px;
+min-height:170px;
+display:flex;
+flex-direction:column;
+justify-content:space-between;
 }
 
-/* 모달 */
-
-#userModal{
-display:none;
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:rgba(0,0,0,0.4);
+.cardMy{
+background:#fff3b0;
 }
 
-.modalContent{
-background:white;
-width:320px;
-max-height:70%;
-overflow:auto;
-margin:80px auto;
-padding:20px;
-border-radius:8px;
+.cardOpen{
+background:#e8f8e8;
 }
 
-.userJoin{
-color:green;
-}
-
-.userNot{
-color:#444;
+.cardClosed{
+background:#eeeeee;
 }
 
 /* 버튼 */
 
-button{
-border:1px solid #aaa;
-border-radius:4px;
-padding:6px 10px;
-cursor:pointer;
-}
-
 .btnJoin{
 background:#4CAF50;
 color:white;
-border:none;
 }
 
 .btnLeave{
 background:#777;
 color:white;
-border:none;
 }
 
 .btnDelete{
 background:#e74c3c;
 color:white;
-border:none;
 }
 
 /* 레이아웃 */
@@ -127,102 +112,49 @@ margin-top:30px;
 }
 
 .column{
-display:flex;
-flex-direction:column;
-height:650px;
-}
-
-.column.my{flex:1;}
-.column.open{flex:4;}
-.column.closed{flex:2;}
-
-.scroll{
 flex:1;
-overflow-y:auto;
-}
-
-.gridMy{display:grid;gap:12px;}
-.gridOpen{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
-.gridClosed{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
-
-/* 카드 */
-
-.partyCard{
-border:1px solid #ccc;
-border-radius:6px;
-padding:12px;
-display:flex;
-flex-direction:column;
-justify-content:space-between;
-min-height:170px;
-}
-
-.cardMy{
-background:#e8f8e8;
-border:2px solid #4CAF50;
-}
-
-.cardOpen{
-background:white;
-}
-
-.cardClosed{
-background:#eeeeee;
-}
-
-/* 멤버 */
-
-.members div{
-display:flex;
-justify-content:space-between;
-}
-
-.time{
-font-size:11px;
-color:#888;
-margin-top:3px;
-}
-
-.cardButtons{
-display:flex;
-justify-content:center;
-gap:5px;
-margin-top:10px;
-flex-wrap:wrap;
-}
-
-/* 모바일 */
-
-@media (max-width:900px){
-
-.layout{
-flex-direction:column;
-}
-
-.column{
-height:auto;
-}
-
-.scroll{
-overflow-y:visible;
 }
 
 .gridOpen{
-grid-template-columns:repeat(2,1fr);
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:12px;
 }
 
 .gridClosed{
-grid-template-columns:1fr;
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:12px;
 }
 
-.topbar{
-position:static;
-margin-bottom:10px;
-display:flex;
-justify-content:flex-end;
+.gridMy{
+display:grid;
+gap:12px;
 }
 
+/* 모달 */
+
+.modal{
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.4);
 }
+
+.modalContent{
+background:white;
+padding:20px;
+width:350px;
+margin:100px auto;
+max-height:70%;
+overflow:auto;
+}
+
+.userJoin{color:green;}
+.userNot{color:#333;}
 
 </style>
 
@@ -234,69 +166,63 @@ justify-content:flex-end;
 
 <h2>970KOR 로그인</h2>
 
-<input id="nickname" placeholder="닉네임" autofocus>
-
+<input id="nickname" placeholder="닉네임">
 <button onclick="login()">로그인</button>
 
 </div>
 
-<div id="main">
+<div id="main" style="display:none">
 
 <div class="topbar">
 
 <span id="userLabel"></span>
 
+<span id="adminMenu"></span>
+
 <button onclick="logout()">로그아웃</button>
 
 </div>
 
-<h1>970KOR 바이킹의 역습</h1>
+<h1>970KOR 바이킹</h1>
 
 <div id="dashboard"></div>
 
-<br>
+<button onclick="showUsers()">전체목록</button>
+
+<br><br>
 
 <input id="partyName" placeholder="파티 이름">
 
 <select id="limit">
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
+<option>2</option>
+<option>3</option>
+<option>4</option>
+<option>5</option>
+<option>6</option>
 </select>
 
 <button onclick="createParty()">파티 생성</button>
 
 <div class="layout">
 
-<div class="column my">
+<div class="column">
 
 <h3>⭐ 나의 파티</h3>
-
-<div class="scroll">
 <div id="myParty" class="gridMy"></div>
-</div>
 
 </div>
 
-<div class="column open">
+<div class="column">
 
-<h3 id="openTitle">모집중</h3>
-
-<div class="scroll">
+<h3 id="openTitle">🟢 모집중</h3>
 <div id="openParty" class="gridOpen"></div>
-</div>
 
 </div>
 
-<div class="column closed">
+<div class="column">
 
-<h3 id="closedTitle">모집완료</h3>
-
-<div class="scroll">
+<h3 id="closedTitle">🔴 모집완료</h3>
 <div id="closedParty" class="gridClosed"></div>
-</div>
 
 </div>
 
@@ -304,13 +230,12 @@ justify-content:flex-end;
 
 </div>
 
-<!-- 모달 -->
+<!-- 사용자 목록 모달 -->
 
-<div id="userModal">
-
+<div id="userModal" class="modal">
 <div class="modalContent">
 
-<h3>전체 인원</h3>
+<h3>전체 사용자</h3>
 
 <div id="userList"></div>
 
@@ -319,7 +244,6 @@ justify-content:flex-end;
 <button onclick="closeUsers()">닫기</button>
 
 </div>
-
 </div>
 
 <script type="module">
@@ -352,12 +276,15 @@ const app=initializeApp(firebaseConfig);
 const db=getFirestore(app);
 
 let nickname="";
+let admins=[];
 let allUsers=[];
 let partyUsers=[];
 
 function isAdmin(){
-return nickname==="병풍";
+return nickname==="병풍" || admins.includes(nickname);
 }
+
+/* 로그인 */
 
 window.login=async function(){
 
@@ -381,6 +308,8 @@ startRealtime();
 
 };
 
+/* 메인 */
+
 function showMain(){
 
 document.getElementById("login").style.display="none";
@@ -388,7 +317,24 @@ document.getElementById("main").style.display="block";
 
 document.getElementById("userLabel").innerText="👤 "+nickname;
 
+if(nickname==="병풍"){
+document.getElementById("adminMenu").innerHTML=
+
+`<div class="dropdown">
+<button>운영 ▼</button>
+<div class="dropdownContent">
+
+<button onclick="resetParties()">전체 파티 초기화</button>
+<button onclick="addAdmin()">운영진 지정</button>
+<button onclick="forceKick()">강제 탈퇴</button>
+
+</div>
+</div>`;
 }
+
+}
+
+/* 로그아웃 */
 
 window.logout=function(){
 
@@ -396,6 +342,8 @@ localStorage.removeItem("nickname");
 location.reload();
 
 };
+
+/* 파티 생성 */
 
 window.createParty=async function(){
 
@@ -427,6 +375,8 @@ created:Date.now()
 
 };
 
+/* 실시간 */
+
 async function startRealtime(){
 
 const usersSnap=await getDocs(collection(db,"users"));
@@ -434,7 +384,11 @@ const usersSnap=await getDocs(collection(db,"users"));
 allUsers=[];
 
 usersSnap.forEach(u=>{
+
+if(!u.id.startsWith("테스트")){
 allUsers.push(u.id);
+}
+
 });
 
 onSnapshot(collection(db,"parties"),snapshot=>{
@@ -442,6 +396,8 @@ render(snapshot);
 });
 
 }
+
+/* 렌더 */
 
 function render(snapshot){
 
@@ -461,120 +417,19 @@ snapshot.forEach(docSnap=>{
 
 const data=docSnap.data();
 const members=data.members;
+
 const isFull=members.length>=data.limit;
 
-members.forEach(m=>totalUsers.add(m));
+members.forEach(m=>{
+
+if(!m.startsWith("테스트")){
+totalUsers.add(m);
+}
+
+});
 
 if(isFull) closedCount++;
 else openCount++;
-
-const card=document.createElement("div");
-
-let cardClass="partyCard";
-
-if(members.includes(nickname)){
-cardClass+=" cardMy";
-}
-else if(isFull){
-cardClass+=" cardClosed";
-}
-else{
-cardClass+=" cardOpen";
-}
-
-card.className=cardClass;
-
-const date=new Date(data.created);
-
-const timeText=
-(date.getMonth()+1)+"/"+
-date.getDate()+" "+
-date.getHours()+":"+
-String(date.getMinutes()).padStart(2,"0");
-
-const membersHTML=members.map(m=>{
-
-let name=m;
-
-if(m===nickname){
-name="⭐ "+m;
-}
-
-if(m===data.leader){
-name="👑 "+name;
-}
-
-let kick="";
-
-if((data.leader===nickname || isAdmin()) && m!==data.leader){
-kick=`<button onclick="kickMember('${docSnap.id}','${m}')">❌</button>`;
-}
-
-return `<div>${name} ${kick}</div>`;
-
-}).join("");
-
-let buttons="";
-
-if(data.leader===nickname){
-
-buttons=`<button class="btnDelete" onclick="deleteParty('${docSnap.id}')">삭제</button>`;
-
-}
-else if(members.includes(nickname)){
-
-buttons=`<button class="btnLeave" onclick="leaveParty('${docSnap.id}')">지원취소</button>`;
-
-}
-else{
-
-if(!isFull){
-buttons=`<button class="btnJoin" onclick="joinParty('${docSnap.id}')">지원</button>`;
-}
-
-}
-
-if(isAdmin() && data.leader!==nickname){
-buttons+=` <button class="btnDelete" onclick="deleteParty('${docSnap.id}')">삭제</button>`;
-}
-
-card.innerHTML=`
-
-<div>
-
-<b>${data.name}</b>
-
-<div class="time">
-${timeText}
-</div>
-
-<br>
-
-${members.length}/${data.limit}
-
-<div class="members">
-${membersHTML}
-</div>
-
-</div>
-
-<div class="cardButtons">
-
-${buttons}
-
-</div>
-
-`;
-
-if(members.includes(nickname)){
-myGrid.appendChild(card);
-}
-else if(isFull){
-closedGrid.appendChild(card);
-}
-else{
-openGrid.appendChild(card);
-}
 
 });
 
@@ -583,15 +438,17 @@ partyUsers=[...totalUsers];
 const notJoin=allUsers.filter(u=>!partyUsers.includes(u));
 
 document.getElementById("dashboard").innerHTML=
+
 "총 인원 "+allUsers.length+
 " | 참여 "+partyUsers.length+
-" | 미참여 "+notJoin.length+
-" <button id='userListBtn' onclick='showUsers()'>전체목록</button>";
+" | 미참여 "+notJoin.length;
 
-document.getElementById("openTitle").innerText="모집중 ("+openCount+")";
-document.getElementById("closedTitle").innerText="모집완료 ("+closedCount+")";
+document.getElementById("openTitle").innerText="🟢 모집중 ("+openCount+")";
+document.getElementById("closedTitle").innerText="🔴 모집완료 ("+closedCount+")";
 
 }
+
+/* 전체 목록 */
 
 window.showUsers=function(){
 
@@ -613,77 +470,48 @@ modal.style.display="block";
 }
 
 window.closeUsers=function(){
-
 document.getElementById("userModal").style.display="none";
-
 }
 
-window.joinParty=async function(id){
+/* 운영 기능 */
+
+window.resetParties=async function(){
+
+if(!confirm("전체 파티 초기화하시겠습니까?")) return;
 
 const snap=await getDocs(collection(db,"parties"));
 
-let already=false;
-
-snap.forEach(p=>{
-if(p.data().members.includes(nickname)){
-already=true;
-}
+snap.forEach(async p=>{
+await deleteDoc(doc(db,"parties",p.id));
 });
 
-if(already){
-alert("이미 다른 파티 참여중");
-return;
 }
 
-const ref=doc(db,"parties",id);
+window.addAdmin=async function(){
 
-const docSnap=await getDoc(ref);
+let name=prompt("운영진 닉네임");
 
-let data=docSnap.data();
+if(!name) return;
 
-data.members.push(nickname);
+await setDoc(doc(db,"admins",name),{});
 
-await updateDoc(ref,{members:data.members});
+alert("운영진 지정 완료");
 
-};
+}
 
-window.leaveParty=async function(id){
+window.forceKick=async function(){
 
-if(!confirm("파티 지원을 취소하시겠습니까?")) return;
+let name=prompt("강제 탈퇴 닉네임");
 
-const ref=doc(db,"parties",id);
+if(!name) return;
 
-const snap=await getDoc(ref);
+if(!confirm("정말 탈퇴 처리하시겠습니까?")) return;
 
-let members=snap.data().members.filter(m=>m!==nickname);
+await deleteDoc(doc(db,"users",name));
 
-await updateDoc(ref,{members});
+alert("탈퇴 처리 완료");
 
-};
-
-window.kickMember=async function(id,member){
-
-if(!confirm(member+" 님을 파티에서 내보내시겠습니까?")) return;
-
-const ref=doc(db,"parties",id);
-
-const snap=await getDoc(ref);
-
-let data=snap.data();
-
-let members=data.members.filter(m=>m!==member);
-
-await updateDoc(ref,{members});
-
-};
-
-window.deleteParty=async function(id){
-
-if(!confirm("이 파티를 삭제하시겠습니까?")) return;
-
-await deleteDoc(doc(db,"parties",id));
-
-};
+}
 
 </script>
 
