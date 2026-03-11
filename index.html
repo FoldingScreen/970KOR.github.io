@@ -1,11 +1,11 @@
 <!DOCTYPE html>
+
 <html>
 
 <head>
 
 <meta charset="UTF-8">
-
-<title>바이킹의 역습 신청</title>
+<title>970KOR 바이킹의 역습</title>
 
 <style>
 
@@ -40,55 +40,67 @@ margin:5px;
 
 <input id="name" placeholder="닉네임 입력">
 
-<button onclick="apply()">
-
-신청하기
-
-</button>
+<button onclick="apply()">신청하기</button>
 
 <h2>참가자 목록</h2>
 
 <ul id="list"></ul>
 
-<script>
+<script type="module">
 
-let users=[]
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
-function apply(){
+const firebaseConfig = {
+  apiKey: "AIzaSyBu2RrQn8cAwwWaLtw5O8Omwn4-NzHWuc0",
+  authDomain: "kor-app-fa47e.firebaseapp.com",
+  projectId: "kor-app-fa47e",
+  storageBucket: "kor-app-fa47e.firebasestorage.app",
+  messagingSenderId: "397749083935",
+  appId: "1:397749083935:web:b2bd8498b943aec5099a2a"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+window.apply = async function(){
 
 let name=document.getElementById("name").value
 
 if(name===""){
-
 alert("닉네임 입력")
-
 return
+}
+
+await addDoc(collection(db,"users"),{
+name:name
+})
+
+load()
 
 }
 
-users.push(name)
-
-render()
-
-}
-
-function render(){
+async function load(){
 
 let list=document.getElementById("list")
 
 list.innerHTML=""
 
-users.forEach(u=>{
+const querySnapshot = await getDocs(collection(db,"users"))
+
+querySnapshot.forEach((doc)=>{
 
 let li=document.createElement("li")
 
-li.innerText=u
+li.innerText=doc.data().name
 
 list.appendChild(li)
 
 })
 
 }
+
+window.onload=load
 
 </script>
 
