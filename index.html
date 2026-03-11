@@ -374,6 +374,25 @@ openGrid.appendChild(card);
 
 window.joinParty=async function(id){
 
+const snapshot=await getDocs(collection(db,"parties"));
+
+let already=false;
+
+snapshot.forEach(p=>{
+
+let d=p.data();
+
+if(d.members.includes(nickname)){
+already=true;
+}
+
+});
+
+if(already){
+alert("이미 다른 파티에 참여중입니다.");
+return;
+}
+
 const ref=doc(db,"parties",id);
 
 const snap=await getDoc(ref);
@@ -395,7 +414,6 @@ data.members.push(nickname);
 await updateDoc(ref,{members:data.members});
 
 };
-
 
 /* 탈퇴 */
 
