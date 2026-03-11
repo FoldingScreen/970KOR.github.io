@@ -14,19 +14,19 @@ text-align:center;
 margin-top:40px;
 }
 
+#main{
+display:none;
+}
+
 input,select{
 padding:8px;
 margin:5px;
 }
 
 button{
-padding:8px 16px;
+padding:8px 14px;
 margin:5px;
 cursor:pointer;
-}
-
-#main{
-display:none;
 }
 
 #partyGrid{
@@ -44,9 +44,23 @@ padding:10px;
 background:#f8f8f8;
 }
 
+.myParty{
+border:3px solid #4CAF50;
+background:#eef9ee;
+}
+
+.status{
+font-weight:bold;
+margin:4px 0;
+}
+
+.open{color:green;}
+.closed{color:red;}
+
 .members{
 font-size:13px;
 color:#444;
+margin-top:4px;
 }
 
 </style>
@@ -54,8 +68,6 @@ color:#444;
 </head>
 
 <body>
-
-<!-- 로그인 -->
 
 <div id="login">
 
@@ -66,8 +78,6 @@ color:#444;
 <button onclick="login()">로그인</button>
 
 </div>
-
-<!-- 메인 -->
 
 <div id="main">
 
@@ -80,13 +90,11 @@ color:#444;
 <input id="partyName" placeholder="파티 이름">
 
 <select id="limit">
-
 <option value="2">2명</option>
 <option value="3">3명</option>
 <option value="4">4명</option>
 <option value="5">5명</option>
 <option value="6">6명</option>
-
 </select>
 
 <button onclick="createParty()">파티 생성</button>
@@ -100,17 +108,21 @@ color:#444;
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+
 import {
 getFirestore,
 collection,
 addDoc,
 doc,
+getDoc,
+setDoc,
 updateDoc,
 deleteDoc,
 onSnapshot
 } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
-const firebaseConfig = {
+
+const firebaseConfig={
 apiKey:"AIzaSyBu2RrQn8cAwwWaLtw5O8Omwn4-NzHWuc0",
 authDomain:"kor-app-fa47e.firebaseapp.com",
 projectId:"kor-app-fa47e",
@@ -124,26 +136,67 @@ const db=getFirestore(app);
 
 let nickname="";
 
-window.login=function(){
+/* 자동 로그인 */
 
-nickname=document.getElementById("nickname").value;
+window.onload=async function(){
 
-if(!nickname){
+const saved=localStorage.getItem("nickname");
+
+if(saved){
+nickname=saved;
+document.getElementById("login").style.display="none";
+document.getElementById("main").style.display="block";
+}
+
+};
+
+
+/* 로그인 */
+
+window.login=async function(){
+
+const name=document.getElementById("nickname").value;
+
+if(!name){
 alert("닉네임 입력");
 return;
 }
+
+const ref=doc(db,"users",name);
+
+const snap=await getDoc(ref);
+
+if(snap.exists()){
+alert("이미 사용중인 닉네임");
+return;
+}
+
+await setDoc(ref,{createdAt:Date.now()});
+
+nickname=name;
+
+localStorage.setItem("nickname",nickname);
 
 document.getElementById("login").style.display="none";
 document.getElementById("main").style.display="block";
 
 };
 
-window.logout=function(){
 
-nickname="";
+/* 로그아웃 */
+
+window.logout=async function(){
+
+await deleteDoc(doc(db,"users",nickname));
+
+localStorage.removeItem("nickname");
+
 location.reload();
 
 };
+
+
+/* 파티 생성 */
 
 window.createParty=async function(){
 
@@ -160,48 +213,96 @@ await addDoc(collection(db,"parties"),{
 name:name,
 leader:nickname,
 members:[nickname],
-limit:limit
+limit:limit,
+createdAt:Date.now()
 
 });
 
 };
 
+
 const partyGrid=document.getElementById("partyGrid");
 
 onSnapshot(collection(db,"parties"),snapshot=>{
 
-partyGrid.innerHTML="";
+let parties=[];
 
 snapshot.forEach(docSnap=>{
+parties.push({
+id:docSnap.id,
+...docSnap.data()
+});
+});
 
-const data=docSnap.data();
+partyGrid.innerHTML="";
+
+
+/* 정렬 */
+
+parties.sort((a,b)=>{
+
+let aFull=a.members.length>=a.limit;
+let bFull=b.members.length>=b.limit;
+
+if(aFull!==bFull){
+return aFull?1:-1;
+}
+
+return b.createdAt-a.createdAt;
+
+});
+
+
+parties.forEach(data=>{
+
 const members=data.members||[];
 
+const isFull=members.length>=data.limit;
+
 const card=document.createElement("div");
+
 card.className="partyCard";
+
+if(members.includes(nickname)){
+card.classList.add("myParty");
+}
+
+const time=new Date(data.createdAt);
+
+const timeText=time.toLocaleTimeString([],{
+hour:"2-digit",
+minute:"2-digit"
+});
+
+const status=isFull
+? `<div class="status closed">🔴 모집완료</div>`
+: `<div class="status open">🟢 모집중</div>`;
+
 
 card.innerHTML=`
 
 <b>${data.name}</b>
 
+<br>생성 : ${timeText}
+
 <br>파티장 : ${data.leader}
+
+${status}
 
 <br>${members.length}/${data.limit}
 
 <div class="members">
-
 ${members.join(", ") || "멤버 없음"}
-
 </div>
 
 <br>
 
-<button onclick="joinParty('${docSnap.id}')">지원</button>
+${!isFull ? `<button onclick="joinParty('${data.id}')">지원</button>` : ""}
 
-<button onclick="leaveParty('${docSnap.id}')">지원취소</button>
+<button onclick="leaveParty('${data.id}')">지원취소</button>
 
 ${data.leader===nickname
-? `<button onclick="deleteParty('${docSnap.id}')">삭제</button>`
+? `<button onclick="deleteParty('${data.id}')">삭제</button>`
 : ""}
 
 `;
@@ -212,23 +313,24 @@ partyGrid.appendChild(card);
 
 });
 
+
+/* 파티 참가 */
+
 window.joinParty=async function(id){
 
 const ref=doc(db,"parties",id);
 
-const snap=await (await fetch(
-`https://firestore.googleapis.com/v1/projects/kor-app-fa47e/databases/(default)/documents/parties/${id}`
-)).json();
+const snap=await getDoc(ref);
 
-let members=snap.fields.members?.arrayValue?.values?.map(v=>v.stringValue)||[];
-let limit=parseInt(snap.fields.limit.integerValue);
+let data=snap.data();
+let members=data.members;
 
 if(members.includes(nickname)){
 alert("이미 참가");
 return;
 }
 
-if(members.length>=limit){
+if(members.length>=data.limit){
 alert("정원 초과");
 return;
 }
@@ -239,15 +341,16 @@ await updateDoc(ref,{members});
 
 };
 
+
+/* 파티 탈퇴 */
+
 window.leaveParty=async function(id){
 
 const ref=doc(db,"parties",id);
 
-const snap=await (await fetch(
-`https://firestore.googleapis.com/v1/projects/kor-app-fa47e/databases/(default)/documents/parties/${id}`
-)).json();
+const snap=await getDoc(ref);
 
-let members=snap.fields.members?.arrayValue?.values?.map(v=>v.stringValue)||[];
+let members=snap.data().members;
 
 members=members.filter(m=>m!==nickname);
 
@@ -255,12 +358,13 @@ await updateDoc(ref,{members});
 
 };
 
+
+/* 파티 삭제 */
+
 window.deleteParty=async function(id){
 
 if(confirm("파티 삭제?")){
-
 await deleteDoc(doc(db,"parties",id));
-
 }
 
 };
