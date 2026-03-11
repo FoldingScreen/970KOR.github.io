@@ -53,7 +53,42 @@ box-shadow:0 0 5px rgba(0,0,0,0.1);
 #dashboard{
 margin-top:10px;
 font-size:14px;
-color:#555;
+}
+
+#userListBtn{
+font-size:12px;
+padding:4px 8px;
+margin-left:10px;
+}
+
+/* 모달 */
+
+#userModal{
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.4);
+}
+
+.modalContent{
+background:white;
+width:320px;
+max-height:70%;
+overflow:auto;
+margin:80px auto;
+padding:20px;
+border-radius:8px;
+}
+
+.userJoin{
+color:green;
+}
+
+.userNot{
+color:#444;
 }
 
 /* 버튼 */
@@ -106,8 +141,6 @@ flex:1;
 overflow-y:auto;
 }
 
-/* 그리드 */
-
 .gridMy{display:grid;gap:12px;}
 .gridOpen{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
 .gridClosed{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
@@ -144,15 +177,11 @@ display:flex;
 justify-content:space-between;
 }
 
-/* 생성시간 */
-
 .time{
 font-size:11px;
 color:#888;
 margin-top:3px;
 }
-
-/* 버튼 영역 */
 
 .cardButtons{
 display:flex;
@@ -253,7 +282,7 @@ justify-content:flex-end;
 
 <div class="column open">
 
-<h3>🟢 모집중</h3>
+<h3 id="openTitle">모집중</h3>
 
 <div class="scroll">
 <div id="openParty" class="gridOpen"></div>
@@ -263,13 +292,31 @@ justify-content:flex-end;
 
 <div class="column closed">
 
-<h3>🔴 모집완료</h3>
+<h3 id="closedTitle">모집완료</h3>
 
 <div class="scroll">
 <div id="closedParty" class="gridClosed"></div>
 </div>
 
 </div>
+
+</div>
+
+</div>
+
+<!-- 모달 -->
+
+<div id="userModal">
+
+<div class="modalContent">
+
+<h3>전체 인원</h3>
+
+<div id="userList"></div>
+
+<br>
+
+<button onclick="closeUsers()">닫기</button>
 
 </div>
 
@@ -305,6 +352,8 @@ const app=initializeApp(firebaseConfig);
 const db=getFirestore(app);
 
 let nickname="";
+let allUsers=[];
+let partyUsers=[];
 
 function isAdmin(){
 return nickname==="병풍";
@@ -318,12 +367,9 @@ const ref=doc(db,"users",name);
 
 const snap=await getDoc(ref);
 
-if(snap.exists()){
-alert("이미 사용중 닉네임");
-return;
+if(!snap.exists()){
+await setDoc(ref,{created:Date.now()});
 }
-
-await setDoc(ref,{});
 
 nickname=name;
 
@@ -344,12 +390,9 @@ document.getElementById("userLabel").innerText="👤 "+nickname;
 
 }
 
-window.logout=async function(){
-
-await deleteDoc(doc(db,"users",nickname));
+window.logout=function(){
 
 localStorage.removeItem("nickname");
-
 location.reload();
 
 };
@@ -384,7 +427,15 @@ created:Date.now()
 
 };
 
-function startRealtime(){
+async function startRealtime(){
+
+const usersSnap=await getDocs(collection(db,"users"));
+
+allUsers=[];
+
+usersSnap.forEach(u=>{
+allUsers.push(u.id);
+});
 
 onSnapshot(collection(db,"parties"),snapshot=>{
 render(snapshot);
@@ -527,10 +578,43 @@ openGrid.appendChild(card);
 
 });
 
+partyUsers=[...totalUsers];
+
+const notJoin=allUsers.filter(u=>!partyUsers.includes(u));
+
 document.getElementById("dashboard").innerHTML=
-"총 인원 "+totalUsers.size+
-" | 모집중 "+openCount+
-" | 모집완료 "+closedCount;
+"총 인원 "+allUsers.length+
+" | 참여 "+partyUsers.length+
+" | 미참여 "+notJoin.length+
+" <button id='userListBtn' onclick='showUsers()'>전체목록</button>";
+
+document.getElementById("openTitle").innerText="모집중 ("+openCount+")";
+document.getElementById("closedTitle").innerText="모집완료 ("+closedCount+")";
+
+}
+
+window.showUsers=function(){
+
+const modal=document.getElementById("userModal");
+const list=document.getElementById("userList");
+
+list.innerHTML="";
+
+allUsers.forEach(u=>{
+
+let cls=partyUsers.includes(u)?"userJoin":"userNot";
+
+list.innerHTML+=`<div class="${cls}">${u}</div>`;
+
+});
+
+modal.style.display="block";
+
+}
+
+window.closeUsers=function(){
+
+document.getElementById("userModal").style.display="none";
 
 }
 
