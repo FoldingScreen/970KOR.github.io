@@ -5,9 +5,12 @@
 <head>
 
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>970KOR 바이킹의 역습</title>
 
 <style>
+
+/* 기본 */
 
 body{
 font-family:sans-serif;
@@ -15,11 +18,36 @@ margin:20px;
 text-align:center;
 }
 
+/* 로그인 화면 */
+
+#login{
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+height:100vh;
+}
+
+#login input{
+width:260px;
+font-size:16px;
+padding:8px;
+margin:8px;
+}
+
+#login button{
+width:150px;
+font-size:16px;
+padding:8px;
+}
+
+/* 메인 */
+
 #main{
 display:none;
 }
 
-/* 상단 유저 */
+/* 상단 사용자 */
 
 .topbar{
 position:fixed;
@@ -157,8 +185,6 @@ max-height:none;
 overflow-y:visible;
 }
 
-/* 모바일 grid */
-
 .gridMy{
 grid-template-columns:1fr;
 }
@@ -171,8 +197,6 @@ grid-template-columns:repeat(2,1fr);
 grid-template-columns:1fr;
 }
 
-/* 카드 확대 */
-
 .partyCard{
 font-size:16px;
 padding:16px;
@@ -183,6 +207,22 @@ font-size:15px;
 padding:10px 14px;
 }
 
+/* 로그인 모바일 */
+
+#login input{
+width:80%;
+max-width:320px;
+font-size:18px;
+padding:12px;
+}
+
+#login button{
+width:60%;
+max-width:200px;
+font-size:18px;
+padding:12px;
+}
+
 }
 
 </style>
@@ -191,15 +231,19 @@ padding:10px 14px;
 
 <body>
 
+<!-- 로그인 -->
+
 <div id="login">
 
 <h2>970KOR 로그인</h2>
 
-<input id="nickname" placeholder="닉네임">
+<input id="nickname" placeholder="닉네임" autofocus>
 
 <button onclick="login()">로그인</button>
 
 </div>
+
+<!-- 메인 -->
 
 <div id="main">
 
@@ -294,6 +338,8 @@ const db=getFirestore(app);
 
 let nickname="";
 
+/* 자동 로그인 */
+
 window.onload=function(){
 
 const saved=localStorage.getItem("nickname");
@@ -304,6 +350,8 @@ showMain();
 }
 
 };
+
+/* 로그인 */
 
 window.login=async function(){
 
@@ -333,6 +381,8 @@ showMain();
 
 };
 
+/* 메인 */
+
 function showMain(){
 
 document.getElementById("login").style.display="none";
@@ -341,6 +391,8 @@ document.getElementById("main").style.display="block";
 document.getElementById("userLabel").innerText="👤 "+nickname;
 
 }
+
+/* 로그아웃 */
 
 window.logout=async function(){
 
@@ -351,6 +403,8 @@ localStorage.removeItem("nickname");
 location.reload();
 
 };
+
+/* 파티 생성 */
 
 window.createParty=async function(){
 
