@@ -17,8 +17,6 @@ margin:20px;
 text-align:center;
 }
 
-/* 로그인 */
-
 #login{
 display:flex;
 flex-direction:column;
@@ -29,24 +27,19 @@ height:100vh;
 
 #login input{
 width:260px;
+padding:10px;
+margin:10px;
 font-size:16px;
-padding:8px;
-margin:8px;
 }
 
 #login button{
-width:150px;
-font-size:16px;
-padding:8px;
+width:160px;
+padding:10px;
 }
-
-/* 메인 */
 
 #main{
 display:none;
 }
-
-/* 상단 */
 
 .topbar{
 position:fixed;
@@ -54,39 +47,22 @@ top:15px;
 right:20px;
 font-size:14px;
 background:white;
-padding:5px 10px;
+padding:6px 12px;
 border-radius:6px;
 box-shadow:0 0 5px rgba(0,0,0,0.1);
 }
 
-/* 버튼 공통 */
-
 button{
-padding:8px 12px;
-margin:3px;
-cursor:pointer;
-border:1px solid #999;
-background:#f5f5f5;
+border:1px solid #aaa;
+background:#f3f3f3;
 border-radius:4px;
+padding:6px 10px;
+cursor:pointer;
 }
-
-/* 관리자 버튼 */
-
-.adminPanel{
-margin-top:10px;
-}
-
-.adminPanel button{
-background:#ffe3e3;
-border:1px solid #ff8a8a;
-}
-
-/* 레이아웃 */
 
 .layout{
 display:flex;
 gap:30px;
-align-items:flex-start;
 margin-top:30px;
 }
 
@@ -96,56 +72,38 @@ flex-direction:column;
 height:650px;
 }
 
-.column.my{
-flex:1;
-min-width:220px;
-}
-
-.column.open{
-flex:4;
-}
-
-.column.closed{
-flex:2;
-}
-
-/* 스크롤 */
+.column.my{flex:1;}
+.column.open{flex:4;}
+.column.closed{flex:2;}
 
 .scroll{
 flex:1;
 overflow-y:auto;
 }
 
-/* 그리드 */
-
 .gridMy{
 display:grid;
 grid-template-columns:1fr;
-gap:15px;
-min-height:120px;
+gap:12px;
 }
 
 .gridOpen{
 display:grid;
 grid-template-columns:repeat(4,1fr);
-gap:15px;
-min-height:120px;
+gap:12px;
 }
 
 .gridClosed{
 display:grid;
 grid-template-columns:repeat(3,1fr);
-gap:15px;
-min-height:120px;
+gap:12px;
 }
-
-/* 카드 */
 
 .partyCard{
 border:1px solid #ccc;
 border-radius:6px;
-padding:12px;
 background:#f8f8f8;
+padding:12px;
 
 display:flex;
 flex-direction:column;
@@ -159,33 +117,29 @@ border:3px solid #4CAF50;
 background:#eef9ee;
 }
 
-.status{
-font-weight:bold;
-margin:5px 0;
+.members div{
+display:flex;
+justify-content:space-between;
+}
+
+.cardButtons{
+display:flex;
+flex-wrap:wrap;
+justify-content:center;
+gap:5px;
+margin-top:10px;
 }
 
 .openStatus{color:green;}
 .closedStatus{color:red;}
 
-.members{
-font-size:13px;
-color:#444;
-margin-top:4px;
+.adminPanel{
+margin-top:10px;
 }
 
-/* 버튼 줄 */
-
-.cardButtons{
-display:flex;
-justify-content:center;
-flex-wrap:wrap;
-gap:5px;
-margin-top:8px;
-}
-
-.empty{
-color:#888;
-margin-top:20px;
+.adminPanel button{
+background:#ffe3e3;
+border-color:#ff8a8a;
 }
 
 /* 모바일 */
@@ -194,7 +148,6 @@ margin-top:20px;
 
 .layout{
 flex-direction:column;
-gap:40px;
 }
 
 .column{
@@ -218,23 +171,15 @@ font-size:16px;
 padding:16px;
 }
 
-button{
-font-size:14px;
-padding:10px 12px;
-}
-
 #login input{
 width:80%;
 max-width:320px;
 font-size:18px;
-padding:12px;
 }
 
 #login button{
 width:60%;
 max-width:200px;
-font-size:18px;
-padding:12px;
 }
 
 .topbar{
@@ -242,7 +187,6 @@ position:static;
 margin-bottom:10px;
 display:flex;
 justify-content:flex-end;
-font-size:13px;
 }
 
 }
@@ -275,8 +219,6 @@ font-size:13px;
 
 <h1>970KOR 바이킹의 역습</h1>
 
-<h3>파티 생성</h3>
-
 <input id="partyName" placeholder="파티 이름">
 
 <select id="limit">
@@ -295,7 +237,7 @@ font-size:13px;
 
 <div class="column my">
 
-<h2>⭐ 나의 파티</h2>
+<h3>⭐ 나의 파티</h3>
 
 <div class="scroll">
 <div id="myParty" class="gridMy"></div>
@@ -305,7 +247,7 @@ font-size:13px;
 
 <div class="column open">
 
-<h2>🟢 모집중</h2>
+<h3>🟢 모집중</h3>
 
 <div class="scroll">
 <div id="openParty" class="gridOpen"></div>
@@ -315,7 +257,7 @@ font-size:13px;
 
 <div class="column closed">
 
-<h2>🔴 모집완료</h2>
+<h3>🔴 모집완료</h3>
 
 <div class="scroll">
 <div id="closedParty" class="gridClosed"></div>
@@ -357,13 +299,36 @@ const app=initializeApp(firebaseConfig);
 const db=getFirestore(app);
 
 let nickname="";
-const admin="병풍";
+const master="병풍";
+let admins=[];
+
+/* 관리자 로드 */
+
+async function loadAdmins(){
+
+const snap=await getDocs(collection(db,"admins"));
+
+admins=[];
+
+snap.forEach(d=>{
+admins.push(d.id);
+});
+
+}
+
+function isAdmin(){
+
+return nickname===master || admins.includes(nickname);
+
+}
 
 /* 자동 로그인 */
 
-window.onload=function(){
+window.onload=async function(){
 
 const saved=localStorage.getItem("nickname");
+
+await loadAdmins();
 
 if(saved){
 nickname=saved;
@@ -372,27 +337,20 @@ showMain();
 
 };
 
-/* 로그인 */
-
 window.login=async function(){
 
 const name=document.getElementById("nickname").value;
-
-if(!name){
-alert("닉네임 입력");
-return;
-}
 
 const ref=doc(db,"users",name);
 
 const snap=await getDoc(ref);
 
 if(snap.exists()){
-alert("이미 사용중인 닉네임");
+alert("이미 사용중 닉네임");
 return;
 }
 
-await setDoc(ref,{createdAt:Date.now()});
+await setDoc(ref,{});
 
 nickname=name;
 
@@ -402,8 +360,6 @@ showMain();
 
 };
 
-/* 메인 */
-
 function showMain(){
 
 document.getElementById("login").style.display="none";
@@ -411,14 +367,13 @@ document.getElementById("main").style.display="block";
 
 document.getElementById("userLabel").innerText="👤 "+nickname;
 
-/* 관리자 버튼 */
-
-if(nickname===admin){
+if(nickname===master){
 
 document.getElementById("adminPanel").innerHTML=`
 
+<input id="adminName" placeholder="운영진 닉네임">
+<button onclick="addAdmin()">운영진 추가</button>
 <button onclick="deleteAllParties()">전체 파티 삭제</button>
-<button onclick="resetDatabase()">DB 초기화</button>
 
 `;
 
@@ -426,15 +381,29 @@ document.getElementById("adminPanel").innerHTML=`
 
 }
 
-/* 로그아웃 */
+/* 운영진 추가 */
 
-window.logout=async function(){
+window.addAdmin=async function(){
 
-await deleteDoc(doc(db,"users",nickname));
+const name=document.getElementById("adminName").value;
 
-localStorage.removeItem("nickname");
+await setDoc(doc(db,"admins",name),{});
 
-location.reload();
+alert("운영진 추가");
+
+};
+
+/* 전체 삭제 */
+
+window.deleteAllParties=async function(){
+
+if(!confirm("모든 파티 삭제?")) return;
+
+const snap=await getDocs(collection(db,"parties"));
+
+snap.forEach(async p=>{
+await deleteDoc(doc(db,"parties",p.id));
+});
 
 };
 
@@ -445,23 +414,18 @@ window.createParty=async function(){
 const name=document.getElementById("partyName").value;
 const limit=parseInt(document.getElementById("limit").value);
 
-if(!name){
-alert("파티 이름 입력");
-return;
-}
-
-const snapshot=await getDocs(collection(db,"parties"));
+const snap=await getDocs(collection(db,"parties"));
 
 let blocked=false;
 
-snapshot.forEach(p=>{
+snap.forEach(p=>{
 let d=p.data();
 if(d.leader===nickname) blocked=true;
 if(d.members.includes(nickname)) blocked=true;
 });
 
 if(blocked){
-alert("이미 파티에 참여중입니다.");
+alert("이미 파티 참여중");
 return;
 }
 
@@ -469,34 +433,7 @@ await addDoc(collection(db,"parties"),{
 name:name,
 leader:nickname,
 members:[nickname],
-limit:limit,
-createdAt:Date.now()
-});
-
-};
-
-/* 관리자 기능 */
-
-window.deleteAllParties=async function(){
-
-if(!confirm("모든 파티 삭제?")) return;
-
-const snapshot=await getDocs(collection(db,"parties"));
-
-snapshot.forEach(async p=>{
-await deleteDoc(doc(db,"parties",p.id));
-});
-
-};
-
-window.resetDatabase=async function(){
-
-if(!confirm("DB 초기화?")) return;
-
-const parties=await getDocs(collection(db,"parties"));
-
-parties.forEach(async p=>{
-await deleteDoc(doc(db,"parties",p.id));
+limit:limit
 });
 
 };
@@ -516,8 +453,7 @@ closedGrid.innerHTML="";
 snapshot.forEach(docSnap=>{
 
 const data=docSnap.data();
-const members=data.members||[];
-
+const members=data.members;
 const isFull=members.length>=data.limit;
 
 const card=document.createElement("div");
@@ -527,15 +463,23 @@ if(members.includes(nickname)){
 card.classList.add("myParty");
 }
 
-const status=isFull
-? `<div class="status closedStatus">🔴 모집완료</div>`
-: `<div class="status openStatus">🟢 모집중</div>`;
+let deleteBtn="";
 
-let deleteButton="";
-
-if(data.leader===nickname || nickname===admin){
-deleteButton=`<button onclick="deleteParty('${docSnap.id}')">삭제</button>`;
+if(data.leader===nickname || isAdmin()){
+deleteBtn=`<button onclick="deleteParty('${docSnap.id}')">삭제</button>`;
 }
+
+const membersHTML=members.map(m=>{
+
+let kick="";
+
+if((data.leader===nickname || isAdmin()) && m!==data.leader){
+kick=`<button onclick="kickMember('${docSnap.id}','${m}')">❌</button>`;
+}
+
+return `<div>${m} ${kick}</div>`;
+
+}).join("");
 
 card.innerHTML=`
 
@@ -545,23 +489,27 @@ card.innerHTML=`
 
 <br>파티장 : ${data.leader}
 
-${status}
+<div class="${isFull?'closedStatus':'openStatus'}">
 
-<br>${members.length}/${data.limit}
+${isFull?'🔴 모집완료':'🟢 모집중'}
+
+</div>
+
+${members.length}/${data.limit}
 
 <div class="members">
-${members.join(", ")}
+${membersHTML}
 </div>
 
 </div>
 
 <div class="cardButtons">
 
-${!isFull ? `<button onclick="joinParty('${docSnap.id}')">지원</button>` : ""}
+${!isFull?`<button onclick="joinParty('${docSnap.id}')">지원</button>`:""}
 
 <button onclick="leaveParty('${docSnap.id}')">취소</button>
 
-${deleteButton}
+${deleteBtn}
 
 </div>
 
@@ -581,15 +529,31 @@ openGrid.appendChild(card);
 
 });
 
+/* 강퇴 */
+
+window.kickMember=async function(partyId,member){
+
+const ref=doc(db,"parties",partyId);
+
+const snap=await getDoc(ref);
+
+let data=snap.data();
+
+let members=data.members.filter(m=>m!==member);
+
+await updateDoc(ref,{members});
+
+};
+
 /* 참가 */
 
 window.joinParty=async function(id){
 
-const snapshot=await getDocs(collection(db,"parties"));
+const snap=await getDocs(collection(db,"parties"));
 
 let already=false;
 
-snapshot.forEach(p=>{
+snap.forEach(p=>{
 if(p.data().members.includes(nickname)){
 already=true;
 }
@@ -602,14 +566,9 @@ return;
 
 const ref=doc(db,"parties",id);
 
-const snap=await getDoc(ref);
+const docSnap=await getDoc(ref);
 
-let data=snap.data();
-
-if(data.members.length>=data.limit){
-alert("정원 초과");
-return;
-}
+let data=docSnap.data();
 
 data.members.push(nickname);
 
@@ -625,9 +584,7 @@ const ref=doc(db,"parties",id);
 
 const snap=await getDoc(ref);
 
-let members=snap.data().members;
-
-members=members.filter(m=>m!==nickname);
+let members=snap.data().members.filter(m=>m!==nickname);
 
 await updateDoc(ref,{members});
 
@@ -640,6 +597,16 @@ window.deleteParty=async function(id){
 if(confirm("파티 삭제?")){
 await deleteDoc(doc(db,"parties",id));
 }
+
+};
+
+window.logout=async function(){
+
+await deleteDoc(doc(db,"users",nickname));
+
+localStorage.removeItem("nickname");
+
+location.reload();
 
 };
 
