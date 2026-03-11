@@ -10,12 +10,17 @@
 
 body{
 font-family:sans-serif;
+margin:40px;
 text-align:center;
-margin-top:40px;
 }
 
-#main{
-display:none;
+#main{display:none;}
+
+.topbar{
+position:absolute;
+top:20px;
+right:30px;
+font-size:14px;
 }
 
 input,select{
@@ -29,7 +34,7 @@ margin:5px;
 cursor:pointer;
 }
 
-#partyGrid{
+.grid{
 display:grid;
 grid-template-columns:repeat(4,1fr);
 gap:15px;
@@ -51,7 +56,7 @@ background:#eef9ee;
 
 .status{
 font-weight:bold;
-margin:4px 0;
+margin:5px 0;
 }
 
 .open{color:green;}
@@ -60,7 +65,10 @@ margin:4px 0;
 .members{
 font-size:13px;
 color:#444;
-margin-top:4px;
+}
+
+.section{
+margin-top:40px;
 }
 
 </style>
@@ -68,6 +76,8 @@ margin-top:4px;
 </head>
 
 <body>
+
+<!-- 로그인 -->
 
 <div id="login">
 
@@ -79,11 +89,19 @@ margin-top:4px;
 
 </div>
 
+<!-- 메인 -->
+
 <div id="main">
 
-<h1>970KOR 바이킹의 역습</h1>
+<div class="topbar">
+
+<span id="userLabel"></span>
 
 <button onclick="logout()">로그아웃</button>
+
+</div>
+
+<h1>970KOR 바이킹의 역습</h1>
 
 <h3>파티 생성</h3>
 
@@ -99,9 +117,29 @@ margin-top:4px;
 
 <button onclick="createParty()">파티 생성</button>
 
-<h2>파티 목록</h2>
+<div class="section">
 
-<div id="partyGrid"></div>
+<h2>⭐ 나의 파티</h2>
+
+<div id="myParty" class="grid"></div>
+
+</div>
+
+<div class="section">
+
+<h2>🟢 모집 중</h2>
+
+<div id="openParty" class="grid"></div>
+
+</div>
+
+<div class="section">
+
+<h2>🔴 모집 완료</h2>
+
+<div id="closedParty" class="grid"></div>
+
+</div>
 
 </div>
 
@@ -115,12 +153,12 @@ collection,
 addDoc,
 doc,
 getDoc,
+getDocs,
 setDoc,
 updateDoc,
 deleteDoc,
 onSnapshot
 } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
-
 
 const firebaseConfig={
 apiKey:"AIzaSyBu2RrQn8cAwwWaLtw5O8Omwn4-NzHWuc0",
@@ -144,8 +182,7 @@ const saved=localStorage.getItem("nickname");
 
 if(saved){
 nickname=saved;
-document.getElementById("login").style.display="none";
-document.getElementById("main").style.display="block";
+showMain();
 }
 
 };
@@ -177,10 +214,21 @@ nickname=name;
 
 localStorage.setItem("nickname",nickname);
 
+showMain();
+
+};
+
+
+/* 메인화면 */
+
+function showMain(){
+
 document.getElementById("login").style.display="none";
 document.getElementById("main").style.display="block";
 
-};
+document.getElementById("userLabel").innerText="👤 "+nickname;
+
+}
 
 
 /* 로그아웃 */
@@ -208,6 +256,27 @@ alert("파티 이름 입력");
 return;
 }
 
+/* 중복 체크 */
+
+const snapshot=await getDocs(collection(db,"parties"));
+
+let blocked=false;
+
+snapshot.forEach(p=>{
+
+let d=p.data();
+
+if(d.leader===nickname) blocked=true;
+
+if(d.members.includes(nickname)) blocked=true;
+
+});
+
+if(blocked){
+alert("이미 파티에 참여중입니다.");
+return;
+}
+
 await addDoc(collection(db,"parties"),{
 
 name:name,
@@ -221,46 +290,26 @@ createdAt:Date.now()
 };
 
 
-const partyGrid=document.getElementById("partyGrid");
+/* 파티 표시 */
+
+const myGrid=document.getElementById("myParty");
+const openGrid=document.getElementById("openParty");
+const closedGrid=document.getElementById("closedParty");
 
 onSnapshot(collection(db,"parties"),snapshot=>{
 
-let parties=[];
+myGrid.innerHTML="";
+openGrid.innerHTML="";
+closedGrid.innerHTML="";
 
 snapshot.forEach(docSnap=>{
-parties.push({
-id:docSnap.id,
-...docSnap.data()
-});
-});
 
-partyGrid.innerHTML="";
-
-
-/* 정렬 */
-
-parties.sort((a,b)=>{
-
-let aFull=a.members.length>=a.limit;
-let bFull=b.members.length>=b.limit;
-
-if(aFull!==bFull){
-return aFull?1:-1;
-}
-
-return b.createdAt-a.createdAt;
-
-});
-
-
-parties.forEach(data=>{
-
+const data=docSnap.data();
 const members=data.members||[];
 
 const isFull=members.length>=data.limit;
 
 const card=document.createElement("div");
-
 card.className="partyCard";
 
 if(members.includes(nickname)){
@@ -277,7 +326,6 @@ minute:"2-digit"
 const status=isFull
 ? `<div class="status closed">🔴 모집완료</div>`
 : `<div class="status open">🟢 모집중</div>`;
-
 
 card.innerHTML=`
 
@@ -297,24 +345,32 @@ ${members.join(", ") || "멤버 없음"}
 
 <br>
 
-${!isFull ? `<button onclick="joinParty('${data.id}')">지원</button>` : ""}
+${!isFull ? `<button onclick="joinParty('${docSnap.id}')">지원</button>` : ""}
 
-<button onclick="leaveParty('${data.id}')">지원취소</button>
+<button onclick="leaveParty('${docSnap.id}')">지원취소</button>
 
 ${data.leader===nickname
-? `<button onclick="deleteParty('${data.id}')">삭제</button>`
+? `<button onclick="deleteParty('${docSnap.id}')">삭제</button>`
 : ""}
 
 `;
 
-partyGrid.appendChild(card);
+if(members.includes(nickname)){
+myGrid.appendChild(card);
+}
+else if(isFull){
+closedGrid.appendChild(card);
+}
+else{
+openGrid.appendChild(card);
+}
 
 });
 
 });
 
 
-/* 파티 참가 */
+/* 참가 */
 
 window.joinParty=async function(id){
 
@@ -323,26 +379,25 @@ const ref=doc(db,"parties",id);
 const snap=await getDoc(ref);
 
 let data=snap.data();
-let members=data.members;
 
-if(members.includes(nickname)){
+if(data.members.includes(nickname)){
 alert("이미 참가");
 return;
 }
 
-if(members.length>=data.limit){
+if(data.members.length>=data.limit){
 alert("정원 초과");
 return;
 }
 
-members.push(nickname);
+data.members.push(nickname);
 
-await updateDoc(ref,{members});
+await updateDoc(ref,{members:data.members});
 
 };
 
 
-/* 파티 탈퇴 */
+/* 탈퇴 */
 
 window.leaveParty=async function(id){
 
@@ -359,7 +414,7 @@ await updateDoc(ref,{members});
 };
 
 
-/* 파티 삭제 */
+/* 삭제 */
 
 window.deleteParty=async function(id){
 
