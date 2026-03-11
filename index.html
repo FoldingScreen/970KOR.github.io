@@ -11,33 +11,42 @@
 body{
 font-family:sans-serif;
 text-align:center;
-margin-top:60px;
-}
-
-ul{
-list-style:none;
-padding:0;
+margin-top:40px;
 }
 
 input,select{
-padding:10px;
+padding:8px;
 margin:5px;
 }
 
 button{
-padding:10px 20px;
+padding:8px 16px;
 margin:5px;
+cursor:pointer;
 }
 
 #main{
 display:none;
 }
 
-.party{
+#partyGrid{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:15px;
+max-width:900px;
+margin:auto;
+}
+
+.partyCard{
 border:1px solid #ccc;
+border-radius:8px;
 padding:10px;
-margin:10px auto;
-width:300px;
+background:#f8f8f8;
+}
+
+.members{
+font-size:13px;
+color:#444;
 }
 
 </style>
@@ -46,7 +55,7 @@ width:300px;
 
 <body>
 
-<!-- 로그인 화면 -->
+<!-- 로그인 -->
 
 <div id="login">
 
@@ -58,73 +67,92 @@ width:300px;
 
 </div>
 
-<!-- 메인 화면 -->
+<!-- 메인 -->
 
 <div id="main">
 
 <h1>970KOR 바이킹의 역습</h1>
+
+<button onclick="logout()">로그아웃</button>
 
 <h3>파티 생성</h3>
 
 <input id="partyName" placeholder="파티 이름">
 
 <select id="limit">
+
+<option value="2">2명</option>
+<option value="3">3명</option>
 <option value="4">4명</option>
+<option value="5">5명</option>
 <option value="6">6명</option>
-<option value="8">8명</option>
+
 </select>
 
 <button onclick="createParty()">파티 생성</button>
 
 <h2>파티 목록</h2>
 
-<div id="partyList"></div>
+<div id="partyGrid"></div>
 
 </div>
 
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+import {
+getFirestore,
+collection,
+addDoc,
+doc,
+updateDoc,
+deleteDoc,
+onSnapshot
+} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBu2RrQn8cAwwWaLtw5O8Omwn4-NzHWuc0",
-  authDomain: "kor-app-fa47e.firebaseapp.com",
-  projectId: "kor-app-fa47e",
-  storageBucket: "kor-app-fa47e.firebasestorage.app",
-  messagingSenderId: "397749083935",
-  appId: "1:397749083935:web:b2bd8498b943aec5099a2a"
+apiKey:"AIzaSyBu2RrQn8cAwwWaLtw5O8Omwn4-NzHWuc0",
+authDomain:"kor-app-fa47e.firebaseapp.com",
+projectId:"kor-app-fa47e",
+storageBucket:"kor-app-fa47e.firebasestorage.app",
+messagingSenderId:"397749083935",
+appId:"1:397749083935:web:b2bd8498b943aec5099a2a"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const app=initializeApp(firebaseConfig);
+const db=getFirestore(app);
 
-let nickname=""
+let nickname="";
 
 window.login=function(){
 
-nickname=document.getElementById("nickname").value
+nickname=document.getElementById("nickname").value;
 
-if(nickname===""){
-alert("닉네임 입력")
-return
+if(!nickname){
+alert("닉네임 입력");
+return;
 }
 
-document.getElementById("login").style.display="none"
-document.getElementById("main").style.display="block"
+document.getElementById("login").style.display="none";
+document.getElementById("main").style.display="block";
 
-loadParties()
+};
 
-}
+window.logout=function(){
 
-window.createParty = async function(){
+nickname="";
+location.reload();
 
-let name=document.getElementById("partyName").value
-let limit=parseInt(document.getElementById("limit").value)
+};
 
-if(name===""){
-alert("파티 이름 입력")
-return
+window.createParty=async function(){
+
+const name=document.getElementById("partyName").value;
+const limit=parseInt(document.getElementById("limit").value);
+
+if(!name){
+alert("파티 이름 입력");
+return;
 }
 
 await addDoc(collection(db,"parties"),{
@@ -134,121 +162,108 @@ leader:nickname,
 members:[nickname],
 limit:limit
 
-})
+});
 
-loadParties()
+};
 
-}
+const partyGrid=document.getElementById("partyGrid");
 
-async function loadParties(){
+onSnapshot(collection(db,"parties"),snapshot=>{
 
-let list=document.getElementById("partyList")
-list.innerHTML=""
+partyGrid.innerHTML="";
 
-const querySnapshot = await getDocs(collection(db,"parties"))
+snapshot.forEach(docSnap=>{
 
-querySnapshot.forEach((p)=>{
+const data=docSnap.data();
+const members=data.members||[];
 
-let data=p.data()
-let members=data.members||[]
+const card=document.createElement("div");
+card.className="partyCard";
 
-let div=document.createElement("div")
-div.className="party"
+card.innerHTML=`
 
-div.innerHTML=`
+<b>${data.name}</b>
 
-<b>${data.name}</b> (${members.length}/${data.limit})  
 <br>파티장 : ${data.leader}
 
-<br><br>멤버 : ${members.join(", ") || "없음"}
+<br>${members.length}/${data.limit}
 
-<br><br>
+<div class="members">
 
-<button onclick="joinParty('${p.id}')">지원</button>
+${members.join(", ") || "멤버 없음"}
 
-<button onclick="leaveParty('${p.id}')">지원취소</button>
+</div>
 
-${data.leader===nickname ? `<button onclick="deleteParty('${p.id}')">파티 삭제</button>` : ""}
+<br>
 
-`
+<button onclick="joinParty('${docSnap.id}')">지원</button>
 
-list.appendChild(div)
+<button onclick="leaveParty('${docSnap.id}')">지원취소</button>
 
-})
+${data.leader===nickname
+? `<button onclick="deleteParty('${docSnap.id}')">삭제</button>`
+: ""}
 
-}
+`;
 
-window.joinParty = async function(id){
+partyGrid.appendChild(card);
 
-const ref=doc(db,"parties",id)
+});
 
-const querySnapshot = await getDocs(collection(db,"parties"))
+});
 
-querySnapshot.forEach(async(p)=>{
+window.joinParty=async function(id){
 
-if(p.id===id){
+const ref=doc(db,"parties",id);
 
-let data=p.data()
-let members=data.members||[]
+const snap=await (await fetch(
+`https://firestore.googleapis.com/v1/projects/kor-app-fa47e/databases/(default)/documents/parties/${id}`
+)).json();
+
+let members=snap.fields.members?.arrayValue?.values?.map(v=>v.stringValue)||[];
+let limit=parseInt(snap.fields.limit.integerValue);
 
 if(members.includes(nickname)){
-alert("이미 참가")
-return
+alert("이미 참가");
+return;
 }
 
-if(members.length>=data.limit){
-alert("정원 초과")
-return
+if(members.length>=limit){
+alert("정원 초과");
+return;
 }
 
-members.push(nickname)
+members.push(nickname);
 
-await updateDoc(ref,{members:members})
+await updateDoc(ref,{members});
 
-loadParties()
+};
 
-}
+window.leaveParty=async function(id){
 
-})
+const ref=doc(db,"parties",id);
 
-}
+const snap=await (await fetch(
+`https://firestore.googleapis.com/v1/projects/kor-app-fa47e/databases/(default)/documents/parties/${id}`
+)).json();
 
-window.leaveParty = async function(id){
+let members=snap.fields.members?.arrayValue?.values?.map(v=>v.stringValue)||[];
 
-const ref=doc(db,"parties",id)
+members=members.filter(m=>m!==nickname);
 
-const querySnapshot = await getDocs(collection(db,"parties"))
+await updateDoc(ref,{members});
 
-querySnapshot.forEach(async(p)=>{
+};
 
-if(p.id===id){
-
-let data=p.data()
-let members=data.members||[]
-
-members=members.filter(m=>m!==nickname)
-
-await updateDoc(ref,{members:members})
-
-loadParties()
-
-}
-
-})
-
-}
-
-window.deleteParty = async function(id){
+window.deleteParty=async function(id){
 
 if(confirm("파티 삭제?")){
 
-await deleteDoc(doc(db,"parties",id))
-
-loadParties()
+await deleteDoc(doc(db,"parties",id));
 
 }
 
-}
+};
 
 </script>
 
