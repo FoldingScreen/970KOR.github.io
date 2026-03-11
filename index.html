@@ -1,22 +1,97 @@
 <!DOCTYPE html>
 <html>
+
 <head>
+
 <meta charset="UTF-8">
-<title>Viking Application</title>
-<link rel="stylesheet" href="style.css">
+
+<title>바이킹의 역습 신청</title>
+
+<style>
+
+body{
+font-family:sans-serif;
+text-align:center;
+margin-top:50px;
+}
+
+input{
+padding:10px;
+font-size:16px;
+}
+
+button{
+padding:10px 20px;
+font-size:16px;
+margin-left:10px;
+}
+
+li{
+margin:5px;
+}
+
+</style>
+
 </head>
 
 <body>
 
-<h1>신청서</h1>
+<h1>바이킹의 역습 신청</h1>
 
-<input type="text" id="name" placeholder="닉네임">
+<input id="name" placeholder="닉네임 입력">
 
-<button onclick="apply()">신청하기</button>
+<button onclick="apply()">
+
+신청하기
+
+</button>
+
+<h2>참가자 목록</h2>
 
 <ul id="list"></ul>
 
-<script src="script.js"></script>
+<script>
+
+let users=[]
+
+function apply(){
+
+let name=document.getElementById("name").value
+
+if(name===""){
+
+alert("닉네임 입력")
+
+return
+
+}
+
+users.push(name)
+
+render()
+
+}
+
+function render(){
+
+let list=document.getElementById("list")
+
+list.innerHTML=""
+
+users.forEach(u=>{
+
+let li=document.createElement("li")
+
+li.innerText=u
+
+list.appendChild(li)
+
+})
+
+}
+
+</script>
 
 </body>
+
 </html>
