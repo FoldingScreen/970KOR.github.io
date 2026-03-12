@@ -17,6 +17,7 @@ let partyUsers=[]
 
 const ADMIN="병풍"
 
+
 window.onload=async()=>{
 
 const saved=localStorage.getItem("nickname")
@@ -28,9 +29,11 @@ startApp()
 
 }
 
+
 function enterLogin(e){
 if(e.key==="Enter") login()
 }
+
 
 async function login(){
 
@@ -43,14 +46,12 @@ return
 
 localStorage.setItem("nickname",nickname)
 
-await db.collection("users").doc(nickname).set(
-{t:Date.now()},
-{merge:true}
-)
+await db.collection("users").doc(nickname).set({t:Date.now()},{merge:true})
 
 startApp()
 
 }
+
 
 function startApp(){
 
@@ -63,10 +64,12 @@ startRealtime()
 
 }
 
+
 function logout(){
 localStorage.removeItem("nickname")
 location.reload()
 }
+
 
 async function createParty(){
 
@@ -86,7 +89,7 @@ let already=false
 snap.forEach(p=>{
 
 const d=p.data()
-const members=d.members || []
+const members=d.members||[]
 
 if(d.name===name) duplicate=true
 if(members.includes(nickname)) already=true
@@ -104,18 +107,17 @@ return
 }
 
 await db.collection("parties").add({
-
 name:name,
 leader:nickname,
 members:[nickname],
 limit:limit,
 created:Date.now()
-
 })
 
 document.getElementById("partyName").value=""
 
 }
+
 
 async function joinParty(id){
 
@@ -128,7 +130,7 @@ const ref=db.collection("parties").doc(id)
 const snap=await ref.get()
 
 const d=snap.data()
-const members=d.members || []
+const members=d.members||[]
 
 if(members.length>=d.limit){
 alert("모집완료")
@@ -143,13 +145,14 @@ await ref.update({members})
 
 }
 
+
 async function leaveParty(id){
 
 const ref=db.collection("parties").doc(id)
 const snap=await ref.get()
 
 const d=snap.data()
-const members=d.members || []
+const members=d.members||[]
 
 if(d.leader===nickname){
 alert("파티장은 삭제해야함")
@@ -162,6 +165,7 @@ await ref.update({members:newMembers})
 
 }
 
+
 async function deleteParty(id){
 
 if(!confirm("파티 삭제?")) return
@@ -170,13 +174,14 @@ await db.collection("parties").doc(id).delete()
 
 }
 
+
 async function kickUser(partyId,user){
 
 const ref=db.collection("parties").doc(partyId)
 const snap=await ref.get()
 
 const d=snap.data()
-const members=d.members || []
+const members=d.members||[]
 
 if(d.leader!==nickname && nickname!==ADMIN){
 alert("권한 없음")
@@ -188,6 +193,7 @@ const newMembers=members.filter(m=>m!==user)
 await ref.update({members:newMembers})
 
 }
+
 
 function startRealtime(){
 
@@ -204,6 +210,7 @@ if(!u.id.startsWith("테스트")) allUsers.push(u.id)
 db.collection("parties").onSnapshot(render)
 
 }
+
 
 function render(snapshot){
 
@@ -223,8 +230,7 @@ snapshot.forEach(doc=>{
 
 const id=doc.id
 const d=doc.data()
-
-const members=d.members || []
+const members=d.members||[]
 
 members.forEach(m=>users.add(m))
 
@@ -250,8 +256,7 @@ else cls+=" cardOpen"
 
 card.className=cls
 
-let html=`<b>${d.name}</b><br>
-${members.length}/${d.limit}<br>`
+let html=`<b>${d.name}</b><br>${members.length}/${d.limit}<br>`
 
 sorted.forEach(m=>{
 
@@ -265,19 +270,17 @@ line+=`<span class="member me">${m}</span>`
 line+=`<span class="member">${m}</span>`
 }
 
-if(d.leader===nickname && m!==nickname){
+if((d.leader===nickname || nickname===ADMIN) && m!==d.leader){
 line+=` <button class="btnKick" onclick="kickUser('${id}','${m}')">추방</button>`
-}
-
-if(nickname===ADMIN && m!==d.leader){
-line+=` <button class="btnKick" onclick="kickUser('${id}','${m}')">강제</button>`
 }
 
 html+=line+"<br>"
 
 })
 
-html+=`<small>${new Date(d.created).toLocaleString()}</small><br>`
+html+=`<small>${new Date(d.created).toLocaleString()}</small>`
+
+html+=`<div class="cardButtons">`
 
 if(!members.includes(nickname) && members.length<d.limit)
 html+=`<button class="btnJoin" onclick="joinParty('${id}')">지원</button>`
@@ -287,6 +290,8 @@ html+=`<button class="btnLeave" onclick="leaveParty('${id}')">취소</button>`
 
 if(d.leader===nickname)
 html+=`<button class="btnDelete" onclick="deleteParty('${id}')">삭제</button>`
+
+html+=`</div>`
 
 card.innerHTML=html
 
@@ -302,6 +307,7 @@ updateDashboard(snapshot)
 
 }
 
+
 function updateDashboard(snapshot){
 
 let partyCount=0
@@ -313,7 +319,7 @@ snapshot.forEach(doc=>{
 partyCount++
 
 const d=doc.data()
-const members=d.members || []
+const members=d.members||[]
 
 totalMembers+=members.length
 
@@ -328,6 +334,7 @@ document.getElementById("dashboard").innerText=
  | 파티 ${partyCount} | 모집완료 ${closed} | 평균 ${avg}`
 
 }
+
 
 async function showUsers(){
 
@@ -357,6 +364,7 @@ list.innerHTML+=`<div style="color:#444">● ${u}</div>`
 document.getElementById("userModal").style.display="block"
 
 }
+
 
 function closeUsers(){
 document.getElementById("userModal").style.display="none"
