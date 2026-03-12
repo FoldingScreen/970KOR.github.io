@@ -1,111 +1,129 @@
-<!DOCTYPE html>
-<html>
+body{
+font-family:sans-serif;
+margin:20px;
+background:#f4f4f4;
+}
 
-<head>
+.layout{
+display:grid;
+grid-template-columns:1fr 3fr 2fr;
+gap:30px;
+margin-top:40px;
+}
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+#myParty{
+display:grid;
+grid-template-columns:1fr;
+gap:14px;
+}
 
-<title>970KOR 파티</title>
+#openParty{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:14px;
+}
 
-<link rel="stylesheet" href="style.css">
+#closedParty{
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:14px;
+}
 
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+.partyCard{
 
-</head>
+background:white;
+border-radius:10px;
 
-<body>
+padding:14px;
 
-<div id="loginPage">
+box-shadow:0 3px 8px rgba(0,0,0,0.15);
 
-<h2>970KOR 로그인</h2>
+display:flex;
+flex-direction:column;
 
-<input id="nicknameInput" placeholder="닉네임" onkeypress="enterLogin(event)">
-<button onclick="login()">로그인</button>
+gap:6px;
 
-</div>
+min-height:160px;
+}
 
+.cardMy{
+background:#fff2a8;
+}
 
-<div id="mainPage" style="display:none">
+.cardOpen{
+background:#dcf7dc;
+}
 
-<div class="topbar">
+.cardClosed{
+background:#eaeaea;
+}
 
-<span id="userLabel"></span>
+.member{
+display:flex;
+align-items:center;
+gap:6px;
+font-size:14px;
+}
 
-<div id="adminMenu" style="display:none">
+.me{
+color:#1a73e8;
+font-weight:bold;
+}
 
-<select onchange="adminAction(this.value)">
-<option value="">운영</option>
-<option value="addAdmin">운영진 지정</option>
-<option value="resetParties">파티 초기화</option>
-</select>
+.kick{
+cursor:pointer;
+color:red;
+}
 
-</div>
+.cardButtons{
+margin-top:8px;
+display:flex;
+gap:6px;
+}
 
-<button onclick="logout()">로그아웃</button>
+button{
+padding:6px 10px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
 
-</div>
+.btnJoin{
+background:#27ae60;
+color:white;
+}
 
+.btnLeave{
+background:#888;
+color:white;
+}
 
-<h1>970KOR 파티</h1>
+.btnDelete{
+background:#e74c3c;
+color:white;
+}
 
-<div id="dashboard"></div>
+.topbar{
+position:absolute;
+top:10px;
+right:20px;
+display:flex;
+gap:10px;
+}
 
-<button onclick="showUsers()">전체 사용자</button>
+.modal{
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.4);
+}
 
-<br><br>
-
-<input id="partyName" placeholder="파티 이름">
-
-<select id="partyLimit">
-<option>2</option>
-<option>3</option>
-<option selected>4</option>
-<option>5</option>
-<option>6</option>
-</select>
-
-<button onclick="createParty()">파티 생성</button>
-
-
-<div class="layout">
-
-<div>
-<h3>나의 파티</h3>
-<div id="myParty"></div>
-</div>
-
-<div>
-<h3>모집중</h3>
-<div id="openParty"></div>
-</div>
-
-<div>
-<h3>모집완료</h3>
-<div id="closedParty"></div>
-</div>
-
-</div>
-
-</div>
-
-
-<div id="userModal" class="modal">
-
-<div class="modalContent">
-
-<h3>전체 사용자</h3>
-
-<div id="userList"></div>
-
-<button onclick="closeUsers()">닫기</button>
-
-</div>
-
-</div>
-
-<script src="script.js"></script>
-
-</body>
-</html>
+.modalContent{
+background:white;
+padding:20px;
+margin:100px auto;
+width:400px;
+}
