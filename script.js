@@ -1,4 +1,4 @@
-// firebase 설정
+// Firebase 설정
 
 const firebaseConfig = {
 
@@ -62,10 +62,50 @@ document.getElementById("mainPage").style.display="block"
 
 document.getElementById("userLabel").innerText = nickname
 
+if(event==="viking"){
+document.getElementById("eventTitle").innerText="바이킹의 역습"
+}
+
 if(event==="relic"){
 document.getElementById("eventTitle").innerText="유적 쟁탈"
-startRelic()
 }
+
+startRealtime()
+
+}
+
+
+// 실시간 파티 읽기
+
+function startRealtime(){
+
+db.collection("events")
+.doc(currentEvent)
+.collection("parties")
+.orderBy("timeUTC")
+.onSnapshot(snapshot=>{
+
+let html = `<div class="grid">`
+
+snapshot.forEach(doc=>{
+
+let d = doc.data()
+
+if(currentEvent==="relic"){
+html += renderRelic(d)
+}
+
+if(currentEvent==="viking"){
+html += renderViking(d)
+}
+
+})
+
+html += `</div>`
+
+document.getElementById("partyContainer").innerHTML = html
+
+})
 
 }
 
@@ -87,56 +127,9 @@ return power.toLocaleString()
 }
 
 
-// 시간 포맷
+// relic 카드
 
-function formatTime(month,day,hour){
-
-let utc = new Date(Date.UTC(2025,month-1,day,hour))
-
-let kst = new Date(utc.getTime()+9*3600000)
-
-return {
-
-utc:`${month}/${day} ${hour}:00`,
-kst:`${kst.getMonth()+1}/${kst.getDate()} ${kst.getHours()}:00`
-
-}
-
-}
-
-
-// 유적 파티 시작
-
-function startRelic(){
-
-db.collection("events")
-.doc("relic")
-.collection("parties")
-.orderBy("timeUTC")
-.onSnapshot(snapshot=>{
-
-let html = `<div class="relicGrid">`
-
-snapshot.forEach(doc=>{
-
-let d = doc.data()
-
-html += renderRelicCard(d)
-
-})
-
-html += `</div>`
-
-document.getElementById("partyContainer").innerHTML = html
-
-})
-
-}
-
-
-// 카드 렌더
-
-function renderRelicCard(party){
+function renderRelic(party){
 
 let membersHTML=""
 
@@ -158,20 +151,55 @@ membersHTML += `<div class="member">${name}</div>`
 
 return `
 
-<div class="relicCard">
+<div class="card relicCard">
 
-<div class="relicTitle">
+<div class="title">
 유적명: ${party.name}
 </div>
 
-<div class="relicTime">
+<div>
 시간: ${party.kst}
 <br>
 UTC ${party.utc}
 </div>
 
-<div class="relicPower">
+<div>
 병력수: ${calcPower(party.members.length)}명
+</div>
+
+${membersHTML}
+
+</div>
+
+`
+
+}
+
+
+// viking 카드
+
+function renderViking(party){
+
+let membersHTML=""
+
+party.members.forEach(m=>{
+
+let name = m
+
+if(m===nickname){
+name=`<span class="me">${name}</span>`
+}
+
+membersHTML += `<div class="member">${name}</div>`
+
+})
+
+return `
+
+<div class="card">
+
+<div class="title">
+${party.name}
 </div>
 
 ${membersHTML}
