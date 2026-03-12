@@ -258,8 +258,8 @@ else cls+=" cardOpen"
 
 card.className=cls
 
-let html=`<b>${d.name}</b><br>${members.length}/${d.limit}<br>`
-
+let html=`<b>${d.name} (${members.length}/${d.limit})</b><br>`
+ 
 sorted.forEach(m=>{
 
 let line=""
