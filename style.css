@@ -14,9 +14,9 @@ display:flex;
 gap:10px;
 }
 
-/* 카드 그리드 */
+/* 카드 grid */
 
-.relicGrid{
+.grid{
 
 display:grid;
 
@@ -30,9 +30,9 @@ margin-top:20px;
 
 /* 카드 */
 
-.relicCard{
+.card{
 
-background:#eef3ff;
+background:white;
 
 padding:14px;
 
@@ -40,7 +40,7 @@ border-radius:10px;
 
 box-shadow:0 3px 8px rgba(0,0,0,0.15);
 
-min-height:220px;
+min-height:200px;
 
 display:flex;
 
@@ -50,19 +50,18 @@ gap:6px;
 
 }
 
-/* 텍스트 */
+/* relic 카드 */
 
-.relicTitle{
+.relicCard{
+
+background:#eef3ff;
+
+}
+
+/* 제목 */
+
+.title{
 font-weight:700;
-}
-
-.relicTime{
-font-size:14px;
-}
-
-.relicPower{
-font-size:14px;
-margin-bottom:6px;
 }
 
 /* 멤버 */
@@ -80,7 +79,7 @@ font-weight:700;
 
 @media (max-width:768px){
 
-.relicGrid{
+.grid{
 grid-template-columns:1fr;
 }
 
