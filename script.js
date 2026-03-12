@@ -168,14 +168,16 @@ await ref.update({members:newMembers})
 
 async function deleteParty(id){
 
-if(!confirm("파티 삭제?")) return
-
+if(!confirm("정말 파티를 삭제하시겠습니까?\n모든 파티원이 제거됩니다.")) return
+ 
 await db.collection("parties").doc(id).delete()
 
 }
 
 
 async function kickUser(partyId,user){
+
+if(!confirm(user+" 추방하시겠습니까?")) return
 
 const ref=db.collection("parties").doc(partyId)
 const snap=await ref.get()
@@ -265,14 +267,18 @@ let line=""
 if(m===d.leader) line+="👑 "
 
 if(m===nickname){
-line+=`<span class="member me">${m}</span>`
+line+=`<span class="member me">${m}`
 }else{
-line+=`<span class="member">${m}</span>`
+line+=`<span class="member">${m}`
 }
 
 if((d.leader===nickname || nickname===ADMIN) && m!==d.leader){
-line+=` <button class="btnKick" onclick="kickUser('${id}','${m}')">추방</button>`
+
+line+=` <span class="kick" onclick="kickUser('${id}','${m}')">❌</span>`
+
 }
+
+line+=`</span>`
 
 html+=line+"<br>"
 
