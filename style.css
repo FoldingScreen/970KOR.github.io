@@ -1,213 +1,111 @@
-body{
-font-family:sans-serif;
-margin:20px;
-text-align:center;
-background:#f5f5f5;
-}
+<!DOCTYPE html>
+<html>
 
-#loginPage{
-height:100vh;
-display:flex;
-flex-direction:column;
-align-items:center;
-justify-content:center;
-gap:10px;
-}
+<head>
 
-.topbar{
-position:fixed;
-top:10px;
-right:20px;
-display:flex;
-gap:10px;
-}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-.layout{
-display:grid;
-grid-template-columns:1fr 3fr 2fr;
-gap:30px;
-margin-top:40px;
-align-items:start;
-}
+<title>970KOR 파티</title>
 
-/* 나의 파티 */
+<link rel="stylesheet" href="style.css">
 
-#myParty{
-display:grid;
-grid-template-columns:1fr;
-gap:16px;
-justify-items:center;
-}
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
-/* 모집중 */
+</head>
 
-#openParty{
-display:grid;
-grid-template-columns:repeat(3,1fr);
-gap:16px;
-justify-items:center;
-}
+<body>
 
-/* 모집완료 */
+<div id="loginPage">
 
-#closedParty{
-display:grid;
-grid-template-columns:repeat(2,1fr);
-gap:16px;
-justify-items:center;
-}
+<h2>970KOR 로그인</h2>
 
-/* 카드 */
+<input id="nicknameInput" placeholder="닉네임" onkeypress="enterLogin(event)">
+<button onclick="login()">로그인</button>
 
-.partyCard{
+</div>
 
-width:100%;
-max-width:260px;
-min-height:170px;
 
-background:white;
-border-radius:10px;
+<div id="mainPage" style="display:none">
 
-padding:14px;
+<div class="topbar">
 
-display:flex;
-flex-direction:column;
+<span id="userLabel"></span>
 
-gap:6px;
+<div id="adminMenu" style="display:none">
 
-box-shadow:0 3px 10px rgba(0,0,0,0.15);
+<select onchange="adminAction(this.value)">
+<option value="">운영</option>
+<option value="addAdmin">운영진 지정</option>
+<option value="resetParties">파티 초기화</option>
+</select>
 
-text-align:left;
+</div>
 
-}
+<button onclick="logout()">로그아웃</button>
 
-/* 카드 색 */
+</div>
 
-.cardMy{
-background:#fff3a6;
-}
 
-.cardOpen{
-background:#dff8df;
-}
+<h1>970KOR 파티</h1>
 
-.cardClosed{
-background:#eeeeee;
-}
+<div id="dashboard"></div>
 
-/* 카드 hover */
+<button onclick="showUsers()">전체 사용자</button>
 
-.partyCard:hover{
-transform:translateY(-3px);
-box-shadow:0 6px 16px rgba(0,0,0,0.2);
-transition:0.15s;
-}
+<br><br>
 
-/* 파티원 */
+<input id="partyName" placeholder="파티 이름">
 
-.member{
+<select id="partyLimit">
+<option>2</option>
+<option>3</option>
+<option selected>4</option>
+<option>5</option>
+<option>6</option>
+</select>
 
-display:flex;
-align-items:center;
+<button onclick="createParty()">파티 생성</button>
 
-gap:6px;
 
-font-size:14px;
-line-height:1.25;
+<div class="layout">
 
-}
+<div>
+<h3>나의 파티</h3>
+<div id="myParty"></div>
+</div>
 
-/* 내 닉네임 */
+<div>
+<h3>모집중</h3>
+<div id="openParty"></div>
+</div>
 
-.me{
-color:#1a73e8;
-font-weight:bold;
-}
+<div>
+<h3>모집완료</h3>
+<div id="closedParty"></div>
+</div>
 
-/* 추방 X */
+</div>
 
-.kick{
-cursor:pointer;
-font-size:13px;
-color:#e74c3c;
-margin-left:4px;
-}
+</div>
 
-/* 카드 버튼 영역 */
 
-.cardButtons{
-display:flex;
-gap:6px;
-flex-wrap:wrap;
-margin-top:8px;
-}
+<div id="userModal" class="modal">
 
-/* 버튼 */
+<div class="modalContent">
 
-button{
-padding:6px 10px;
-border:none;
-border-radius:6px;
-cursor:pointer;
-font-size:13px;
-}
+<h3>전체 사용자</h3>
 
-.btnJoin{
-background:#2ecc71;
-color:white;
-}
+<div id="userList"></div>
 
-.btnLeave{
-background:#777;
-color:white;
-}
+<button onclick="closeUsers()">닫기</button>
 
-.btnDelete{
-background:#e74c3c;
-color:white;
-}
+</div>
 
-/* 모달 */
+</div>
 
-.modal{
-display:none;
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:rgba(0,0,0,0.4);
-}
+<script src="script.js"></script>
 
-.modalContent{
-background:white;
-padding:20px;
-margin:80px auto;
-width:90%;
-max-width:400px;
-max-height:70%;
-overflow:auto;
-}
-
-/* 모바일 */
-
-@media(max-width:768px){
-
-.layout{
-grid-template-columns:1fr;
-gap:30px;
-}
-
-#openParty{
-grid-template-columns:repeat(2,1fr);
-}
-
-#closedParty{
-grid-template-columns:1fr;
-}
-
-.partyCard{
-max-width:100%;
-}
-
-}
+</body>
+</html>
