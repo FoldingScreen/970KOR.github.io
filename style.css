@@ -14,215 +14,74 @@ display:flex;
 gap:10px;
 }
 
-/* 메인 레이아웃 */
-
-.layout{
-display:grid;
-grid-template-columns:1fr 3fr 2fr;
-gap:30px;
-margin-top:40px;
-}
-
 /* 카드 그리드 */
 
-.cardGrid{
+.relicGrid{
+
 display:grid;
+
+grid-template-columns:repeat(4,1fr);
+
 gap:16px;
-}
 
-/* 나의 파티 */
+margin-top:20px;
 
-#myParty{
-display:grid;
-grid-template-columns:1fr;
-gap:16px;
-}
-
-/* 모집중 */
-
-#openParty{
-display:grid;
-grid-template-columns:repeat(3,1fr);
-gap:16px;
-}
-
-/* 모집완료 */
-
-#closedParty{
-display:grid;
-grid-template-columns:repeat(2,1fr);
-gap:16px;
 }
 
 /* 카드 */
 
-.partyCard{
+.relicCard{
 
-background:white;
-border-radius:10px;
+background:#eef3ff;
 
 padding:14px;
 
+border-radius:10px;
+
 box-shadow:0 3px 8px rgba(0,0,0,0.15);
 
+min-height:220px;
+
 display:flex;
+
 flex-direction:column;
 
 gap:6px;
 
-min-height:160px;
-
 }
 
-/* 카드 색 */
+/* 텍스트 */
 
-.cardMy{
-background:#fff2a8;
+.relicTitle{
+font-weight:700;
 }
 
-.cardOpen{
-background:#dcf7dc;
+.relicTime{
+font-size:14px;
 }
 
-.cardClosed{
-background:#eaeaea;
+.relicPower{
+font-size:14px;
+margin-bottom:6px;
 }
 
-/* 파티원 */
+/* 멤버 */
 
 .member{
-display:flex;
-align-items:center;
-gap:4px;
 font-size:14px;
-line-height:1.2;
 }
-
-/* 내 닉네임 */
 
 .me{
 color:#1a73e8;
-font-weight:bold;
-}
-
-/* 추방 */
-
-.kick{
-cursor:pointer;
-color:red;
-margin-left:4px;
-}
-
-/* 버튼 영역 */
-
-.cardButtons{
-margin-top:8px;
-display:flex;
-gap:6px;
-flex-wrap:nowrap;
-}
-
-/* 버튼 */
-
-button{
-padding:6px 10px;
-border:none;
-border-radius:6px;
-cursor:pointer;
-}
-
-/* 버튼 색 */
-
-.btnJoin{
-background:#27ae60;
-color:white;
-}
-
-.btnLeave{
-background:#888;
-color:white;
-}
-
-.btnDelete{
-background:#e74c3c;
-color:white;
-}
-
-/* 모달 */
-
-.modal{
-display:none;
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:rgba(0,0,0,0.4);
-}
-
-.modalContent{
-background:white;
-padding:20px;
-margin:100px auto;
-width:400px;
-max-height:70%;
-overflow:auto;
+font-weight:700;
 }
 
 /* 모바일 */
 
 @media (max-width:768px){
 
-body{
-margin:12px;
-}
-
-/* 전체 세로 */
-
-.layout{
+.relicGrid{
 grid-template-columns:1fr;
-gap:24px;
-}
-
-/* 나의 파티 */
-
-#myParty{
-grid-template-columns:1fr;
-}
-
-/* 모집중 */
-
-#openParty{
-grid-template-columns:repeat(2,1fr);
-}
-
-/* 모집완료 */
-
-#closedParty{
-grid-template-columns:repeat(2,1fr);
-}
-
-/* 카드 */
-
-.partyCard{
-padding:12px;
-font-size:14px;
-min-height:150px;
-}
-
-/* 버튼 */
-
-button{
-font-size:13px;
-padding:6px 8px;
-}
-
-/* 상단 */
-
-.topbar{
-position:static;
-justify-content:flex-end;
-margin-bottom:10px;
 }
 
 }
