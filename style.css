@@ -11,22 +11,21 @@ gap:30px;
 margin-top:40px;
 }
 
-#myParty{
+.cardGrid{
 display:grid;
+gap:16px;
+}
+
+#myParty{
 grid-template-columns:1fr;
-gap:14px;
 }
 
 #openParty{
-display:grid;
 grid-template-columns:repeat(3,1fr);
-gap:14px;
 }
 
 #closedParty{
-display:grid;
 grid-template-columns:repeat(2,1fr);
-gap:14px;
 }
 
 .partyCard{
