@@ -1,4 +1,3 @@
-
 const firebaseConfig={
 apiKey:"AIzaSyBu2RrQn8cAwwWaLtw5O8Omwn4-NzHWuc0",
 authDomain:"kor-app-fa47e.firebaseapp.com",
@@ -11,121 +10,105 @@ appId:"1:397749083935:web:b2bd8498b943aec5099a2a"
 firebase.initializeApp(firebaseConfig);
 const db=firebase.firestore();
 
-let nickname="";
-let allUsers=[];
-let partyUsers=[];
-let myPartyId=null;
-let lastAction=null;
+let nickname=""
+let admins=[]
+let myParty=null
 
-const ADMIN="병풍";
+let allUsers=[]
+let partyUsers=[]
 
-window.onload=function(){
-const saved=localStorage.getItem("nickname");
+window.onload=async()=>{
+
+const saved=localStorage.getItem("nickname")
+
 if(saved){
-nickname=saved;
-document.getElementById("login").style.display="none";
-document.getElementById("main").style.display="block";
-document.getElementById("userLabel").innerText="👤 "+nickname;
-setupAdmin();
-startRealtime();
+nickname=saved
+startApp()
 }
+
 }
+
+
+function enterLogin(e){
+if(e.key==="Enter") login()
+}
+
 
 async function login(){
 
-const name=document.getElementById("nickname").value;
+nickname=document.getElementById("nicknameInput").value
 
-if(!name){
-alert("닉네임 입력");
-return;
+if(!nickname){
+alert("닉네임 입력")
+return
 }
 
-nickname=name;
-localStorage.setItem("nickname",name);
+localStorage.setItem("nickname",nickname)
 
-const ref=db.collection("users").doc(name);
-const snap=await ref.get();
+await db.collection("users").doc(nickname).set({t:Date.now()},{merge:true})
 
-if(!snap.exists){
-await ref.set({created:Date.now()});
-}
-
-document.getElementById("login").style.display="none";
-document.getElementById("main").style.display="block";
-
-document.getElementById("userLabel").innerText="👤 "+nickname;
-
-setupAdmin();
-startRealtime();
-}
-
-function setupAdmin(){
-
-if(nickname===ADMIN){
-
-document.getElementById("adminMenu").innerHTML=`
-<button onclick="resetParties()">전체 파티 초기화</button>
-<button onclick="undo()">실행취소</button>
-`;
+startApp()
 
 }
+
+
+async function startApp(){
+
+document.getElementById("loginPage").style.display="none"
+document.getElementById("mainPage").style.display="block"
+
+document.getElementById("userLabel").innerText="👤 "+nickname
+
+const adminSnap=await db.collection("admins").get()
+
+admins=[]
+
+adminSnap.forEach(a=>admins.push(a.id))
+
+if(admins.includes(nickname)){
+document.getElementById("adminDropdown").style.display="block"
 }
+
+startRealtime()
+
+}
+
 
 function logout(){
-localStorage.removeItem("nickname");
-location.reload();
+
+localStorage.removeItem("nickname")
+location.reload()
+
 }
 
-async function startRealtime(){
 
-const usersSnap=await db.collection("users").get();
+function toggleAdminMenu(){
 
-allUsers=[];
+const m=document.getElementById("adminMenu")
 
-usersSnap.forEach(u=>{
-if(!u.id.startsWith("테스트")){
-allUsers.push(u.id);
+m.style.display=m.style.display==="block"?"none":"block"
+
 }
-});
 
-db.collection("parties").onSnapshot(snapshot=>{
-render(snapshot);
-});
-}
 
 async function createParty(){
 
-const name=document.getElementById("partyName").value;
-const limit=parseInt(document.getElementById("limit").value);
+const name=document.getElementById("partyName").value
+const limit=parseInt(document.getElementById("partyLimit").value)
 
-if(!name){
-alert("파티 이름 입력");
-return;
-}
+const snap=await db.collection("parties").get()
 
-const snap=await db.collection("parties").get();
-
-let duplicate=false;
-let already=false;
+let duplicate=false
+let already=false
 
 snap.forEach(p=>{
+const d=p.data()
+if(d.name===name) duplicate=true
+if(d.members.includes(nickname)) already=true
+})
 
-const d=p.data();
-
-if(d.name===name) duplicate=true;
-if(d.members.includes(nickname)) already=true;
-
-});
-
-if(duplicate){
-alert("이미 존재하는 파티 이름");
-return;
-}
-
-if(already){
-alert("이미 파티 참여중");
-return;
-}
+if(duplicate){alert("파티 이름 중복");return}
+if(already){alert("이미 파티 있음");return}
 
 const doc=await db.collection("parties").add({
 name:name,
@@ -133,210 +116,266 @@ leader:nickname,
 members:[nickname],
 limit:limit,
 created:Date.now()
-});
+})
 
-lastAction={type:"create",id:doc.id};
+logAction("create",doc.id)
+
 }
+
 
 async function joinParty(id){
 
-if(myPartyId){
-alert("이미 파티 참여중");
-return;
+if(myParty){alert("이미 파티 있음");return}
+
+const ref=db.collection("parties").doc(id)
+const snap=await ref.get()
+const d=snap.data()
+
+if(d.members.length>=d.limit){alert("모집완료");return}
+
+d.members.push(nickname)
+
+await ref.update({members:d.members})
+
+logAction("join",id)
+
 }
 
-const ref=db.collection("parties").doc(id);
-const snap=await ref.get();
-
-const data=snap.data();
-
-if(data.members.length>=data.limit){
-alert("모집 완료");
-return;
-}
-
-data.members.push(nickname);
-
-await ref.update({members:data.members});
-
-lastAction={type:"join",party:id};
-}
 
 async function leaveParty(id){
 
-const ref=db.collection("parties").doc(id);
-const snap=await ref.get();
+const ref=db.collection("parties").doc(id)
+const snap=await ref.get()
+const d=snap.data()
 
-const data=snap.data();
-
-if(data.leader===nickname){
-alert("파티장은 삭제해야 합니다");
-return;
+if(d.leader===nickname){
+alert("파티장은 삭제해야함")
+return
 }
 
-const members=data.members.filter(m=>m!==nickname);
+const members=d.members.filter(m=>m!==nickname)
 
-await ref.update({members:members});
+await ref.update({members})
 
-lastAction={type:"leave",party:id,user:nickname};
+logAction("leave",id)
+
 }
 
-async function kick(party,user){
-
-if(nickname!==ADMIN) return;
-
-const ref=db.collection("parties").doc(party);
-const snap=await ref.get();
-
-const data=snap.data();
-
-const members=data.members.filter(m=>m!==user);
-
-await ref.update({members:members});
-}
 
 async function deleteParty(id){
 
-if(!confirm("파티 삭제?")) return;
+if(!confirm("삭제?")) return
 
-await db.collection("parties").doc(id).delete();
+await db.collection("parties").doc(id).delete()
 
-lastAction={type:"delete",party:id};
+logAction("delete",id)
+
 }
 
-async function resetParties(){
 
-if(!confirm("전체 파티 초기화?")) return;
+function startRealtime(){
 
-const snap=await db.collection("parties").get();
+db.collection("users").onSnapshot(s=>{
 
-snap.forEach(p=>{
-db.collection("parties").doc(p.id).delete();
-});
+allUsers=[]
+
+s.forEach(u=>{
+if(!u.id.startsWith("테스트")) allUsers.push(u.id)
+})
+
+})
+
+db.collection("parties").onSnapshot(render)
+
 }
 
-function undo(){
-
-if(!lastAction){
-alert("되돌릴 작업 없음");
-return;
-}
-
-alert("간단 실행취소 기능 (최근 작업만)");
-}
 
 function render(snapshot){
 
-const myGrid=document.getElementById("myParty");
-const openGrid=document.getElementById("openParty");
-const closedGrid=document.getElementById("closedParty");
+const my=document.getElementById("myParty")
+const open=document.getElementById("openParty")
+const closed=document.getElementById("closedParty")
 
-myGrid.innerHTML="";
-openGrid.innerHTML="";
-closedGrid.innerHTML="";
+my.innerHTML=""
+open.innerHTML=""
+closed.innerHTML=""
 
-myPartyId=null;
+myParty=null
 
-let totalUsers=new Set();
+let users=new Set()
 
-snapshot.forEach(docSnap=>{
+snapshot.forEach(doc=>{
 
-const id=docSnap.id;
-const data=docSnap.data();
-const members=data.members;
+const id=doc.id
+const d=doc.data()
 
-members.forEach(m=>totalUsers.add(m));
+d.members.forEach(m=>users.add(m))
 
-if(members.includes(nickname)){
-myPartyId=id;
+if(d.members.includes(nickname)) myParty=id
+
+const card=document.createElement("div")
+
+let cls="partyCard"
+
+if(d.members.includes(nickname)) cls+=" cardMy"
+else if(d.members.length>=d.limit) cls+=" cardClosed"
+else cls+=" cardOpen"
+
+card.className=cls
+
+let html=`<b>${d.name}</b><br>
+${d.members.length}/${d.limit}<br>
+${d.members.join(",")}<br>
+<small>${new Date(d.created).toLocaleString()}</small><br>`
+
+if(!d.members.includes(nickname)&&d.members.length<d.limit)
+html+=`<button onclick="joinParty('${id}')">지원</button>`
+
+if(d.members.includes(nickname)&&d.leader!==nickname)
+html+=`<button onclick="leaveParty('${id}')">취소</button>`
+
+if(d.leader===nickname)
+html+=`<button onclick="deleteParty('${id}')">삭제</button>`
+
+card.innerHTML=html
+
+if(d.members.includes(nickname)) my.appendChild(card)
+else if(d.members.length>=d.limit) closed.appendChild(card)
+else open.appendChild(card)
+
+})
+
+partyUsers=[...users]
+
+updateDashboard(snapshot)
+
 }
 
-const card=document.createElement("div");
 
-let cls="partyCard";
+function updateDashboard(snapshot){
 
-if(members.includes(nickname)) cls+=" cardMy";
-else if(members.length>=data.limit) cls+=" cardClosed";
-else cls+=" cardOpen";
+let partyCount=0
+let totalMembers=0
+let closed=0
 
-card.className=cls;
+snapshot.forEach(doc=>{
+partyCount++
+const d=doc.data()
+totalMembers+=d.members.length
+if(d.members.length>=d.limit) closed++
+})
 
-const time=new Date(data.created).toLocaleString();
-
-let html=`
-<b>${data.name}</b><br>
-${members.length}/${data.limit}<br>
-<small>${time}</small><br>
-${members.join(", ")}<br>
-`;
-
-if(!members.includes(nickname)&&members.length<data.limit){
-html+=`<button onclick="joinParty('${id}')">지원</button>`;
-}
-
-if(members.includes(nickname)&&data.leader!==nickname){
-html+=`<button onclick="leaveParty('${id}')">지원취소</button>`;
-}
-
-if(data.leader===nickname){
-html+=`<button onclick="deleteParty('${id}')">삭제</button>`;
-}
-
-if(nickname===ADMIN){
-members.forEach(m=>{
-if(m!==data.leader){
-html+=`<button onclick="kick('${id}','${m}')">추방 ${m}</button>`;
-}
-});
-}
-
-card.innerHTML=html;
-
-if(members.includes(nickname)) myGrid.appendChild(card);
-else if(members.length>=data.limit) closedGrid.appendChild(card);
-else openGrid.appendChild(card);
-
-});
-
-partyUsers=[...totalUsers];
+const avg=(partyCount? (totalMembers/partyCount).toFixed(1):0)
 
 document.getElementById("dashboard").innerText=
-"총 인원 "+allUsers.length+
-" | 참여 "+partyUsers.length+
-" | 미참여 "+(allUsers.length-partyUsers.length);
+`총 ${allUsers.length} | 참여 ${partyUsers.length} | 미참여 ${allUsers.length-partyUsers.length}
+ | 파티 ${partyCount} | 모집완료 ${closed} | 평균 ${avg}`
+
 }
 
-function showUsers(){
 
-const modal=document.getElementById("userModal");
-const list=document.getElementById("userList");
+async function showUsers(){
 
-list.innerHTML="";
+const list=document.getElementById("userList")
 
-let joined=[];
-let notJoined=[];
+list.innerHTML=""
+
+const joined=[]
+const notJoined=[]
 
 allUsers.forEach(u=>{
+if(partyUsers.includes(u)) joined.push(u)
+else notJoined.push(u)
+})
 
-if(partyUsers.includes(u)) joined.push(u);
-else notJoined.push(u);
-
-});
-
-joined.sort();
-notJoined.sort();
+joined.sort()
+notJoined.sort()
 
 joined.forEach(u=>{
-list.innerHTML+=`<div class="userJoin">🟢 ${u}</div>`;
-});
+list.innerHTML+=`<div style="color:green">● ${u}</div>`
+})
 
 notJoined.forEach(u=>{
-list.innerHTML+=`<div class="userNot">⚫ ${u}</div>`;
-});
+list.innerHTML+=`<div style="color:#444">● ${u}</div>`
+})
 
-modal.style.display="block";
+document.getElementById("userModal").style.display="block"
+
 }
 
+
 function closeUsers(){
-document.getElementById("userModal").style.display="none";
+document.getElementById("userModal").style.display="none"
+}
+
+
+async function logAction(type,party){
+
+await db.collection("adminLogs").add({
+type,
+party,
+user:nickname,
+time:Date.now(),
+undone:false
+})
+
+}
+
+
+async function openLogs(){
+
+const snap=await db.collection("adminLogs").orderBy("time","desc").get()
+
+const list=document.getElementById("logList")
+
+list.innerHTML=""
+
+snap.forEach(doc=>{
+
+const d=doc.data()
+
+const div=document.createElement("div")
+
+div.className="logItem"
+
+div.innerHTML=
+`${new Date(d.time).toLocaleString()} - ${d.user} - ${d.type}`
+
+div.onclick=()=>showUndo(doc.id,d)
+
+list.appendChild(div)
+
+})
+
+document.getElementById("logModal").style.display="block"
+
+}
+
+
+function closeLogs(){
+document.getElementById("logModal").style.display="none"
+}
+
+
+function showUndo(id,data){
+
+const btn=document.createElement("button")
+
+btn.innerText="실행취소"
+
+btn.className="undoBtn"
+
+btn.onclick=()=>undoLog(id,data)
+
+event.target.appendChild(btn)
+
+}
+
+
+async function undoLog(id,data){
+
+alert("로그 기반 실행취소 구조 구현 가능 (확장 예정)")
+
+await db.collection("adminLogs").doc(id).update({undone:true})
+
 }
