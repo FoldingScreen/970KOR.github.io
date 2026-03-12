@@ -14,6 +14,7 @@ let nickname=""
 let myParty=null
 let allUsers=[]
 let partyUsers=[]
+let admins=[]
 
 const ADMIN="병풍"
 
@@ -208,6 +209,18 @@ if(!u.id.startsWith("테스트")) allUsers.push(u.id)
 })
 
 })
+
+
+db.collection("admins").onSnapshot(s=>{
+
+admins=[]
+
+s.forEach(doc=>{
+admins.push(doc.id)
+})
+
+})
+
 
 db.collection("parties").onSnapshot(render)
 
