@@ -264,13 +264,19 @@ sorted.forEach(m=>{
 
 let line=""
 
+if(m===nickname){
+
+line+=`<span class="member me">`
+
+}else{
+
+line+=`<span class="member">`
+
+}
+
 if(m===d.leader) line+="👑 "
 
-if(m===nickname){
-line+=`<span class="member me">${m}`
-}else{
-line+=`<span class="member">${m}`
-}
+line+=`${m}`
 
 if((d.leader===nickname || nickname===ADMIN) && m!==d.leader){
 
