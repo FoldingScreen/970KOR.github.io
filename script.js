@@ -1,87 +1,183 @@
-body{
-font-family:sans-serif;
-margin:20px;
-background:#f4f4f4;
-}
+// firebase 설정
 
-/* 상단 */
+const firebaseConfig = {
 
-.topbar{
-position:absolute;
-top:10px;
-right:20px;
-display:flex;
-gap:10px;
-}
-
-/* 카드 그리드 */
-
-.relicGrid{
-
-display:grid;
-
-grid-template-columns:repeat(4,1fr);
-
-gap:16px;
-
-margin-top:20px;
+apiKey: "APIKEY",
+authDomain: "PROJECT.firebaseapp.com",
+projectId: "PROJECT"
 
 }
 
-/* 카드 */
+firebase.initializeApp(firebaseConfig)
 
-.relicCard{
+const db = firebase.firestore()
 
-background:#eef3ff;
 
-padding:14px;
+let nickname = ""
+let currentEvent = ""
 
-border-radius:10px;
 
-box-shadow:0 3px 8px rgba(0,0,0,0.15);
+// 로그인
 
-min-height:220px;
+function login(){
 
-display:flex;
+nickname = document.getElementById("nicknameInput").value.trim()
 
-flex-direction:column;
+if(!nickname) return alert("닉네임 입력")
 
-gap:6px;
+localStorage.setItem("nickname",nickname)
+
+document.getElementById("loginPage").style.display="none"
+document.getElementById("eventPage").style.display="block"
 
 }
 
-/* 텍스트 */
+function enterLogin(e){
 
-.relicTitle{
-font-weight:700;
+if(e.key==="Enter"){
+login()
 }
 
-.relicTime{
-font-size:14px;
 }
 
-.relicPower{
-font-size:14px;
-margin-bottom:6px;
+
+// 로그아웃
+
+function logout(){
+
+localStorage.removeItem("nickname")
+location.reload()
+
 }
 
-/* 멤버 */
 
-.member{
-font-size:14px;
+// 이벤트 선택
+
+function selectEvent(event){
+
+currentEvent = event
+
+document.getElementById("eventPage").style.display="none"
+document.getElementById("mainPage").style.display="block"
+
+document.getElementById("userLabel").innerText = nickname
+
+if(event==="relic"){
+document.getElementById("eventTitle").innerText="유적 쟁탈"
+startRelic()
 }
 
-.me{
-color:#1a73e8;
-font-weight:700;
 }
 
-/* 모바일 */
 
-@media (max-width:768px){
+// 병력 계산
 
-.relicGrid{
-grid-template-columns:1fr;
+function calcPower(memberCount){
+
+let soldiers = memberCount - 1
+
+if(soldiers <= 0) return "-"
+
+let power = 920000 / soldiers
+
+power = Math.floor(power / 1000) * 1000
+
+return power.toLocaleString()
+
 }
+
+
+// 시간 포맷
+
+function formatTime(month,day,hour){
+
+let utc = new Date(Date.UTC(2025,month-1,day,hour))
+
+let kst = new Date(utc.getTime()+9*3600000)
+
+return {
+
+utc:`${month}/${day} ${hour}:00`,
+kst:`${kst.getMonth()+1}/${kst.getDate()} ${kst.getHours()}:00`
+
+}
+
+}
+
+
+// 유적 파티 시작
+
+function startRelic(){
+
+db.collection("events")
+.doc("relic")
+.collection("parties")
+.orderBy("timeUTC")
+.onSnapshot(snapshot=>{
+
+let html = `<div class="relicGrid">`
+
+snapshot.forEach(doc=>{
+
+let d = doc.data()
+
+html += renderRelicCard(d)
+
+})
+
+html += `</div>`
+
+document.getElementById("partyContainer").innerHTML = html
+
+})
+
+}
+
+
+// 카드 렌더
+
+function renderRelicCard(party){
+
+let membersHTML=""
+
+party.members.forEach(m=>{
+
+let name = m
+
+if(m===party.rally){
+name="👑 "+name
+}
+
+if(m===nickname){
+name=`<span class="me">${name}</span>`
+}
+
+membersHTML += `<div class="member">${name}</div>`
+
+})
+
+return `
+
+<div class="relicCard">
+
+<div class="relicTitle">
+유적명: ${party.name}
+</div>
+
+<div class="relicTime">
+시간: ${party.kst}
+<br>
+UTC ${party.utc}
+</div>
+
+<div class="relicPower">
+병력수: ${calcPower(party.members.length)}명
+</div>
+
+${membersHTML}
+
+</div>
+
+`
 
 }
