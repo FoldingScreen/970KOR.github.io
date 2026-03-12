@@ -1,120 +1,79 @@
-}
 <!DOCTYPE html>
 <html>
-
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
 <title>970KOR 바이킹</title>
 
 <link rel="stylesheet" href="style.css">
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 
 <body>
 
 <div id="login">
-
 <h2>970KOR 로그인</h2>
-
 <input id="nickname" placeholder="닉네임">
 <button onclick="login()">로그인</button>
-
 </div>
-
 
 <div id="main" style="display:none">
 
 <div class="topbar">
-
 <span id="userLabel"></span>
-
-<div id="adminMenu"></div>
-
 <button onclick="logout()">로그아웃</button>
-
 </div>
 
-
-<h1>970KOR 바이킹</h1>
-
+<h1 id="title">970KOR 바이킹</h1>
 
 <div id="dashboard"></div>
-
 <button onclick="showUsers()">전체목록</button>
 
-
 <br><br>
-
 
 <input id="partyName" placeholder="파티 이름">
 
 <select id="limit">
-
 <option>2</option>
 <option>3</option>
 <option selected>4</option>
 <option>5</option>
 <option>6</option>
-
 </select>
 
 <button onclick="createParty()">파티 생성</button>
 
-
 <div class="layout">
 
 <div>
-
 <h3>⭐ 나의 파티</h3>
-
 <div id="myParty" class="gridMy"></div>
-
 </div>
 
-
 <div>
-
 <h3>🟢 모집중</h3>
-
 <div id="openParty" class="gridOpen"></div>
-
 </div>
-
 
 <div>
-
 <h3>🔴 모집완료</h3>
-
 <div id="closedParty" class="gridClosed"></div>
-
-</div>
-
-
 </div>
 
 </div>
-
+</div>
 
 <div id="userModal" class="modal">
-
 <div class="modalContent">
-
 <h3>전체 사용자</h3>
-
 <div id="userList"></div>
-
 <button onclick="closeUsers()">닫기</button>
-
+</div>
 </div>
 
-</div>
-
-
-<script type="module" src="script.js"></script>
+<script src="script.js"></script>
 
 </body>
-
 </html>
