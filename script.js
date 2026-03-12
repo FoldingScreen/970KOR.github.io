@@ -1,8 +1,8 @@
 const firebaseConfig = {
 
-apiKey:"APIKEY",
-authDomain:"PROJECT.firebaseapp.com",
-projectId:"PROJECT"
+apiKey: "YOUR_KEY",
+authDomain: "YOUR_DOMAIN",
+projectId: "YOUR_PROJECT"
 
 }
 
@@ -10,74 +10,73 @@ firebase.initializeApp(firebaseConfig)
 
 const db = firebase.firestore()
 
-
-let nickname=""
-let currentEvent=""
-
-const ADMINS=["병풍"]
+let currentUser = ""
+let currentEvent = ""
 
 
-// 로그인
+function enterLogin(e){
 
-function login(){
+if(e.key==="Enter") login()
 
-nickname=document.getElementById("nicknameInput").value.trim()
+}
 
-if(!nickname) return alert("닉네임 입력")
 
-localStorage.setItem("nickname",nickname)
+async function login(){
+
+const name = document.getElementById("nicknameInput").value.trim()
+
+if(!name) return
+
+currentUser = name
 
 document.getElementById("loginPage").style.display="none"
 document.getElementById("eventPage").style.display="block"
 
+document.getElementById("userLabel").innerText=name
+
+await db.collection("users").doc(name).set({
+
+name:name,
+time:Date.now()
+
+},{merge:true})
+
 }
 
-function enterLogin(e){
-
-if(e.key==="Enter"){
-login()
-}
-
-}
-
-
-// 로그아웃
 
 function logout(){
 
-localStorage.removeItem("nickname")
 location.reload()
 
 }
 
 
-// 이벤트 선택
+function openEvent(event){
 
-function selectEvent(event){
-
-currentEvent=event
+currentEvent = event
 
 document.getElementById("eventPage").style.display="none"
 document.getElementById("mainPage").style.display="block"
 
-document.getElementById("userLabel").innerText=nickname
-
 if(event==="viking"){
+
 document.getElementById("eventTitle").innerText="바이킹의 역습"
+
 }
 
 if(event==="relic"){
+
 document.getElementById("eventTitle").innerText="유적 쟁탈"
-}
-
-startRealtime()
+document.getElementById("createPartyBtn").style.display="inline-block"
 
 }
 
+listenParties()
 
-// 실시간 파티
+}
 
-function startRealtime(){
+
+function listenParties(){
 
 db.collection("events")
 .doc(currentEvent)
@@ -85,282 +84,102 @@ db.collection("events")
 .orderBy("timeUTC")
 .onSnapshot(snapshot=>{
 
-let html=`<div class="grid">`
+const list = document.getElementById("partyList")
+
+list.innerHTML=""
 
 snapshot.forEach(doc=>{
 
-let d=doc.data()
+const p = doc.data()
 
-if(currentEvent==="relic"){
-html+=renderRelic(d,doc.id)
-}
-
-if(currentEvent==="viking"){
-html+=renderViking(d)
-}
-
-})
-
-html+=`</div>`
-
-document.getElementById("partyContainer").innerHTML=html
-
-})
-
-}
-
-
-// 병력 계산
-
-function calcPower(memberCount){
-
-let soldiers=memberCount-1
-
-if(soldiers<=0) return "-"
-
-let power=920000/soldiers
-
-power=Math.floor(power/1000)*1000
-
-return power.toLocaleString()
-
-}
-
-
-// relic 카드
-
-function renderRelic(party,id){
-
-let members=[...party.members]
-
-if(party.rally){
-
-members=members.filter(m=>m!==party.rally)
-members.unshift(party.rally)
-
-}
+const card = document.createElement("div")
+card.className="partyCard"
 
 let membersHTML=""
 
-members.forEach(m=>{
+p.members.forEach(m=>{
 
-let name=m
+if(m===currentUser){
 
-if(m===party.rally){
-name="👑 "+name
-}
+membersHTML += `<div class="me">${m}</div>`
 
-if(m===nickname){
-name=`<span class="me">${name}</span>`
-}
+}else{
 
-let controls=""
-
-if(ADMINS.includes(nickname)){
-
-controls+=`<span class="rallyBtn" onclick="setRally('${id}','${m}')">👍</span>`
-
-if(m!==party.rally){
-
-controls+=`<span class="kick" onclick="kick('${id}','${m}')">✖</span>`
+membersHTML += `<div>${m}</div>`
 
 }
-
-}
-
-membersHTML+=`<div class="member">${name} ${controls}</div>`
 
 })
 
-let joinBtn=""
-let leaveBtn=""
-let deleteBtn=""
+card.innerHTML=`
 
-if(!party.members.includes(nickname) && party.members.length<15){
+<div><b>유적명:</b> ${p.name}</div>
+<div><b>시간:</b> ${p.kst}</div>
+<div><b>UTC:</b> ${p.utc}</div>
 
-joinBtn=`<button onclick="joinParty('${id}')">지원</button>`
-
-}
-
-if(party.members.includes(nickname)){
-
-leaveBtn=`<button onclick="leaveParty('${id}')">취소</button>`
-
-}
-
-if(ADMINS.includes(nickname)){
-
-deleteBtn=`<button onclick="deleteParty('${id}')">삭제</button>`
-
-}
-
-return `
-
-<div class="card relicCard">
-
-<div class="title">
-유적명: ${party.name}
-</div>
-
-<div>
-시간: ${party.kst}
-<br>
-UTC ${party.utc}
-</div>
-
-<div>
-병력수: ${calcPower(party.members.length)}명
-</div>
+<div class="partyMembers">
 
 ${membersHTML}
 
-<div class="buttons">
-
-${joinBtn}
-${leaveBtn}
-${deleteBtn}
-
-</div>
-
 </div>
 
 `
 
-}
-
-
-// 바이킹 카드
-
-function renderViking(party){
-
-let html=""
-
-party.members.forEach(m=>{
-
-let name=m
-
-if(m===nickname){
-name=`<span class="me">${name}</span>`
-}
-
-html+=`<div class="member">${name}</div>`
+list.appendChild(card)
 
 })
-
-return `
-
-<div class="card">
-
-<div class="title">${party.name}</div>
-
-${html}
-
-</div>
-
-`
-
-}
-
-
-// 참가
-
-async function joinParty(id){
-
-let ref=db.collection("events")
-.doc("relic")
-.collection("parties")
-.doc(id)
-
-let doc=await ref.get()
-
-let data=doc.data()
-
-if(data.members.includes(nickname)) return
-
-if(data.members.length>=15){
-
-alert("파티 인원 초과")
-return
-
-}
-
-await ref.update({
-
-members:firebase.firestore.FieldValue.arrayUnion(nickname)
 
 })
 
 }
 
 
-// 취소
+async function createRelicParty(){
 
-async function leaveParty(id){
+const relicName = prompt("유적명")
+if(!relicName) return
 
-let ref=db.collection("events")
+const month = parseInt(prompt("UTC 월"))
+const day = parseInt(prompt("UTC 일"))
+const hour = parseInt(prompt("UTC 시간"))
+
+const utcDate = new Date(Date.UTC(2026, month-1, day, hour))
+const kstDate = new Date(utcDate.getTime() + 9*3600000)
+
+const kst =
+`${kstDate.getMonth()+1}/${kstDate.getDate()} ${kstDate.getHours()}:00`
+
+const utc =
+`${month}/${day} ${hour}:00`
+
+const partyRef = await db
+.collection("events")
 .doc("relic")
 .collection("parties")
-.doc(id)
+.add({
 
-await ref.update({
+name: relicName,
 
-members:firebase.firestore.FieldValue.arrayRemove(nickname)
+members:[currentUser],
+
+rally: currentUser,
+
+kst: kst,
+
+utc: utc,
+
+timeUTC: utcDate.getTime()
 
 })
 
-}
+await db.collection("adminLogs").add({
 
-
-// 추방
-
-async function kick(id,user){
-
-if(!confirm(user+" 추방할까요?")) return
-
-let ref=db.collection("events")
-.doc("relic")
-.collection("parties")
-.doc(id)
-
-await ref.update({
-
-members:firebase.firestore.FieldValue.arrayRemove(user)
+type:"create",
+user:currentUser,
+party:partyRef.id,
+time:Date.now(),
+undone:false
 
 })
-
-}
-
-
-// 집결장 변경
-
-async function setRally(id,user){
-
-if(!confirm("집결장을 변경할까요?")) return
-
-let ref=db.collection("events")
-.doc("relic")
-.collection("parties")
-.doc(id)
-
-await ref.update({
-
-rally:user
-
-})
-
-}
-
-
-// 파티 삭제
-
-async function deleteParty(id){
-
-if(!confirm("파티를 삭제할까요?")) return
-
-await db.collection("events")
-.doc("relic")
-.collection("parties")
-.doc(id)
-.delete()
 
 }
