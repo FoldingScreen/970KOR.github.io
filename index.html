@@ -16,8 +16,6 @@
 
 <body>
 
-<!-- 로그인 -->
-
 <div id="loginPage">
 
 <h2>970KOR 로그인</h2>
@@ -33,29 +31,11 @@ onkeypress="enterLogin(event)"
 </div>
 
 
-<!-- 메인 -->
-
 <div id="mainPage" style="display:none">
 
 <div class="topbar">
 
 <span id="userLabel"></span>
-
-<div id="adminDropdown" class="dropdown" style="display:none">
-
-<button onclick="toggleAdminMenu()">운영 ▾</button>
-
-<div id="adminMenu" class="dropdownContent">
-
-<button onclick="resetParties()">전체 파티 초기화</button>
-
-<button onclick="grantAdmin()">운영진 권한 부여</button>
-
-<button onclick="openLogs()">운영 로그</button>
-
-</div>
-
-</div>
 
 <button onclick="logout()">로그아웃</button>
 
@@ -64,8 +44,6 @@ onkeypress="enterLogin(event)"
 
 <h1>970KOR 파티</h1>
 
-
-<!-- 대시보드 -->
 
 <div id="dashboard"></div>
 
@@ -107,12 +85,8 @@ onkeypress="enterLogin(event)"
 
 </div>
 
-
 </div>
 
-
-
-<!-- 사용자 목록 -->
 
 <div id="userModal" class="modal">
 
@@ -127,25 +101,6 @@ onkeypress="enterLogin(event)"
 </div>
 
 </div>
-
-
-
-<!-- 운영 로그 -->
-
-<div id="logModal" class="modal">
-
-<div class="modalContent">
-
-<h3>운영 로그</h3>
-
-<div id="logList"></div>
-
-<button onclick="closeLogs()">닫기</button>
-
-</div>
-
-</div>
-
 
 
 <script src="script.js"></script>
