@@ -22,7 +22,6 @@
 <h2>970KOR 로그인</h2>
 
 <input id="nicknameInput" placeholder="닉네임" onkeypress="enterLogin(event)">
-
 <button onclick="login()">로그인</button>
 
 </div>
@@ -33,6 +32,16 @@
 <div class="topbar">
 
 <span id="userLabel"></span>
+
+<div id="adminMenu" style="display:none">
+
+<select onchange="adminAction(this.value)">
+<option value="">운영</option>
+<option value="addAdmin">운영진 지정</option>
+<option value="resetParties">파티 초기화</option>
+</select>
+
+</div>
 
 <button onclick="logout()">로그아웃</button>
 
