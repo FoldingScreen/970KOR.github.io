@@ -29,7 +29,7 @@ window.onload = async () => {
 
   const savedNickname = localStorage.getItem("nickname");
   if (savedNickname) {
-    state.nickname = savedNickname.trim();
+    state.nickname = savedNickname.trim()ㅗ
     document.getElementById("nicknameInput").value = state.nickname;
 
     try {
@@ -215,6 +215,8 @@ function renderTopTabs() {
 
 function renderHomeSummary() {
   const homeStats = document.getElementById("homeStats");
+  if (!homeStats) return;
+
   const eventCount = state.eventsList.length;
   const adminCount = state.admins.size;
 
