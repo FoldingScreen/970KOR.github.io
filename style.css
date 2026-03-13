@@ -1,112 +1,72 @@
 body{
-
 font-family:Arial;
 margin:20px;
 background:#f4f4f4;
+}
 
+.tabs{
+display:flex;
+gap:10px;
+margin-bottom:20px;
+}
+
+.tabs button{
+padding:6px 12px;
+border:none;
+border-radius:6px;
+background:#ddd;
+cursor:pointer;
+}
+
+.tabs button.active{
+background:#1a73e8;
+color:white;
 }
 
 .layout{
-
 display:grid;
 grid-template-columns:1fr 3fr 2fr;
 gap:30px;
-margin-top:30px;
-
-}
-
-.column{
-
-display:flex;
-flex-direction:column;
-
 }
 
 .cardGrid{
-
 display:grid;
 gap:16px;
-
 }
 
 .partyCard{
-
 background:white;
 padding:14px;
 border-radius:10px;
 box-shadow:0 2px 6px rgba(0,0,0,0.1);
-min-height:140px;
-
-}
-
-.member{
-
-font-size:14px;
-
-}
-
-.me{
-
-color:#1a73e8;
-font-weight:bold;
-
-}
-
-.kick{
-
-color:red;
-cursor:pointer;
-
 }
 
 .cardButtons{
-
 margin-top:10px;
 display:flex;
 gap:6px;
-
 }
 
 button{
-
-padding:6px 10px;
-border:none;
-border-radius:6px;
 cursor:pointer;
-
 }
 
 .btnJoin{
-
 background:#27ae60;
 color:white;
-
 }
 
 .btnLeave{
-
 background:#e67e22;
 color:white;
-
 }
 
 .btnDelete{
-
 background:#e74c3c;
 color:white;
-
-}
-
-.topbar{
-
-display:flex;
-justify-content:space-between;
-margin-bottom:20px;
-
 }
 
 .modal{
-
 display:none;
 position:fixed;
 top:0;
@@ -114,14 +74,11 @@ left:0;
 width:100%;
 height:100%;
 background:rgba(0,0,0,0.4);
-
 }
 
 .modalContent{
-
 background:white;
 width:300px;
 margin:120px auto;
 padding:20px;
-
 }
