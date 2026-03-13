@@ -20,8 +20,8 @@ const state = {
   currentEventMeta: null,
   unsubscribeParties: null,
   currentParties: [],
-  myPartyId: null,
-  createBusy: false
+  createBusy: false,
+  selectedRuinMemberByParty: {}
 };
 
 window.onload = async () => {
@@ -31,7 +31,14 @@ window.onload = async () => {
   if (savedNickname) {
     state.nickname = savedNickname.trim();
     document.getElementById("nicknameInput").value = state.nickname;
-    await startApp();
+
+    try {
+      await registerUser();
+      await startApp();
+    } catch (error) {
+      console.error(error);
+      alert("자동 로그인 중 오류가 발생했습니다.");
+    }
   }
 };
 
@@ -44,6 +51,7 @@ function bindStaticEvents() {
   window.addEventListener("click", (e) => {
     if (e.target.id === "userModal") closeUsers();
     if (e.target.id === "adminModal") closeAdminModal();
+    if (e.target.id === "ruinsCreateModal") closeRuinsCreateModal();
   });
 }
 
@@ -58,6 +66,18 @@ function escapeHtml(value) {
     };
     return map[char];
   });
+}
+
+function isAdmin() {
+  return state.admins.has(state.nickname);
+}
+
+function isCurrentRuins() {
+  return state.currentEventMeta && state.currentEventMeta.template === "ruins";
+}
+
+function isCurrentVikings() {
+  return state.currentEventMeta && state.currentEventMeta.template === "vikings";
 }
 
 async function login() {
@@ -89,10 +109,6 @@ async function registerUser() {
       created: Date.now()
     });
   }
-
-  if (!state.allUsers.includes(state.nickname)) {
-    state.allUsers.push(state.nickname);
-  }
 }
 
 async function startApp() {
@@ -111,6 +127,10 @@ async function refreshBaseData() {
       loadAdmins(),
       loadEvents()
     ]);
+
+    if (state.currentEventId && state.eventsMap[state.currentEventId]) {
+      state.currentEventMeta = state.eventsMap[state.currentEventId];
+    }
 
     renderHomeSummary();
     updateAdminModalInfo();
@@ -243,7 +263,7 @@ function goHome() {
   state.currentEventId = null;
   state.currentEventMeta = null;
   state.currentParties = [];
-  state.myPartyId = null;
+  state.selectedRuinMemberByParty = {};
 
   document.getElementById("homeView").style.display = "block";
   document.getElementById("eventView").style.display = "none";
@@ -273,10 +293,10 @@ function selectEvent(eventId) {
 
   state.currentEventId = eventId;
   state.currentEventMeta = meta;
+  state.selectedRuinMemberByParty = {};
 
   document.getElementById("homeView").style.display = "none";
   document.getElementById("eventView").style.display = "block";
-
   document.getElementById("eventTitle").innerText = meta.name;
 
   setActiveTab(eventId);
@@ -286,48 +306,52 @@ function selectEvent(eventId) {
 }
 
 function updateCreateBox() {
-  const titleLabel = document.getElementById("titleLabel");
-  const titleInput = document.getElementById("partyTitleInput");
-  const timeWrap = document.getElementById("timeFieldWrap");
-  const limitInput = document.getElementById("partyLimitInput");
-  const createBtn = document.getElementById("createPartyBtn");
   const createHint = document.getElementById("createHint");
+  const vikingWrap = document.getElementById("vikingCreateWrap");
+  const ruinsWrap = document.getElementById("ruinsCreateWrap");
+  const createBtn = document.getElementById("createPartyBtn");
+  const partyTitleInput = document.getElementById("partyTitleInput");
+  const partyLimitInput = document.getElementById("partyLimitInput");
+  const ruinsOpenBtn = document.getElementById("ruinsCreateOpenBtn");
+  const ruinsLimitInput = document.getElementById("ruinsLimitInput");
 
   if (!state.currentEventMeta) {
-    titleLabel.innerText = "파티명";
-    titleInput.placeholder = "파티명을 입력하세요";
-    timeWrap.style.display = "none";
+    vikingWrap.style.display = "none";
+    ruinsWrap.style.display = "none";
     createHint.innerText = "";
     return;
   }
 
-  const isAdmin = state.admins.has(state.nickname);
-  const canCreate = state.currentEventMeta.createRole !== "admin" || isAdmin;
-  const isRuins = state.currentEventMeta.template === "ruins";
+  const canCreate = state.currentEventMeta.createRole !== "admin" || isAdmin();
 
-  titleLabel.innerText = isRuins ? "유적명" : "파티명";
-  titleInput.placeholder = isRuins ? "유적명을 입력하세요" : "파티명을 입력하세요";
-  timeWrap.style.display = isRuins ? "grid" : "none";
-  limitInput.value = state.currentEventMeta.defaultLimit || 6;
+  if (isCurrentVikings()) {
+    vikingWrap.style.display = "grid";
+    ruinsWrap.style.display = "none";
 
-  createBtn.disabled = !canCreate;
-  titleInput.disabled = !canCreate;
-  limitInput.disabled = !canCreate;
-  document.getElementById("timeKSTInput").disabled = !canCreate;
-  document.getElementById("timeUTCInput").disabled = !canCreate;
+    partyTitleInput.disabled = !canCreate;
+    partyLimitInput.disabled = !canCreate;
+    createBtn.disabled = !canCreate;
+    partyLimitInput.value = state.currentEventMeta.defaultLimit || 6;
 
-  if (!canCreate) {
-    createHint.innerText = "이 이벤트는 운영진만 파티를 만들 수 있습니다.";
-  } else if (isRuins) {
-    createHint.innerText = "유적명과 KST / UTC 시간을 입력해 파티를 생성하세요.";
-  } else {
-    createHint.innerText = "원하는 이름으로 파티를 바로 개설할 수 있습니다.";
+    createHint.innerText = canCreate
+      ? "원하는 이름으로 파티를 바로 개설할 수 있습니다."
+      : "이 이벤트는 운영진만 파티를 만들 수 있습니다.";
+  } else if (isCurrentRuins()) {
+    vikingWrap.style.display = "none";
+    ruinsWrap.style.display = "flex";
+
+    ruinsOpenBtn.disabled = !canCreate;
+    ruinsLimitInput.value = state.currentEventMeta.defaultLimit || 6;
+
+    createHint.innerText = canCreate
+      ? "유적 생성 버튼을 눌러 유적명과 시간을 입력하세요."
+      : "이 이벤트는 운영진만 파티를 만들 수 있습니다.";
   }
 }
 
 function updateAdminButtonVisibility() {
   const btn = document.getElementById("adminMenuBtn");
-  btn.style.display = state.admins.has(state.nickname) ? "inline-flex" : "none";
+  btn.style.display = isAdmin() ? "inline-flex" : "none";
 }
 
 function updateAdminModalInfo() {
@@ -341,13 +365,34 @@ function updateAdminModalInfo() {
 }
 
 function openAdminModal() {
-  if (!state.admins.has(state.nickname)) return;
+  if (!isAdmin()) return;
   updateAdminModalInfo();
   document.getElementById("adminModal").style.display = "flex";
 }
 
 function closeAdminModal() {
   document.getElementById("adminModal").style.display = "none";
+}
+
+function openRuinsCreateModal() {
+  if (!state.currentEventMeta || !isCurrentRuins()) return;
+
+  const canCreate = state.currentEventMeta.createRole !== "admin" || isAdmin();
+  if (!canCreate) {
+    alert("이 이벤트는 운영진만 파티를 만들 수 있습니다.");
+    return;
+  }
+
+  document.getElementById("ruinsTitleInput").value = "";
+  document.getElementById("ruinsTimeKSTInput").value = "";
+  document.getElementById("ruinsTimeUTCInput").value = "";
+  document.getElementById("ruinsLimitInput").value = state.currentEventMeta.defaultLimit || 6;
+
+  document.getElementById("ruinsCreateModal").style.display = "flex";
+}
+
+function closeRuinsCreateModal() {
+  document.getElementById("ruinsCreateModal").style.display = "none";
 }
 
 function subscribeCurrentEvent() {
@@ -383,6 +428,7 @@ function normalizeParty(id, data) {
     timeKST: data.timeKST || "",
     timeUTC: data.timeUTC || "",
     createdBy: data.createdBy || "",
+    rallyLeader: data.rallyLeader || "",
     members,
     limit: Number(data.limit) || 6,
     created: Number(data.created) || 0
@@ -396,7 +442,7 @@ function renderCurrentEvent(snapshot) {
     parties.push(normalizeParty(doc.id, doc.data() || {}));
   });
 
-  if (state.currentEventMeta && state.currentEventMeta.template === "ruins") {
+  if (isCurrentRuins()) {
     parties.sort((a, b) => {
       const timeCompare = String(a.timeKST).localeCompare(String(b.timeKST), "ko");
       if (timeCompare !== 0) return timeCompare;
@@ -408,8 +454,20 @@ function renderCurrentEvent(snapshot) {
 
   state.currentParties = parties;
 
-  const myParty = parties.find((party) => party.members.includes(state.nickname));
-  state.myPartyId = myParty ? myParty.id : null;
+  // 유적에서 사라진 선택 상태 정리
+  const validPartyIds = new Set(parties.map((p) => p.id));
+  Object.keys(state.selectedRuinMemberByParty).forEach((partyId) => {
+    if (!validPartyIds.has(partyId)) {
+      delete state.selectedRuinMemberByParty[partyId];
+      return;
+    }
+
+    const party = parties.find((p) => p.id === partyId);
+    const member = state.selectedRuinMemberByParty[partyId];
+    if (!party || !party.members.includes(member)) {
+      delete state.selectedRuinMemberByParty[partyId];
+    }
+  });
 
   renderBoardSections(parties);
   updateDashboard(parties);
@@ -459,8 +517,10 @@ function renderBoardSections(parties) {
 
 function buildPartyCard(party) {
   const card = document.createElement("div");
-  const templateClass = party.template === "ruins" ? "partyCard partyCardRuins" : "partyCard partyCardVikings";
-  card.className = templateClass;
+  card.className = party.template === "ruins"
+    ? "partyCard partyCardRuins"
+    : "partyCard partyCardVikings";
+
   card.innerHTML = party.template === "ruins"
     ? renderRuinsCardHtml(party)
     : renderVikingsCardHtml(party);
@@ -489,12 +549,25 @@ function renderVikingsCardHtml(party) {
 }
 
 function renderRuinsCardHtml(party) {
+  const troopText = getTroopText(party);
+
   return `
     <div class="cardHead cardHeadRuins">
       <div class="cardTitle">${escapeHtml(party.title || "이름 없는 유적")}</div>
-      <div class="timeBadges">
+
+      <div class="ruinMetaRow">
         <span class="timeBadge">KST ${escapeHtml(party.timeKST || "-")}</span>
         <span class="timeBadge timeBadgeUtc">UTC ${escapeHtml(party.timeUTC || "-")}</span>
+        <span class="timeBadge troopBadge">병력 수 ${troopText}</span>
+      </div>
+    </div>
+
+    <div class="cardSection">
+      <div class="sectionLabel">집결장</div>
+      <div class="rallyLeaderBox">
+        ${party.rallyLeader
+          ? `<span class="rallyLeaderChip">${escapeHtml(party.rallyLeader)}</span>`
+          : `<span class="rallyLeaderEmpty">아직 선택되지 않음</span>`}
       </div>
     </div>
 
@@ -503,6 +576,7 @@ function renderRuinsCardHtml(party) {
       <div class="memberList">
         ${renderMembersHtml(party)}
       </div>
+      ${renderRuinsMemberActionHtml(party)}
     </div>
 
     <div class="cardButtons">
@@ -516,32 +590,87 @@ function renderMembersHtml(party) {
     return `<div class="emptyMembers">아직 참여한 인원이 없습니다.</div>`;
   }
 
+  const selectedMember = state.selectedRuinMemberByParty[party.id] || "";
+
   return party.members.map((member) => {
     const isMine = member === state.nickname;
     const isCreator = member === party.createdBy;
+    const isRallyLeader = member === party.rallyLeader;
+
+    if (party.template === "ruins" && isAdmin()) {
+      const encodedMember = encodeURIComponent(member);
+      const selectedClass = selectedMember === member ? "memberItemSelected" : "";
+
+      return `
+        <button
+          type="button"
+          class="memberItem memberButton ${isMine ? "memberItemMine" : ""} ${selectedClass}"
+          onclick="selectRuinMember('${party.id}', '${encodedMember}')"
+        >
+          <span class="memberName">${escapeHtml(member)}</span>
+          <span class="memberMetaWrap">
+            ${isCreator ? `<span class="memberRole">생성자</span>` : ""}
+            ${isRallyLeader ? `<span class="memberRole memberRolePurple">집결장</span>` : ""}
+          </span>
+        </button>
+      `;
+    }
 
     return `
       <div class="memberItem ${isMine ? "memberItemMine" : ""}">
         <span class="memberName">${escapeHtml(member)}</span>
-        ${isCreator ? `<span class="memberRole">생성자</span>` : ""}
+        <span class="memberMetaWrap">
+          ${isCreator ? `<span class="memberRole">생성자</span>` : ""}
+          ${isRallyLeader ? `<span class="memberRole memberRolePurple">집결장</span>` : ""}
+        </span>
       </div>
     `;
   }).join("");
 }
 
+function renderRuinsMemberActionHtml(party) {
+  if (party.template !== "ruins" || !isAdmin()) return "";
+
+  const selected = state.selectedRuinMemberByParty[party.id] || "";
+  if (!selected || !party.members.includes(selected)) {
+    return `<div class="memberActionHint">운영진은 파티원 닉네임을 눌러 집결장을 지정할 수 있습니다.</div>`;
+  }
+
+  const encodedMember = encodeURIComponent(selected);
+  const isCurrentRally = selected === party.rallyLeader;
+
+  return `
+    <div class="memberActionBox">
+      <div class="memberActionText">선택된 파티원: <b>${escapeHtml(selected)}</b></div>
+      <button
+        class="secondaryBtn"
+        onclick="setRallyLeader('${party.id}', '${encodedMember}')"
+      >
+        ${isCurrentRally ? "집결장 유지중" : "집결장으로 지정"}
+      </button>
+    </div>
+  `;
+}
+
 function renderCardButtons(party) {
   const isMember = party.members.includes(state.nickname);
   const isCreator = party.createdBy === state.nickname;
-  const isAdmin = state.admins.has(state.nickname);
+  const admin = isAdmin();
   const isFull = party.members.length >= party.limit;
-  const hasOtherParty = state.myPartyId && state.myPartyId !== party.id;
+
+  let hasOtherParty = false;
+  if (party.template === "vikings") {
+    hasOtherParty = state.currentParties.some(
+      (item) => item.id !== party.id && item.members.includes(state.nickname)
+    );
+  }
 
   let html = "";
 
   if (!isMember) {
     if (isFull) {
       html += `<button class="disabledBtn" disabled>모집완료</button>`;
-    } else if (hasOtherParty) {
+    } else if (party.template === "vikings" && hasOtherParty) {
       html += `<button class="disabledBtn" disabled>다른 파티 참여중</button>`;
     } else {
       html += `<button class="joinBtn" onclick="joinParty('${party.id}')">지원</button>`;
@@ -552,11 +681,21 @@ function renderCardButtons(party) {
     html += `<button class="leaveBtn" onclick="leaveParty('${party.id}')">취소</button>`;
   }
 
-  if (isCreator || isAdmin) {
+  if (isCreator || admin) {
     html += `<button class="deleteBtn" onclick="deleteParty('${party.id}')">삭제</button>`;
   }
 
   return html;
+}
+
+function getTroopText(party) {
+  const activeMemberCount = party.rallyLeader
+    ? party.members.filter((member) => member !== party.rallyLeader).length
+    : party.members.length;
+
+  if (activeMemberCount <= 0) return "-";
+
+  return Math.floor(920000 / activeMemberCount).toLocaleString("ko-KR");
 }
 
 function updateDashboard(parties) {
@@ -576,24 +715,31 @@ function updateDashboard(parties) {
     `총 ${totalUsers} | 참여 ${joined} | 미참여 ${notJoined} | 파티 ${parties.length} | 모집완료 ${closedCount}`;
 }
 
-async function createParty() {
-  if (!state.currentEventMeta || state.createBusy) return;
+function createParty() {
+  if (!state.currentEventMeta) return;
 
-  const isAdmin = state.admins.has(state.nickname);
-  const canCreate = state.currentEventMeta.createRole !== "admin" || isAdmin;
-
+  const canCreate = state.currentEventMeta.createRole !== "admin" || isAdmin();
   if (!canCreate) {
     alert("이 이벤트는 운영진만 파티를 만들 수 있습니다.");
     return;
   }
 
+  if (isCurrentRuins()) {
+    openRuinsCreateModal();
+    return;
+  }
+
+  createVikingsParty();
+}
+
+async function createVikingsParty() {
+  if (!state.currentEventMeta || state.createBusy || !isCurrentVikings()) return;
+
   const title = document.getElementById("partyTitleInput").value.trim();
   const limit = Number(document.getElementById("partyLimitInput").value);
-  const timeKST = document.getElementById("timeKSTInput").value.trim();
-  const timeUTC = document.getElementById("timeUTCInput").value.trim();
 
   if (!title) {
-    alert(state.currentEventMeta.template === "ruins" ? "유적명을 입력해 주세요." : "파티명을 입력해 주세요.");
+    alert("파티명을 입력해 주세요.");
     return;
   }
 
@@ -602,15 +748,8 @@ async function createParty() {
     return;
   }
 
-  if (state.currentEventMeta.template === "ruins") {
-    if (!timeKST || !timeUTC) {
-      alert("유적 이벤트는 KST와 UTC 시간을 모두 입력해 주세요.");
-      return;
-    }
-  }
-
-  // 바이킹은 생성과 동시에 본인이 참여하므로, 이미 다른 파티에 있으면 생성 불가
-  if (state.currentEventMeta.template === "vikings" && state.myPartyId) {
+  const alreadyJoined = state.currentParties.some((party) => party.members.includes(state.nickname));
+  if (alreadyJoined) {
     alert("이 이벤트에는 이미 참여 중인 파티가 있습니다.");
     return;
   }
@@ -620,26 +759,17 @@ async function createParty() {
   createBtn.disabled = true;
 
   try {
-    const payload = {
+    await db.collection("parties").add({
       event: state.currentEventId,
-      template: state.currentEventMeta.template,
+      template: "vikings",
       title,
       createdBy: state.nickname,
-      members: state.currentEventMeta.template === "vikings" ? [state.nickname] : [],
+      members: [state.nickname],
       limit,
       created: Date.now()
-    };
-
-    if (state.currentEventMeta.template === "ruins") {
-      payload.timeKST = timeKST;
-      payload.timeUTC = timeUTC;
-    }
-
-    await db.collection("parties").add(payload);
+    });
 
     document.getElementById("partyTitleInput").value = "";
-    document.getElementById("timeKSTInput").value = "";
-    document.getElementById("timeUTCInput").value = "";
     document.getElementById("partyLimitInput").value = state.currentEventMeta.defaultLimit || 6;
   } catch (error) {
     console.error(error);
@@ -650,21 +780,64 @@ async function createParty() {
   }
 }
 
+async function submitRuinsParty() {
+  if (!state.currentEventMeta || state.createBusy || !isCurrentRuins()) return;
+
+  const canCreate = state.currentEventMeta.createRole !== "admin" || isAdmin();
+  if (!canCreate) {
+    alert("이 이벤트는 운영진만 파티를 만들 수 있습니다.");
+    return;
+  }
+
+  const title = document.getElementById("ruinsTitleInput").value.trim();
+  const timeKST = document.getElementById("ruinsTimeKSTInput").value.trim();
+  const timeUTC = document.getElementById("ruinsTimeUTCInput").value.trim();
+  const limit = Number(document.getElementById("ruinsLimitInput").value);
+
+  if (!title) {
+    alert("유적명을 입력해 주세요.");
+    return;
+  }
+
+  if (!timeKST || !timeUTC) {
+    alert("KST와 UTC 시간을 모두 입력해 주세요.");
+    return;
+  }
+
+  if (!limit || limit < 1) {
+    alert("총원은 1 이상이어야 합니다.");
+    return;
+  }
+
+  state.createBusy = true;
+
+  try {
+    await db.collection("parties").add({
+      event: state.currentEventId,
+      template: "ruins",
+      title,
+      timeKST,
+      timeUTC,
+      createdBy: state.nickname,
+      rallyLeader: "",
+      members: [],
+      limit,
+      created: Date.now()
+    });
+
+    closeRuinsCreateModal();
+  } catch (error) {
+    console.error(error);
+    alert("유적 파티 생성 중 오류가 발생했습니다.");
+  } finally {
+    state.createBusy = false;
+  }
+}
+
 async function joinParty(partyId) {
   if (!state.currentEventId) return;
 
   try {
-    const existingSnap = await db.collection("parties")
-      .where("event", "==", state.currentEventId)
-      .where("members", "array-contains", state.nickname)
-      .get();
-
-    const otherParty = existingSnap.docs.find((doc) => doc.id !== partyId);
-    if (otherParty) {
-      alert("이 이벤트에는 이미 참여 중인 파티가 있습니다.");
-      return;
-    }
-
     const ref = db.collection("parties").doc(partyId);
     const snap = await ref.get();
 
@@ -682,6 +855,20 @@ async function joinParty(partyId) {
       return;
     }
 
+    // 바이킹만 1인 1파티 제한
+    if (party.template === "vikings") {
+      const existingSnap = await db.collection("parties")
+        .where("event", "==", state.currentEventId)
+        .where("members", "array-contains", state.nickname)
+        .get();
+
+      const otherParty = existingSnap.docs.find((doc) => doc.id !== partyId);
+      if (otherParty) {
+        alert("이 이벤트에는 이미 참여 중인 파티가 있습니다.");
+        return;
+      }
+    }
+
     await ref.update({
       members: firebase.firestore.FieldValue.arrayUnion(state.nickname)
     });
@@ -694,10 +881,20 @@ async function joinParty(partyId) {
 async function leaveParty(partyId) {
   try {
     const ref = db.collection("parties").doc(partyId);
+    const snap = await ref.get();
 
-    await ref.update({
+    if (!snap.exists) return;
+
+    const party = normalizeParty(snap.id, snap.data() || {});
+    const updatePayload = {
       members: firebase.firestore.FieldValue.arrayRemove(state.nickname)
-    });
+    };
+
+    if (party.template === "ruins" && party.rallyLeader === state.nickname) {
+      updatePayload.rallyLeader = firebase.firestore.FieldValue.delete();
+    }
+
+    await ref.update(updatePayload);
   } catch (error) {
     console.error(error);
     alert("취소 처리 중 오류가 발생했습니다.");
@@ -709,9 +906,7 @@ async function deleteParty(partyId) {
   if (!party) return;
 
   const isCreator = party.createdBy === state.nickname;
-  const isAdmin = state.admins.has(state.nickname);
-
-  if (!isCreator && !isAdmin) {
+  if (!isCreator && !isAdmin()) {
     alert("삭제 권한이 없습니다.");
     return;
   }
@@ -723,6 +918,49 @@ async function deleteParty(partyId) {
   } catch (error) {
     console.error(error);
     alert("파티 삭제 중 오류가 발생했습니다.");
+  }
+}
+
+function selectRuinMember(partyId, encodedMember) {
+  if (!isCurrentRuins() || !isAdmin()) return;
+
+  const member = decodeURIComponent(encodedMember);
+  const current = state.selectedRuinMemberByParty[partyId] || "";
+
+  if (current === member) {
+    delete state.selectedRuinMemberByParty[partyId];
+  } else {
+    state.selectedRuinMemberByParty[partyId] = member;
+  }
+
+  renderBoardSections(state.currentParties);
+}
+
+async function setRallyLeader(partyId, encodedMember) {
+  if (!isCurrentRuins() || !isAdmin()) return;
+
+  const member = decodeURIComponent(encodedMember);
+  const party = state.currentParties.find((item) => item.id === partyId);
+
+  if (!party) {
+    alert("파티 정보를 찾을 수 없습니다.");
+    return;
+  }
+
+  if (!party.members.includes(member)) {
+    alert("해당 사용자는 현재 파티원이 아닙니다.");
+    return;
+  }
+
+  try {
+    await db.collection("parties").doc(partyId).update({
+      rallyLeader: member
+    });
+
+    state.selectedRuinMemberByParty[partyId] = member;
+  } catch (error) {
+    console.error(error);
+    alert("집결장 지정 중 오류가 발생했습니다.");
   }
 }
 
@@ -753,14 +991,18 @@ async function showUsers() {
       <div class="userSection">
         <div class="userSectionTitle">참여 (${joined.length})</div>
         <div class="userGrid">
-          ${joined.length ? joined.map((user) => `<div class="userChip userChipJoined">${escapeHtml(user)}</div>`).join("") : `<div class="emptyUsers">참여자가 없습니다.</div>`}
+          ${joined.length
+            ? joined.map((user) => `<div class="userChip userChipJoined">${escapeHtml(user)}</div>`).join("")
+            : `<div class="emptyUsers">참여자가 없습니다.</div>`}
         </div>
       </div>
 
       <div class="userSection">
         <div class="userSectionTitle">미참여 (${notJoined.length})</div>
         <div class="userGrid">
-          ${notJoined.length ? notJoined.map((user) => `<div class="userChip userChipIdle">${escapeHtml(user)}</div>`).join("") : `<div class="emptyUsers">모든 유저가 참여 중입니다.</div>`}
+          ${notJoined.length
+            ? notJoined.map((user) => `<div class="userChip userChipIdle">${escapeHtml(user)}</div>`).join("")
+            : `<div class="emptyUsers">모든 유저가 참여 중입니다.</div>`}
         </div>
       </div>
     `;
