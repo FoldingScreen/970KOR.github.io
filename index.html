@@ -11,7 +11,6 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </head>
 <body>
-  <!-- 로그인 -->
   <div id="loginPage" class="loginPage">
     <div class="loginCard">
       <div class="loginLogo">970KOR</div>
@@ -23,7 +22,6 @@
     </div>
   </div>
 
-  <!-- 앱 -->
   <div id="appShell" class="appShell" style="display:none;">
     <header class="topbar">
       <div class="topbarLeft">
@@ -43,7 +41,6 @@
     </header>
 
     <main class="mainArea">
-      <!-- 홈 -->
       <section id="homeView" class="homeView">
         <div class="heroCard">
           <div class="heroTitle">970KOR 이벤트 로비</div>
@@ -58,7 +55,6 @@
         <div id="homeEventCards" class="homeEventCards"></div>
       </section>
 
-      <!-- 이벤트 -->
       <section id="eventView" class="eventView" style="display:none;">
         <div class="eventHeader">
           <h1 id="eventTitle" class="eventTitle"></h1>
@@ -75,7 +71,6 @@
             <div id="createHint" class="createHint"></div>
           </div>
 
-          <!-- 바이킹 생성 -->
           <div id="vikingCreateWrap" class="createGrid">
             <div class="fieldItem">
               <label for="partyTitleInput">파티명</label>
@@ -93,7 +88,6 @@
             </div>
           </div>
 
-          <!-- 유적 생성 -->
           <div id="ruinsCreateWrap" class="ruinsCreateWrap" style="display:none;">
             <button id="ruinsCreateOpenBtn" class="primaryBtn" onclick="createParty()">유적 파티 생성</button>
           </div>
@@ -119,7 +113,6 @@
     </main>
   </div>
 
-  <!-- 참여자 모달 -->
   <div id="userModal" class="modal" style="display:none;">
     <div class="modalPanel">
       <div class="modalHeader">
@@ -130,7 +123,6 @@
     </div>
   </div>
 
-  <!-- 운영진 모달 -->
   <div id="adminModal" class="modal" style="display:none;">
     <div class="modalPanel">
       <div class="modalHeader">
@@ -151,7 +143,6 @@
     </div>
   </div>
 
-  <!-- 유적 생성 모달 -->
   <div id="ruinsCreateModal" class="modal" style="display:none;">
     <div class="modalPanel ruinsModalPanel">
       <div class="modalHeader">
@@ -166,13 +157,18 @@
         </div>
 
         <div class="fieldItem">
-          <label for="ruinsTimeKSTInput">시간(KST)</label>
-          <input id="ruinsTimeKSTInput" class="textInput" placeholder="예: 21:00" autocomplete="off" />
+          <label for="ruinsMonthInput">월</label>
+          <input id="ruinsMonthInput" class="textInput" placeholder="예: 5" autocomplete="off" />
         </div>
 
         <div class="fieldItem">
-          <label for="ruinsTimeUTCInput">시간(UTC)</label>
-          <input id="ruinsTimeUTCInput" class="textInput" placeholder="예: 12:00" autocomplete="off" />
+          <label for="ruinsDayInput">일</label>
+          <input id="ruinsDayInput" class="textInput" placeholder="예: 14" autocomplete="off" />
+        </div>
+
+        <div class="fieldItem">
+          <label for="ruinsKSTInput">시간(KST)</label>
+          <input id="ruinsKSTInput" class="textInput" placeholder="예: 21:00" autocomplete="off" />
         </div>
 
         <div class="fieldItem">
@@ -188,6 +184,6 @@
     </div>
   </div>
 
-  <script src="script.js?v=8"></script>
+  <script src="script.js?v=10"></script>
 </body>
 </html>
