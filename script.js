@@ -1,21 +1,22 @@
 const firebaseConfig = {
-
-apiKey:"YOUR_KEY",
-authDomain:"YOUR_DOMAIN",
-projectId:"YOUR_PROJECT"
-
-}
+  apiKey: "AIzaSyBu2RrQn8cAwwWaLtw5O8Omwn4-NzHWuc0",
+  authDomain: "kor-app-fa47e.firebaseapp.com",
+  projectId: "kor-app-fa47e",
+  storageBucket: "kor-app-fa47e.firebasestorage.app",
+  messagingSenderId: "397749083935",
+  appId: "1:397749083935:web:b2bd8498b943aec5099a2a"
+};
 
 firebase.initializeApp(firebaseConfig)
 
-const db=firebase.firestore()
+const db = firebase.firestore()
 
 let nickname=""
-let myParty=null
-
 let allUsers=[]
 let admins=[]
 let partyUsers=[]
+let currentEvent=null
+let unsubscribeParties=null
 
 window.onload=()=>{
 
@@ -30,20 +31,35 @@ startApp()
 
 }
 
-function login(){
+async function login(){
 
 nickname=document.getElementById("nicknameInput").value.trim()
 
 if(!nickname){
-
 alert("닉네임 입력")
 return
-
 }
 
 localStorage.setItem("nickname",nickname)
 
+await registerUser()
+
 startApp()
+
+}
+
+async function registerUser(){
+
+const ref=db.collection("users").doc(nickname)
+const doc=await ref.get()
+
+if(!doc.exists){
+
+await ref.set({
+created:Date.now()
+})
+
+}
 
 }
 
@@ -52,7 +68,9 @@ function startApp(){
 document.getElementById("loginPage").style.display="none"
 document.getElementById("mainPage").style.display="block"
 
-startRealtime()
+loadUsers()
+loadAdmins()
+loadEvents()
 
 }
 
@@ -63,84 +81,112 @@ location.reload()
 
 }
 
-function startRealtime(){
+function loadUsers(){
 
-db.collection("users").onSnapshot(s=>{
+db.collection("users").get().then(s=>{
 
 allUsers=[]
 
 s.forEach(u=>{
 
-if(!u.id.startsWith("테스트")) allUsers.push(u.id)
+allUsers.push(u.id)
 
 })
 
 })
 
-db.collection("admins").onSnapshot(s=>{
+}
+
+function loadAdmins(){
+
+db.collection("admins").get().then(s=>{
 
 admins=[]
 
-s.forEach(doc=>{
+s.forEach(a=>admins.push(a.id))
 
-admins.push(doc.id)
+})
+
+}
+
+function loadEvents(){
+
+db.collection("events").get().then(snapshot=>{
+
+const tabs=document.getElementById("eventTabs")
+
+tabs.innerHTML=""
+
+snapshot.forEach(doc=>{
+
+const e=doc.data()
+
+const btn=document.createElement("button")
+btn.innerText=e.name
+
+btn.onclick=()=>changeEvent(doc.id,btn)
+
+tabs.appendChild(btn)
 
 })
 
 })
 
-db.collection("parties").onSnapshot(render)
+}
+
+function changeEvent(eventId,btn){
+
+currentEvent=eventId
+
+document.querySelectorAll(".tabs button")
+.forEach(b=>b.classList.remove("active"))
+
+btn.classList.add("active")
+
+loadParties()
+
+}
+
+function loadParties(){
+
+if(unsubscribeParties) unsubscribeParties()
+
+unsubscribeParties=
+db.collection("parties")
+.where("event","==",currentEvent)
+.onSnapshot(render)
 
 }
 
 async function createParty(){
 
-if(myParty){
-
-alert("이미 파티 있음")
+if(!currentEvent){
+alert("이벤트 선택")
 return
-
 }
 
 const name=document.getElementById("partyName").value
 const limit=parseInt(document.getElementById("partyLimit").value)
 
-if(!name){
-
-alert("파티 이름")
-return
-
-}
-
 await db.collection("parties").add({
 
+event:currentEvent,
 name:name,
 leader:nickname,
-limit:limit,
 members:[nickname],
+limit:limit,
 created:Date.now()
 
 })
-
-document.getElementById("partyName").value=""
 
 }
 
 async function joinParty(id){
 
-if(myParty){
-
-alert("이미 파티 있음")
-return
-
-}
-
 const ref=db.collection("parties").doc(id)
 
 await ref.update({
-
 members:firebase.firestore.FieldValue.arrayUnion(nickname)
-
 })
 
 }
@@ -150,9 +196,7 @@ async function leaveParty(id){
 const ref=db.collection("parties").doc(id)
 
 await ref.update({
-
 members:firebase.firestore.FieldValue.arrayRemove(nickname)
-
 })
 
 }
@@ -162,25 +206,6 @@ async function deleteParty(id){
 if(!confirm("파티 삭제?")) return
 
 await db.collection("parties").doc(id).delete()
-
-}
-
-async function kickUser(partyId,user){
-
-if(!admins.includes(nickname)){
-
-alert("권한 없음")
-return
-
-}
-
-const ref=db.collection("parties").doc(partyId)
-
-await ref.update({
-
-members:firebase.firestore.FieldValue.arrayRemove(user)
-
-})
 
 }
 
@@ -194,7 +219,6 @@ my.innerHTML=""
 open.innerHTML=""
 closed.innerHTML=""
 
-myParty=null
 partyUsers=[]
 
 snapshot.forEach(doc=>{
@@ -205,12 +229,8 @@ const d=doc.data()
 const members=d.members||[]
 
 members.forEach(m=>{
-
 if(!partyUsers.includes(m)) partyUsers.push(m)
-
 })
-
-if(members.includes(nickname)) myParty=id
 
 const card=document.createElement("div")
 
@@ -220,24 +240,7 @@ let html=`<b>${d.name} (${members.length}/${d.limit})</b><br>`
 
 members.forEach(m=>{
 
-let line=""
-
-if(m===nickname) line+="<span class='member me'>"
-else line+="<span class='member'>"
-
-if(m===d.leader) line+="👑 "
-
-line+=m
-
-if(admins.includes(nickname) && m!==d.leader){
-
-line+=` <span class="kick" onclick="kickUser('${id}','${m}')">❌</span>`
-
-}
-
-line+="</span><br>"
-
-html+=line
+html+=`<div class="member">${m}</div>`
 
 })
 
@@ -256,9 +259,14 @@ html+=`</div>`
 
 card.innerHTML=html
 
-if(members.includes(nickname)) my.appendChild(card)
-else if(members.length>=d.limit) closed.appendChild(card)
-else open.appendChild(card)
+if(members.includes(nickname))
+my.appendChild(card)
+
+else if(members.length>=d.limit)
+closed.appendChild(card)
+
+else
+open.appendChild(card)
 
 })
 
@@ -277,7 +285,8 @@ partyCount++
 
 const d=doc.data()
 
-if((d.members||[]).length>=d.limit) closed++
+if((d.members||[]).length>=d.limit)
+closed++
 
 })
 
@@ -298,8 +307,11 @@ const notJoined=[]
 
 allUsers.forEach(u=>{
 
-if(partyUsers.includes(u)) joined.push(u)
-else notJoined.push(u)
+if(partyUsers.includes(u))
+joined.push(u)
+
+else
+notJoined.push(u)
 
 })
 
@@ -308,17 +320,8 @@ notJoined.sort()
 
 let html=""
 
-joined.forEach(u=>{
-
-html+=`<div style="color:green">${u}</div>`
-
-})
-
-notJoined.forEach(u=>{
-
-html+=`<div style="color:#666">${u}</div>`
-
-})
+joined.forEach(u=>html+=`<div style="color:green">${u}</div>`)
+notJoined.forEach(u=>html+=`<div style="color:#666">${u}</div>`)
 
 list.innerHTML=html
 
