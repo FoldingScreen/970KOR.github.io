@@ -1,25 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+
+<meta charset="UTF-8">
+<title>970KOR 파티 매칭</title>
+
+<link rel="stylesheet" href="style.css">
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+</head>
+
+<body>
+
+<div id="loginPage">
+
+<h1>970KOR 파티 매칭</h1>
+
+<input id="nicknameInput" placeholder="닉네임">
+<button onclick="login()">입장</button>
+
+</div>
+
+<div id="mainPage" style="display:none">
+
+<div class="topbar">
+
+<span id="dashboard"></span>
+
+<button onclick="showUsers()">참여현황</button>
+<button onclick="logout()">로그아웃</button>
+
+</div>
+
+<div class="createBox">
+
+<input id="partyName" placeholder="파티 이름">
+<input id="partyLimit" type="number" value="6">
+<button onclick="createParty()">파티 생성</button>
+
+</div>
 
 <div class="layout">
 
-<div>
 <div class="column">
+
 <h3>나의 파티</h3>
-<div id="myParty"></div>
+
 <div id="myParty" class="cardGrid"></div>
+
 </div>
 
-<div>
 <div class="column">
+
 <h3>모집중</h3>
-<div id="openParty"></div>
+
 <div id="openParty" class="cardGrid"></div>
+
 </div>
 
-<div>
 <div class="column">
+
 <h3>모집완료</h3>
-<div id="closedParty"></div>
+
 <div id="closedParty" class="cardGrid"></div>
+
 </div>
 
 </div>
+
+</div>
+
+<div id="userModal" class="modal">
+
+<div class="modalContent">
+
+<h3>참여현황</h3>
+
+<div id="userList"></div>
+
+<button onclick="closeUsers()">닫기</button>
+
+</div>
+
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
