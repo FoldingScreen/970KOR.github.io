@@ -402,14 +402,16 @@ body {
 
 .boardGrid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(260px, 1fr) minmax(520px, 2fr) minmax(260px, 1fr);
   gap: 18px;
+  align-items: start;
 }
 
 .boardColumn {
   min-width: 0;
   display: grid;
   gap: 12px;
+  align-items: start;
 }
 
 .boardTitle {
@@ -421,14 +423,15 @@ body {
   display: grid;
   gap: 14px;
   justify-items: stretch;
+  align-items: start;
 }
 
 .emptyCard {
-  min-height: 130px;
+  min-height: 96px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 18px;
+  padding: 16px;
   background: #fff;
   border-radius: 18px;
   color: #94a3b8;
@@ -446,6 +449,21 @@ body {
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
   display: grid;
   gap: 12px;
+}
+
+.zoneMy {
+  background: #fff7c7;
+  border: 1px solid #f4df7a;
+}
+
+.zoneOpen {
+  background: #e8f7e8;
+  border: 1px solid #b9e3b9;
+}
+
+.zoneClosed {
+  background: #ffe8cc;
+  border: 1px solid #f2bf86;
 }
 
 .partyCardVikings {
@@ -764,6 +782,32 @@ body {
   .boardGrid {
     grid-template-columns: 1fr;
   }
+}
+
+#myParty.cardGrid {
+  gap: 10px;
+}
+
+#myParty .partyCard {
+  gap: 10px;
+  padding: 14px;
+}
+
+#myParty .cardSection {
+  gap: 6px;
+}
+
+#myParty .memberList {
+  gap: 6px;
+}
+
+#myParty .memberItem {
+  min-height: 36px;
+  padding: 7px 10px;
+}
+
+#myParty .cardButtons {
+  margin-top: 2px;
 }
 
 @media (max-width: 768px) {
