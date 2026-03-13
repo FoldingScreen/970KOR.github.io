@@ -9,8 +9,6 @@ body {
   font-family: Arial, "Noto Sans KR", sans-serif;
 }
 
-/* 로그인 */
-
 .loginPage {
   min-height: 100vh;
   display: flex;
@@ -51,8 +49,6 @@ body {
   width: 100%;
 }
 
-/* 공통 입력 / 버튼 */
-
 .textInput {
   width: 100%;
   height: 44px;
@@ -83,6 +79,13 @@ body {
   cursor: pointer;
   font-size: 14px;
   font-weight: 700;
+}
+
+.miniBtn {
+  height: 34px;
+  padding: 0 10px;
+  font-size: 12px;
+  border-radius: 9px;
 }
 
 .primaryBtn {
@@ -131,13 +134,9 @@ body {
   cursor: not-allowed;
 }
 
-/* 앱 */
-
 .appShell {
   min-height: 100vh;
 }
-
-/* 상단 바 */
 
 .topbar {
   position: sticky;
@@ -221,15 +220,11 @@ body {
   font-weight: 700;
 }
 
-/* 메인 영역 */
-
 .mainArea {
-  max-width: 1500px;
+  max-width: 1360px;
   margin: 0 auto;
   padding: 24px 20px 36px;
 }
-
-/* 홈 */
 
 .homeView {
   display: grid;
@@ -314,8 +309,6 @@ body {
   width: 100%;
 }
 
-/* 이벤트 뷰 */
-
 .eventView {
   display: grid;
   gap: 20px;
@@ -346,8 +339,6 @@ body {
   font-size: 15px;
   font-weight: 700;
 }
-
-/* 생성 박스 */
 
 .createBox {
   background: #fff;
@@ -409,11 +400,9 @@ body {
   min-width: 180px;
 }
 
-/* 보드 */
-
 .boardGrid {
   display: grid;
-  grid-template-columns: 1.1fr 1.8fr 1.2fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
 }
 
@@ -431,6 +420,7 @@ body {
 .cardGrid {
   display: grid;
   gap: 14px;
+  justify-items: stretch;
 }
 
 .emptyCard {
@@ -446,15 +436,16 @@ body {
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
 }
 
-/* 카드 공통 */
-
 .partyCard {
+  width: 100%;
+  max-width: 430px;
+  justify-self: center;
   background: #fff;
   border-radius: 18px;
-  padding: 18px;
+  padding: 16px;
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .partyCardVikings {
@@ -477,22 +468,23 @@ body {
   align-items: flex-start;
 }
 
+.cardTitleLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .cardTitle {
-  font-size: 19px;
+  font-size: 18px;
   font-weight: 900;
   line-height: 1.35;
   word-break: keep-all;
 }
 
-.quotaBadge {
-  flex: 0 0 auto;
-  min-width: 56px;
-  text-align: center;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: #e8eefc;
-  color: #1d4ed8;
-  font-size: 13px;
+.inlineQuota {
+  color: #64748b;
+  font-size: 14px;
   font-weight: 800;
 }
 
@@ -507,7 +499,7 @@ body {
   border-radius: 999px;
   background: #ede9fe;
   color: #6d28d9;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
 }
 
@@ -523,7 +515,7 @@ body {
 
 .cardSection {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .sectionLabel {
@@ -533,7 +525,7 @@ body {
 }
 
 .rallyLeaderBox {
-  min-height: 44px;
+  min-height: 40px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -542,7 +534,7 @@ body {
 .rallyLeaderChip {
   display: inline-flex;
   align-items: center;
-  min-height: 36px;
+  min-height: 34px;
   padding: 0 12px;
   border-radius: 999px;
   background: #ede9fe;
@@ -558,17 +550,17 @@ body {
 
 .memberList {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: 1fr;
+  gap: 8px;
 }
 
 .memberItem {
-  min-height: 42px;
+  min-height: 40px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 10px 12px;
+  padding: 9px 11px;
   border-radius: 12px;
   background: #f8fafc;
   border: 1px solid #edf2f7;
@@ -625,18 +617,13 @@ body {
   font-size: 14px;
 }
 
-.memberActionHint {
-  color: #64748b;
-  font-size: 13px;
-}
-
 .memberActionBox {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
-  padding: 12px;
+  padding: 10px 12px;
   border-radius: 12px;
   background: #faf5ff;
   border: 1px solid #e9d5ff;
@@ -644,21 +631,25 @@ body {
 
 .memberActionText {
   color: #5b21b6;
-  font-size: 14px;
+  font-size: 13px;
 }
 
-.cardButtons {
+.memberActionBtns {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
 
-.cardButtons button {
-  flex: 1 1 auto;
-  min-width: 96px;
+.cardButtons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: nowrap;
 }
 
-/* 모달 */
+.cardButtons button {
+  flex: 1 1 0;
+  min-width: 0;
+}
 
 .modal {
   position: fixed;
@@ -769,8 +760,6 @@ body {
   flex-wrap: wrap;
 }
 
-/* 반응형 */
-
 @media (max-width: 1200px) {
   .boardGrid {
     grid-template-columns: 1fr;
@@ -797,15 +786,18 @@ body {
 
   .topTabs {
     width: 100%;
+    overflow-x: auto;
+    padding-bottom: 2px;
   }
 
   .eventTabs {
-    width: 100%;
+    width: max-content;
   }
 
   .topbarRight {
     justify-content: flex-end;
     flex-wrap: wrap;
+    gap: 8px;
   }
 
   .brand {
@@ -830,6 +822,7 @@ body {
 
   .eventTitle {
     font-size: 28px;
+    line-height: 1.2;
   }
 
   .eventSubRow {
@@ -849,21 +842,54 @@ body {
     grid-template-columns: 1fr;
   }
 
+  .boardGrid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
   .boardTitle {
     font-size: 18px;
   }
 
+  .cardGrid {
+    justify-items: stretch;
+  }
+
   .partyCard {
+    max-width: 100%;
+    width: 100%;
     padding: 14px;
+    border-radius: 16px;
   }
 
   .cardHead {
     flex-direction: column;
     align-items: flex-start;
+    gap: 10px;
   }
 
-  .memberList {
-    grid-template-columns: 1fr;
+  .cardTitleLine {
+    width: 100%;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .cardTitle {
+    font-size: 17px;
+  }
+
+  .inlineQuota {
+    font-size: 13px;
+  }
+
+  .ruinMetaRow {
+    width: 100%;
+    gap: 6px;
+  }
+
+  .timeBadge {
+    font-size: 11px;
+    padding: 5px 8px;
   }
 
   .memberActionBox {
@@ -871,13 +897,31 @@ body {
     align-items: stretch;
   }
 
+  .memberActionBtns {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+  }
+
+  .memberActionBtns button {
+    flex: 1 1 0;
+  }
+
   .cardButtons {
-    flex-direction: column;
+    display: flex;
+    gap: 8px;
+    flex-wrap: nowrap;
   }
 
   .cardButtons button {
-    width: 100%;
+    flex: 1 1 0;
     min-width: 0;
+  }
+
+  .miniBtn {
+    height: 32px;
+    padding: 0 8px;
+    font-size: 12px;
   }
 
   .modalPanel {
@@ -894,5 +938,17 @@ body {
 
   .modalFooter button {
     width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .ruinMetaRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .troopBadge {
+    grid-column: 1 / -1;
+    width: fit-content;
   }
 }
