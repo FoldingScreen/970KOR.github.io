@@ -71,6 +71,7 @@ body {
 .primaryBtn,
 .secondaryBtn,
 .ghostBtn,
+.ghostDarkBtn,
 .joinBtn,
 .leaveBtn,
 .deleteBtn,
@@ -102,6 +103,11 @@ body {
 .ghostBtn {
   background: rgba(255, 255, 255, 0.14);
   color: #fff;
+}
+
+.ghostDarkBtn {
+  background: #eef2ff;
+  color: #1e3a8a;
 }
 
 .joinBtn {
@@ -371,15 +377,9 @@ body {
 
 .createGrid {
   display: grid;
-  grid-template-columns: 2fr 2fr 0.8fr 0.9fr;
+  grid-template-columns: 2fr 0.8fr 0.9fr;
   gap: 14px;
   align-items: end;
-}
-
-.timeFieldWrap {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
 }
 
 .fieldItem {
@@ -399,6 +399,14 @@ body {
 
 .fieldButton .primaryBtn {
   width: 100%;
+}
+
+.ruinsCreateWrap {
+  display: flex;
+}
+
+.ruinsCreateWrap .primaryBtn {
+  min-width: 180px;
 }
 
 /* 보드 */
@@ -488,7 +496,7 @@ body {
   font-weight: 800;
 }
 
-.timeBadges {
+.ruinMetaRow {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
@@ -508,6 +516,11 @@ body {
   color: #7e22ce;
 }
 
+.troopBadge {
+  background: #efe7ff;
+  color: #5b21b6;
+}
+
 .cardSection {
   display: grid;
   gap: 10px;
@@ -517,6 +530,30 @@ body {
   font-size: 13px;
   color: #64748b;
   font-weight: 800;
+}
+
+.rallyLeaderBox {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rallyLeaderChip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: #ede9fe;
+  color: #6d28d9;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.rallyLeaderEmpty {
+  color: #94a3b8;
+  font-size: 14px;
 }
 
 .memberList {
@@ -537,9 +574,21 @@ body {
   border: 1px solid #edf2f7;
 }
 
+.memberButton {
+  width: 100%;
+  cursor: pointer;
+  text-align: left;
+  appearance: none;
+}
+
 .memberItemMine {
   background: #e8eefc;
   border-color: #c7d8ff;
+}
+
+.memberItemSelected {
+  background: #f3e8ff;
+  border-color: #c4b5fd;
 }
 
 .memberName {
@@ -547,6 +596,13 @@ body {
   font-size: 14px;
   font-weight: 700;
   word-break: break-all;
+}
+
+.memberMetaWrap {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .memberRole {
@@ -559,8 +615,35 @@ body {
   font-weight: 800;
 }
 
+.memberRolePurple {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
 .emptyMembers {
   color: #94a3b8;
+  font-size: 14px;
+}
+
+.memberActionHint {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.memberActionBox {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px;
+  border-radius: 12px;
+  background: #faf5ff;
+  border: 1px solid #e9d5ff;
+}
+
+.memberActionText {
+  color: #5b21b6;
   font-size: 14px;
 }
 
@@ -599,6 +682,10 @@ body {
   box-shadow: 0 18px 44px rgba(15, 23, 42, 0.18);
 }
 
+.ruinsModalPanel {
+  max-width: 620px;
+}
+
 .modalHeader {
   display: flex;
   align-items: center;
@@ -610,6 +697,19 @@ body {
 .modalTitle {
   font-size: 22px;
   font-weight: 900;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.ruinsCreateGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
 }
 
 .userList {
@@ -672,10 +772,6 @@ body {
 /* 반응형 */
 
 @media (max-width: 1200px) {
-  .createGrid {
-    grid-template-columns: 1.4fr 1.8fr 0.8fr 1fr;
-  }
-
   .boardGrid {
     grid-template-columns: 1fr;
   }
@@ -748,11 +844,8 @@ body {
     padding: 16px;
   }
 
-  .createGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .timeFieldWrap {
+  .createGrid,
+  .ruinsCreateGrid {
     grid-template-columns: 1fr;
   }
 
@@ -773,6 +866,11 @@ body {
     grid-template-columns: 1fr;
   }
 
+  .memberActionBox {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .cardButtons {
     flex-direction: column;
   }
@@ -788,5 +886,13 @@ body {
 
   .modalTitle {
     font-size: 18px;
+  }
+
+  .modalFooter {
+    flex-direction: column;
+  }
+
+  .modalFooter button {
+    width: 100%;
   }
 }
