@@ -288,32 +288,57 @@ body {
 
 .homeEventCards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
 
-.homeEventCard {
-  background: #fff;
-  border-radius: 18px;
-  padding: 20px;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
-}
-
-.homeEventName {
-  font-size: 18px;
-  font-weight: 800;
-  margin-bottom: 8px;
-}
-
-.homeEventMeta {
-  color: #64748b;
-  font-size: 14px;
-  line-height: 1.5;
-  margin-bottom: 16px;
-}
-
-.homeEventBtn {
+.homeEventShortcut {
   width: 100%;
+  border: none;
+  border-radius: 20px;
+  padding: 24px 20px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+  cursor: pointer;
+  text-align: center;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.homeEventShortcut:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+}
+
+.homeShortcutName {
+  font-size: 22px;
+  font-weight: 900;
+  color: #1f2937;
+  line-height: 1.3;
+}
+
+.homeShortcutSub {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+@media (max-width: 768px) {
+  .homeEventCards {
+    grid-template-columns: 1fr;
+  }
+
+  .homeEventShortcut {
+    padding: 20px 16px;
+  }
+
+  .homeShortcutName {
+    font-size: 20px;
+  }
 }
 
 .eventView {
