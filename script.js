@@ -234,23 +234,27 @@ function renderHomeSummary() {
   `;
 }
 
-function renderHomeEventCards() {
-  const wrap = document.getElementById("homeEventCards");
-  wrap.innerHTML = "";
+function renderHomeSummary() {
+  const homeStats = document.getElementById("homeStats");
+  if (!homeStats) return;
 
-  state.eventsList.forEach((event) => {
-    const card = document.createElement("button");
-    card.className = "homeEventShortcut";
-    card.type = "button";
-    card.onclick = () => selectEvent(event.id);
+  const eventCount = state.eventsList.length;
+  const adminCount = state.admins.size;
 
-    card.innerHTML = `
-      <div class="homeShortcutName">${escapeHtml(event.name)}</div>
-      <div class="homeShortcutSub">바로가기</div>
-    `;
-
-    wrap.appendChild(card);
-  });
+  homeStats.innerHTML = `
+    <div class="statCard">
+      <div class="statLabel">전체 유저</div>
+      <div class="statValue">${state.allUsers.length}</div>
+    </div>
+    <div class="statCard">
+      <div class="statLabel">이벤트 수</div>
+      <div class="statValue">${eventCount}</div>
+    </div>
+    <div class="statCard">
+      <div class="statLabel">운영진 수</div>
+      <div class="statValue">${adminCount}</div>
+    </div>
+  `;
 }
 
 function goHome() {
