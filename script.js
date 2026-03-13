@@ -239,17 +239,16 @@ function renderHomeEventCards() {
   wrap.innerHTML = "";
 
   state.eventsList.forEach((event) => {
-    const card = document.createElement("div");
-    card.className = "homeEventCard";
+    const card = document.createElement("button");
+    card.className = "homeEventShortcut";
+    card.type = "button";
+    card.onclick = () => selectEvent(event.id);
+
     card.innerHTML = `
-      <div class="homeEventName">${escapeHtml(event.name)}</div>
-      <div class="homeEventMeta">
-        카드 유형: ${escapeHtml(event.template)} · 생성 권한: ${escapeHtml(event.createRole)}
-      </div>
-      <button class="secondaryBtn homeEventBtn">바로가기</button>
+      <div class="homeShortcutName">${escapeHtml(event.name)}</div>
+      <div class="homeShortcutSub">바로가기</div>
     `;
 
-    card.querySelector(".homeEventBtn").onclick = () => selectEvent(event.id);
     wrap.appendChild(card);
   });
 }
