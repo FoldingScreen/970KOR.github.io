@@ -344,7 +344,7 @@ function updateCreateBox() {
     ruinsLimitInput.value = state.currentEventMeta.defaultLimit || 6;
 
     createHint.innerText = canCreate
-      ? "유적 생성 버튼을 눌러 유적명과 시간을 입력하세요."
+      ? "유적 생성 버튼을 눌러 월 / 일 / 한국시간을 입력하세요."
       : "이 이벤트는 운영진만 파티를 만들 수 있습니다.";
   }
 }
@@ -384,8 +384,9 @@ function openRuinsCreateModal() {
   }
 
   document.getElementById("ruinsTitleInput").value = "";
-  document.getElementById("ruinsTimeKSTInput").value = "";
-  document.getElementById("ruinsTimeUTCInput").value = "";
+  document.getElementById("ruinsMonthInput").value = "";
+  document.getElementById("ruinsDayInput").value = "";
+  document.getElementById("ruinsKSTInput").value = "";
   document.getElementById("ruinsLimitInput").value = state.currentEventMeta.defaultLimit || 6;
 
   document.getElementById("ruinsCreateModal").style.display = "flex";
@@ -425,6 +426,8 @@ function normalizeParty(id, data) {
     event: data.event || "",
     template: data.template || (state.currentEventMeta ? state.currentEventMeta.template : "vikings"),
     title: data.title || "",
+    month: data.month || "",
+    day: data.day || "",
     timeKST: data.timeKST || "",
     timeUTC: data.timeUTC || "",
     createdBy: data.createdBy || "",
@@ -433,6 +436,22 @@ function normalizeParty(id, data) {
     limit: Number(data.limit) || 6,
     created: Number(data.created) || 0
   };
+}
+
+function getRuinsSortValue(party) {
+  const month = Number(party.month) || 0;
+  const day = Number(party.day) || 0;
+
+  let hour = 0;
+  let minute = 0;
+
+  const match = /^(\d{1,2}):(\d{2})$/.exec(String(party.timeKST || "").trim());
+  if (match) {
+    hour = Number(match[1]) || 0;
+    minute = Number(match[2]) || 0;
+  }
+
+  return month * 1000000 + day * 10000 + hour * 100 + minute;
 }
 
 function renderCurrentEvent(snapshot) {
@@ -444,8 +463,10 @@ function renderCurrentEvent(snapshot) {
 
   if (isCurrentRuins()) {
     parties.sort((a, b) => {
-      const timeCompare = String(a.timeKST).localeCompare(String(b.timeKST), "ko");
-      if (timeCompare !== 0) return timeCompare;
+      const aValue = getRuinsSortValue(a);
+      const bValue = getRuinsSortValue(b);
+
+      if (aValue !== bValue) return aValue - bValue;
       return a.created - b.created;
     });
   } else {
@@ -454,7 +475,6 @@ function renderCurrentEvent(snapshot) {
 
   state.currentParties = parties;
 
-  // 유적에서 사라진 선택 상태 정리
   const validPartyIds = new Set(parties.map((p) => p.id));
   Object.keys(state.selectedRuinMemberByParty).forEach((partyId) => {
     if (!validPartyIds.has(partyId)) {
@@ -531,8 +551,10 @@ function buildPartyCard(party) {
 function renderVikingsCardHtml(party) {
   return `
     <div class="cardHead">
-      <div class="cardTitle">${escapeHtml(party.title || "이름 없는 파티")}</div>
-      <div class="quotaBadge">${party.members.length}/${party.limit}</div>
+      <div class="cardTitleLine">
+        <div class="cardTitle">${escapeHtml(party.title || "이름 없는 파티")}</div>
+        <div class="inlineQuota">(${party.members.length}/${party.limit})</div>
+      </div>
     </div>
 
     <div class="cardSection">
@@ -550,12 +572,18 @@ function renderVikingsCardHtml(party) {
 
 function renderRuinsCardHtml(party) {
   const troopText = getTroopText(party);
+  const dateText = `${escapeHtml(party.month || "-")}월 ${escapeHtml(party.day || "-")}일`;
+  const visibleMembers = party.members.filter((member) => member !== party.rallyLeader);
 
   return `
     <div class="cardHead cardHeadRuins">
-      <div class="cardTitle">${escapeHtml(party.title || "이름 없는 유적")}</div>
+      <div class="cardTitleLine">
+        <div class="cardTitle">${escapeHtml(party.title || "이름 없는 유적")}</div>
+        <div class="inlineQuota">(${party.members.length}/${party.limit})</div>
+      </div>
 
       <div class="ruinMetaRow">
+        <span class="timeBadge">${dateText}</span>
         <span class="timeBadge">KST ${escapeHtml(party.timeKST || "-")}</span>
         <span class="timeBadge timeBadgeUtc">UTC ${escapeHtml(party.timeUTC || "-")}</span>
         <span class="timeBadge troopBadge">병력 수 ${troopText}</span>
@@ -574,7 +602,7 @@ function renderRuinsCardHtml(party) {
     <div class="cardSection">
       <div class="sectionLabel">파티원</div>
       <div class="memberList">
-        ${renderMembersHtml(party)}
+        ${renderMembersHtml({ ...party, members: visibleMembers })}
       </div>
       ${renderRuinsMemberActionHtml(party)}
     </div>
@@ -632,22 +660,26 @@ function renderRuinsMemberActionHtml(party) {
   if (party.template !== "ruins" || !isAdmin()) return "";
 
   const selected = state.selectedRuinMemberByParty[party.id] || "";
-  if (!selected || !party.members.includes(selected)) {
-    return `<div class="memberActionHint">운영진은 파티원 닉네임을 눌러 집결장을 지정할 수 있습니다.</div>`;
-  }
-
-  const encodedMember = encodeURIComponent(selected);
-  const isCurrentRally = selected === party.rallyLeader;
+  const selectedExists = selected && party.members.includes(selected);
+  const encodedMember = selectedExists ? encodeURIComponent(selected) : "";
 
   return `
     <div class="memberActionBox">
-      <div class="memberActionText">선택된 파티원: <b>${escapeHtml(selected)}</b></div>
-      <button
-        class="secondaryBtn"
-        onclick="setRallyLeader('${party.id}', '${encodedMember}')"
-      >
-        ${isCurrentRally ? "집결장 유지중" : "집결장으로 지정"}
-      </button>
+      <div class="memberActionText">
+        ${selectedExists
+          ? `선택된 파티원: <b>${escapeHtml(selected)}</b>`
+          : `운영진은 파티원 닉네임을 눌러 집결장을 지정하거나 추방할 수 있습니다.`}
+      </div>
+      <div class="memberActionBtns">
+        ${selectedExists ? `
+          <button class="secondaryBtn miniBtn" onclick="setRallyLeader('${party.id}', '${encodedMember}')">
+            ${selected === party.rallyLeader ? "집결장 유지중" : "집결장 지정"}
+          </button>
+          <button class="deleteBtn miniBtn" onclick="kickMember('${party.id}', '${encodedMember}')">
+            추방
+          </button>
+        ` : ``}
+      </div>
     </div>
   `;
 }
@@ -669,20 +701,20 @@ function renderCardButtons(party) {
 
   if (!isMember) {
     if (isFull) {
-      html += `<button class="disabledBtn" disabled>모집완료</button>`;
+      html += `<button class="disabledBtn miniBtn" disabled>모집완료</button>`;
     } else if (party.template === "vikings" && hasOtherParty) {
-      html += `<button class="disabledBtn" disabled>다른 파티 참여중</button>`;
+      html += `<button class="disabledBtn miniBtn" disabled>다른 파티 참여중</button>`;
     } else {
-      html += `<button class="joinBtn" onclick="joinParty('${party.id}')">지원</button>`;
+      html += `<button class="joinBtn miniBtn" onclick="joinParty('${party.id}')">지원</button>`;
     }
   }
 
   if (isMember && !isCreator) {
-    html += `<button class="leaveBtn" onclick="leaveParty('${party.id}')">취소</button>`;
+    html += `<button class="leaveBtn miniBtn" onclick="leaveParty('${party.id}')">취소</button>`;
   }
 
   if (isCreator || admin) {
-    html += `<button class="deleteBtn" onclick="deleteParty('${party.id}')">삭제</button>`;
+    html += `<button class="deleteBtn miniBtn" onclick="deleteParty('${party.id}')">삭제</button>`;
   }
 
   return html;
@@ -694,8 +726,20 @@ function getTroopText(party) {
     : party.members.length;
 
   if (activeMemberCount <= 0) return "-";
-
   return Math.floor(920000 / activeMemberCount).toLocaleString("ko-KR");
+}
+
+function toUtcTimeString(kstText) {
+  const match = /^(\d{1,2}):(\d{2})$/.exec(kstText.trim());
+  if (!match) return "";
+
+  let hour = Number(match[1]);
+  const minute = Number(match[2]);
+
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return "";
+
+  hour = (hour - 9 + 24) % 24;
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 }
 
 function updateDashboard(parties) {
@@ -790,17 +834,24 @@ async function submitRuinsParty() {
   }
 
   const title = document.getElementById("ruinsTitleInput").value.trim();
-  const timeKST = document.getElementById("ruinsTimeKSTInput").value.trim();
-  const timeUTC = document.getElementById("ruinsTimeUTCInput").value.trim();
+  const month = document.getElementById("ruinsMonthInput").value.trim();
+  const day = document.getElementById("ruinsDayInput").value.trim();
+  const timeKST = document.getElementById("ruinsKSTInput").value.trim();
   const limit = Number(document.getElementById("ruinsLimitInput").value);
+  const timeUTC = toUtcTimeString(timeKST);
 
   if (!title) {
     alert("유적명을 입력해 주세요.");
     return;
   }
 
-  if (!timeKST || !timeUTC) {
-    alert("KST와 UTC 시간을 모두 입력해 주세요.");
+  if (!month || !day || !timeKST) {
+    alert("월, 일, 한국시간을 모두 입력해 주세요.");
+    return;
+  }
+
+  if (!timeUTC) {
+    alert("한국시간은 HH:MM 형식으로 입력해 주세요. 예: 21:00");
     return;
   }
 
@@ -816,6 +867,8 @@ async function submitRuinsParty() {
       event: state.currentEventId,
       template: "ruins",
       title,
+      month,
+      day,
       timeKST,
       timeUTC,
       createdBy: state.nickname,
@@ -855,7 +908,6 @@ async function joinParty(partyId) {
       return;
     }
 
-    // 바이킹만 1인 1파티 제한
     if (party.template === "vikings") {
       const existingSnap = await db.collection("parties")
         .where("event", "==", state.currentEventId)
@@ -891,7 +943,7 @@ async function leaveParty(partyId) {
     };
 
     if (party.template === "ruins" && party.rallyLeader === state.nickname) {
-      updatePayload.rallyLeader = firebase.firestore.FieldValue.delete();
+      updatePayload.rallyLeader = "";
     }
 
     await ref.update(updatePayload);
@@ -961,6 +1013,41 @@ async function setRallyLeader(partyId, encodedMember) {
   } catch (error) {
     console.error(error);
     alert("집결장 지정 중 오류가 발생했습니다.");
+  }
+}
+
+async function kickMember(partyId, encodedMember) {
+  if (!isCurrentRuins() || !isAdmin()) return;
+
+  const member = decodeURIComponent(encodedMember);
+  const party = state.currentParties.find((item) => item.id === partyId);
+
+  if (!party) {
+    alert("파티 정보를 찾을 수 없습니다.");
+    return;
+  }
+
+  if (!party.members.includes(member)) {
+    alert("해당 사용자는 현재 파티원이 아닙니다.");
+    return;
+  }
+
+  if (!confirm(`${member} 님을 추방하시겠습니까?`)) return;
+
+  const payload = {
+    members: firebase.firestore.FieldValue.arrayRemove(member)
+  };
+
+  if (party.rallyLeader === member) {
+    payload.rallyLeader = "";
+  }
+
+  try {
+    await db.collection("parties").doc(partyId).update(payload);
+    delete state.selectedRuinMemberByParty[partyId];
+  } catch (error) {
+    console.error(error);
+    alert("추방 처리 중 오류가 발생했습니다.");
   }
 }
 
