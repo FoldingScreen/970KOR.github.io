@@ -1,203 +1,127 @@
+body{
+
+font-family:Arial;
+margin:20px;
 background:#f4f4f4;
+
 }
-
-/* 상단 */
-
-.topbar{
-position:absolute;
-top:10px;
-right:20px;
-display:flex;
-gap:10px;
-}
-
-/* 메인 레이아웃 */
 
 .layout{
+
 display:grid;
 grid-template-columns:1fr 3fr 2fr;
 gap:30px;
-margin-top:40px;
+margin-top:30px;
+
 }
 
-/* 카드 그리드 */
+.column{
+
+display:flex;
+flex-direction:column;
+
+}
 
 .cardGrid{
+
 display:grid;
 gap:16px;
+
 }
-
-/* 나의 파티 */
-
-#myParty{
-display:grid;
-grid-template-columns:1fr;
-gap:16px;
-}
-
-/* 모집중 */
-
-#openParty{
-display:grid;
-grid-template-columns:repeat(3,1fr);
-gap:16px;
-}
-
-/* 모집완료 */
-
-#closedParty{
-display:grid;
-grid-template-columns:repeat(2,1fr);
-gap:16px;
-}
-
-/* 카드 */
 
 .partyCard{
 
 background:white;
-@@ -43,8 +71,11 @@ flex-direction:column;
-gap:6px;
-
-min-height:160px;
+padding:14px;
+border-radius:10px;
+box-shadow:0 2px 6px rgba(0,0,0,0.1);
+min-height:140px;
 
 }
-
-/* 카드 색 */
-
-.cardMy{
-background:#fff2a8;
-}
-@@ -57,36 +88,51 @@ background:#dcf7dc;
-background:#eaeaea;
-}
-
-/* 파티원 */
 
 .member{
-display:flex;
-align-items:center;
-gap:6px;
-gap:4px;
-font-size:14px;
-line-height:1.2;
-}
 
-/* 내 닉네임 */
+font-size:14px;
+
+}
 
 .me{
+
 color:#1a73e8;
 font-weight:bold;
-}
 
-/* 추방 */
+}
 
 .kick{
-cursor:pointer;
-color:red;
-margin-left:4px;
-}
 
-/* 버튼 영역 */
+color:red;
+cursor:pointer;
+
+}
 
 .cardButtons{
-margin-top:8px;
+
+margin-top:10px;
 display:flex;
 gap:6px;
-flex-wrap:nowrap;
+
 }
 
-/* 버튼 */
-
 button{
+
 padding:6px 10px;
 border:none;
 border-radius:6px;
 cursor:pointer;
-}
 
-/* 버튼 색 */
+}
 
 .btnJoin{
+
 background:#27ae60;
 color:white;
-@@ -102,13 +148,7 @@ background:#e74c3c;
+
+}
+
+.btnLeave{
+
+background:#e67e22;
 color:white;
+
+}
+
+.btnDelete{
+
+background:#e74c3c;
+color:white;
+
 }
 
 .topbar{
-position:absolute;
-top:10px;
-right:20px;
+
 display:flex;
-gap:10px;
+justify-content:space-between;
+margin-bottom:20px;
+
 }
-/* 모달 */
 
 .modal{
+
 display:none;
-@@ -125,4 +165,64 @@ background:white;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.4);
+
+}
+
+.modalContent{
+
+background:white;
+width:300px;
+margin:120px auto;
 padding:20px;
-margin:100px auto;
-width:400px;
-max-height:70%;
-overflow:auto;
-}
-
-/* 모바일 */
-
-@media (max-width:768px){
-
-body{
-margin:12px;
-}
-
-/* 전체 세로 */
-
-.layout{
-grid-template-columns:1fr;
-gap:24px;
-}
-
-/* 나의 파티 */
-
-#myParty{
-grid-template-columns:1fr;
-}
-
-/* 모집중 */
-
-#openParty{
-grid-template-columns:repeat(2,1fr);
-}
-
-/* 모집완료 */
-
-#closedParty{
-grid-template-columns:repeat(2,1fr);
-}
-
-/* 카드 */
-
-.partyCard{
-padding:12px;
-font-size:14px;
-min-height:150px;
-}
-
-/* 버튼 */
-
-button{
-font-size:13px;
-padding:6px 8px;
-}
-
-/* 상단 */
-
-.topbar{
-position:static;
-justify-content:flex-end;
-margin-bottom:10px;
-}
 
 }
