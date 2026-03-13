@@ -23,7 +23,7 @@ body {
   background: #ffffff;
   border-radius: 20px;
   padding: 32px 28px;
-  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.10);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.1);
   text-align: center;
 }
 
@@ -148,7 +148,7 @@ body {
   gap: 18px;
   padding: 14px 20px;
   background: linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%);
-  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.20);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.2);
 }
 
 .topbarLeft {
@@ -205,6 +205,13 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: nowrap;
+}
+
+#adminMenuBtn,
+.topbarRight .ghostBtn,
+.topbarRight .nicknameBadge {
+  white-space: nowrap;
 }
 
 .nicknameBadge {
@@ -400,6 +407,7 @@ body {
   min-width: 180px;
 }
 
+/* 레이아웃 핵심 */
 .boardGrid {
   display: grid;
   grid-template-columns: 1fr 2fr 1fr;
@@ -411,7 +419,7 @@ body {
   min-width: 0;
   display: grid;
   gap: 12px;
-  align-items: start;
+  align-content: start;
 }
 
 .boardTitle {
@@ -422,8 +430,16 @@ body {
 .cardGrid {
   display: grid;
   gap: 14px;
-  justify-items: stretch;
-  align-items: start;
+  align-content: start;
+}
+
+#myParty,
+#closedParty {
+  grid-template-columns: 1fr;
+}
+
+#openParty {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .emptyCard {
@@ -441,8 +457,8 @@ body {
 
 .partyCard {
   width: 100%;
-  max-width: 430px;
-  justify-self: center;
+  max-width: none;
+  justify-self: stretch;
   background: #fff;
   border-radius: 18px;
   padding: 16px;
@@ -778,12 +794,7 @@ body {
   flex-wrap: wrap;
 }
 
-@media (max-width: 1200px) {
-  .boardGrid {
-    grid-template-columns: 1fr;
-  }
-}
-
+/* 나의 파티 카드 조금 더 조밀하게 */
 #myParty.cardGrid {
   gap: 10px;
 }
@@ -808,6 +819,18 @@ body {
 
 #myParty .cardButtons {
   margin-top: 2px;
+}
+
+/* 모바일 */
+@media (max-width: 900px) {
+  .boardGrid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  #openParty {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
@@ -886,17 +909,8 @@ body {
     grid-template-columns: 1fr;
   }
 
-  .boardGrid {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
   .boardTitle {
     font-size: 18px;
-  }
-
-  .cardGrid {
-    justify-items: stretch;
   }
 
   .partyCard {
