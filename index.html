@@ -1,131 +1,25 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>970KOR 이벤트</title>
 
-  <link rel="stylesheet" href="./style.css">
+<div class="layout">
 
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-</head>
-<body>
+<div>
+<div class="column">
+<h3>나의 파티</h3>
+<div id="myParty"></div>
+<div id="myParty" class="cardGrid"></div>
+</div>
 
-  <!-- 로그인 -->
-  <div id="loginPage" class="page">
-    <h2>970KOR 로그인</h2>
-    <input id="nicknameInput" placeholder="닉네임" onkeydown="enterLogin(event)">
-    <button onclick="login()">로그인</button>
-    <div class="version">최종 업데이트: 2026-03-12 23:59:00</div>
-  </div>
+<div>
+<div class="column">
+<h3>모집중</h3>
+<div id="openParty"></div>
+<div id="openParty" class="cardGrid"></div>
+</div>
 
-  <!-- 이벤트 선택 -->
-  <div id="eventPage" class="page hidden">
-    <h2>이벤트 선택</h2>
-    <div class="eventButtons">
-      <button onclick="openEvent('viking')">바이킹의 역습</button>
-      <button onclick="openEvent('relic')">유적 쟁탈</button>
-    </div>
-  </div>
+<div>
+<div class="column">
+<h3>모집완료</h3>
+<div id="closedParty"></div>
+<div id="closedParty" class="cardGrid"></div>
+</div>
 
-  <!-- 메인 -->
-  <div id="mainPage" class="hidden">
-    <div class="topbar">
-      <div class="leftTop">
-        <span id="userLabel"></span>
-      </div>
-
-      <div class="rightTop">
-        <div id="adminDropdown" class="dropdown hidden">
-          <button type="button" onclick="toggleAdminMenu()">운영 ▾</button>
-          <div id="adminMenu" class="dropdownContent hidden">
-            <button type="button" onclick="openCreateRelicModal()">유적 파티 생성</button>
-            <button type="button" onclick="adminAction('addAdmin')">운영진 지정</button>
-            <button type="button" onclick="adminAction('resetParties')">현재 이벤트 파티 초기화</button>
-            <button type="button" onclick="openLogs()">운영 로그</button>
-          </div>
-        </div>
-
-        <button type="button" onclick="backToEvents()">이벤트 선택</button>
-        <button type="button" onclick="logout()">로그아웃</button>
-      </div>
-    </div>
-
-    <h1 id="eventTitle"></h1>
-
-    <div id="dashboard" class="dashboard"></div>
-
-    <div class="toolbar">
-      <!-- 바이킹용 생성 영역 -->
-      <div id="vikingCreateBox" class="hidden">
-        <input id="partyName" placeholder="파티 이름">
-        <select id="partyLimit">
-          <option value="2">2</option>
-          <option value="3">3</option>
-          <option value="4" selected>4</option>
-          <option value="5">5</option>
-          <option value="6">6</option>
-        </select>
-        <button type="button" onclick="createVikingParty()">파티 생성</button>
-      </div>
-
-      <button type="button" onclick="showUsers()">전체 사용자</button>
-    </div>
-
-    <div id="partyList"></div>
-  </div>
-
-  <!-- 전체 사용자 -->
-  <div id="userModal" class="modal hidden">
-    <div class="modalContent userModalWide">
-      <h3>전체 사용자</h3>
-      <div class="userGridHeader">
-        <div class="joinedHeader" style="grid-column:1 / span 2;">참여</div>
-        <div class="notJoinedHeader" style="grid-column:3 / span 2;">미참여</div>
-      </div>
-      <div id="userList"></div>
-      <div class="modalButtons">
-        <button type="button" onclick="closeUsers()">닫기</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 유적 파티 생성 모달 -->
-  <div id="relicCreateModal" class="modal hidden">
-    <div class="modalContent relicModalWide">
-      <h3>유적 파티 생성</h3>
-
-      <div class="relicCountRow">
-        <label for="relicPartyCount">파티 수</label>
-        <select id="relicPartyCount" onchange="renderRelicCreateForms()">
-          <option value="1">1</option>
-          <option value="2">2</option>
-          <option value="3">3</option>
-          <option value="4">4</option>
-        </select>
-      </div>
-
-      <div id="relicCreateForms"></div>
-
-      <div class="modalButtons">
-        <button type="button" onclick="submitRelicParties()">생성</button>
-        <button type="button" onclick="closeCreateRelicModal()">취소</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 운영 로그 -->
-  <div id="logModal" class="modal hidden">
-    <div class="modalContent">
-      <h3>운영 로그</h3>
-      <div id="logList"></div>
-      <div class="modalButtons">
-        <button type="button" onclick="closeLogs()">닫기</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="./script.js"></script>
-</body>
-</html>
+</div>
