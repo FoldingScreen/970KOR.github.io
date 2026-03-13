@@ -729,7 +729,9 @@ function getTroopText(party) {
     : party.members.length;
 
   if (activeMemberCount <= 0) return "-";
-  return Math.floor(920000 / activeMemberCount).toLocaleString("ko-KR");
+  
+  const value = Math.floor((920000 / activeMemberCount) / 1000) * 1000;
+  return value.toLocaleString("ko-KR");
 }
 
 function toUtcTimeString(kstText) {
