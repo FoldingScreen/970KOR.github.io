@@ -1,3 +1,5 @@
+근데 아까는 안 그랬고, 내가 로비 화면 수정한다고 코드 혼자 만지고 나서부터 그랬어. 한번 네가 코드를 검토해
+
 const firebaseConfig = {
   apiKey: "AIzaSyBu2RrQn8cAwwWaLtw5O8Omwn4-NzHWuc0",
   authDomain: "kor-app-fa47e.firebaseapp.com",
@@ -29,7 +31,7 @@ window.onload = async () => {
 
   const savedNickname = localStorage.getItem("nickname");
   if (savedNickname) {
-    state.nickname = savedNickname.trim()ㅗ
+    state.nickname = savedNickname.trim();
     document.getElementById("nicknameInput").value = state.nickname;
 
     try {
