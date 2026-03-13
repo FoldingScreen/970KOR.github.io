@@ -1,84 +1,792 @@
-body{
-font-family:Arial;
-margin:20px;
-background:#f4f4f4;
+* {
+  box-sizing: border-box;
 }
 
-.tabs{
-display:flex;
-gap:10px;
-margin-bottom:20px;
+body {
+  margin: 0;
+  background: #f4f6fb;
+  color: #1f2937;
+  font-family: Arial, "Noto Sans KR", sans-serif;
 }
 
-.tabs button{
-padding:6px 12px;
-border:none;
-border-radius:6px;
-background:#ddd;
-cursor:pointer;
+/* 로그인 */
+
+.loginPage {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
 }
 
-.tabs button.active{
-background:#1a73e8;
-color:white;
+.loginCard {
+  width: 100%;
+  max-width: 420px;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 32px 28px;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.10);
+  text-align: center;
 }
 
-.layout{
-display:grid;
-grid-template-columns:1fr 3fr 2fr;
-gap:30px;
+.loginLogo {
+  font-size: 14px;
+  font-weight: 700;
+  color: #2563eb;
+  margin-bottom: 8px;
 }
 
-.cardGrid{
-display:grid;
-gap:16px;
+.loginTitle {
+  margin: 0 0 8px;
+  font-size: 30px;
 }
 
-.partyCard{
-background:white;
-padding:14px;
-border-radius:10px;
-box-shadow:0 2px 6px rgba(0,0,0,0.1);
+.loginDesc {
+  margin: 0 0 20px;
+  color: #64748b;
+  font-size: 14px;
 }
 
-.cardButtons{
-margin-top:10px;
-display:flex;
-gap:6px;
+.loginBtn {
+  width: 100%;
 }
 
-button{
-cursor:pointer;
+/* 공통 입력 / 버튼 */
+
+.textInput {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid #dbe3ef;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 14px;
+  outline: none;
 }
 
-.btnJoin{
-background:#27ae60;
-color:white;
+.textInput:focus {
+  border-color: #3b82f6;
 }
 
-.btnLeave{
-background:#e67e22;
-color:white;
+.primaryBtn,
+.secondaryBtn,
+.ghostBtn,
+.joinBtn,
+.leaveBtn,
+.deleteBtn,
+.disabledBtn {
+  height: 40px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
 }
 
-.btnDelete{
-background:#e74c3c;
-color:white;
+.primaryBtn {
+  background: #2563eb;
+  color: #fff;
 }
 
-.modal{
-display:none;
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:rgba(0,0,0,0.4);
+.primaryBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
-.modalContent{
-background:white;
-width:300px;
-margin:120px auto;
-padding:20px;
+.secondaryBtn {
+  background: #e8eefc;
+  color: #1d4ed8;
+}
+
+.ghostBtn {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+.joinBtn {
+  background: #16a34a;
+  color: #fff;
+}
+
+.leaveBtn {
+  background: #f59e0b;
+  color: #fff;
+}
+
+.deleteBtn {
+  background: #ef4444;
+  color: #fff;
+}
+
+.disabledBtn {
+  background: #e5e7eb;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+/* 앱 */
+
+.appShell {
+  min-height: 100vh;
+}
+
+/* 상단 바 */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 14px 20px;
+  background: linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.20);
+}
+
+.topbarLeft {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  overflow: hidden;
+}
+
+.brand {
+  flex: 0 0 auto;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+}
+
+.topTabs {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.eventTabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topTab {
+  flex: 0 0 auto;
+  height: 38px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.topTab.active {
+  background: #ffffff;
+  color: #1d4ed8;
+}
+
+.topbarRight {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nicknameBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* 메인 영역 */
+
+.mainArea {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 24px 20px 36px;
+}
+
+/* 홈 */
+
+.homeView {
+  display: grid;
+  gap: 20px;
+}
+
+.heroCard {
+  background: linear-gradient(135deg, #ffffff 0%, #eef4ff 100%);
+  border-radius: 22px;
+  padding: 28px 30px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+}
+
+.heroTitle {
+  font-size: 30px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.heroDesc {
+  color: #64748b;
+  line-height: 1.6;
+}
+
+.homeStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.statCard {
+  background: #fff;
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+}
+
+.statLabel {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.statValue {
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.homeSectionTitle {
+  margin-top: 6px;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.homeEventCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.homeEventCard {
+  background: #fff;
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+}
+
+.homeEventName {
+  font-size: 18px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.homeEventMeta {
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.homeEventBtn {
+  width: 100%;
+}
+
+/* 이벤트 뷰 */
+
+.eventView {
+  display: grid;
+  gap: 20px;
+}
+
+.eventHeader {
+  display: grid;
+  gap: 8px;
+}
+
+.eventTitle {
+  margin: 0;
+  font-size: 36px;
+  font-weight: 900;
+  letter-spacing: -0.3px;
+}
+
+.eventSubRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.dashboard {
+  color: #475569;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* 생성 박스 */
+
+.createBox {
+  background: #fff;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+}
+
+.createBoxTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.createTitle {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.createHint {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.createGrid {
+  display: grid;
+  grid-template-columns: 2fr 2fr 0.8fr 0.9fr;
+  gap: 14px;
+  align-items: end;
+}
+
+.timeFieldWrap {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.fieldItem {
+  display: grid;
+  gap: 8px;
+}
+
+.fieldItem label {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.fieldLimit {
+  min-width: 100px;
+}
+
+.fieldButton .primaryBtn {
+  width: 100%;
+}
+
+/* 보드 */
+
+.boardGrid {
+  display: grid;
+  grid-template-columns: 1.1fr 1.8fr 1.2fr;
+  gap: 18px;
+}
+
+.boardColumn {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.boardTitle {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.cardGrid {
+  display: grid;
+  gap: 14px;
+}
+
+.emptyCard {
+  min-height: 130px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: #fff;
+  border-radius: 18px;
+  color: #94a3b8;
+  text-align: center;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+}
+
+/* 카드 공통 */
+
+.partyCard {
+  background: #fff;
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+  display: grid;
+  gap: 14px;
+}
+
+.partyCardVikings {
+  border-top: 4px solid #2563eb;
+}
+
+.partyCardRuins {
+  border-top: 4px solid #7c3aed;
+}
+
+.cardHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cardHeadRuins {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.cardTitle {
+  font-size: 19px;
+  font-weight: 900;
+  line-height: 1.35;
+  word-break: keep-all;
+}
+
+.quotaBadge {
+  flex: 0 0 auto;
+  min-width: 56px;
+  text-align: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #e8eefc;
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.timeBadges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.timeBadge {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #ede9fe;
+  color: #6d28d9;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.timeBadgeUtc {
+  background: #f3e8ff;
+  color: #7e22ce;
+}
+
+.cardSection {
+  display: grid;
+  gap: 10px;
+}
+
+.sectionLabel {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 800;
+}
+
+.memberList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.memberItem {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #edf2f7;
+}
+
+.memberItemMine {
+  background: #e8eefc;
+  border-color: #c7d8ff;
+}
+
+.memberName {
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 700;
+  word-break: break-all;
+}
+
+.memberRole {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.emptyMembers {
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.cardButtons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cardButtons button {
+  flex: 1 1 auto;
+  min-width: 96px;
+}
+
+/* 모달 */
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.42);
+}
+
+.modalPanel {
+  width: 100%;
+  max-width: 760px;
+  max-height: 84vh;
+  overflow: auto;
+  background: #fff;
+  border-radius: 20px;
+  padding: 22px;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.18);
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.modalTitle {
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.userList {
+  display: grid;
+  gap: 18px;
+}
+
+.userSection {
+  display: grid;
+  gap: 12px;
+}
+
+.userSectionTitle {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.userGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.userChip {
+  padding: 10px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.userChipJoined {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.userChipIdle {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.emptyUsers {
+  color: #94a3b8;
+}
+
+.adminInfo {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 14px;
+  background: #f8fafc;
+  margin-bottom: 16px;
+}
+
+.adminActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* 반응형 */
+
+@media (max-width: 1200px) {
+  .createGrid {
+    grid-template-columns: 1.4fr 1.8fr 0.8fr 1fr;
+  }
+
+  .boardGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .topbar {
+    padding: 12px;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .topbarLeft,
+  .topbarRight {
+    width: 100%;
+  }
+
+  .topbarLeft {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .topTabs {
+    width: 100%;
+  }
+
+  .eventTabs {
+    width: 100%;
+  }
+
+  .topbarRight {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .brand {
+    font-size: 18px;
+  }
+
+  .mainArea {
+    padding: 16px 12px 28px;
+  }
+
+  .heroCard {
+    padding: 22px 18px;
+  }
+
+  .heroTitle {
+    font-size: 24px;
+  }
+
+  .homeStats {
+    grid-template-columns: 1fr;
+  }
+
+  .eventTitle {
+    font-size: 28px;
+  }
+
+  .eventSubRow {
+    align-items: stretch;
+  }
+
+  .eventSubRow .secondaryBtn {
+    width: 100%;
+  }
+
+  .createBox {
+    padding: 16px;
+  }
+
+  .createGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .timeFieldWrap {
+    grid-template-columns: 1fr;
+  }
+
+  .boardTitle {
+    font-size: 18px;
+  }
+
+  .partyCard {
+    padding: 14px;
+  }
+
+  .cardHead {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .memberList {
+    grid-template-columns: 1fr;
+  }
+
+  .cardButtons {
+    flex-direction: column;
+  }
+
+  .cardButtons button {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .modalPanel {
+    padding: 16px;
+  }
+
+  .modalTitle {
+    font-size: 18px;
+  }
 }
