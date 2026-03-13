@@ -25,7 +25,6 @@
 
   <!-- 앱 -->
   <div id="appShell" class="appShell" style="display:none;">
-    <!-- 상단 바 -->
     <header class="topbar">
       <div class="topbarLeft">
         <div class="brand">970KOR</div>
@@ -76,22 +75,11 @@
             <div id="createHint" class="createHint"></div>
           </div>
 
-          <div class="createGrid">
+          <!-- 바이킹 생성 -->
+          <div id="vikingCreateWrap" class="createGrid">
             <div class="fieldItem">
-              <label id="titleLabel" for="partyTitleInput">파티명</label>
+              <label for="partyTitleInput">파티명</label>
               <input id="partyTitleInput" class="textInput" placeholder="파티명을 입력하세요" autocomplete="off" />
-            </div>
-
-            <div id="timeFieldWrap" class="timeFieldWrap" style="display:none;">
-              <div class="fieldItem">
-                <label for="timeKSTInput">시간(KST)</label>
-                <input id="timeKSTInput" class="textInput" placeholder="예: 21:00" autocomplete="off" />
-              </div>
-
-              <div class="fieldItem">
-                <label for="timeUTCInput">시간(UTC)</label>
-                <input id="timeUTCInput" class="textInput" placeholder="예: 12:00" autocomplete="off" />
-              </div>
             </div>
 
             <div class="fieldItem fieldLimit">
@@ -103,6 +91,11 @@
               <label>&nbsp;</label>
               <button id="createPartyBtn" class="primaryBtn" onclick="createParty()">파티 생성</button>
             </div>
+          </div>
+
+          <!-- 유적 생성 -->
+          <div id="ruinsCreateWrap" class="ruinsCreateWrap" style="display:none;">
+            <button id="ruinsCreateOpenBtn" class="primaryBtn" onclick="createParty()">유적 파티 생성</button>
           </div>
         </section>
 
@@ -131,7 +124,7 @@
     <div class="modalPanel">
       <div class="modalHeader">
         <div class="modalTitle">현재 이벤트 참여자 현황</div>
-        <button class="ghostBtn" onclick="closeUsers()">닫기</button>
+        <button class="ghostDarkBtn" onclick="closeUsers()">닫기</button>
       </div>
       <div id="userList" class="userList"></div>
     </div>
@@ -142,7 +135,7 @@
     <div class="modalPanel">
       <div class="modalHeader">
         <div class="modalTitle">운영진 메뉴</div>
-        <button class="ghostBtn" onclick="closeAdminModal()">닫기</button>
+        <button class="ghostDarkBtn" onclick="closeAdminModal()">닫기</button>
       </div>
 
       <div class="adminInfo">
@@ -158,6 +151,43 @@
     </div>
   </div>
 
-  <script src="script.js?v=7"></script>
+  <!-- 유적 생성 모달 -->
+  <div id="ruinsCreateModal" class="modal" style="display:none;">
+    <div class="modalPanel ruinsModalPanel">
+      <div class="modalHeader">
+        <div class="modalTitle">유적 파티 생성</div>
+        <button class="ghostDarkBtn" onclick="closeRuinsCreateModal()">닫기</button>
+      </div>
+
+      <div class="ruinsCreateGrid">
+        <div class="fieldItem">
+          <label for="ruinsTitleInput">유적명</label>
+          <input id="ruinsTitleInput" class="textInput" placeholder="예: 중앙 유적" autocomplete="off" />
+        </div>
+
+        <div class="fieldItem">
+          <label for="ruinsTimeKSTInput">시간(KST)</label>
+          <input id="ruinsTimeKSTInput" class="textInput" placeholder="예: 21:00" autocomplete="off" />
+        </div>
+
+        <div class="fieldItem">
+          <label for="ruinsTimeUTCInput">시간(UTC)</label>
+          <input id="ruinsTimeUTCInput" class="textInput" placeholder="예: 12:00" autocomplete="off" />
+        </div>
+
+        <div class="fieldItem">
+          <label for="ruinsLimitInput">총원</label>
+          <input id="ruinsLimitInput" class="textInput" type="number" min="1" value="6" />
+        </div>
+      </div>
+
+      <div class="modalFooter">
+        <button class="secondaryBtn" onclick="closeRuinsCreateModal()">취소</button>
+        <button class="primaryBtn" onclick="submitRuinsParty()">생성</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js?v=8"></script>
 </body>
 </html>
