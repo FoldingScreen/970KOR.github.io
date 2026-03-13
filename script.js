@@ -511,12 +511,15 @@ function renderBoardSections(parties) {
     const card = buildPartyCard(party);
 
     if (party.members.includes(state.nickname)) {
+      card.classList.add("zoneMy");
       myWrap.appendChild(card);
       myCount += 1;
     } else if (party.members.length >= party.limit) {
+      card.classList.add("zoneClosed");
       closedWrap.appendChild(card);
       closedCount += 1;
     } else {
+      card.classList.add("zoneOpen");
       openWrap.appendChild(card);
       openCount += 1;
     }
