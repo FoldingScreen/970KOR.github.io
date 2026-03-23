@@ -215,6 +215,8 @@ function renderTopTabs() {
 
 function renderHomeSummary() {
   const homeStats = document.getElementById("homeStats");
+  if (!homeStats) return;
+
   const eventCount = state.eventsList.length;
   const adminCount = state.admins.size;
 
