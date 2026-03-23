@@ -2,11 +2,23 @@
   box-sizing: border-box;
 }
 
+html,
 body {
   margin: 0;
-  background: #f4f6fb;
-  color: #1f2937;
-  font-family: Arial, "Noto Sans KR", sans-serif;
+  padding: 0;
+  background: #0f1115;
+  color: #f5f7fb;
+  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+body {
+  min-height: 100vh;
 }
 
 .loginPage {
@@ -15,53 +27,451 @@ body {
   align-items: center;
   justify-content: center;
   padding: 24px;
+  background:
+    radial-gradient(circle at top left, rgba(76, 110, 245, 0.18), transparent 35%),
+    radial-gradient(circle at bottom right, rgba(16, 185, 129, 0.14), transparent 30%),
+    #0f1115;
 }
 
 .loginCard {
   width: 100%;
   max-width: 420px;
-  background: #ffffff;
+  background: #181b22;
+  border: 1px solid #2a3040;
   border-radius: 20px;
-  padding: 32px 28px;
-  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.1);
-  text-align: center;
+  padding: 28px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
 }
 
 .loginLogo {
-  font-size: 14px;
-  font-weight: 700;
-  color: #2563eb;
-  margin-bottom: 8px;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  margin-bottom: 14px;
 }
 
 .loginTitle {
   margin: 0 0 8px;
-  font-size: 30px;
+  font-size: 26px;
 }
 
 .loginDesc {
-  margin: 0 0 20px;
-  color: #64748b;
-  font-size: 14px;
-}
-
-.loginBtn {
-  width: 100%;
+  margin: 0 0 18px;
+  color: #9aa3b2;
 }
 
 .textInput {
   width: 100%;
   height: 44px;
-  padding: 0 14px;
-  border: 1px solid #dbe3ef;
+  border: 1px solid #30384a;
+  background: #12151c;
+  color: #f5f7fb;
   border-radius: 12px;
-  background: #fff;
-  font-size: 14px;
+  padding: 0 14px;
   outline: none;
 }
 
 .textInput:focus {
-  border-color: #3b82f6;
+  border-color: #4c6ef5;
+}
+
+.loginBtn {
+  width: 100%;
+  margin-top: 14px;
+}
+
+.appShell {
+  min-height: 100vh;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  background: rgba(15, 17, 21, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid #242a37;
+}
+
+.topbarLeft,
+.topbarRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand {
+  font-weight: 800;
+  font-size: 20px;
+  white-space: nowrap;
+}
+
+.topTabs,
+.eventTabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.topTab {
+  height: 38px;
+  padding: 0 16px;
+  border: 1px solid #2f3545;
+  background: #181c24;
+  color: #cfd6e4;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.topTab.active {
+  background: #4c6ef5;
+  border-color: #4c6ef5;
+  color: #fff;
+  font-weight: 700;
+}
+
+.nicknameBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: #1a2030;
+  border: 1px solid #2a3550;
+  color: #dfe7ff;
+}
+
+.mainArea {
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 22px 20px 40px;
+}
+
+.heroCard,
+.createBox,
+.boardColumn,
+.statCard,
+.homeEventCard,
+.modalPanel {
+  background: #171b23;
+  border: 1px solid #252c3a;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+}
+
+.heroCard {
+  padding: 22px;
+  margin-bottom: 20px;
+}
+
+.heroTitle {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.heroDesc {
+  color: #9aa3b2;
+}
+
+.homeSectionTitle {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 18px 0 12px;
+}
+
+.homeEventCards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.homeEventCard {
+  padding: 18px;
+  cursor: pointer;
+  transition: transform 0.14s ease, border-color 0.14s ease;
+}
+
+.homeEventCard:hover {
+  transform: translateY(-2px);
+  border-color: #4c6ef5;
+}
+
+.homeEventTitle {
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.homeEventMeta {
+  color: #9aa3b2;
+  line-height: 1.5;
+  font-size: 14px;
+}
+
+.homeStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.statCard {
+  padding: 18px;
+}
+
+.statLabel {
+  color: #9aa3b2;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.statValue {
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.eventHeader {
+  margin-bottom: 18px;
+}
+
+.eventTitle {
+  margin: 0 0 10px;
+  font-size: 28px;
+}
+
+.eventSubRow {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.dashboard {
+  color: #cfd6e4;
+  background: #181d27;
+  border: 1px solid #273040;
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+
+.createBox {
+  padding: 18px;
+  margin-bottom: 18px;
+}
+
+.createBoxTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.createTitle {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.createHint {
+  color: #9aa3b2;
+  font-size: 14px;
+}
+
+.createGrid,
+.ruinsCreateGrid {
+  display: grid;
+  grid-template-columns: 1.4fr 0.7fr 0.7fr;
+  gap: 12px;
+  align-items: end;
+}
+
+.ruinsCreateGrid {
+  grid-template-columns: 1.3fr 0.8fr 0.8fr 0.8fr;
+}
+
+.ruinsCreateWrap {
+  display: flex;
+}
+
+.fieldItem label {
+  display: block;
+  margin-bottom: 8px;
+  color: #9aa3b2;
+  font-size: 14px;
+}
+
+.fieldButton button,
+.ruinsCreateWrap button {
+  width: 100%;
+}
+
+.boardGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.boardColumn {
+  padding: 16px;
+  min-height: 220px;
+}
+
+.boardTitle {
+  font-size: 18px;
+  font-weight: 800;
+  margin-bottom: 12px;
+}
+
+.cardGrid {
+  display: grid;
+  gap: 12px;
+}
+
+.partyCard {
+  border: 1px solid #2a3141;
+  border-radius: 16px;
+  background: #121720;
+  padding: 14px;
+}
+
+.partyCardRuins {
+  min-height: 210px;
+}
+
+.cardHead {
+  margin-bottom: 12px;
+}
+
+.cardTitleLine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cardTitle {
+  font-size: 19px;
+  font-weight: 800;
+  word-break: keep-all;
+}
+
+.inlineQuota {
+  color: #9aa3b2;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.ruinInfoLine {
+  margin-top: 8px;
+  color: #dce2ef;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.ruinInfoLine .muted {
+  color: #9aa3b2;
+}
+
+.cardSection {
+  margin-top: 10px;
+}
+
+.sectionLabel {
+  font-size: 13px;
+  color: #95a0b3;
+  margin-bottom: 6px;
+}
+
+.memberList {
+  display: grid;
+  gap: 6px;
+}
+
+.memberRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 30px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: #181d27;
+}
+
+.memberLeft {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.memberName {
+  color: #f5f7fb;
+  font-size: 14px;
+  word-break: break-all;
+}
+
+.memberNameMine {
+  color: #4ea1ff;
+  font-weight: 800;
+}
+
+.memberCreatorTag {
+  color: #f4c46a;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.crown {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.memberActionsInline {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.iconBtn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #39445a;
+  background: #222a38;
+  color: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.iconBtn:hover {
+  border-color: #4c6ef5;
+}
+
+.emptyCard,
+.emptyMembers,
+.emptyUsers,
+.emptyLogs {
+  padding: 14px;
+  border-radius: 12px;
+  background: #121720;
+  border: 1px dashed #30384a;
+  color: #9aa3b2;
+  font-size: 14px;
+}
+
+.cardButtons {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .primaryBtn,
@@ -74,641 +484,67 @@ body {
 .disabledBtn {
   height: 40px;
   padding: 0 14px;
-  border: none;
-  border-radius: 10px;
+  border-radius: 12px;
+  border: 1px solid transparent;
   cursor: pointer;
-  font-size: 14px;
-  font-weight: 700;
+}
+
+.primaryBtn {
+  background: #4c6ef5;
+  color: #fff;
+  border-color: #4c6ef5;
+}
+
+.secondaryBtn {
+  background: #202736;
+  color: #eef3ff;
+  border-color: #313c53;
+}
+
+.ghostBtn {
+  background: #1a1f29;
+  color: #e4ebfa;
+  border-color: #2a3242;
+}
+
+.ghostDarkBtn {
+  background: #232a38;
+  color: #fff;
+  border-color: #384359;
+}
+
+.joinBtn {
+  background: #1f6feb;
+  color: #fff;
+  border-color: #1f6feb;
+}
+
+.leaveBtn {
+  background: #283140;
+  color: #fff;
+  border-color: #3a4558;
+}
+
+.deleteBtn {
+  background: #8f2d35;
+  color: #fff;
+  border-color: #8f2d35;
+}
+
+.disabledBtn {
+  background: #2b2f39;
+  color: #8e97aa;
+  border-color: #383f4f;
+  cursor: not-allowed;
 }
 
 .miniBtn {
   height: 34px;
-  padding: 0 10px;
-  font-size: 12px;
-  border-radius: 9px;
-}
-
-.primaryBtn {
-  background: #2563eb;
-  color: #fff;
-}
-
-.primaryBtn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-.secondaryBtn {
-  background: #e8eefc;
-  color: #1d4ed8;
-}
-
-.ghostBtn {
-  background: rgba(255, 255, 255, 0.14);
-  color: #fff;
-}
-
-.ghostDarkBtn {
-  background: #eef2ff;
-  color: #1e3a8a;
-}
-
-.joinBtn {
-  background: #16a34a;
-  color: #fff;
-}
-
-.leaveBtn {
-  background: #f59e0b;
-  color: #fff;
-}
-
-.deleteBtn {
-  background: #ef4444;
-  color: #fff;
-}
-
-.disabledBtn {
-  background: #e5e7eb;
-  color: #6b7280;
-  cursor: not-allowed;
-}
-
-.appShell {
-  min-height: 100vh;
-}
-
-/* 상단 바 */
-.topbar {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  padding: 14px 20px;
-  background: linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%);
-  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.2);
-}
-
-.topbarLeft {
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 22px;
-  overflow: hidden;
-}
-
-.brand {
-  flex: 0 0 auto;
-  color: #fff;
-  font-size: 20px;
-  font-weight: 800;
-  letter-spacing: 0.4px;
-}
-
-.topTabs {
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  overflow-x: auto;
-  scrollbar-width: thin;
-}
-
-.eventTabs {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.topTab {
-  flex: 0 0 auto;
-  height: 38px;
-  padding: 0 14px;
-  border: none;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.92);
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.topTab.active {
-  background: #ffffff;
-  color: #1d4ed8;
-}
-
-.topbarRight {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: nowrap;
-}
-
-#adminMenuBtn,
-.topbarRight .ghostBtn,
-.topbarRight .nicknameBadge {
-  white-space: nowrap;
-}
-
-.nicknameBadge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 38px;
-  padding: 0 14px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
-  color: #fff;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.mainArea {
-  max-width: 1360px;
-  margin: 0 auto;
-  padding: 24px 20px 36px;
-}
-
-/* 홈 */
-.homeView {
-  display: grid;
-  gap: 20px;
-}
-
-.heroCard {
-  background: linear-gradient(135deg, #ffffff 0%, #eef4ff 100%);
-  border-radius: 22px;
-  padding: 28px 30px;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
-}
-
-.heroTitle {
-  font-size: 30px;
-  font-weight: 800;
-  margin-bottom: 8px;
-}
-
-.heroDesc {
-  color: #64748b;
-  line-height: 1.6;
-}
-
-.homeSectionTitle {
-  margin-top: 6px;
-  font-size: 18px;
-  font-weight: 800;
-}
-
-.homeEventCards {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.homeEventShortcut {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 100%;
-  border: none;
-  border-radius: 22px;
-  padding: 24px 20px;
-  background: linear-gradient(135deg, #ffffff 0%, #eef4ff 100%);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
-  cursor: pointer;
-  text-align: center;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 110px;
-}
-
-.homeEventShortcut:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.1);
-}
-
-.homeEventShortcut:active {
-  transform: translateY(0);
-}
-
-.homeShortcutName {
-  font-size: 24px;
-  font-weight: 900;
-  color: #1f2937;
-  line-height: 1.25;
-  text-align: center;
-}
-
-.homeShortcutSub {
-  margin-top: 8px;
-  font-size: 13px;
-  color: #64748b;
-  text-align: center;
-}
-
-.homeStats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.statCard {
-  background: #fff;
-  border-radius: 18px;
-  padding: 20px;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
-}
-
-.statLabel {
-  font-size: 13px;
-  color: #64748b;
-  margin-bottom: 8px;
-}
-
-.statValue {
-  font-size: 28px;
-  font-weight: 800;
-}
-
-/* 이벤트 뷰 */
-.eventView {
-  display: grid;
-  gap: 20px;
-}
-
-.eventHeader {
-  display: grid;
-  gap: 8px;
-}
-
-.eventTitle {
-  margin: 0;
-  font-size: 36px;
-  font-weight: 900;
-  letter-spacing: -0.3px;
-}
-
-.eventSubRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  flex-wrap: wrap;
-}
-
-.dashboard {
-  color: #475569;
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.createBox {
-  background: #fff;
-  border-radius: 20px;
-  padding: 20px;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
-}
-
-.createBoxTop {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-}
-
-.createTitle {
-  font-size: 20px;
-  font-weight: 800;
-}
-
-.createHint {
-  color: #64748b;
-  font-size: 14px;
-}
-
-.createGrid {
-  display: grid;
-  grid-template-columns: 2fr 0.8fr 0.9fr;
-  gap: 14px;
-  align-items: end;
-}
-
-.fieldItem {
-  display: grid;
-  gap: 8px;
-}
-
-.fieldItem label {
-  font-size: 13px;
-  color: #64748b;
-  font-weight: 700;
-}
-
-.fieldLimit {
-  min-width: 100px;
-}
-
-.fieldButton .primaryBtn {
-  width: 100%;
-}
-
-.ruinsCreateWrap {
-  display: flex;
-}
-
-.ruinsCreateWrap .primaryBtn {
-  min-width: 180px;
-}
-
-/* 보드 레이아웃 */
-.boardGrid {
-  display: grid;
-  grid-template-columns: 1fr 2fr 1fr;
-  gap: 18px;
-  align-items: start;
-}
-
-.boardColumn {
-  min-width: 0;
-  display: grid;
-  gap: 12px;
-  align-content: start;
-}
-
-.boardTitle {
-  font-size: 20px;
-  font-weight: 800;
-}
-
-.cardGrid {
-  display: grid;
-  gap: 14px;
-  align-content: start;
-}
-
-#myParty,
-#closedParty {
-  grid-template-columns: 1fr;
-}
-
-#openParty {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.emptyCard {
-  min-height: 96px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  background: #fff;
-  border-radius: 18px;
-  color: #94a3b8;
-  text-align: center;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
-}
-
-/* 카드 */
-.partyCard {
-  width: 100%;
-  max-width: none;
-  justify-self: stretch;
-  background: #fff;
-  border-radius: 18px;
-  padding: 16px;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
-  display: grid;
-  gap: 12px;
-}
-
-.zoneMy {
-  background: #fff7c7;
-  border: 1px solid #f4df7a;
-}
-
-.zoneOpen {
-  background: #e8f7e8;
-  border: 1px solid #b9e3b9;
-}
-
-.zoneClosed {
-  background: #ffe8cc;
-  border: 1px solid #f2bf86;
-}
-
-.partyCardVikings {
-  border-top: 4px solid #2563eb;
-}
-
-.partyCardRuins {
-  border-top: 4px solid #7c3aed;
-}
-
-.cardHead {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.cardHeadRuins {
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-.cardTitleLine {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.cardTitle {
-  font-size: 18px;
-  font-weight: 900;
-  line-height: 1.35;
-  word-break: keep-all;
-}
-
-.inlineQuota {
-  color: #64748b;
-  font-size: 14px;
-  font-weight: 800;
-}
-
-.ruinMetaRow {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.timeBadge {
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: #ede9fe;
-  color: #6d28d9;
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.timeBadgeUtc {
-  background: #f3e8ff;
-  color: #7e22ce;
-}
-
-.troopBadge {
-  background: #efe7ff;
-  color: #5b21b6;
-}
-
-.cardSection {
-  display: grid;
-  gap: 8px;
-}
-
-.sectionLabel {
-  font-size: 13px;
-  color: #64748b;
-  font-weight: 800;
-}
-
-.rallyLeaderBox {
-  min-height: 40px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.rallyLeaderChip {
-  display: inline-flex;
-  align-items: center;
-  min-height: 34px;
   padding: 0 12px;
-  border-radius: 999px;
-  background: #ede9fe;
-  color: #6d28d9;
   font-size: 13px;
-  font-weight: 800;
+  border-radius: 10px;
 }
 
-.rallyLeaderEmpty {
-  color: #94a3b8;
-  font-size: 14px;
-}
-
-.memberList {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
-}
-
-.memberItem {
-  min-height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 9px 11px;
-  border-radius: 12px;
-  background: #f8fafc;
-  border: 1px solid #edf2f7;
-}
-
-.memberButton {
-  width: 100%;
-  cursor: pointer;
-  text-align: left;
-  appearance: none;
-}
-
-.memberItemMine {
-  background: #e8eefc;
-  border-color: #c7d8ff;
-}
-
-.memberItemSelected {
-  background: #f3e8ff;
-  border-color: #c4b5fd;
-}
-
-.memberName {
-  min-width: 0;
-  font-size: 14px;
-  font-weight: 700;
-  word-break: break-all;
-}
-
-.memberMetaWrap {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.memberRole {
-  flex: 0 0 auto;
-  padding: 4px 8px;
-  border-radius: 999px;
-  background: #dbeafe;
-  color: #1d4ed8;
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.memberRolePurple {
-  background: #ede9fe;
-  color: #6d28d9;
-}
-
-.emptyMembers {
-  color: #94a3b8;
-  font-size: 14px;
-}
-
-.memberActionBox {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  flex-wrap: wrap;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: #faf5ff;
-  border: 1px solid #e9d5ff;
-}
-
-.memberActionText {
-  color: #5b21b6;
-  font-size: 13px;
-}
-
-.memberActionBtns {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.cardButtons {
-  display: flex;
-  gap: 8px;
-  flex-wrap: nowrap;
-}
-
-.cardButtons button {
-  flex: 1 1 0;
-  min-width: 0;
-}
-
-/* 모달 */
 .modal {
   position: fixed;
   inset: 0;
@@ -717,22 +553,26 @@ body {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: rgba(15, 23, 42, 0.42);
+  background: rgba(0, 0, 0, 0.62);
 }
 
 .modalPanel {
-  width: 100%;
-  max-width: 760px;
-  max-height: 84vh;
-  overflow: auto;
-  background: #fff;
-  border-radius: 20px;
-  padding: 22px;
-  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.18);
+  width: min(760px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  padding: 18px;
+}
+
+.wideModalPanel {
+  width: min(1100px, 100%);
+}
+
+.adminModalPanel {
+  width: min(900px, 100%);
 }
 
 .ruinsModalPanel {
-  max-width: 620px;
+  width: min(720px, 100%);
 }
 
 .modalHeader {
@@ -740,126 +580,158 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 
 .modalTitle {
-  font-size: 22px;
-  font-weight: 900;
+  font-size: 20px;
+  font-weight: 800;
 }
 
 .modalFooter {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  margin-top: 18px;
+  gap: 8px;
+  margin-top: 16px;
 }
 
-.ruinsCreateGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
+.ruinsCreateNote {
+  margin-top: 14px;
+  color: #9aa3b2;
+  font-size: 14px;
 }
 
 .userList {
   display: grid;
-  gap: 18px;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
 }
 
 .userSection {
-  display: grid;
-  gap: 12px;
+  background: #121720;
+  border: 1px solid #2a3141;
+  border-radius: 14px;
+  padding: 14px;
 }
 
 .userSectionTitle {
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 800;
+  margin-bottom: 12px;
 }
 
 .userGrid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  text-align: left;
 }
 
 .userChip {
-  padding: 10px 12px;
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 800;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  border-radius: 10px;
+  font-size: 14px;
 }
 
 .userChipJoined {
-  background: #dcfce7;
-  color: #166534;
+  background: #1d2838;
+  border: 1px solid #30415c;
 }
 
 .userChipIdle {
-  background: #f1f5f9;
-  color: #475569;
-}
-
-.emptyUsers {
-  color: #94a3b8;
+  background: #191d25;
+  border: 1px solid #2e3646;
+  color: #c9d0df;
 }
 
 .adminInfo {
   display: grid;
-  gap: 10px;
-  padding: 16px;
+  gap: 8px;
+  background: #121720;
+  border: 1px solid #2a3141;
   border-radius: 14px;
-  background: #f8fafc;
-  margin-bottom: 16px;
+  padding: 14px;
+  margin-bottom: 14px;
 }
 
 .adminActions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
+  margin-bottom: 16px;
 }
 
-/* 나의 파티는 좀 더 조밀하게 */
-#myParty.cardGrid {
-  gap: 10px;
-}
-
-#myParty .partyCard {
-  gap: 10px;
+.adminLogWrap {
+  background: #121720;
+  border: 1px solid #2a3141;
+  border-radius: 14px;
   padding: 14px;
 }
 
-#myParty .cardSection {
-  gap: 6px;
+.adminLogTitle {
+  font-size: 17px;
+  font-weight: 800;
+  margin-bottom: 10px;
 }
 
-#myParty .memberList {
-  gap: 6px;
+.adminLogList {
+  display: grid;
+  gap: 10px;
 }
 
-#myParty .memberItem {
-  min-height: 36px;
-  padding: 7px 10px;
+.adminLogItem {
+  border: 1px solid #2d3545;
+  border-radius: 12px;
+  padding: 12px;
+  background: #171c26;
 }
 
-#myParty .cardButtons {
-  margin-top: 2px;
+.adminLogTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
 }
 
-/* 모바일/태블릿 */
-@media (max-width: 900px) {
-  .boardGrid {
+.adminLogAction {
+  font-weight: 700;
+}
+
+.adminLogTime {
+  color: #9aa3b2;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.adminLogDesc {
+  color: #d6deee;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.adminLogBottom {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (max-width: 1100px) {
+  .boardGrid,
+  .homeStats,
+  .homeEventCards,
+  .userList {
     grid-template-columns: 1fr;
-    gap: 16px;
   }
 
-  #openParty {
+  .createGrid,
+  .ruinsCreateGrid {
     grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 768px) {
   .topbar {
-    padding: 12px;
     align-items: flex-start;
     flex-direction: column;
   }
@@ -867,185 +739,22 @@ body {
   .topbarLeft,
   .topbarRight {
     width: 100%;
-  }
-
-  .topbarLeft {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-
-  .topTabs {
-    width: 100%;
-    overflow-x: auto;
-    padding-bottom: 2px;
-  }
-
-  .eventTabs {
-    width: max-content;
-  }
-
-  .topbarRight {
-    justify-content: flex-end;
     flex-wrap: wrap;
-    gap: 8px;
   }
 
-  .brand {
-    font-size: 18px;
+  .boardGrid {
+    grid-template-columns: 1fr;
   }
 
-  .mainArea {
-    padding: 16px 12px 28px;
+  .userGrid {
+    grid-template-columns: 1fr 1fr;
   }
 
-  .heroCard {
-    padding: 22px 18px;
+  .eventTitle {
+    font-size: 24px;
   }
 
   .heroTitle {
     font-size: 24px;
-  }
-
-  .homeEventCards {
-    grid-template-columns: 1fr;
-  }
-
-  .homeEventShortcut {
-    min-height: 96px;
-    padding: 20px 16px;
-  }
-
-  .homeShortcutName {
-    font-size: 20px;
-  }
-
-  .homeShortcutSub {
-    font-size: 12px;
-  }
-
-  .homeStats {
-    grid-template-columns: 1fr;
-  }
-
-  .eventTitle {
-    font-size: 28px;
-    line-height: 1.2;
-  }
-
-  .eventSubRow {
-    align-items: stretch;
-  }
-
-  .eventSubRow .secondaryBtn {
-    width: 100%;
-  }
-
-  .createBox {
-    padding: 16px;
-  }
-
-  .createGrid,
-  .ruinsCreateGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .boardTitle {
-    font-size: 18px;
-  }
-
-  .partyCard {
-    width: 100%;
-    padding: 14px;
-    border-radius: 16px;
-  }
-
-  .cardHead {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-
-  .cardTitleLine {
-    width: 100%;
-    align-items: flex-start;
-    gap: 6px;
-  }
-
-  .cardTitle {
-    font-size: 17px;
-  }
-
-  .inlineQuota {
-    font-size: 13px;
-  }
-
-  .ruinMetaRow {
-    width: 100%;
-    gap: 6px;
-  }
-
-  .timeBadge {
-    font-size: 11px;
-    padding: 5px 8px;
-  }
-
-  .memberActionBox {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .memberActionBtns {
-    width: 100%;
-    display: flex;
-    gap: 8px;
-  }
-
-  .memberActionBtns button {
-    flex: 1 1 0;
-  }
-
-  .cardButtons {
-    gap: 8px;
-    flex-wrap: nowrap;
-  }
-
-  .cardButtons button {
-    flex: 1 1 0;
-    min-width: 0;
-  }
-
-  .miniBtn {
-    height: 32px;
-    padding: 0 8px;
-    font-size: 12px;
-  }
-
-  .modalPanel {
-    padding: 16px;
-  }
-
-  .modalTitle {
-    font-size: 18px;
-  }
-
-  .modalFooter {
-    flex-direction: column;
-  }
-
-  .modalFooter button {
-    width: 100%;
-  }
-}
-
-@media (max-width: 480px) {
-  .ruinMetaRow {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .troopBadge {
-    grid-column: 1 / -1;
-    width: fit-content;
   }
 }
