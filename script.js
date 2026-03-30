@@ -59,8 +59,8 @@ function renderRuinsCard(p){const members=[...p.members].sort((a,b)=>a===p.rally
 
 async function createParty(){if(state.currentEventId==="viking")return createVikingParty();if(state.currentEventId==="ruins")return openRuinsCreateModal();}
 window.createParty=createParty;
-async function createVikingParty(){const name=(prompt("파티 이름을 입력하세요.")||"").trim();if(!name)return;if(myParty()){alert("이미 다른 파티에 참여 중입니다.");return;}const maxPrompt="최대 인원을 입력하세요.
-예: 6";const maxInput=(prompt(maxPrompt)||"").trim();const maxMembers=Number(maxInput);if(!Number.isInteger(maxMembers)||maxMembers<1){alert("최대 인원은 1 이상의 숫자로 입력하세요.");return;}const dup=await partiesRef("viking").where("name","==",name).get();if(!dup.empty){alert("같은 이름의 파티가 이미 있습니다.");return;}await partiesRef("viking").add({type:"viking",event:"viking",name,createdBy:state.currentUser,members:[state.currentUser],maxMembers,createdAt:firebase.firestore.FieldValue.serverTimestamp()});}
+async function createVikingParty(){const name=(prompt("파티 이름을 입력하세요.")||"").trim();if(!name)return;if(myParty()){alert("이미 다른 파티에 참여 중입니다.");return;}const maxPrompt=`최대 인원을 입력하세요.
+예: 6`;const maxInput=(prompt(maxPrompt)||"").trim();const maxMembers=Number(maxInput);if(!Number.isInteger(maxMembers)||maxMembers<1){alert("최대 인원은 1 이상의 숫자로 입력하세요.");return;}const dup=await partiesRef("viking").where("name","==",name).get();if(!dup.empty){alert("같은 이름의 파티가 이미 있습니다.");return;}await partiesRef("viking").add({type:"viking",event:"viking",name,createdBy:state.currentUser,members:[state.currentUser],maxMembers,createdAt:firebase.firestore.FieldValue.serverTimestamp()});}
 function openRuinsCreateModal(){if(!state.isAdmin){alert("유적 파티는 운영진만 생성할 수 있습니다.");return;}el.ruinNameInput.value="";openOverlay();el.ruinsCreateModal.classList.remove("hidden");}
 function closeRuinsCreateModal(){el.ruinsCreateModal.classList.add("hidden");closeOverlay();}
 window.openRuinsCreateModal=openRuinsCreateModal;window.closeRuinsCreateModal=closeRuinsCreateModal;
