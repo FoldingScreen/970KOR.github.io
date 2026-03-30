@@ -79,6 +79,7 @@ window.setRallyLeader=setRallyLeader;
 
 // ===== 유적 공지 복사 =====
 function copyRuinsNotice(partyId){const p=state.parties.find(v=>v.id===partyId);if(!p)return;const members=[...p.members];const leader=p.rallyLeader||"";const others=members.filter(n=>n!==leader);const power=calcPower(members.length).toLocaleString("ko-KR");const title=(p.ruinName||p.name||"")+" 명단";const text=`${title}
+시간: ${kstTime}(UTC ${utcTime})
 집결장: ${leader||"-"}
 집결원: ${others.join(", ")}
 병력수: ${power}명`;if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(()=>alert("복사되었습니다."),()=>fallbackCopy(text));}else{fallbackCopy(text);} }
