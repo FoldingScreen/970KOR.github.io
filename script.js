@@ -7,7 +7,7 @@ const TEST_HIDDEN_NAMES=["test","tester","테스트","운영테스트"];
 const el={loginScreen:document.getElementById("loginScreen"),homeScreen:document.getElementById("homeScreen"),eventScreen:document.getElementById("eventScreen"),nicknameInput:document.getElementById("nicknameInput"),myNameBtn:document.getElementById("myNameBtn"),adminMenuBtn:document.getElementById("adminMenuBtn"),adminMenu:document.getElementById("adminMenu"),homeSummary:document.getElementById("homeSummary"),homeEventCards:document.getElementById("homeEventCards"),partyList:document.getElementById("partyList"),eventTitle:document.getElementById("eventTitle"),eventDesc:document.getElementById("eventDesc"),createPartyBtn:document.getElementById("createPartyBtn"),modalOverlay:document.getElementById("modalOverlay"),userModal:document.getElementById("userModal"),joinedUsers:document.getElementById("joinedUsers"),notJoinedUsers:document.getElementById("notJoinedUsers"),logModal:document.getElementById("logModal"),logList:document.getElementById("logList"),ruinsCreateModal:document.getElementById("ruinsCreateModal"),ruinNameInput:document.getElementById("ruinNameInput"),utcMonth:document.getElementById("utcMonth"),utcDay:document.getElementById("utcDay"),utcHour:document.getElementById("utcHour")};
 
 function escapeHtml(s){return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;").replace(/'/g,"&#39;");}
-function escapeJs(s){return String(s??"").replace(/\\/g,"\\\\").replace(/'/g,"\\'");}
+function escapeJs(s){return String(s??"").replace(/\/g,"\\").replace(/'/g,"\'");}
 function normalizeMembers(m){return Array.isArray(m)?m.filter(v=>typeof v==="string"&&v.trim()!==""):[];}
 function showOnly(name){el.loginScreen.classList.add("hidden");el.homeScreen.classList.add("hidden");el.eventScreen.classList.add("hidden");if(name==="login")el.loginScreen.classList.remove("hidden");if(name==="home")el.homeScreen.classList.remove("hidden");if(name==="event")el.eventScreen.classList.remove("hidden");}
 function eventRef(id){return db.collection("events").doc(id);}
@@ -78,7 +78,7 @@ async function setRallyLeader(id,name){if(!state.isAdmin){alert("권한이 없�
 window.setRallyLeader=setRallyLeader;
 
 // ===== 유적 공지 복사 =====
-function copyRuinsNotice(partyId){const p=state.parties.find(v=>v.id===partyId);if(!p)return;const members=[...p.members];const leader=p.rallyLeader||"";const others=members.filter(n=>n!==leader);const power=calcPower(members.length).toLocaleString("ko-KR");const title=(p.ruinName||p.name||"")+" 명단";const text=`${title}
+function copyRuinsNotice(partyId){const p=state.parties.find(v=>v.id===partyId);if(!p)return;const members=[...p.members];const leader=p.rallyLeader||"";const others=members.filter(n=>n!==leader);const power=calcPower(members.length).toLocaleString("ko-KR");const kstTime=toDate(p.timeUTC)?`${String(toDate(p.timeUTC).getHours()).padStart(2,"0")}:00`:"-";const utcTime=toDate(p.timeUTC)?`${String(toDate(p.timeUTC).getUTCHours()).padStart(2,"0")}:00`:"-";const title=(p.ruinName||p.name||"")+" 명단";const text=`${title}
 시간: ${kstTime}(UTC ${utcTime})
 집결장: ${leader||"-"}
 집결원: ${others.join(", ")}
