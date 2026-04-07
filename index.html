@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>970KOR</title>
-  <link rel="stylesheet" href="style.css?v=stable1" />
+  <link rel="stylesheet" href="style.css?v=stable2" />
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -139,13 +139,27 @@
     <div class="rearrange-modal-body">
       <div class="form-group">
         <label>'빛나는 첨탑' 도달한 최고 스테이지</label>
-        <input id="rearrangeStageInput" class="text-input" type="text" inputmode="text" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="예: 15-4" />
+        <input
+          id="rearrangeStageInput"
+          class="text-input"
+          type="text"
+          inputmode="text"
+          autocapitalize="off"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="예: 15-4"
+        />
         <p class="muted form-help">입력 형식: 큰 스테이지-세부 스테이지 (예: 15-4)</p>
       </div>
 
       <div class="form-group rearrange-example-wrap">
         <label>입력 예시</label>
-        <img src="빛나는첨탑순위.png" alt="빛나는 첨탑 순위 예시" class="example-image" onclick="openExampleImageModal()" />
+        <img
+          src="빛나는첨탑순위.png"
+          alt="빛나는 첨탑 순위 예시"
+          class="example-image"
+          onclick="openExampleImageModal()"
+        />
       </div>
     </div>
 
@@ -154,16 +168,16 @@
     </div>
   </div>
 
-  <script src="script.js?v=stable1"></script>
-  
   <div id="exampleImageModal" class="modal hidden image-modal">
-  <div class="modal-header">
-    <h3>입력 예시 크게 보기</h3>
-    <button class="close-btn" onclick="closeExampleImageModal()">닫기</button>
+    <div class="modal-header">
+      <h3>입력 예시 크게 보기</h3>
+      <button class="close-btn" onclick="closeExampleImageModal()">닫기</button>
+    </div>
+    <div class="image-modal-body">
+      <img src="빛나는첨탑순위.png" alt="빛나는 첨탑 순위 예시 크게 보기" class="example-image-large" />
+    </div>
   </div>
-  <div class="image-modal-body">
-    <img src="빛나는첨탑순위.png" alt="빛나는 첨탑 순위 예시 크게 보기" class="example-image-large" />
-  </div>
-</div>
+
+  <script src="script.js?v=stable2"></script>
 </body>
 </html>
