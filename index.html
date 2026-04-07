@@ -145,7 +145,7 @@
 
       <div class="form-group rearrange-example-wrap">
         <label>입력 예시</label>
-        <img src="빛나는첨탑순위.png" alt="빛나는 첨탑 순위 예시" class="example-image" />
+        <img src="빛나는첨탑순위.png" alt="빛나는 첨탑 순위 예시" class="example-image" onclick="openExampleImageModal()" />
       </div>
     </div>
 
@@ -155,5 +155,15 @@
   </div>
 
   <script src="script.js?v=stable1"></script>
+  
+  <div id="exampleImageModal" class="modal hidden image-modal">
+  <div class="modal-header">
+    <h3>입력 예시 크게 보기</h3>
+    <button class="close-btn" onclick="closeExampleImageModal()">닫기</button>
+  </div>
+  <div class="image-modal-body">
+    <img src="빛나는첨탑순위.png" alt="빛나는 첨탑 순위 예시 크게 보기" class="example-image-large" />
+  </div>
+</div>
 </body>
 </html>
