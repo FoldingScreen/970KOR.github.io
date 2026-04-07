@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>970KOR</title>
-  <link rel="stylesheet" href="style.css?v=stable2" />
+  <link rel="stylesheet" href="style.css?v=stable3" />
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -68,6 +68,7 @@
           <div class="actions right-wrap">
             <button id="createPartyBtn" onclick="createParty()">파티 생성</button>
             <button id="rearrangeEditBtn" class="hidden" onclick="openMyRearrangeModal()">내 진척도 입력</button>
+            <button id="rearrangeManageBtn" class="hidden" onclick="openRearrangeRankEditModal()">순위표 행 추가</button>
             <button id="rearrangePublicBtn" class="hidden" onclick="toggleRearrangePublic()">순위 공개</button>
             <button onclick="showAllUsers()">전체 사용자</button>
           </div>
@@ -178,6 +179,38 @@
     </div>
   </div>
 
-  <script src="script.js?v=stable2"></script>
+  <div id="rearrangeRankEditModal" class="modal hidden">
+    <div class="modal-header">
+      <h3 id="rearrangeRankEditTitle">순위표 행 추가</h3>
+      <button class="close-btn" onclick="closeRearrangeRankEditModal()">닫기</button>
+    </div>
+
+    <div class="form-group">
+      <label>닉네임</label>
+      <input id="rankEditNicknameInput" class="text-input" type="text" placeholder="닉네임 입력" />
+    </div>
+
+    <div class="form-group">
+      <label>스테이지</label>
+      <input id="rankEditStageInput" class="text-input" type="text" placeholder="예: 15-4" />
+    </div>
+
+    <div class="form-group">
+      <label>전투력</label>
+      <input id="rankEditPowerInput" class="text-input" type="number" min="0" step="1" placeholder="예: 123456789" />
+    </div>
+
+    <div class="form-group">
+      <label>비고</label>
+      <input id="rankEditNoteInput" class="text-input" type="text" placeholder="비고 입력" />
+    </div>
+
+    <div class="actions right-wrap">
+      <button id="rankEditDeleteBtn" class="hidden" onclick="deleteRearrangeRankRow()">삭제</button>
+      <button id="rankEditSubmitBtn" onclick="submitRearrangeRankEdit()">저장</button>
+    </div>
+  </div>
+
+  <script src="script.js?v=stable3"></script>
 </body>
 </html>
