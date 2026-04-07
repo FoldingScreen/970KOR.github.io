@@ -4,7 +4,7 @@ const db=firebase.firestore();
 
 const state={currentUser:"",currentEventId:"",isAdmin:false,unsubscribeParties:null,unsubscribeMeta:null,parties:[],rearrangeEntries:[],rearrangePublic:false,events:[{id:"viking",name:"바이킹의 역습",desc:"기존 파티 시스템 유지"},{id:"ruins",name:"유적 쟁탈",desc:"운영진 전용 파티 생성 / 15인 고정"},{id:"rearrange",name:"자리 재배치",desc:"빛나는 첨탑 최고 스테이지 입력 / 순위 관리"}],editingRuinsPartyId:""};
 const TEST_HIDDEN_PREFIXES=["test","tester","테스트","운영테스트"];
-const el={loginScreen:document.getElementById("loginScreen"),homeScreen:document.getElementById("homeScreen"),eventScreen:document.getElementById("eventScreen"),nicknameInput:document.getElementById("nicknameInput"),myNameBtn:document.getElementById("myNameBtn"),adminMenuBtn:document.getElementById("adminMenuBtn"),adminMenu:document.getElementById("adminMenu"),homeSummary:document.getElementById("homeSummary"),homeEventCards:document.getElementById("homeEventCards"),partyList:document.getElementById("partyList"),eventTitle:document.getElementById("eventTitle"),eventDesc:document.getElementById("eventDesc"),createPartyBtn:document.getElementById("createPartyBtn"),rearrangeEditBtn:document.getElementById("rearrangeEditBtn"),rearrangePublicBtn:document.getElementById("rearrangePublicBtn"),modalOverlay:document.getElementById("modalOverlay"),userModal:document.getElementById("userModal"),joinedUsers:document.getElementById("joinedUsers"),notJoinedUsers:document.getElementById("notJoinedUsers"),logModal:document.getElementById("logModal"),logList:document.getElementById("logList"),ruinsCreateModal:document.getElementById("ruinsCreateModal"),ruinsModalTitle:document.getElementById("ruinsModalTitle"),ruinsSubmitBtn:document.getElementById("ruinsSubmitBtn"),ruinNameInput:document.getElementById("ruinNameInput"),utcMonth:document.getElementById("utcMonth"),utcDay:document.getElementById("utcDay"),utcHour:document.getElementById("utcHour"),rearrangeModal:document.getElementById("rearrangeModal"),rearrangeModalTitle:document.getElementById("rearrangeModalTitle"),rearrangeStageInput:document.getElementById("rearrangeStageInput"),rearrangeSubmitBtn:document.getElementById("rearrangeSubmitBtn")};
+const el={loginScreen:document.getElementById("loginScreen"),homeScreen:document.getElementById("homeScreen"),eventScreen:document.getElementById("eventScreen"),nicknameInput:document.getElementById("nicknameInput"),myNameBtn:document.getElementById("myNameBtn"),adminMenuBtn:document.getElementById("adminMenuBtn"),adminMenu:document.getElementById("adminMenu"),homeSummary:document.getElementById("homeSummary"),homeEventCards:document.getElementById("homeEventCards"),partyList:document.getElementById("partyList"),eventTitle:document.getElementById("eventTitle"),eventDesc:document.getElementById("eventDesc"),createPartyBtn:document.getElementById("createPartyBtn"),rearrangeEditBtn:document.getElementById("rearrangeEditBtn"),rearrangePublicBtn:document.getElementById("rearrangePublicBtn"),modalOverlay:document.getElementById("modalOverlay"),userModal:document.getElementById("userModal"),joinedUsers:document.getElementById("joinedUsers"),notJoinedUsers:document.getElementById("notJoinedUsers"),logModal:document.getElementById("logModal"),logList:document.getElementById("logList"),ruinsCreateModal:document.getElementById("ruinsCreateModal"),ruinsModalTitle:document.getElementById("ruinsModalTitle"),ruinsSubmitBtn:document.getElementById("ruinsSubmitBtn"),ruinNameInput:document.getElementById("ruinNameInput"),utcMonth:document.getElementById("utcMonth"),utcDay:document.getElementById("utcDay"),utcHour:document.getElementById("utcHour"),rearrangeModal:document.getElementById("rearrangeModal"),rearrangeModalTitle:document.getElementById("rearrangeModalTitle"),rearrangeStageInput:document.getElementById("rearrangeStageInput"),rearrangeSubmitBtn:document.getElementById("rearrangeSubmitBtn"), exampleImageModal:document.getElementById("exampleImageModal")};
 
 function escapeHtml(s){return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;").replace(/'/g,"&#39;");}
 function escapeJs(s){return String(s??"").replace(/\\/g,"\\\\").replace(/'/g,"\\'");}
@@ -21,8 +21,14 @@ function toggleAdminMenu(){el.adminMenu.classList.toggle("hidden");}
 function closeAdminMenu(){el.adminMenu.classList.add("hidden");}
 window.toggleAdminMenu=toggleAdminMenu;window.closeAdminMenu=closeAdminMenu;
 function openOverlay(){el.modalOverlay.classList.remove("hidden");}
-function closeOverlay(){if(!el.userModal.classList.contains("hidden"))return;if(!el.logModal.classList.contains("hidden"))return;if(!el.ruinsCreateModal.classList.contains("hidden"))return;if(!el.rearrangeModal.classList.contains("hidden"))return;el.modalOverlay.classList.add("hidden");}
-el.modalOverlay.addEventListener("click",()=>{closeUserModal();closeLogModal();closeRuinsCreateModal();closeRearrangeModal();});
+function closeOverlay(){
+  if(!el.userModal.classList.contains("hidden"))return;
+  if(!el.logModal.classList.contains("hidden"))return;
+  if(!el.ruinsCreateModal.classList.contains("hidden"))return;
+  if(!el.rearrangeModal.classList.contains("hidden"))return;
+  if(!el.exampleImageModal.classList.contains("hidden"))return;
+  el.modalOverlay.classList.add("hidden");
+}el.modalOverlay.addEventListener("click",()=>{closeUserModal();closeLogModal();closeRuinsCreateModal();closeRearrangeModal();closeExampleImageModal();});
 function clearSubscriptions(){if(state.unsubscribeParties){state.unsubscribeParties();state.unsubscribeParties=null;}if(state.unsubscribeMeta){state.unsubscribeMeta();state.unsubscribeMeta=null;}}
 
 async function ensureEventDocs(){for(const e of state.events){const payload={name:e.name,desc:e.desc};if(e.id==="rearrange")payload.rankingPublic=false;await eventRef(e.id).set(payload,{merge:true});}}
@@ -81,8 +87,38 @@ window.openRuinsCreateModal=openRuinsCreateModal;window.closeRuinsCreateModal=cl
 async function submitRuinsParty(){if(!state.isAdmin){alert("권한이 없습니다.");return;}const ruinName=(el.ruinNameInput.value||"").trim();const m=Number(el.utcMonth.value),d=Number(el.utcDay.value),h=Number(el.utcHour.value);if(!ruinName){alert("유적명을 입력하세요.");return;}if(!m||!d||h<0||h>23){alert("UTC 날짜/시간을 선택하세요.");return;}const year=new Date().getUTCFullYear();const utcDate=new Date(Date.UTC(year,m-1,d,h,0,0,0));if(state.editingRuinsPartyId){const ref=partiesRef("ruins").doc(state.editingRuinsPartyId);await ref.update({name:ruinName,ruinName,timeUTC:utcDate});await writeAdminLog("update_ruins_party",{partyId:state.editingRuinsPartyId,ruinName,month:m,day:d,hour:h});}else{await partiesRef("ruins").add({type:"ruins",event:"ruins",name:ruinName,ruinName,createdBy:state.currentUser,members:[],rallyLeader:"",maxMembers:15,timeUTC:utcDate,createdAt:firebase.firestore.FieldValue.serverTimestamp()});await writeAdminLog("create_ruins_party",{ruinName,month:m,day:d,hour:h});}closeRuinsCreateModal();}
 window.submitRuinsParty=submitRuinsParty;
 
-function openMyRearrangeModal(){if(el.rearrangeModalTitle)el.rearrangeModalTitle.textContent="내 진척도 입력";if(el.rearrangeSubmitBtn)el.rearrangeSubmitBtn.textContent="저장";const mine=myRearrangeEntry();el.rearrangeStageInput.value=mine?mine.stageText:"";openOverlay();el.rearrangeModal.classList.remove("hidden");}
-function closeRearrangeModal(){el.rearrangeModal.classList.add("hidden");closeOverlay();}
+function openMyRearrangeModal(){
+  if(el.rearrangeModalTitle)el.rearrangeModalTitle.textContent="내 진척도 입력";
+  if(el.rearrangeSubmitBtn)el.rearrangeSubmitBtn.textContent="저장";
+  const mine=myRearrangeEntry();
+  el.rearrangeStageInput.value=mine?mine.stageText:"";
+  if(el.rearrangeStageInput)el.rearrangeStageInput.blur();
+  openOverlay();
+  el.rearrangeModal.classList.remove("hidden");
+  setTimeout(()=>{
+    if(el.rearrangeStageInput)el.rearrangeStageInput.blur();
+    if(document.activeElement&&typeof document.activeElement.blur==="function"){
+      document.activeElement.blur();
+    }
+  },50);
+}
+function closeRearrangeModal(){
+  if(el.rearrangeStageInput)el.rearrangeStageInput.blur();
+  el.rearrangeModal.classList.add("hidden");
+  closeOverlay();
+}
+function openExampleImageModal(){
+  openOverlay();
+  el.exampleImageModal.classList.remove("hidden");
+}
+
+function closeExampleImageModal(){
+  el.exampleImageModal.classList.add("hidden");
+  closeOverlay();
+}
+
+window.openExampleImageModal=openExampleImageModal;
+window.closeExampleImageModal=closeExampleImageModal;
 window.openMyRearrangeModal=openMyRearrangeModal;window.closeRearrangeModal=closeRearrangeModal;
 async function submitRearrangeProgress(){const raw=(el.rearrangeStageInput.value||"").trim();const parts=raw.split("-");if(parts.length!==2||parts[0]===""||parts[1]===""){alert("최고 스테이지는 15-4 형식으로 입력하세요.");return;}const stageMajor=Number(parts[0]);const stageMinor=Number(parts[1]);if(!Number.isInteger(stageMajor)||!Number.isInteger(stageMinor)||stageMajor<0||stageMinor<0){alert("최고 스테이지는 15-4 형식으로 입력하세요.");return;}await rearrangeRef().doc(state.currentUser).set({user:state.currentUser,stageText:raw,stageMajor,stageMinor,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),createdAt:myRearrangeEntry()?.createdAt||firebase.firestore.FieldValue.serverTimestamp()},{merge:true});closeRearrangeModal();}
 window.submitRearrangeProgress=submitRearrangeProgress;
