@@ -1,9 +1,13 @@
+// script.js
 const firebaseConfig={apiKey:"AIzaSyBu2RrQn8cAwwWaLtw5O8Omwn4-NzHWuc0",authDomain:"kor-app-fa47e.firebaseapp.com",projectId:"kor-app-fa47e",storageBucket:"kor-app-fa47e.firebasestorage.app",messagingSenderId:"397749083935",appId:"1:397749083935:web:51c7c"};
 if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
 const db=firebase.firestore();
 
 const state={currentUser:"",currentEventId:"",isAdmin:false,unsubscribeParties:null,unsubscribeMeta:null,parties:[],rearrangeEntries:[],rearrangePublic:false,events:[{id:"viking",name:"바이킹의 역습",desc:"기존 파티 시스템 유지"},{id:"ruins",name:"유적 쟁탈",desc:"운영진 전용 파티 생성 / 15인 고정"},{id:"rearrange",name:"자리 재배치",desc:"빛나는 첨탑 최고 스테이지 입력 / 순위 관리"}],editingRuinsPartyId:"",editingRearrangeRankUser:""};
 const TEST_HIDDEN_PREFIXES=["test","tester","테스트","운영테스트"];
+const REARRANGE_LAYOUT_ROWS=[1,2,3,4,5,6,7,8,9,10,11,10,9,8,5];
+const REARRANGE_SLOT_ROWS=buildRearrangeSlotRows(REARRANGE_LAYOUT_ROWS);
+
 const el={
 loginScreen:document.getElementById("loginScreen"),
 homeScreen:document.getElementById("homeScreen"),
@@ -48,6 +52,18 @@ rankEditNoteInput:document.getElementById("rankEditNoteInput"),
 rankEditDeleteBtn:document.getElementById("rankEditDeleteBtn"),
 rankEditSubmitBtn:document.getElementById("rankEditSubmitBtn")
 };
+
+function buildRearrangeSlotRows(rowCounts){
+  let slot=1;
+  return rowCounts.map((count,rowIndex)=>{
+    const cells=[];
+    for(let i=0;i<count;i++){
+      cells.push({slot});
+      slot++;
+    }
+    return {rowIndex,cells};
+  });
+}
 
 function escapeHtml(s){return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;").replace(/'/g,"&#39;");}
 function escapeJs(s){return String(s??"").replace(/\\/g,"\\\\").replace(/'/g,"\\'");}
@@ -314,6 +330,10 @@ function getRearrangeColumn(rank){
   return 5;
 }
 
+function getLayoutLabel(rank){
+  return `${getRearrangeColumn(rank)}열`;
+}
+
 function renderPartyList(){
   if(!state.parties.length){
     el.partyList.innerHTML=`<div class="empty-card">아직 생성된 파티가 없습니다.</div>`;
@@ -347,13 +367,13 @@ function renderRearrangeTable(entries){
 
   const rows=entries.map((entry,idx)=>{
     const rank=idx+1;
-    const col=getRearrangeColumn(rank);
+    const columnLabel=getLayoutLabel(rank);
     const powerText=entry.power>0?Number(entry.power).toLocaleString("ko-KR"):"-";
     const noteText=entry.note?escapeHtml(entry.note):"-";
     const rowClass=entry.user===state.currentUser?"rank-row-me":"";
     return `<tr class="${rowClass}">
       <td>${rank}</td>
-      <td>${col}열</td>
+      <td>${columnLabel}</td>
       <td class="left ${entry.user===state.currentUser?"my-name":""}">${escapeHtml(entry.user)}</td>
       <td>${escapeHtml(entry.stageText||"-")}</td>
       <td>${powerText}</td>
@@ -380,23 +400,54 @@ function renderRearrangeTable(entries){
   </div>`;
 }
 
+function renderRearrangeLayout(entries){
+  const assignedByRank={};
+  entries.slice(0,98).forEach((entry,idx)=>{
+    assignedByRank[idx+1]=entry;
+  });
+
+  const rowsHtml=REARRANGE_SLOT_ROWS.map(row=>{
+    const rowClass=row.rowIndex%2===1?"layout-row shifted":"layout-row";
+    const cellsHtml=row.cells.map(cell=>{
+      const rank=cell.slot;
+      const entry=assignedByRank[rank];
+      if(!entry){
+        return `<div class="layout-tile empty"><div class="layout-tile-inner"><div class="layout-slot-label">${getLayoutLabel(rank)}</div><div class="layout-empty-mark">빈자리</div></div></div>`;
+      }
+      const meClass=entry.user===state.currentUser?" me":"";
+      return `<div class="layout-tile${meClass}"><div class="layout-tile-inner"><div class="layout-slot-label">${getLayoutLabel(rank)}</div><div class="layout-slot-name">${escapeHtml(entry.user)}</div></div></div>`;
+    }).join("");
+    return `<div class="${rowClass}">${cellsHtml}</div>`;
+  }).join("");
+
+  return `<div class="layout-board-wrap"><div class="layout-board">${rowsHtml}</div></div>`;
+}
+
 function renderRearrangeEvent(){
   const mine=myRearrangeEntry();
   const visibleEntries=state.rearrangeEntries.filter(v=>!isHiddenTestNickname(v.user));
+
   const mineCard=`<div class="party-card"><div class="party-title">내 진척도</div><div class="party-sub">빛나는 첨탑 최고 스테이지</div><div class="party-sub">현재 입력값: ${mine?escapeHtml(mine.stageText):"미입력"}</div><div class="party-sub">최종 수정: ${mine?formatDateTime(mine.updatedAt):"-"}</div><div class="card-actions"><button onclick="openMyRearrangeModal()">${mine?"수정":"입력"}</button></div></div>`;
 
   let rankingCard="";
+  let layoutCard="";
   if(state.isAdmin||state.rearrangePublic){
     rankingCard=`<div class="party-card rank-table-card">
       <div class="party-title">진척도 순위표</div>
       <div class="party-sub">${state.isAdmin?state.rearrangePublic?"현재 전체 공개 상태입니다.":"현재 운영진만 볼 수 있습니다.":"공개된 순위입니다."}</div>
       ${renderRearrangeTable(visibleEntries)}
     </div>`;
+
+    layoutCard=`<div class="party-card layout-board-card">
+      <div class="party-title">자동 배치도</div>
+      <div class="party-sub">타일 표시는 순열 / 닉네임 기준입니다.</div>
+      ${renderRearrangeLayout(visibleEntries)}
+    </div>`;
   }else{
     rankingCard=`<div class="party-card"><div class="party-title">진척도 순위</div><div class="party-sub">아직 공개되지 않았습니다.</div><div class="party-sub">운영진 공개 후 전체 유저가 확인할 수 있습니다.</div></div>`;
   }
 
-  el.partyList.innerHTML=mineCard+rankingCard;
+  el.partyList.innerHTML=mineCard+rankingCard+layoutCard;
 }
 
 async function createParty(){
