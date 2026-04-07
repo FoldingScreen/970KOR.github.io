@@ -4,9 +4,23 @@ const db=firebase.firestore();
 
 const state={currentUser:"",currentEventId:"",isAdmin:false,unsubscribeParties:null,unsubscribeMeta:null,parties:[],rearrangeEntries:[],rearrangePublic:false,events:[{id:"viking",name:"바이킹의 역습",desc:"기존 파티 시스템 유지"},{id:"ruins",name:"유적 쟁탈",desc:"운영진 전용 파티 생성 / 15인 고정"},{id:"rearrange",name:"자리 재배치",desc:"빛나는 첨탑 최고 스테이지 입력 / 순위 관리"}],editingRuinsPartyId:"",editingRearrangeRankUser:""};
 const TEST_HIDDEN_PREFIXES=["test","tester","테스트","운영테스트"];
-const REARRANGE_LAYOUT_ROWS=[1,2,3,4,5,6,7,8,9,10,11,10,9,8,5];
-const REARRANGE_LAYOUT_Y=[14,39,63,87,111,136,161,186,211,236,261,286,311,336,361];
-const REARRANGE_LAYOUT_X=[573,547,521,495,469,443,417,391,365,339,313,339,365,391,443];
+const REARRANGE_ROWS=[
+  {startRank:1,count:1,x:572,y:18},
+  {startRank:2,count:2,x:548,y:41},
+  {startRank:4,count:3,x:525,y:64},
+  {startRank:7,count:4,x:500,y:89},
+  {startRank:11,count:5,x:474,y:114},
+  {startRank:16,count:6,x:447,y:139},
+  {startRank:22,count:7,x:418,y:165},
+  {startRank:29,count:8,x:388,y:190},
+  {startRank:37,count:9,x:361,y:216},
+  {startRank:46,count:10,x:335,y:242},
+  {startRank:56,count:11,x:312,y:268},
+  {startRank:67,count:10,x:337,y:294},
+  {startRank:77,count:9,x:364,y:320},
+  {startRank:86,count:8,x:392,y:347},
+  {startRank:94,count:5,x:442,y:374}
+];
 const REARRANGE_STEP_X=52;
 
 const el={
@@ -307,14 +321,13 @@ function getLayoutLabel(rank){return `${getRearrangeColumn(rank)}열`;}
 
 function buildMapSlots(){
   const slots=[];
-  let rank=1;
-  for(let row=0;row<REARRANGE_LAYOUT_ROWS.length;row++){
-    const count=REARRANGE_LAYOUT_ROWS[row];
-    const y=REARRANGE_LAYOUT_Y[row];
-    const x=REARRANGE_LAYOUT_X[row];
-    for(let i=0;i<count;i++){
-      slots.push({rank,x:x+(REARRANGE_STEP_X*i),y});
-      rank++;
+  for(const row of REARRANGE_ROWS){
+    for(let i=0;i<row.count;i++){
+      slots.push({
+        rank:row.startRank+i,
+        x:row.x+(REARRANGE_STEP_X*i),
+        y:row.y
+      });
     }
   }
   return slots;
@@ -426,7 +439,7 @@ function renderRearrangeEvent(){
 
     layoutCard=`<div class="party-card layout-board-card">
       <div class="party-title">자동 배치도</div>
-      <div class="party-sub">배경 위치도 기준으로 도시 위치를 맞췄습니다.</div>
+      <div class="party-sub">격자 기준으로 배치했습니다.</div>
       ${renderRearrangeLayout(visibleEntries)}
     </div>`;
   }else{
@@ -481,11 +494,7 @@ async function openRuinsEditModal(partyId){
 }
 window.openRuinsEditModal=openRuinsEditModal;
 
-function closeRuinsCreateModal(){
-  state.editingRuinsPartyId="";
-  el.ruinsCreateModal.classList.add("hidden");
-  syncOverlay();
-}
+function closeRuinsCreateModal(){state.editingRuinsPartyId="";el.ruinsCreateModal.classList.add("hidden");syncOverlay();}
 window.closeRuinsCreateModal=closeRuinsCreateModal;
 
 async function submitRuinsParty(){
