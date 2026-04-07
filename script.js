@@ -5,7 +5,9 @@ const db=firebase.firestore();
 const state={currentUser:"",currentEventId:"",isAdmin:false,unsubscribeParties:null,unsubscribeMeta:null,parties:[],rearrangeEntries:[],rearrangePublic:false,events:[{id:"viking",name:"바이킹의 역습",desc:"기존 파티 시스템 유지"},{id:"ruins",name:"유적 쟁탈",desc:"운영진 전용 파티 생성 / 15인 고정"},{id:"rearrange",name:"자리 재배치",desc:"빛나는 첨탑 최고 스테이지 입력 / 순위 관리"}],editingRuinsPartyId:"",editingRearrangeRankUser:""};
 const TEST_HIDDEN_PREFIXES=["test","tester","테스트","운영테스트"];
 const REARRANGE_LAYOUT_ROWS=[1,2,3,4,5,6,7,8,9,10,11,10,9,8,5];
-const REARRANGE_SLOT_ROWS=buildRearrangeSlotRows(REARRANGE_LAYOUT_ROWS);
+const REARRANGE_LAYOUT_Y=[18,41,64,89,114,139,165,190,216,242,268,294,320,347,374];
+const REARRANGE_LAYOUT_X=[572,548,525,500,474,447,418,388,361,335,312,337,364,392,442];
+const REARRANGE_STEP_X=52;
 
 const el={
 loginScreen:document.getElementById("loginScreen"),
@@ -52,18 +54,6 @@ rankEditDeleteBtn:document.getElementById("rankEditDeleteBtn"),
 rankEditSubmitBtn:document.getElementById("rankEditSubmitBtn")
 };
 
-function buildRearrangeSlotRows(rowCounts){
-  let slot=1;
-  return rowCounts.map((count,rowIndex)=>{
-    const cells=[];
-    for(let i=0;i<count;i++){
-      cells.push({slot});
-      slot++;
-    }
-    return {rowIndex,cells};
-  });
-}
-
 function escapeHtml(s){return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;").replace(/'/g,"&#39;");}
 function escapeJs(s){return String(s??"").replace(/\\/g,"\\\\").replace(/'/g,"\\'");}
 function normalizeMembers(m){return Array.isArray(m)?m.filter(v=>typeof v==="string"&&v.trim()!==""):[];}
@@ -91,8 +81,6 @@ function syncOverlay(){
   if(hasOpenModal) el.modalOverlay.classList.remove("hidden");
   else el.modalOverlay.classList.add("hidden");
 }
-function openOverlay(){syncOverlay();}
-function closeOverlay(){syncOverlay();}
 el.modalOverlay.addEventListener("click",()=>{
   closeExampleImageModal();
   closeUserModal();
@@ -186,9 +174,7 @@ async function renderHomeSummary(){
   const adminsSnap=await db.collection("admins").get();
   el.homeSummary.innerHTML=`<div class="summary-card"><div class="muted">전체 유저</div><div class="big-number">${usersSnap.size}</div></div><div class="summary-card"><div class="muted">이벤트 수</div><div class="big-number">${state.events.length}</div></div><div class="summary-card"><div class="muted">운영진 수</div><div class="big-number">${adminsSnap.size}</div></div>`;
 }
-function renderHomeEventCards(){
-  el.homeEventCards.innerHTML=state.events.map(e=>`<div class="event-card"><h3>${escapeHtml(e.name)}</h3><p>${escapeHtml(e.desc)}</p><div class="actions"><button onclick="openEvent('${escapeJs(e.id)}')">들어가기</button></div></div>`).join("");
-}
+function renderHomeEventCards(){el.homeEventCards.innerHTML=state.events.map(e=>`<div class="event-card"><h3>${escapeHtml(e.name)}</h3><p>${escapeHtml(e.desc)}</p><div class="actions"><button onclick="openEvent('${escapeJs(e.id)}')">들어가기</button></div></div>`).join("");}
 async function goHome(){
   clearSubscriptions();
   state.currentEventId="";
@@ -266,21 +252,10 @@ function subscribeRearrange(){
     console.error(err);
     alert("기본 데이터를 불러오는 중 오류가 발생했습니다.");
   });
-
   state.unsubscribeParties=rearrangeRef().onSnapshot(snap=>{
     state.rearrangeEntries=snap.docs.map(doc=>{
       const d=doc.data()||{};
-      return{
-        id:doc.id,
-        user:d.user||doc.id,
-        stageText:String(d.stageText||d.stage||""),
-        stageMajor:Number(d.stageMajor||0),
-        stageMinor:Number(d.stageMinor||0),
-        power:Number(d.power||0),
-        note:String(d.note||""),
-        updatedAt:d.updatedAt||null,
-        createdAt:d.createdAt||null
-      };
+      return{id:doc.id,user:d.user||doc.id,stageText:String(d.stageText||d.stage||""),stageMajor:Number(d.stageMajor||0),stageMinor:Number(d.stageMinor||0),power:Number(d.power||0),note:String(d.note||""),updatedAt:d.updatedAt||null,createdAt:d.createdAt||null};
     });
     state.rearrangeEntries.sort(sortRearrangeEntries);
     renderRearrangeEvent();
@@ -328,10 +303,23 @@ function getRearrangeColumn(rank){
   if(rank<=60)return 4;
   return 5;
 }
+function getLayoutLabel(rank){return `${getRearrangeColumn(rank)}열`;}
 
-function getLayoutLabel(rank){
-  return `${getRearrangeColumn(rank)}열`;
+function buildMapSlots(){
+  const slots=[];
+  let rank=1;
+  for(let row=0;row<REARRANGE_LAYOUT_ROWS.length;row++){
+    const count=REARRANGE_LAYOUT_ROWS[row];
+    const y=REARRANGE_LAYOUT_Y[row];
+    const x=REARRANGE_LAYOUT_X[row];
+    for(let i=0;i<count;i++){
+      slots.push({rank,x:x+(REARRANGE_STEP_X*i),y});
+      rank++;
+    }
+  }
+  return slots;
 }
+const REARRANGE_MAP_SLOTS=buildMapSlots();
 
 function renderPartyList(){
   if(!state.parties.length){
@@ -360,19 +348,15 @@ function renderRuinsCard(p){
 }
 
 function renderRearrangeTable(entries){
-  if(!entries.length){
-    return `<div class="rank-empty">입력된 데이터가 없습니다.</div>`;
-  }
-
+  if(!entries.length) return `<div class="rank-empty">입력된 데이터가 없습니다.</div>`;
   const rows=entries.map((entry,idx)=>{
     const rank=idx+1;
-    const columnLabel=getLayoutLabel(rank);
+    const rowClass=entry.user===state.currentUser?"rank-row-me":"";
     const powerText=entry.power>0?Number(entry.power).toLocaleString("ko-KR"):"-";
     const noteText=entry.note?escapeHtml(entry.note):"-";
-    const rowClass=entry.user===state.currentUser?"rank-row-me":"";
     return `<tr class="${rowClass}">
       <td>${rank}</td>
-      <td>${columnLabel}</td>
+      <td>${getLayoutLabel(rank)}</td>
       <td class="left ${entry.user===state.currentUser?"my-name":""}">${escapeHtml(entry.user)}</td>
       <td>${escapeHtml(entry.stageText||"-")}</td>
       <td>${powerText}</td>
@@ -383,6 +367,9 @@ function renderRearrangeTable(entries){
 
   return `<div class="rank-table-wrap">
     <table class="rank-table">
+      <colgroup>
+        <col><col><col><col><col><col>${state.isAdmin?`<col>`:""}
+      </colgroup>
       <thead>
         <tr>
           <th>순위</th>
@@ -401,31 +388,31 @@ function renderRearrangeTable(entries){
 
 function renderRearrangeLayout(entries){
   const assignedByRank={};
-  entries.slice(0,98).forEach((entry,idx)=>{
-    assignedByRank[idx+1]=entry;
-  });
+  entries.slice(0,98).forEach((entry,idx)=>{assignedByRank[idx+1]=entry;});
 
-  const rowsHtml=REARRANGE_SLOT_ROWS.map(row=>{
-    const rowClass=row.rowIndex%2===1?"layout-row shifted":"layout-row";
-    const cellsHtml=row.cells.map(cell=>{
-      const rank=cell.slot;
-      const entry=assignedByRank[rank];
-      if(!entry){
-        return `<div class="layout-tile empty"><div class="layout-tile-inner"><div class="layout-slot-label">${getLayoutLabel(rank)}</div><div class="layout-empty-mark">빈자리</div></div></div>`;
-      }
-      const meClass=entry.user===state.currentUser?" me":"";
-      return `<div class="layout-tile${meClass}"><div class="layout-tile-inner"><div class="layout-slot-label">${getLayoutLabel(rank)}</div><div class="layout-slot-name">${escapeHtml(entry.user)}</div></div></div>`;
-    }).join("");
-    return `<div class="${rowClass}">${cellsHtml}</div>`;
+  const chips=REARRANGE_MAP_SLOTS.map(slot=>{
+    const entry=assignedByRank[slot.rank];
+    if(!entry) return "";
+    const meClass=entry.user===state.currentUser?" me":"";
+    return `<div class="layout-city-chip${meClass}" style="left:${slot.x}px;top:${slot.y}px;">
+      <div class="layout-city-inner">
+        <div class="layout-city-col">${getLayoutLabel(slot.rank)}</div>
+        <div class="layout-city-name">${escapeHtml(entry.user)}</div>
+      </div>
+    </div>`;
   }).join("");
 
-  return `<div class="layout-board-wrap"><div class="layout-board">${rowsHtml}</div></div>`;
+  return `<div class="layout-map-wrap">
+    <div class="layout-map">
+      <img class="layout-map-bg" src="자리 재배치 위치도.png" alt="자리 재배치 위치도" />
+      ${chips}
+    </div>
+  </div>`;
 }
 
 function renderRearrangeEvent(){
   const mine=myRearrangeEntry();
   const visibleEntries=state.rearrangeEntries.filter(v=>!isHiddenTestNickname(v.user));
-
   const mineCard=`<div class="party-card"><div class="party-title">내 진척도</div><div class="party-sub">빛나는 첨탑 최고 스테이지</div><div class="party-sub">현재 입력값: ${mine?escapeHtml(mine.stageText):"미입력"}</div><div class="party-sub">최종 수정: ${mine?formatDateTime(mine.updatedAt):"-"}</div><div class="card-actions"><button onclick="openMyRearrangeModal()">${mine?"수정":"입력"}</button></div></div>`;
 
   let rankingCard="";
@@ -439,29 +426,23 @@ function renderRearrangeEvent(){
 
     layoutCard=`<div class="party-card layout-board-card">
       <div class="party-title">자동 배치도</div>
-      <div class="party-sub">타일 표시는 순열 / 닉네임 기준입니다.</div>
+      <div class="party-sub">배경 위치도 기준으로 도시 위치를 맞췄습니다.</div>
       ${renderRearrangeLayout(visibleEntries)}
     </div>`;
   }else{
     rankingCard=`<div class="party-card"><div class="party-title">진척도 순위</div><div class="party-sub">아직 공개되지 않았습니다.</div><div class="party-sub">운영진 공개 후 전체 유저가 확인할 수 있습니다.</div></div>`;
   }
-
   el.partyList.innerHTML=mineCard+rankingCard+layoutCard;
 }
 
-async function createParty(){
-  if(state.currentEventId==="viking")return createVikingParty();
-  if(state.currentEventId==="ruins")return openRuinsCreateModal();
-}
+async function createParty(){if(state.currentEventId==="viking")return createVikingParty();if(state.currentEventId==="ruins")return openRuinsCreateModal();}
 window.createParty=createParty;
 
 async function createVikingParty(){
   const name=(prompt("파티 이름을 입력하세요.")||"").trim();
   if(!name)return;
   if(myParty()){alert("이미 다른 파티에 참여 중입니다.");return;}
-  const maxPrompt=`최대 인원을 입력하세요.
-예: 6`;
-  const maxInput=(prompt(maxPrompt)||"").trim();
+  const maxInput=(prompt("최대 인원을 입력하세요.\n예: 6")||"").trim();
   const maxMembers=Number(maxInput);
   if(!Number.isInteger(maxMembers)||maxMembers<1){alert("최대 인원은 1 이상의 숫자로 입력하세요.");return;}
   const dup=await partiesRef("viking").where("name","==",name).get();
@@ -472,8 +453,8 @@ async function createVikingParty(){
 function openRuinsCreateModal(){
   if(!state.isAdmin){alert("유적 파티는 운영진만 생성할 수 있습니다.");return;}
   state.editingRuinsPartyId="";
-  if(el.ruinsModalTitle)el.ruinsModalTitle.textContent="유적 파티 생성";
-  if(el.ruinsSubmitBtn)el.ruinsSubmitBtn.textContent="생성";
+  el.ruinsModalTitle.textContent="유적 파티 생성";
+  el.ruinsSubmitBtn.textContent="생성";
   el.ruinNameInput.value="";
   el.utcMonth.value="1";
   el.utcDay.value="1";
@@ -486,8 +467,8 @@ async function openRuinsEditModal(partyId){
   const p=state.parties.find(v=>v.id===partyId);
   if(!p){alert("파티를 찾을 수 없습니다.");return;}
   state.editingRuinsPartyId=partyId;
-  if(el.ruinsModalTitle)el.ruinsModalTitle.textContent="유적 파티 수정";
-  if(el.ruinsSubmitBtn)el.ruinsSubmitBtn.textContent="수정";
+  el.ruinsModalTitle.textContent="유적 파티 수정";
+  el.ruinsSubmitBtn.textContent="수정";
   el.ruinNameInput.value=p.ruinName||p.name||"";
   const d=toDate(p.timeUTC);
   if(d){
@@ -502,12 +483,9 @@ window.openRuinsEditModal=openRuinsEditModal;
 
 function closeRuinsCreateModal(){
   state.editingRuinsPartyId="";
-  if(el.ruinsModalTitle)el.ruinsModalTitle.textContent="유적 파티 생성";
-  if(el.ruinsSubmitBtn)el.ruinsSubmitBtn.textContent="생성";
   el.ruinsCreateModal.classList.add("hidden");
   syncOverlay();
 }
-window.openRuinsCreateModal=openRuinsCreateModal;
 window.closeRuinsCreateModal=closeRuinsCreateModal;
 
 async function submitRuinsParty(){
@@ -530,81 +508,32 @@ async function submitRuinsParty(){
 }
 window.submitRuinsParty=submitRuinsParty;
 
-function lockRearrangeInputForManualTap(){
-  if(!el.rearrangeStageInput)return;
-  el.rearrangeStageInput.setAttribute("readonly","readonly");
-  el.rearrangeStageInput.blur();
-}
-function unlockRearrangeInput(){
-  if(!el.rearrangeStageInput)return;
-  if(el.rearrangeStageInput.hasAttribute("readonly")){
-    el.rearrangeStageInput.removeAttribute("readonly");
-  }
-}
+function lockRearrangeInputForManualTap(){el.rearrangeStageInput.setAttribute("readonly","readonly");el.rearrangeStageInput.blur();}
+function unlockRearrangeInput(){if(el.rearrangeStageInput.hasAttribute("readonly"))el.rearrangeStageInput.removeAttribute("readonly");}
 if(el.rearrangeStageInput){
-  const unlockAndFocus=()=>{
-    unlockRearrangeInput();
-    setTimeout(()=>{
-      try{el.rearrangeStageInput.focus({preventScroll:true});}
-      catch(_){el.rearrangeStageInput.focus();}
-    },0);
-  };
+  const unlockAndFocus=()=>{unlockRearrangeInput();setTimeout(()=>{try{el.rearrangeStageInput.focus({preventScroll:true});}catch(_){el.rearrangeStageInput.focus();}},0);};
   el.rearrangeStageInput.addEventListener("pointerdown",unlockAndFocus);
   el.rearrangeStageInput.addEventListener("touchstart",unlockAndFocus,{passive:true});
   el.rearrangeStageInput.addEventListener("mousedown",unlockAndFocus);
 }
 
 function openMyRearrangeModal(){
-  if(el.rearrangeModalTitle)el.rearrangeModalTitle.textContent="내 진척도 입력";
-  if(el.rearrangeSubmitBtn)el.rearrangeSubmitBtn.textContent="저장";
+  el.rearrangeModalTitle.textContent="내 진척도 입력";
+  el.rearrangeSubmitBtn.textContent="저장";
   const mine=myRearrangeEntry();
   el.rearrangeStageInput.value=mine?mine.stageText:"";
   lockRearrangeInputForManualTap();
   el.rearrangeModal.classList.remove("hidden");
   syncOverlay();
-  setTimeout(()=>{
-    if(document.activeElement&&typeof document.activeElement.blur==="function"){document.activeElement.blur();}
-    if(el.rearrangeStageInput)el.rearrangeStageInput.blur();
-  },80);
+  setTimeout(()=>{if(document.activeElement&&typeof document.activeElement.blur==="function")document.activeElement.blur();el.rearrangeStageInput.blur();},80);
 }
-function closeRearrangeModal(){
-  if(el.rearrangeStageInput){
-    el.rearrangeStageInput.blur();
-    el.rearrangeStageInput.removeAttribute("readonly");
-  }
-  el.rearrangeModal.classList.add("hidden");
-  syncOverlay();
-}
-function openExampleImageModal(){
-  el.exampleImageModal.classList.remove("hidden");
-  syncOverlay();
-}
-function closeExampleImageModal(){
-  el.exampleImageModal.classList.add("hidden");
-  syncOverlay();
-}
+function closeRearrangeModal(){el.rearrangeStageInput.blur();el.rearrangeStageInput.removeAttribute("readonly");el.rearrangeModal.classList.add("hidden");syncOverlay();}
+function openExampleImageModal(){el.exampleImageModal.classList.remove("hidden");syncOverlay();}
+function closeExampleImageModal(){el.exampleImageModal.classList.add("hidden");syncOverlay();}
 window.openMyRearrangeModal=openMyRearrangeModal;
 window.closeRearrangeModal=closeRearrangeModal;
 window.openExampleImageModal=openExampleImageModal;
 window.closeExampleImageModal=closeExampleImageModal;
-
-async function submitRearrangeProgress(){
-  const raw=(el.rearrangeStageInput.value||"").trim();
-  const parsed=parseStageText(raw);
-  if(!parsed){alert("최고 스테이지는 15-4 형식으로 입력하세요.");return;}
-  await rearrangeRef().doc(state.currentUser).set({
-    user:state.currentUser,
-    stageText:raw,
-    stageMajor:parsed.stageMajor,
-    stageMinor:parsed.stageMinor,
-    updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
-    createdAt:myRearrangeEntry()?.createdAt||firebase.firestore.FieldValue.serverTimestamp()
-  },{merge:true});
-  closeExampleImageModal();
-  closeRearrangeModal();
-  syncOverlay();
-}
-window.submitRearrangeProgress=submitRearrangeProgress;
 
 function parseStageText(raw){
   const value=String(raw||"").trim();
@@ -616,11 +545,21 @@ function parseStageText(raw){
   return{stageMajor,stageMinor};
 }
 
+async function submitRearrangeProgress(){
+  const raw=(el.rearrangeStageInput.value||"").trim();
+  const parsed=parseStageText(raw);
+  if(!parsed){alert("최고 스테이지는 15-4 형식으로 입력하세요.");return;}
+  await rearrangeRef().doc(state.currentUser).set({user:state.currentUser,stageText:raw,stageMajor:parsed.stageMajor,stageMinor:parsed.stageMinor,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),createdAt:myRearrangeEntry()?.createdAt||firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+  closeExampleImageModal();
+  closeRearrangeModal();
+  syncOverlay();
+}
+window.submitRearrangeProgress=submitRearrangeProgress;
+
 function openRearrangeRankEditModal(userName=""){
   if(!state.isAdmin){alert("권한이 없습니다.");return;}
   const entry=userName?state.rearrangeEntries.find(v=>v.user===userName):null;
   state.editingRearrangeRankUser=entry?entry.user:"";
-
   if(entry){
     el.rearrangeRankEditTitle.textContent="순위표 행 수정";
     el.rankEditSubmitBtn.textContent="저장";
@@ -638,58 +577,32 @@ function openRearrangeRankEditModal(userName=""){
     el.rankEditPowerInput.value="";
     el.rankEditNoteInput.value="";
   }
-
   el.rearrangeRankEditModal.classList.remove("hidden");
   syncOverlay();
 }
-function closeRearrangeRankEditModal(){
-  state.editingRearrangeRankUser="";
-  el.rearrangeRankEditModal.classList.add("hidden");
-  syncOverlay();
-}
+function closeRearrangeRankEditModal(){state.editingRearrangeRankUser="";el.rearrangeRankEditModal.classList.add("hidden");syncOverlay();}
 window.openRearrangeRankEditModal=openRearrangeRankEditModal;
 window.closeRearrangeRankEditModal=closeRearrangeRankEditModal;
 
 async function submitRearrangeRankEdit(){
   if(!state.isAdmin){alert("권한이 없습니다.");return;}
-
   const nickname=(el.rankEditNicknameInput.value||"").trim();
   const stageText=(el.rankEditStageInput.value||"").trim();
   const powerRaw=(el.rankEditPowerInput.value||"").trim();
   const note=(el.rankEditNoteInput.value||"").trim();
-
   if(!nickname){alert("닉네임을 입력하세요.");return;}
   const parsed=parseStageText(stageText);
   if(!parsed){alert("스테이지는 15-4 형식으로 입력하세요.");return;}
-
   let power=0;
   if(powerRaw!==""){
     power=Number(powerRaw);
-    if(!Number.isInteger(power)||power<0){
-      alert("전투력은 0 이상의 정수로 입력하세요.");
-      return;
-    }
+    if(!Number.isInteger(power)||power<0){alert("전투력은 0 이상의 정수로 입력하세요.");return;}
   }
-
   const oldUser=state.editingRearrangeRankUser||"";
   const newUser=nickname;
-
-  if(oldUser&&oldUser!==newUser){
-    await rearrangeRef().doc(oldUser).delete();
-  }
-
+  if(oldUser&&oldUser!==newUser) await rearrangeRef().doc(oldUser).delete();
   await ensureUserDoc(newUser);
-  await rearrangeRef().doc(newUser).set({
-    user:newUser,
-    stageText,
-    stageMajor:parsed.stageMajor,
-    stageMinor:parsed.stageMinor,
-    power,
-    note,
-    updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
-    createdAt:(state.rearrangeEntries.find(v=>v.user===newUser)?.createdAt)||firebase.firestore.FieldValue.serverTimestamp()
-  },{merge:true});
-
+  await rearrangeRef().doc(newUser).set({user:newUser,stageText,stageMajor:parsed.stageMajor,stageMinor:parsed.stageMinor,power,note,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),createdAt:(state.rearrangeEntries.find(v=>v.user===newUser)?.createdAt)||firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
   await writeAdminLog(oldUser?"update_rearrange_rank_row":"create_rearrange_rank_row",{oldUser,newUser,stageText,power,note});
   closeRearrangeRankEditModal();
 }
@@ -698,7 +611,7 @@ window.submitRearrangeRankEdit=submitRearrangeRankEdit;
 async function deleteRearrangeRankRow(){
   if(!state.isAdmin){alert("권한이 없습니다.");return;}
   const user=state.editingRearrangeRankUser||"";
-  if(!user){return;}
+  if(!user)return;
   if(!confirm(`${user} 행을 삭제하시겠습니까?`))return;
   await rearrangeRef().doc(user).delete();
   await writeAdminLog("delete_rearrange_rank_row",{user});
@@ -725,7 +638,7 @@ async function joinParty(id){
   const members=normalizeMembers(d.members);
   if(state.currentEventId==="ruins"&&members.length>=15){alert("유적 파티는 최대 15명입니다.");return;}
   if(state.currentEventId==="viking"&&Number(d.maxMembers||0)>0&&members.length>=Number(d.maxMembers)){alert("이 파티는 정원이 가득 찼습니다.");return;}
-  if(members.includes(state.currentUser)){if(state.currentEventId==="ruins"){alert("이미 이 유적 파티에 신청되어 있습니다.");}return;}
+  if(members.includes(state.currentUser)){if(state.currentEventId==="ruins")alert("이미 이 유적 파티에 신청되어 있습니다.");return;}
   members.push(state.currentUser);
   await ref.update({members});
 }
@@ -736,7 +649,7 @@ async function leaveParty(id){
   const snap=await ref.get();
   if(!snap.exists)return;
   const d=snap.data()||{};
-  let members=normalizeMembers(d.members).filter(v=>v!==state.currentUser);
+  const members=normalizeMembers(d.members).filter(v=>v!==state.currentUser);
   const updates={members};
   if(state.currentEventId==="ruins"&&d.rallyLeader===state.currentUser)updates.rallyLeader=members[0]||"";
   await ref.update(updates);
@@ -797,11 +710,8 @@ function copyRuinsNotice(partyId){
 집결장: ${leader||"-"}
 집결원: ${others.join(", ")}
 병력수: ${power}명`;
-  if(navigator.clipboard&&navigator.clipboard.writeText){
-    navigator.clipboard.writeText(text).then(()=>alert("복사되었습니다."),()=>fallbackCopy(text));
-  }else{
-    fallbackCopy(text);
-  }
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(()=>alert("복사되었습니다."),()=>fallbackCopy(text));}
+  else fallbackCopy(text);
 }
 function fallbackCopy(text){
   const ta=document.createElement("textarea");
@@ -816,35 +726,26 @@ function fallbackCopy(text){
 async function showAllUsers(){
   const usersSnap=await db.collection("users").get();
   const joined=new Set();
-  if(state.currentEventId==="rearrange"){state.rearrangeEntries.forEach(v=>joined.add(v.user));}
-  else{state.parties.forEach(p=>normalizeMembers(p.members).forEach(n=>joined.add(n)));}
+  if(state.currentEventId==="rearrange")state.rearrangeEntries.forEach(v=>joined.add(v.user));
+  else state.parties.forEach(p=>normalizeMembers(p.members).forEach(n=>joined.add(n)));
   const all=[];
   usersSnap.forEach(doc=>{if(!isHiddenTestNickname(doc.id))all.push(doc.id);});
   all.sort((a,b)=>a.localeCompare(b,"ko"));
-  const inUsers=all.filter(n=>joined.has(n));
-  const outUsers=all.filter(n=>!joined.has(n));
-  el.joinedUsers.innerHTML=renderNameColumns(inUsers);
-  el.notJoinedUsers.innerHTML=renderNameColumns(outUsers);
+  el.joinedUsers.innerHTML=renderNameColumns(all.filter(n=>joined.has(n)));
+  el.notJoinedUsers.innerHTML=renderNameColumns(all.filter(n=>!joined.has(n)));
   el.userModal.classList.remove("hidden");
   syncOverlay();
 }
 window.showAllUsers=showAllUsers;
 
-function renderNameColumns(arr){
-  if(!arr.length)return`<div class="name-item">(없음)</div>`;
-  return arr.map(v=>`<div class="name-item">${escapeHtml(v)}</div>`).join("");
-}
-function closeUserModal(){
-  el.userModal.classList.add("hidden");
-  syncOverlay();
-}
+function renderNameColumns(arr){if(!arr.length)return`<div class="name-item">(없음)</div>`;return arr.map(v=>`<div class="name-item">${escapeHtml(v)}</div>`).join("");}
+function closeUserModal(){el.userModal.classList.add("hidden");syncOverlay();}
 window.closeUserModal=closeUserModal;
 
 async function showAdminLogs(){
   if(!state.isAdmin){alert("권한이 없습니다.");return;}
   const snap=await db.collection("adminLogs").orderBy("createdAt","desc").limit(50).get();
-  const items=[];
-  snap.forEach(doc=>items.push({id:doc.id,...doc.data()}));
+  const items=[];snap.forEach(doc=>items.push({id:doc.id,...doc.data()}));
   el.logList.innerHTML=items.length?items.map(log=>`<div class="log-item"><div class="log-top"><div class="log-action">${escapeHtml(log.action||"")}</div><div class="muted">${log.admin?escapeHtml(log.admin):""}</div></div><div class="muted">이벤트: ${escapeHtml(log.event||"-")}</div><div class="muted">${escapeHtml(JSON.stringify(log.payload||{}))}</div>${!log.undone?`<button class="undo-btn" onclick="undoAdminLog('${escapeJs(log.id)}')">실행취소</button>`:`<div class="muted">실행취소됨</div>`}</div>`).join(""):`<div class="empty-card">운영 로그가 없습니다.</div>`;
   el.logModal.classList.remove("hidden");
   syncOverlay();
@@ -852,10 +753,7 @@ async function showAdminLogs(){
 }
 window.showAdminLogs=showAdminLogs;
 
-function closeLogModal(){
-  el.logModal.classList.add("hidden");
-  syncOverlay();
-}
+function closeLogModal(){el.logModal.classList.add("hidden");syncOverlay();}
 window.closeLogModal=closeLogModal;
 
 async function undoAdminLog(id){
@@ -865,26 +763,19 @@ async function undoAdminLog(id){
   const log=snap.data()||{};
   if(log.undone)return;
   const p=log.payload||{};
-
-  if(log.action==="set_rally_leader"&&log.event==="ruins"&&p.partyId){
-    await partiesRef("ruins").doc(p.partyId).update({rallyLeader:""});
-  }
+  if(log.action==="set_rally_leader"&&log.event==="ruins"&&p.partyId) await partiesRef("ruins").doc(p.partyId).update({rallyLeader:""});
   if(log.action==="kick_member"&&log.event&&p.partyId&&p.memberName){
     const pref=partiesRef(log.event).doc(p.partyId);
     const psnap=await pref.get();
     if(psnap.exists){
       const d=psnap.data()||{};
       const members=normalizeMembers(d.members);
-      if(!members.includes(p.memberName)){
-        members.push(p.memberName);
-        await pref.update({members});
-      }
+      if(!members.includes(p.memberName)){members.push(p.memberName);await pref.update({members});}
     }
   }
   if((log.action==="publish_rearrange_ranking"||log.action==="hide_rearrange_ranking")&&typeof p.rankingPublic==="boolean"){
     await eventRef("rearrange").set({rankingPublic:!p.rankingPublic},{merge:true});
   }
-
   await ref.update({undone:true,undoneAt:firebase.firestore.FieldValue.serverTimestamp(),undoneBy:state.currentUser});
   showAdminLogs();
 }
