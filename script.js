@@ -4,11 +4,10 @@ const db=firebase.firestore();
 
 const state={currentUser:"",currentEventId:"",isAdmin:false,unsubscribeParties:null,unsubscribeMeta:null,parties:[],rearrangeEntries:[],rearrangePublic:false,events:[{id:"viking",name:"바이킹의 역습",desc:"기존 파티 시스템 유지"},{id:"ruins",name:"유적 쟁탈",desc:"운영진 전용 파티 생성 / 15인 고정"},{id:"rearrange",name:"자리 재배치",desc:"빛나는 첨탑 최고 스테이지 입력 / 순위 관리"}],editingRuinsPartyId:""};
 const TEST_HIDDEN_PREFIXES=["test","tester","테스트","운영테스트"];
-const el={loginScreen:document.getElementById("loginScreen"),homeScreen:document.getElementById("homeScreen"),eventScreen:document.getElementById("eventScreen"),nicknameInput:document.getElementById("nicknameInput"),myNameBtn:document.getElementById("myNameBtn"),adminMenuBtn:document.getElementById("adminMenuBtn"),adminMenu:document.getElementById("adminMenu"),homeSummary:document.getElementById("homeSummary"),homeEventCards:document.getElementById("homeEventCards"),partyList:document.getElementById("partyList"),eventTitle:document.getElementById("eventTitle"),eventDesc:document.getElementById("eventDesc"),createPartyBtn:document.getElementById("createPartyBtn"),rearrangeEditBtn:document.getElementById("rearrangeEditBtn"),rearrangePublicBtn:document.getElementById("rearrangePublicBtn"),modalOverlay:document.getElementById("modalOverlay"),userModal:document.getElementById("userModal"),joinedUsers:document.getElementById("joinedUsers"),notJoinedUsers:document.getElementById("notJoinedUsers"),logModal:document.getElementById("logModal"),logList:document.getElementById("logList"),ruinsCreateModal:document.getElementById("ruinsCreateModal"),ruinsModalTitle:document.getElementById("ruinsModalTitle"),ruinsSubmitBtn:document.getElementById("ruinsSubmitBtn"),ruinNameInput:document.getElementById("ruinNameInput"),utcMonth:document.getElementById("utcMonth"),utcDay:document.getElementById("utcDay"),utcHour:document.getElementById("utcHour"),rearrangeModal:document.getElementById("rearrangeModal"),rearrangeModalTitle:document.getElementById("rearrangeModalTitle"),rearrangeStageInput:document.getElementById("rearrangeStageInput"),rearrangeSubmitBtn:document.getElementById("rearrangeSubmitBtn"), exampleImageModal:document.getElementById("exampleImageModal")};
+const el={loginScreen:document.getElementById("loginScreen"),homeScreen:document.getElementById("homeScreen"),eventScreen:document.getElementById("eventScreen"),nicknameInput:document.getElementById("nicknameInput"),myNameBtn:document.getElementById("myNameBtn"),adminMenuBtn:document.getElementById("adminMenuBtn"),adminMenu:document.getElementById("adminMenu"),homeSummary:document.getElementById("homeSummary"),homeEventCards:document.getElementById("homeEventCards"),partyList:document.getElementById("partyList"),eventTitle:document.getElementById("eventTitle"),eventDesc:document.getElementById("eventDesc"),createPartyBtn:document.getElementById("createPartyBtn"),rearrangeEditBtn:document.getElementById("rearrangeEditBtn"),rearrangePublicBtn:document.getElementById("rearrangePublicBtn"),modalOverlay:document.getElementById("modalOverlay"),userModal:document.getElementById("userModal"),joinedUsers:document.getElementById("joinedUsers"),notJoinedUsers:document.getElementById("notJoinedUsers"),logModal:document.getElementById("logModal"),logList:document.getElementById("logList"),ruinsCreateModal:document.getElementById("ruinsCreateModal"),ruinsModalTitle:document.getElementById("ruinsModalTitle"),ruinsSubmitBtn:document.getElementById("ruinsSubmitBtn"),ruinNameInput:document.getElementById("ruinNameInput"),utcMonth:document.getElementById("utcMonth"),utcDay:document.getElementById("utcDay"),utcHour:document.getElementById("utcHour"),rearrangeModal:document.getElementById("rearrangeModal"),rearrangeModalTitle:document.getElementById("rearrangeModalTitle"),rearrangeStageInput:document.getElementById("rearrangeStageInput"),rearrangeSubmitBtn:document.getElementById("rearrangeSubmitBtn"),exampleImageModal:document.getElementById("exampleImageModal")};
 
 function escapeHtml(s){return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;").replace(/'/g,"&#39;");}
 function escapeJs(s){return String(s??"").replace(/\\/g,"\\\\").replace(/'/g,"\\'");}
-
 function normalizeMembers(m){return Array.isArray(m)?m.filter(v=>typeof v==="string"&&v.trim()!==""):[];}
 function isHiddenTestNickname(name){const lowered=String(name||"").trim().toLowerCase();return TEST_HIDDEN_PREFIXES.some(prefix=>lowered.startsWith(String(prefix).toLowerCase()));}
 function showOnly(name){el.loginScreen.classList.add("hidden");el.homeScreen.classList.add("hidden");el.eventScreen.classList.add("hidden");if(name==="login")el.loginScreen.classList.remove("hidden");if(name==="home")el.homeScreen.classList.remove("hidden");if(name==="event")el.eventScreen.classList.remove("hidden");}
@@ -20,15 +19,29 @@ function updateUserBadge(){el.myNameBtn.textContent=state.currentUser?`${state.c
 function toggleAdminMenu(){el.adminMenu.classList.toggle("hidden");}
 function closeAdminMenu(){el.adminMenu.classList.add("hidden");}
 window.toggleAdminMenu=toggleAdminMenu;window.closeAdminMenu=closeAdminMenu;
-function openOverlay(){el.modalOverlay.classList.remove("hidden");}
-function closeOverlay(){
-  if(!el.userModal.classList.contains("hidden"))return;
-  if(!el.logModal.classList.contains("hidden"))return;
-  if(!el.ruinsCreateModal.classList.contains("hidden"))return;
-  if(!el.rearrangeModal.classList.contains("hidden"))return;
-  if(!el.exampleImageModal.classList.contains("hidden"))return;
-  el.modalOverlay.classList.add("hidden");
-}el.modalOverlay.addEventListener("click",()=>{closeUserModal();closeLogModal();closeRuinsCreateModal();closeRearrangeModal();closeExampleImageModal();});
+
+function syncOverlay(){
+  const hasOpenModal=
+    !el.userModal.classList.contains("hidden")||
+    !el.logModal.classList.contains("hidden")||
+    !el.ruinsCreateModal.classList.contains("hidden")||
+    !el.rearrangeModal.classList.contains("hidden")||
+    !el.exampleImageModal.classList.contains("hidden");
+
+  if(hasOpenModal) el.modalOverlay.classList.remove("hidden");
+  else el.modalOverlay.classList.add("hidden");
+}
+function openOverlay(){syncOverlay();}
+function closeOverlay(){syncOverlay();}
+el.modalOverlay.addEventListener("click",()=>{
+  closeExampleImageModal();
+  closeUserModal();
+  closeLogModal();
+  closeRuinsCreateModal();
+  closeRearrangeModal();
+  syncOverlay();
+});
+
 function clearSubscriptions(){if(state.unsubscribeParties){state.unsubscribeParties();state.unsubscribeParties=null;}if(state.unsubscribeMeta){state.unsubscribeMeta();state.unsubscribeMeta=null;}}
 
 async function ensureEventDocs(){for(const e of state.events){const payload={name:e.name,desc:e.desc};if(e.id==="rearrange")payload.rankingPublic=false;await eventRef(e.id).set(payload,{merge:true});}}
@@ -79,49 +92,85 @@ async function createParty(){if(state.currentEventId==="viking")return createVik
 window.createParty=createParty;
 async function createVikingParty(){const name=(prompt("파티 이름을 입력하세요.")||"").trim();if(!name)return;if(myParty()){alert("이미 다른 파티에 참여 중입니다.");return;}const maxPrompt=`최대 인원을 입력하세요.
 예: 6`;const maxInput=(prompt(maxPrompt)||"").trim();const maxMembers=Number(maxInput);if(!Number.isInteger(maxMembers)||maxMembers<1){alert("최대 인원은 1 이상의 숫자로 입력하세요.");return;}const dup=await partiesRef("viking").where("name","==",name).get();if(!dup.empty){alert("같은 이름의 파티가 이미 있습니다.");return;}await partiesRef("viking").add({type:"viking",event:"viking",name,createdBy:state.currentUser,members:[state.currentUser],maxMembers,createdAt:firebase.firestore.FieldValue.serverTimestamp()});}
-function openRuinsCreateModal(){if(!state.isAdmin){alert("유적 파티는 운영진만 생성할 수 있습니다.");return;}state.editingRuinsPartyId="";if(el.ruinsModalTitle)el.ruinsModalTitle.textContent="유적 파티 생성";if(el.ruinsSubmitBtn)el.ruinsSubmitBtn.textContent="생성";el.ruinNameInput.value="";el.utcMonth.value="1";el.utcDay.value="1";el.utcHour.value="0";openOverlay();el.ruinsCreateModal.classList.remove("hidden");}
-async function openRuinsEditModal(partyId){if(!state.isAdmin){alert("권한이 없습니다.");return;}const p=state.parties.find(v=>v.id===partyId);if(!p){alert("파티를 찾을 수 없습니다.");return;}state.editingRuinsPartyId=partyId;if(el.ruinsModalTitle)el.ruinsModalTitle.textContent="유적 파티 수정";if(el.ruinsSubmitBtn)el.ruinsSubmitBtn.textContent="수정";el.ruinNameInput.value=p.ruinName||p.name||"";const d=toDate(p.timeUTC);if(d){el.utcMonth.value=String(d.getUTCMonth()+1);el.utcDay.value=String(d.getUTCDate());el.utcHour.value=String(d.getUTCHours());}openOverlay();el.ruinsCreateModal.classList.remove("hidden");}
+function openRuinsCreateModal(){if(!state.isAdmin){alert("유적 파티는 운영진만 생성할 수 있습니다.");return;}state.editingRuinsPartyId="";if(el.ruinsModalTitle)el.ruinsModalTitle.textContent="유적 파티 생성";if(el.ruinsSubmitBtn)el.ruinsSubmitBtn.textContent="생성";el.ruinNameInput.value="";el.utcMonth.value="1";el.utcDay.value="1";el.utcHour.value="0";el.ruinsCreateModal.classList.remove("hidden");syncOverlay();}
+async function openRuinsEditModal(partyId){if(!state.isAdmin){alert("권한이 없습니다.");return;}const p=state.parties.find(v=>v.id===partyId);if(!p){alert("파티를 찾을 수 없습니다.");return;}state.editingRuinsPartyId=partyId;if(el.ruinsModalTitle)el.ruinsModalTitle.textContent="유적 파티 수정";if(el.ruinsSubmitBtn)el.ruinsSubmitBtn.textContent="수정";el.ruinNameInput.value=p.ruinName||p.name||"";const d=toDate(p.timeUTC);if(d){el.utcMonth.value=String(d.getUTCMonth()+1);el.utcDay.value=String(d.getUTCDate());el.utcHour.value=String(d.getUTCHours());}el.ruinsCreateModal.classList.remove("hidden");syncOverlay();}
 window.openRuinsEditModal=openRuinsEditModal;
-function closeRuinsCreateModal(){state.editingRuinsPartyId="";if(el.ruinsModalTitle)el.ruinsModalTitle.textContent="유적 파티 생성";if(el.ruinsSubmitBtn)el.ruinsSubmitBtn.textContent="생성";el.ruinsCreateModal.classList.add("hidden");closeOverlay();}
+function closeRuinsCreateModal(){state.editingRuinsPartyId="";if(el.ruinsModalTitle)el.ruinsModalTitle.textContent="유적 파티 생성";if(el.ruinsSubmitBtn)el.ruinsSubmitBtn.textContent="생성";el.ruinsCreateModal.classList.add("hidden");syncOverlay();}
 window.openRuinsCreateModal=openRuinsCreateModal;window.closeRuinsCreateModal=closeRuinsCreateModal;
 async function submitRuinsParty(){if(!state.isAdmin){alert("권한이 없습니다.");return;}const ruinName=(el.ruinNameInput.value||"").trim();const m=Number(el.utcMonth.value),d=Number(el.utcDay.value),h=Number(el.utcHour.value);if(!ruinName){alert("유적명을 입력하세요.");return;}if(!m||!d||h<0||h>23){alert("UTC 날짜/시간을 선택하세요.");return;}const year=new Date().getUTCFullYear();const utcDate=new Date(Date.UTC(year,m-1,d,h,0,0,0));if(state.editingRuinsPartyId){const ref=partiesRef("ruins").doc(state.editingRuinsPartyId);await ref.update({name:ruinName,ruinName,timeUTC:utcDate});await writeAdminLog("update_ruins_party",{partyId:state.editingRuinsPartyId,ruinName,month:m,day:d,hour:h});}else{await partiesRef("ruins").add({type:"ruins",event:"ruins",name:ruinName,ruinName,createdBy:state.currentUser,members:[],rallyLeader:"",maxMembers:15,timeUTC:utcDate,createdAt:firebase.firestore.FieldValue.serverTimestamp()});await writeAdminLog("create_ruins_party",{ruinName,month:m,day:d,hour:h});}closeRuinsCreateModal();}
 window.submitRuinsParty=submitRuinsParty;
+
+function lockRearrangeInputForManualTap(){
+  if(!el.rearrangeStageInput)return;
+  el.rearrangeStageInput.setAttribute("readonly","readonly");
+  el.rearrangeStageInput.blur();
+}
+function unlockRearrangeInput(){
+  if(!el.rearrangeStageInput)return;
+  if(el.rearrangeStageInput.hasAttribute("readonly")){
+    el.rearrangeStageInput.removeAttribute("readonly");
+  }
+}
+if(el.rearrangeStageInput){
+  const unlockAndFocus=()=>{
+    unlockRearrangeInput();
+    setTimeout(()=>{
+      try{el.rearrangeStageInput.focus({preventScroll:true});}
+      catch(_){el.rearrangeStageInput.focus();}
+    },0);
+  };
+  el.rearrangeStageInput.addEventListener("pointerdown",unlockAndFocus);
+  el.rearrangeStageInput.addEventListener("touchstart",unlockAndFocus,{passive:true});
+  el.rearrangeStageInput.addEventListener("mousedown",unlockAndFocus);
+}
 
 function openMyRearrangeModal(){
   if(el.rearrangeModalTitle)el.rearrangeModalTitle.textContent="내 진척도 입력";
   if(el.rearrangeSubmitBtn)el.rearrangeSubmitBtn.textContent="저장";
   const mine=myRearrangeEntry();
   el.rearrangeStageInput.value=mine?mine.stageText:"";
-  if(el.rearrangeStageInput)el.rearrangeStageInput.blur();
-  openOverlay();
+  lockRearrangeInputForManualTap();
   el.rearrangeModal.classList.remove("hidden");
+  syncOverlay();
   setTimeout(()=>{
-    if(el.rearrangeStageInput)el.rearrangeStageInput.blur();
     if(document.activeElement&&typeof document.activeElement.blur==="function"){
       document.activeElement.blur();
     }
-  },50);
+    if(el.rearrangeStageInput)el.rearrangeStageInput.blur();
+  },80);
 }
 function closeRearrangeModal(){
-  if(el.rearrangeStageInput)el.rearrangeStageInput.blur();
+  if(el.rearrangeStageInput){
+    el.rearrangeStageInput.blur();
+    el.rearrangeStageInput.removeAttribute("readonly");
+  }
   el.rearrangeModal.classList.add("hidden");
-  closeOverlay();
+  syncOverlay();
 }
 function openExampleImageModal(){
-  openOverlay();
   el.exampleImageModal.classList.remove("hidden");
+  syncOverlay();
 }
-
 function closeExampleImageModal(){
   el.exampleImageModal.classList.add("hidden");
-  closeOverlay();
+  syncOverlay();
 }
+window.openMyRearrangeModal=openMyRearrangeModal;window.closeRearrangeModal=closeRearrangeModal;window.openExampleImageModal=openExampleImageModal;window.closeExampleImageModal=closeExampleImageModal;
 
-window.openExampleImageModal=openExampleImageModal;
-window.closeExampleImageModal=closeExampleImageModal;
-window.openMyRearrangeModal=openMyRearrangeModal;window.closeRearrangeModal=closeRearrangeModal;
-async function submitRearrangeProgress(){const raw=(el.rearrangeStageInput.value||"").trim();const parts=raw.split("-");if(parts.length!==2||parts[0]===""||parts[1]===""){alert("최고 스테이지는 15-4 형식으로 입력하세요.");return;}const stageMajor=Number(parts[0]);const stageMinor=Number(parts[1]);if(!Number.isInteger(stageMajor)||!Number.isInteger(stageMinor)||stageMajor<0||stageMinor<0){alert("최고 스테이지는 15-4 형식으로 입력하세요.");return;}await rearrangeRef().doc(state.currentUser).set({user:state.currentUser,stageText:raw,stageMajor,stageMinor,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),createdAt:myRearrangeEntry()?.createdAt||firebase.firestore.FieldValue.serverTimestamp()},{merge:true});closeRearrangeModal();}
+async function submitRearrangeProgress(){
+  const raw=(el.rearrangeStageInput.value||"").trim();
+  const parts=raw.split("-");
+  if(parts.length!==2||parts[0]===""||parts[1]===""){alert("최고 스테이지는 15-4 형식으로 입력하세요.");return;}
+  const stageMajor=Number(parts[0]);
+  const stageMinor=Number(parts[1]);
+  if(!Number.isInteger(stageMajor)||!Number.isInteger(stageMinor)||stageMajor<0||stageMinor<0){alert("최고 스테이지는 15-4 형식으로 입력하세요.");return;}
+  await rearrangeRef().doc(state.currentUser).set({user:state.currentUser,stageText:raw,stageMajor,stageMinor,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),createdAt:myRearrangeEntry()?.createdAt||firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+  closeExampleImageModal();
+  closeRearrangeModal();
+  syncOverlay();
+}
 window.submitRearrangeProgress=submitRearrangeProgress;
+
 async function toggleRearrangePublic(){if(!state.isAdmin){alert("권한이 없습니다.");return;}const next=!state.rearrangePublic;const message=next?"순위를 전체 공개하시겠습니까?":"순위를 다시 비공개하시겠습니까?";if(!confirm(message))return;await eventRef("rearrange").set({rankingPublic:next},{merge:true});await writeAdminLog(next?"publish_rearrange_ranking":"hide_rearrange_ranking",{rankingPublic:next});}
 window.toggleRearrangePublic=toggleRearrangePublic;
 
@@ -136,22 +185,22 @@ window.kickMember=kickMember;
 async function setRallyLeader(id,name){if(!state.isAdmin){alert("권한이 없습니다.");return;}if(!confirm(`${name} 님을 집결장으로 지정하시겠습니까?`))return;const p=state.parties.find(v=>v.id===id);if(!p||!p.members.includes(name)){alert("해당 사용자는 현재 파티원이 아닙니다.");return;}await partiesRef("ruins").doc(id).update({rallyLeader:name});await writeAdminLog("set_rally_leader",{partyId:id,memberName:name});}
 window.setRallyLeader=setRallyLeader;
 
-function copyRuinsNotice(partyId){const p=state.parties.find(v=>v.id===partyId);if(!p)return;const members=[...p.members];const leader=p.rallyLeader||"";const others=members.filter(n=>n!==leader);const power=calcPower(members.length).toLocaleString("ko-KR");const kstTime=toDate(p.timeUTC)?`${String(toDate(p.timeUTC).getHours()).padStart(2,"0")}:00`:"-";const utcTime=toDate(p.timeUTC)?`${String(toDate(p.timeUTC).getUTCHours()).padStart(2,"0")}:00`:"-";const title=(p.ruinName||p.name||"")+" 명단";const text=`${title}
+function copyRuinsNotice(partyId){const p=state.parties.find(v=>v.id===partyId);if(!p)return;const members=[...p.members];const leader=p.rallyLeader||"";const others=members.filter(n=>n!==leader);const power=calcPower(members.length).toLocaleString("ko-KR");const d=toDate(p.timeUTC);const kstTime=d?`${String(d.getHours()).padStart(2,"0")}:00`:"-";const utcTime=d?`${String(d.getUTCHours()).padStart(2,"0")}:00`:"-";const title=(p.ruinName||p.name||"")+" 명단";const text=`${title}
 시간: ${kstTime}(UTC ${utcTime})
 집결장: ${leader||"-"}
 집결원: ${others.join(", ")}
 병력수: ${power}명`;if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(()=>alert("복사되었습니다."),()=>fallbackCopy(text));}else{fallbackCopy(text);}}
 function fallbackCopy(text){const ta=document.createElement("textarea");ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand("copy");document.body.removeChild(ta);alert("복사되었습니다.");}
 
-async function showAllUsers(){const usersSnap=await db.collection("users").get();const joined=new Set();if(state.currentEventId==="rearrange"){state.rearrangeEntries.forEach(v=>joined.add(v.user));}else{state.parties.forEach(p=>normalizeMembers(p.members).forEach(n=>joined.add(n)));}const all=[];usersSnap.forEach(doc=>{if(!isHiddenTestNickname(doc.id))all.push(doc.id);});all.sort((a,b)=>a.localeCompare(b,"ko"));const inUsers=all.filter(n=>joined.has(n));const outUsers=all.filter(n=>!joined.has(n));el.joinedUsers.innerHTML=renderNameColumns(inUsers);el.notJoinedUsers.innerHTML=renderNameColumns(outUsers);openOverlay();el.userModal.classList.remove("hidden");}
+async function showAllUsers(){const usersSnap=await db.collection("users").get();const joined=new Set();if(state.currentEventId==="rearrange"){state.rearrangeEntries.forEach(v=>joined.add(v.user));}else{state.parties.forEach(p=>normalizeMembers(p.members).forEach(n=>joined.add(n)));}const all=[];usersSnap.forEach(doc=>{if(!isHiddenTestNickname(doc.id))all.push(doc.id);});all.sort((a,b)=>a.localeCompare(b,"ko"));const inUsers=all.filter(n=>joined.has(n));const outUsers=all.filter(n=>!joined.has(n));el.joinedUsers.innerHTML=renderNameColumns(inUsers);el.notJoinedUsers.innerHTML=renderNameColumns(outUsers);el.userModal.classList.remove("hidden");syncOverlay();}
 window.showAllUsers=showAllUsers;
 function renderNameColumns(arr){if(!arr.length)return`<div class="name-item">(없음)</div>`;return arr.map(v=>`<div class="name-item">${escapeHtml(v)}</div>`).join("");}
-function closeUserModal(){el.userModal.classList.add("hidden");closeOverlay();}
+function closeUserModal(){el.userModal.classList.add("hidden");syncOverlay();}
 window.closeUserModal=closeUserModal;
 
-async function showAdminLogs(){if(!state.isAdmin){alert("권한이 없습니다.");return;}const snap=await db.collection("adminLogs").orderBy("createdAt","desc").limit(50).get();const items=[];snap.forEach(doc=>items.push({id:doc.id,...doc.data()}));el.logList.innerHTML=items.length?items.map(log=>`<div class="log-item"><div class="log-top"><div class="log-action">${escapeHtml(log.action||"")}</div><div class="muted">${log.admin?escapeHtml(log.admin):""}</div></div><div class="muted">이벤트: ${escapeHtml(log.event||"-")}</div><div class="muted">${escapeHtml(JSON.stringify(log.payload||{}))}</div>${!log.undone?`<button class="undo-btn" onclick="undoAdminLog('${escapeJs(log.id)}')">실행취소</button>`:`<div class="muted">실행취소됨</div>`}</div>`).join(""):`<div class="empty-card">운영 로그가 없습니다.</div>`;openOverlay();el.logModal.classList.remove("hidden");closeAdminMenu();}
+async function showAdminLogs(){if(!state.isAdmin){alert("권한이 없습니다.");return;}const snap=await db.collection("adminLogs").orderBy("createdAt","desc").limit(50).get();const items=[];snap.forEach(doc=>items.push({id:doc.id,...doc.data()}));el.logList.innerHTML=items.length?items.map(log=>`<div class="log-item"><div class="log-top"><div class="log-action">${escapeHtml(log.action||"")}</div><div class="muted">${log.admin?escapeHtml(log.admin):""}</div></div><div class="muted">이벤트: ${escapeHtml(log.event||"-")}</div><div class="muted">${escapeHtml(JSON.stringify(log.payload||{}))}</div>${!log.undone?`<button class="undo-btn" onclick="undoAdminLog('${escapeJs(log.id)}')">실행취소</button>`:`<div class="muted">실행취소됨</div>`}</div>`).join(""):`<div class="empty-card">운영 로그가 없습니다.</div>`;el.logModal.classList.remove("hidden");syncOverlay();closeAdminMenu();}
 window.showAdminLogs=showAdminLogs;
-function closeLogModal(){el.logModal.classList.add("hidden");closeOverlay();}
+function closeLogModal(){el.logModal.classList.add("hidden");syncOverlay();}
 window.closeLogModal=closeLogModal;
 async function undoAdminLog(id){const ref=db.collection("adminLogs").doc(id);const snap=await ref.get();if(!snap.exists)return;const log=snap.data()||{};if(log.undone)return;const p=log.payload||{};if(log.action==="set_rally_leader"&&log.event==="ruins"&&p.partyId){await partiesRef("ruins").doc(p.partyId).update({rallyLeader:""});}if(log.action==="kick_member"&&log.event&&p.partyId&&p.memberName){const pref=partiesRef(log.event).doc(p.partyId);const psnap=await pref.get();if(psnap.exists){const d=psnap.data()||{};const members=normalizeMembers(d.members);if(!members.includes(p.memberName)){members.push(p.memberName);await pref.update({members});}}}if((log.action==="publish_rearrange_ranking"||log.action==="hide_rearrange_ranking")&&typeof p.rankingPublic==="boolean"){await eventRef("rearrange").set({rankingPublic:!p.rankingPublic},{merge:true});}await ref.update({undone:true,undoneAt:firebase.firestore.FieldValue.serverTimestamp(),undoneBy:state.currentUser});showAdminLogs();}
 window.undoAdminLog=undoAdminLog;
