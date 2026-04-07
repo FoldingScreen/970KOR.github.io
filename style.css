@@ -1,125 +1,217 @@
-*{box-sizing:border-box}
-body{margin:0;background:#050810;color:#e8edf7;font-family:Arial,"Apple SD Gothic Neo",sans-serif}
-button,input,select{font:inherit}
-button{cursor:pointer}
-button:disabled{cursor:default;opacity:.6}
-.hidden{display:none!important}
-.container{max-width:1380px;margin:0 auto;padding:20px}
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>970KOR</title>
+  <link rel="stylesheet" href="style.css?v=stable4" />
 
-.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 20px;border-bottom:1px solid #162033;background:#050810;position:sticky;top:0;z-index:30}
-.brand{font-size:20px;font-weight:800}
-.top-tabs{display:flex;gap:10px;flex:1}
-.top-right{display:flex;gap:8px;align-items:center}
-.tab-btn,.pill,.actions button,.inline-btn,.close-btn{border:1px solid #22304a;background:#0b1220;color:#dce7ff;border-radius:999px;padding:10px 14px}
-.tab-btn.active{background:#1a2f66}
-.admin-menu{position:absolute;top:72px;right:20px;background:#0b1220;border:1px solid #22304a;border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:8px;z-index:40}
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div class="brand">970KOR</div>
 
-.screen{display:block}
-.card,.party-card,.summary-card,.event-card,.empty-card{background:#07111e;border:1px solid #14233a;border-radius:22px;padding:20px;box-shadow:0 0 0 1px rgba(255,255,255,.02) inset}
-.narrow{max-width:480px;margin:80px auto}
-.hero{margin-bottom:20px}
-.section-title{margin:16px 0 12px}
-.muted{color:#92a3bf}
-.text-input,select{width:100%;background:#09111d;color:#e8edf7;border:1px solid #22304a;border-radius:14px;padding:12px 14px}
-.actions{display:flex;gap:10px;flex-wrap:wrap}
-.actions.single{margin-top:12px}
-.right-wrap{justify-content:flex-end}
+      <nav class="top-tabs" id="topTabs">
+        <button class="tab-btn active" onclick="goHome()">홈</button>
+        <button class="tab-btn" onclick="openEvent('viking')">바이킹의 역습</button>
+        <button class="tab-btn" onclick="openEvent('ruins')">유적쟁탈</button>
+        <button class="tab-btn" onclick="openEvent('rearrange')">자리 재배치</button>
+      </nav>
 
-.summary-grid,.home-event-grid,.party-grid{display:grid;gap:16px}
-.summary-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
-.home-event-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-.party-grid{grid-template-columns:repeat(4,minmax(0,1fr));align-items:start}
-.summary-card .big-number{font-size:34px;font-weight:800;margin-top:10px}
-.event-card h3,.party-title{margin:0 0 10px;font-size:28px;font-weight:800}
-.event-card p,.party-sub{margin:6px 0;color:#9eb0cc}
-.event-top-row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px}
+      <div class="top-right">
+        <button id="adminMenuBtn" class="pill hidden" onclick="toggleAdminMenu()">운영진 메뉴</button>
+        <button class="pill" id="myNameBtn" disabled>로그인 안 됨</button>
+        <button class="pill" onclick="logout()">로그아웃</button>
+      </div>
+    </header>
 
-.member-list{margin-top:14px;border-top:1px solid #152640;padding-top:12px}
-.member-list.compact .member-line{margin:4px 0}
-.member-line{display:flex;align-items:center;gap:6px;justify-content:space-between;margin:6px 0;line-height:1.2}
-.member-line span{display:inline-block;flex:1;min-width:0;word-break:break-word}
-.my-name{color:#68a7ff;font-weight:800}
-.inline-btn{padding:5px 10px;border-radius:10px}
-.card-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
-.empty-card{text-align:center;color:#91a1bc}
+    <div id="adminMenu" class="admin-menu hidden">
+      <button onclick="showAllUsers()">전체 사용자</button>
+      <button onclick="showAdminLogs()">운영 로그</button>
+      <button onclick="closeAdminMenu()">닫기</button>
+    </div>
 
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:80}
-.modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(920px,92vw);max-height:85vh;overflow:auto;background:#08121f;border:1px solid #1d2d49;border-radius:22px;padding:20px;z-index:90}
-.modal-header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}
-.user-modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
-.name-columns{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;align-items:start}
-.name-item{padding:6px 0;text-align:left;border-bottom:1px solid rgba(255,255,255,.04)}
-.form-group{margin-bottom:14px}
-.form-help{margin:8px 0 0;font-size:14px}
-.rearrange-modal-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,300px);gap:16px;align-items:start}
-.rearrange-example-wrap{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
-.example-image{
-  display:block;
-  width:100%;
-  max-width:180px;
-  max-height:220px;
-  object-fit:contain;
-  border-radius:16px;
-  border:1px solid #22304a;
-  margin-top:0;
-  background:#0b1220;
-  cursor:zoom-in;
-  pointer-events:auto;
-  touch-action:manipulation;
-  -webkit-user-select:none;
-  user-select:none;
-}
-.image-modal{
-  width:min(96vw,720px);
-  z-index:100;
-}
-.image-modal-body{display:flex;justify-content:center;align-items:center}
-.example-image-large{
-  display:block;
-  max-width:100%;
-  max-height:70vh;
-  object-fit:contain;
-  border-radius:16px;
-  border:1px solid #22304a;
-  background:#0b1220;
-}
+    <main class="container">
+      <section id="loginScreen" class="screen hidden">
+        <div class="card narrow">
+          <h1>970KOR 입장</h1>
+          <p class="muted">닉네임으로 입장합니다.</p>
+          <input id="nicknameInput" class="text-input" placeholder="닉네임 입력" />
+          <div class="actions single">
+            <button onclick="login()">입장</button>
+          </div>
+        </div>
+      </section>
 
-.triple-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-.log-list{display:flex;flex-direction:column;gap:10px}
-.log-item{border:1px solid #20304b;border-radius:16px;padding:14px}
-.log-top{display:flex;justify-content:space-between;gap:12px;margin-bottom:6px}
-.log-action{font-weight:700}
-.undo-btn{margin-top:10px}
+      <section id="homeScreen" class="screen hidden">
+        <div class="hero card">
+          <h1>970KOR 이벤트 로비</h1>
+          <p class="muted">사바나가 보고있다</p>
+        </div>
 
-.rank-table-card{grid-column:1/-1}
-.rank-table-wrap{overflow:auto;border:1px solid #1a2943;border-radius:18px}
-.rank-table{width:100%;border-collapse:collapse;min-width:760px;background:#07111e}
-.rank-table th,.rank-table td{padding:12px 10px;border-bottom:1px solid #16243a;text-align:center;vertical-align:middle}
-.rank-table th{background:#0d1728;color:#dce7ff;font-weight:800;position:sticky;top:0;z-index:1}
-.rank-table td.left{text-align:left}
-.rank-table tr:last-child td{border-bottom:none}
-.rank-row-me td{background:rgba(104,167,255,.08)}
-.rank-edit-btn{padding:6px 10px;border-radius:10px;border:1px solid #22304a;background:#0b1220;color:#dce7ff}
-.rank-empty{padding:24px;text-align:center;color:#92a3bf}
+        <h2 class="section-title">이벤트 바로가기</h2>
+        <div id="homeEventCards" class="home-event-grid"></div>
 
-@media (max-width:1100px){
-  .party-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .summary-grid{grid-template-columns:1fr}
-  .home-event-grid{grid-template-columns:1fr 1fr}
-}
+        <h2 class="section-title">전체 현황</h2>
+        <div id="homeSummary" class="summary-grid"></div>
+      </section>
 
-@media (max-width:900px){
-  .rearrange-modal-body{grid-template-columns:1fr}
-  .example-image{max-width:130px;max-height:170px;margin:0 auto}
-}
+      <section id="eventScreen" class="screen hidden">
+        <div class="event-top-row">
+          <div>
+            <h1 id="eventTitle">이벤트</h1>
+            <div id="eventDesc" class="muted"></div>
+          </div>
+          <div class="actions right-wrap">
+            <button id="createPartyBtn" onclick="createParty()">파티 생성</button>
+            <button id="rearrangeEditBtn" class="hidden" onclick="openMyRearrangeModal()">내 진척도 입력</button>
+            <button id="rearrangeManageBtn" class="hidden" onclick="openRearrangeRankEditModal()">순위표 행 추가</button>
+            <button id="rearrangePublicBtn" class="hidden" onclick="toggleRearrangePublic()">순위 공개</button>
+            <button onclick="showAllUsers()">전체 사용자</button>
+          </div>
+        </div>
 
-@media (max-width:720px){
-  .topbar{flex-wrap:wrap}
-  .top-tabs{order:3;width:100%}
-  .event-top-row{flex-direction:column}
-  .party-grid,.home-event-grid,.summary-grid,.user-modal-grid,.triple-grid,.name-columns{grid-template-columns:1fr}
-  .modal{width:min(94vw,94vw)}
-  .example-image{max-width:96px;max-height:128px;margin:0 auto}
-  .image-modal{width:min(94vw,94vw)}
-  .container{padding:14px}
-}
+        <div id="partyList" class="party-grid"></div>
+      </section>
+    </main>
+  </div>
+
+  <div id="modalOverlay" class="modal-overlay hidden"></div>
+
+  <div id="userModal" class="modal hidden">
+    <div class="modal-header">
+      <h3>전체 사용자</h3>
+      <button class="close-btn" onclick="closeUserModal()">닫기</button>
+    </div>
+    <div class="user-modal-grid">
+      <div>
+        <h4>참여</h4>
+        <div id="joinedUsers" class="name-columns"></div>
+      </div>
+      <div>
+        <h4>미참여</h4>
+        <div id="notJoinedUsers" class="name-columns"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="logModal" class="modal hidden">
+    <div class="modal-header">
+      <h3>운영 로그</h3>
+      <button class="close-btn" onclick="closeLogModal()">닫기</button>
+    </div>
+    <div id="logList" class="log-list"></div>
+  </div>
+
+  <div id="ruinsCreateModal" class="modal hidden">
+    <div class="modal-header">
+      <h3 id="ruinsModalTitle">유적 파티 생성</h3>
+      <button class="close-btn" onclick="closeRuinsCreateModal()">닫기</button>
+    </div>
+
+    <div class="form-group">
+      <label>유적명</label>
+      <input id="ruinNameInput" class="text-input" placeholder="예: 4번 성채" />
+    </div>
+
+    <div class="form-group">
+      <label>UTC 월/일/시간</label>
+      <div class="triple-grid">
+        <select id="utcMonth"></select>
+        <select id="utcDay"></select>
+        <select id="utcHour"></select>
+      </div>
+    </div>
+
+    <div class="actions right-wrap">
+      <button id="ruinsSubmitBtn" onclick="submitRuinsParty()">생성</button>
+    </div>
+  </div>
+
+  <div id="rearrangeModal" class="modal hidden">
+    <div class="modal-header">
+      <h3 id="rearrangeModalTitle">내 진척도 입력</h3>
+      <button class="close-btn" onclick="closeRearrangeModal()">닫기</button>
+    </div>
+
+    <div class="rearrange-modal-body">
+      <div class="form-group">
+        <label>'빛나는 첨탑' 도달한 최고 스테이지</label>
+        <input
+          id="rearrangeStageInput"
+          class="text-input"
+          type="text"
+          inputmode="text"
+          autocapitalize="off"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="예: 15-4"
+        />
+        <p class="muted form-help">입력 형식: 큰 스테이지-세부 스테이지 (예: 15-4)</p>
+      </div>
+
+      <div class="form-group rearrange-example-wrap">
+        <label>입력 예시</label>
+        <img
+          src="빛나는첨탑순위.png"
+          alt="빛나는 첨탑 순위 예시"
+          class="example-image"
+          onclick="openExampleImageModal()"
+        />
+      </div>
+    </div>
+
+    <div class="actions right-wrap">
+      <button id="rearrangeSubmitBtn" onclick="submitRearrangeProgress()">저장</button>
+    </div>
+  </div>
+
+  <div id="exampleImageModal" class="modal hidden image-modal">
+    <div class="modal-header">
+      <h3>입력 예시 크게 보기</h3>
+      <button class="close-btn" onclick="closeExampleImageModal()">닫기</button>
+    </div>
+    <div class="image-modal-body">
+      <img src="빛나는첨탑순위.png" alt="빛나는 첨탑 순위 예시 크게 보기" class="example-image-large" />
+    </div>
+  </div>
+
+  <div id="rearrangeRankEditModal" class="modal hidden">
+    <div class="modal-header">
+      <h3 id="rearrangeRankEditTitle">순위표 행 추가</h3>
+      <button class="close-btn" onclick="closeRearrangeRankEditModal()">닫기</button>
+    </div>
+
+    <div class="form-group">
+      <label>닉네임</label>
+      <input id="rankEditNicknameInput" class="text-input" type="text" placeholder="닉네임 입력" />
+    </div>
+
+    <div class="form-group">
+      <label>스테이지</label>
+      <input id="rankEditStageInput" class="text-input" type="text" placeholder="예: 15-4" />
+    </div>
+
+    <div class="form-group">
+      <label>전투력</label>
+      <input id="rankEditPowerInput" class="text-input" type="number" min="0" step="1" placeholder="예: 123456789" />
+    </div>
+
+    <div class="form-group">
+      <label>비고</label>
+      <input id="rankEditNoteInput" class="text-input" type="text" placeholder="비고 입력" />
+    </div>
+
+    <div class="actions right-wrap">
+      <button id="rankEditDeleteBtn" class="hidden" onclick="deleteRearrangeRankRow()">삭제</button>
+      <button id="rankEditSubmitBtn" onclick="submitRearrangeRankEdit()">저장</button>
+    </div>
+  </div>
+
+  <script src="script.js?v=stable4"></script>
+</body>
+</html>
