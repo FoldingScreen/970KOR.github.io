@@ -5,8 +5,8 @@ const db=firebase.firestore();
 const state={currentUser:"",currentEventId:"",isAdmin:false,unsubscribeParties:null,unsubscribeMeta:null,parties:[],rearrangeEntries:[],rearrangePublic:false,events:[{id:"viking",name:"바이킹의 역습",desc:"기존 파티 시스템 유지"},{id:"ruins",name:"유적 쟁탈",desc:"운영진 전용 파티 생성 / 15인 고정"},{id:"rearrange",name:"자리 재배치",desc:"빛나는 첨탑 최고 스테이지 입력 / 순위 관리"}],editingRuinsPartyId:"",editingRearrangeRankUser:""};
 const TEST_HIDDEN_PREFIXES=["test","tester","테스트","운영테스트"];
 const REARRANGE_LAYOUT_ROWS=[1,2,3,4,5,6,7,8,9,10,11,10,9,8,5];
-const REARRANGE_LAYOUT_Y=[18,41,64,89,114,139,165,190,216,242,268,294,320,347,374];
-const REARRANGE_LAYOUT_X=[572,548,525,500,474,447,418,388,361,335,312,337,364,392,442];
+const REARRANGE_LAYOUT_Y=[14,39,63,87,111,136,161,186,211,236,261,286,311,336,361];
+const REARRANGE_LAYOUT_X=[573,547,521,495,469,443,417,391,365,339,313,339,365,391,443];
 const REARRANGE_STEP_X=52;
 
 const el={
