@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>970KOR</title>
-  <link rel="stylesheet" href="style.css?v=stable-grid1" />
+  <link rel="stylesheet" href="style.css?v=stable-final1" />
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -16,9 +16,9 @@
 
       <nav class="top-tabs" id="topTabs">
         <button class="tab-btn active" onclick="goHome()">홈</button>
-        <button class="tab-btn" onclick="openEvent('viking')">바이킹의 역습</button>
+        <button class="tab-btn" onclick="openEvent('viking')">바이킹</button>
         <button class="tab-btn" onclick="openEvent('ruins')">유적쟁탈</button>
-        <button class="tab-btn" onclick="openEvent('rearrange')">자리 재배치</button>
+        <button class="tab-btn" onclick="openEvent('rearrange')">자리재배치</button>
       </nav>
 
       <div class="top-right">
@@ -159,7 +159,7 @@
           src="빛나는첨탑순위.png"
           alt="빛나는 첨탑 순위 예시"
           class="example-image"
-          onclick="openExampleImageModal()"
+          onclick="openExampleImageModal('tower')"
         />
       </div>
     </div>
@@ -171,11 +171,11 @@
 
   <div id="exampleImageModal" class="modal hidden image-modal">
     <div class="modal-header">
-      <h3>입력 예시 크게 보기</h3>
+      <h3 id="exampleImageModalTitle">예시 보기</h3>
       <button class="close-btn" onclick="closeExampleImageModal()">닫기</button>
     </div>
     <div class="image-modal-body">
-      <img src="빛나는첨탑순위.png" alt="빛나는 첨탑 순위 예시 크게 보기" class="example-image-large" />
+      <img id="exampleImageModalImg" src="" alt="예시 이미지" class="example-image-large" />
     </div>
   </div>
 
@@ -211,6 +211,6 @@
     </div>
   </div>
 
-  <script src="script.js?v=stable-grid1"></script>
+  <script src="script.js?v=stable-final1"></script>
 </body>
 </html>
