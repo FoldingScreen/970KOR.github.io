@@ -4,24 +4,6 @@ const db=firebase.firestore();
 
 const state={currentUser:"",currentEventId:"",isAdmin:false,unsubscribeParties:null,unsubscribeMeta:null,parties:[],rearrangeEntries:[],rearrangePublic:false,events:[{id:"viking",name:"바이킹의 역습",desc:"기존 파티 시스템 유지"},{id:"ruins",name:"유적 쟁탈",desc:"운영진 전용 파티 생성 / 15인 고정"},{id:"rearrange",name:"자리 재배치",desc:"빛나는 첨탑 최고 스테이지 입력 / 순위 관리"}],editingRuinsPartyId:"",editingRearrangeRankUser:""};
 const TEST_HIDDEN_PREFIXES=["test","tester","테스트","운영테스트"];
-const REARRANGE_ROWS=[
-  {startRank:1,count:1,x:572,y:18},
-  {startRank:2,count:2,x:548,y:41},
-  {startRank:4,count:3,x:525,y:64},
-  {startRank:7,count:4,x:500,y:89},
-  {startRank:11,count:5,x:474,y:114},
-  {startRank:16,count:6,x:447,y:139},
-  {startRank:22,count:7,x:418,y:165},
-  {startRank:29,count:8,x:388,y:190},
-  {startRank:37,count:9,x:361,y:216},
-  {startRank:46,count:10,x:335,y:242},
-  {startRank:56,count:11,x:312,y:268},
-  {startRank:67,count:10,x:337,y:294},
-  {startRank:77,count:9,x:364,y:320},
-  {startRank:86,count:8,x:392,y:347},
-  {startRank:94,count:5,x:442,y:374}
-];
-const REARRANGE_STEP_X=52;
 
 const el={
 loginScreen:document.getElementById("loginScreen"),
@@ -58,6 +40,8 @@ rearrangeModalTitle:document.getElementById("rearrangeModalTitle"),
 rearrangeStageInput:document.getElementById("rearrangeStageInput"),
 rearrangeSubmitBtn:document.getElementById("rearrangeSubmitBtn"),
 exampleImageModal:document.getElementById("exampleImageModal"),
+exampleImageModalTitle:document.getElementById("exampleImageModalTitle"),
+exampleImageModalImg:document.getElementById("exampleImageModalImg"),
 rearrangeRankEditModal:document.getElementById("rearrangeRankEditModal"),
 rearrangeRankEditTitle:document.getElementById("rearrangeRankEditTitle"),
 rankEditNicknameInput:document.getElementById("rankEditNicknameInput"),
@@ -309,30 +293,16 @@ function formatDateTime(t){const d=toDate(t);if(!d)return"-";return`${d.getMonth
 function calcPower(memberCount){const base=Math.max(memberCount-1,1);return Math.floor((920000/base)/1000)*1000;}
 function myParty(){if(state.currentEventId!=="viking")return null;return state.parties.find(p=>p.members.includes(state.currentUser))||null;}
 function myRearrangeEntry(){return state.rearrangeEntries.find(v=>v.user===state.currentUser)||null;}
-
-function getRearrangeColumn(rank){
-  if(rank<=10)return 1;
-  if(rank<=24)return 2;
-  if(rank<=42)return 3;
-  if(rank<=60)return 4;
-  return 5;
-}
+function getRearrangeColumn(rank){if(rank<=10)return 1;if(rank<=24)return 2;if(rank<=42)return 3;if(rank<=60)return 4;return 5;}
 function getLayoutLabel(rank){return `${getRearrangeColumn(rank)}열`;}
 
-function buildMapSlots(){
-  const slots=[];
-  for(const row of REARRANGE_ROWS){
-    for(let i=0;i<row.count;i++){
-      slots.push({
-        rank:row.startRank+i,
-        x:row.x+(REARRANGE_STEP_X*i),
-        y:row.y
-      });
-    }
-  }
-  return slots;
+function getDisplayedRearrangeEntries(entries){
+  const firstColumn=entries.slice(0,10);
+  const rest=entries.slice(10);
+  const pinnedToSecondColumnTop=rest.filter(entry=>String(entry.note||"").trim()!=="");
+  const normalRest=rest.filter(entry=>String(entry.note||"").trim()==="");
+  return [...firstColumn,...pinnedToSecondColumnTop,...normalRest];
 }
-const REARRANGE_MAP_SLOTS=buildMapSlots();
 
 function renderPartyList(){
   if(!state.parties.length){
@@ -399,53 +369,41 @@ function renderRearrangeTable(entries){
   </div>`;
 }
 
-function renderRearrangeLayout(entries){
-  const assignedByRank={};
-  entries.slice(0,98).forEach((entry,idx)=>{assignedByRank[idx+1]=entry;});
-
-  const chips=REARRANGE_MAP_SLOTS.map(slot=>{
-    const entry=assignedByRank[slot.rank];
-    if(!entry) return "";
-    const meClass=entry.user===state.currentUser?" me":"";
-    return `<div class="layout-city-chip${meClass}" style="left:${slot.x}px;top:${slot.y}px;">
-      <div class="layout-city-inner">
-        <div class="layout-city-col">${getLayoutLabel(slot.rank)}</div>
-        <div class="layout-city-name">${escapeHtml(entry.user)}</div>
-      </div>
-    </div>`;
-  }).join("");
-
-  return `<div class="layout-map-wrap">
-    <div class="layout-map">
-      <img class="layout-map-bg" src="자리 재배치 위치도.png" alt="자리 재배치 위치도" />
-      ${chips}
-    </div>
+function renderRearrangeGuide(){
+  return `<div class="layout-guide-wrap">
+    <img src="자리 순열.png" alt="자리 순열 안내도" class="layout-guide-image" />
   </div>`;
 }
 
 function renderRearrangeEvent(){
   const mine=myRearrangeEntry();
   const visibleEntries=state.rearrangeEntries.filter(v=>!isHiddenTestNickname(v.user));
+  const displayedEntries=getDisplayedRearrangeEntries(visibleEntries);
+
   const mineCard=`<div class="party-card"><div class="party-title">내 진척도</div><div class="party-sub">빛나는 첨탑 최고 스테이지</div><div class="party-sub">현재 입력값: ${mine?escapeHtml(mine.stageText):"미입력"}</div><div class="party-sub">최종 수정: ${mine?formatDateTime(mine.updatedAt):"-"}</div><div class="card-actions"><button onclick="openMyRearrangeModal()">${mine?"수정":"입력"}</button></div></div>`;
 
   let rankingCard="";
-  let layoutCard="";
+  let guideCard="";
   if(state.isAdmin||state.rearrangePublic){
     rankingCard=`<div class="party-card rank-table-card">
       <div class="party-title">진척도 순위표</div>
       <div class="party-sub">${state.isAdmin?state.rearrangePublic?"현재 전체 공개 상태입니다.":"현재 운영진만 볼 수 있습니다.":"공개된 순위입니다."}</div>
-      ${renderRearrangeTable(visibleEntries)}
+      ${renderRearrangeTable(displayedEntries)}
     </div>`;
 
-    layoutCard=`<div class="party-card layout-board-card">
-      <div class="party-title">자동 배치도</div>
-      <div class="party-sub">격자 기준으로 배치했습니다.</div>
-      ${renderRearrangeLayout(visibleEntries)}
+    guideCard=`<div class="party-card layout-guide-card">
+      <div class="party-title">순열 안내 예시</div>
+      <div class="party-sub">비고가 있는 인원은 1열 제외 후 2열 최상단부터 우선 배치합니다.</div>
+      <div class="card-actions">
+        <button onclick="openExampleImageModal('guide')">예시 크게 보기</button>
+      </div>
+      ${renderRearrangeGuide()}
     </div>`;
   }else{
     rankingCard=`<div class="party-card"><div class="party-title">진척도 순위</div><div class="party-sub">아직 공개되지 않았습니다.</div><div class="party-sub">운영진 공개 후 전체 유저가 확인할 수 있습니다.</div></div>`;
   }
-  el.partyList.innerHTML=mineCard+rankingCard+layoutCard;
+
+  el.partyList.innerHTML=mineCard+rankingCard+guideCard;
 }
 
 async function createParty(){if(state.currentEventId==="viking")return createVikingParty();if(state.currentEventId==="ruins")return openRuinsCreateModal();}
@@ -537,7 +495,19 @@ function openMyRearrangeModal(){
   setTimeout(()=>{if(document.activeElement&&typeof document.activeElement.blur==="function")document.activeElement.blur();el.rearrangeStageInput.blur();},80);
 }
 function closeRearrangeModal(){el.rearrangeStageInput.blur();el.rearrangeStageInput.removeAttribute("readonly");el.rearrangeModal.classList.add("hidden");syncOverlay();}
-function openExampleImageModal(){el.exampleImageModal.classList.remove("hidden");syncOverlay();}
+function openExampleImageModal(type="tower"){
+  if(type==="guide"){
+    el.exampleImageModalTitle.textContent="순열 안내 예시";
+    el.exampleImageModalImg.src="자리 순열.png";
+    el.exampleImageModalImg.alt="자리 순열 안내 예시";
+  }else{
+    el.exampleImageModalTitle.textContent="입력 예시 크게 보기";
+    el.exampleImageModalImg.src="빛나는첨탑순위.png";
+    el.exampleImageModalImg.alt="빛나는 첨탑 순위 예시 크게 보기";
+  }
+  el.exampleImageModal.classList.remove("hidden");
+  syncOverlay();
+}
 function closeExampleImageModal(){el.exampleImageModal.classList.add("hidden");syncOverlay();}
 window.openMyRearrangeModal=openMyRearrangeModal;
 window.closeRearrangeModal=closeRearrangeModal;
@@ -647,7 +617,7 @@ async function joinParty(id){
   const members=normalizeMembers(d.members);
   if(state.currentEventId==="ruins"&&members.length>=15){alert("유적 파티는 최대 15명입니다.");return;}
   if(state.currentEventId==="viking"&&Number(d.maxMembers||0)>0&&members.length>=Number(d.maxMembers)){alert("이 파티는 정원이 가득 찼습니다.");return;}
-  if(members.includes(state.currentUser)){if(state.currentEventId==="ruins")alert("이미 이 유적 파티에 신청되어 있습니다.");return;}
+  if(members.includes(state.currentUser)){if(state.currentEventId==="ruins"){alert("이미 이 유적 파티에 신청되어 있습니다.");}return;}
   members.push(state.currentUser);
   await ref.update({members});
 }
