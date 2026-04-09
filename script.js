@@ -308,47 +308,75 @@ function myRearrangeEntry(){return state.rearrangeEntries.find(v=>v.user===state
 function getRearrangeColumn(rank){if(rank<=10)return 1;if(rank<=24)return 2;if(rank<=42)return 3;if(rank<=60)return 4;return 5;}
 function getLayoutLabel(rank){return `${getRearrangeColumn(rank)}열`;}
 
+function parseForcedColumnFromNote(note){
+  const match=String(note||"").match(/([1-5])\s*열/);
+  return match?Number(match[1]):0;
+}
+
 function getDisplayedRearrangeEntries(entries){
-  const forceSecondColumn = [];
-  const firstColumnKeep = [];
-  const pinnedByNote = [];
-  const normalRest = [];
+  const capacities={1:10,2:14,3:18,4:18,5:Number.MAX_SAFE_INTEGER};
+  const forced={1:[],2:[],3:[],4:[],5:[]};
+  const normal=[];
 
-  entries.forEach((entry, idx) => {
-    const originalRank = idx + 1;
-    const note = String(entry.note || "").trim();
-
-    if (note.includes("2열")) {
-      forceSecondColumn.push(entry);
-      return;
+  entries.forEach(entry=>{
+    const forcedCol=parseForcedColumnFromNote(entry.note);
+    if(forcedCol>=1&&forcedCol<=5){
+      forced[forcedCol].push(entry);
+    }else{
+      normal.push(entry);
     }
-
-    if (originalRank <= 10) {
-      firstColumnKeep.push(entry);
-      return;
-    }
-
-    if (note !== "") {
-      pinnedByNote.push(entry);
-      return;
-    }
-
-    normalRest.push(entry);
   });
 
-  const finalFirstColumn = [...firstColumnKeep, ...normalRest].slice(0, 10);
-  const usedUsers = new Set(finalFirstColumn.map(v => v.user));
+  const result=[];
+  const usedUsers=new Set();
 
-  const remainingForceSecond = forceSecondColumn.filter(v => !usedUsers.has(v.user));
-  const remainingPinned = pinnedByNote.filter(v => !usedUsers.has(v.user));
-  const remainingNormal = [...firstColumnKeep, ...normalRest].filter(v => !usedUsers.has(v.user));
+  function pushForced(col, limit){
+    let placed=0;
+    for(const entry of forced[col]){
+      if(placed>=limit)break;
+      if(usedUsers.has(entry.user))continue;
+      result.push(entry);
+      usedUsers.add(entry.user);
+      placed++;
+    }
+    return placed;
+  }
 
-  return [
-    ...finalFirstColumn,
-    ...remainingForceSecond,
-    ...remainingPinned,
-    ...remainingNormal
-  ];
+  function pushNormal(limit){
+    let placed=0;
+    for(const entry of normal){
+      if(placed>=limit)break;
+      if(usedUsers.has(entry.user))continue;
+      result.push(entry);
+      usedUsers.add(entry.user);
+      placed++;
+    }
+    return placed;
+  }
+
+  for(const col of [1,2,3,4,5]){
+    const cap=capacities[col];
+    const forcedPlaced=pushForced(col, cap);
+    if(cap!==Number.MAX_SAFE_INTEGER){
+      pushNormal(cap-forcedPlaced);
+    }
+  }
+
+  for(const col of [1,2,3,4,5]){
+    for(const entry of forced[col]){
+      if(usedUsers.has(entry.user))continue;
+      result.push(entry);
+      usedUsers.add(entry.user);
+    }
+  }
+
+  for(const entry of normal){
+    if(usedUsers.has(entry.user))continue;
+    result.push(entry);
+    usedUsers.add(entry.user);
+  }
+
+  return result;
 }
 
 function renderPartyList(){
@@ -443,7 +471,7 @@ function renderRearrangeEvent(){
 
     guideCard=`<div class="party-card layout-guide-card">
       <div class="party-title">순열 안내 예시</div>
-      <div class="party-sub">빨(1), 주(2), 노(3), 초(4), 파(5), 보(6)</div>
+      <div class="party-sub">빨(1), 주(2), 노(3), 초(4), 파(5)</div>
       <div class="card-actions">
         <button onclick="openExampleImageModal('guide')">예시 크게 보기</button>
       </div>
