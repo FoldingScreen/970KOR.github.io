@@ -372,27 +372,6 @@ function parseNoteRule(note){
 
 function getDisplayedRearrangeEntries(entries){
   const capacities={1:10,2:14,3:18,4:18,5:Number.MAX_SAFE_INTEGER};
-
-  const explicit={1:[],2:[],3:[],4:[],5:[]};
-  const r45=[];
-  const normal=[];
-
-  entries.forEach(entry=>{
-    const rule=parseNoteRule(entry.note);
-    if(rule.explicitColumn>=1&&rule.explicitColumn<=5){
-      explicit[rule.explicitColumn].push(entry);
-    }else if(rule.hasR45){
-      r45.push(entry);
-    }else{
-      normal.push(entry);
-    }
-  });
-
-  const result=[];
-  const usedUsers=new Set();
-
-function getDisplayedRearrangeEntries(entries){
-  const capacities={1:10,2:14,3:18,4:18,5:Number.MAX_SAFE_INTEGER};
   const sorted=[...entries];
   const fixedByColumn={1:[],2:[],3:[],4:[],5:[]};
   const normal=[];
