@@ -258,6 +258,8 @@ function updateEventActionButtons(){
   el.rearrangePublicBtn.classList.add("hidden");
   el.rearrangeManageBtn.classList.add("hidden");
 
+  const canToggleRearrangePublic=state.currentUser==="병풍";
+
   if(state.currentEventId==="viking"){
     el.createPartyBtn.classList.remove("hidden");
     el.createPartyBtn.textContent="파티 생성";
@@ -269,9 +271,11 @@ function updateEventActionButtons(){
   if(state.currentEventId==="rearrange"){
     el.rearrangeEditBtn.classList.remove("hidden");
     if(state.isAdmin){
-      el.rearrangePublicBtn.classList.remove("hidden");
       el.rearrangeManageBtn.classList.remove("hidden");
-      el.rearrangePublicBtn.textContent=state.rearrangePublic?"순위 비공개":"순위 공개";
+      if(canToggleRearrangePublic){
+        el.rearrangePublicBtn.classList.remove("hidden");
+        el.rearrangePublicBtn.textContent=state.rearrangePublic?"순위 비공개":"순위 공개";
+      }
     }
   }
 }
