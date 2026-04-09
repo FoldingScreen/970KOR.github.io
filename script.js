@@ -91,7 +91,19 @@ el.modalOverlay.addEventListener("click",()=>{
 
 function clearSubscriptions(){if(state.unsubscribeParties){state.unsubscribeParties();state.unsubscribeParties=null;}if(state.unsubscribeMeta){state.unsubscribeMeta();state.unsubscribeMeta=null;}}
 
-async function ensureEventDocs(){for(const e of state.events){const payload={name:e.name,desc:e.desc};if(e.id==="rearrange")payload.rankingPublic=false;await eventRef(e.id).set(payload,{merge:true});}}
+async function ensureEventDocs(){
+  for(const e of state.events){
+    const ref=eventRef(e.id);
+    const snap=await ref.get();
+    const payload={name:e.name,desc:e.desc};
+
+    if(!snap.exists && e.id==="rearrange"){
+      payload.rankingPublic=false;
+    }
+
+    await ref.set(payload,{merge:true});
+  }
+}
 async function ensureUserDoc(name){await db.collection("users").doc(name).set({nickname:name,lastLoginAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});}
 async function refreshAdmin(){state.isAdmin=(await db.collection("admins").doc(state.currentUser).get()).exists;updateUserBadge();updateEventActionButtons();}
 async function writeAdminLog(action,payload){if(!state.isAdmin)return;await db.collection("adminLogs").add({action,payload:payload||{},event:state.currentEventId||"",admin:state.currentUser,createdAt:firebase.firestore.FieldValue.serverTimestamp(),undone:false});}
