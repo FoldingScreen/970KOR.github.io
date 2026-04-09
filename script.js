@@ -408,7 +408,7 @@ function renderRearrangeEvent(){
 
     guideCard=`<div class="party-card layout-guide-card">
       <div class="party-title">순열 안내 예시</div>
-      <div class="party-sub">비고가 있는 인원은 1열 제외 후 2열 최상단부터 우선 배치합니다.</div>
+      <div class="party-sub">빨(1), 주(2), 노(3), 초(4), 파(5), 보(6)</div>
       <div class="card-actions">
         <button onclick="openExampleImageModal('guide')">예시 크게 보기</button>
       </div>
