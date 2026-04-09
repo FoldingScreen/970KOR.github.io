@@ -400,6 +400,9 @@ function renderRearrangeEvent(){
     rankingCard=`<div class="party-card rank-table-card">
       <div class="party-title">진척도 순위표</div>
       <div class="party-sub">${state.isAdmin?state.rearrangePublic?"현재 전체 공개 상태입니다.":"현재 운영진만 볼 수 있습니다.":"공개된 순위입니다."}</div>
+      <div class="card-actions">
+        <button onclick="copyRearrangeColumns()">순열 복사</button>
+      </div>
       ${renderRearrangeTable(displayedEntries)}
     </div>`;
 
@@ -713,6 +716,34 @@ function fallbackCopy(text){
   document.body.removeChild(ta);
   alert("복사되었습니다.");
 }
+
+function copyRearrangeColumns(){
+  const visibleEntries=state.rearrangeEntries.filter(v=>!isHiddenTestNickname(v.user));
+  const displayedEntries=getDisplayedRearrangeEntries(visibleEntries);
+
+  const columns={1:[],2:[],3:[],4:[],5:[]};
+
+  displayedEntries.forEach((entry,idx)=>{
+    const rank=idx+1;
+    const col=getRearrangeColumn(rank);
+    columns[col].push(entry.user);
+  });
+
+  const text=[
+    `1열: ${columns[1].join(", ")}`,
+    `2열: ${columns[2].join(", ")}`,
+    `3열: ${columns[3].join(", ")}`,
+    `4열: ${columns[4].join(", ")}`,
+    `5열: ${columns[5].join(", ")}`
+  ].join("\n");
+
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=>alert("순열이 복사되었습니다."),()=>fallbackCopy(text));
+  }else{
+    fallbackCopy(text);
+  }
+}
+window.copyRearrangeColumns=copyRearrangeColumns;
 
 async function showAllUsers(){
   const usersSnap=await db.collection("users").get();
