@@ -307,35 +307,36 @@ function myRearrangeEntry(){return state.rearrangeEntries.find(v=>v.user===state
 function getRearrangeColumn(rank){if(rank<=10)return 1;if(rank<=24)return 2;if(rank<=42)return 3;if(rank<=60)return 4;return 5;}
 function getLayoutLabel(rank){return `${getRearrangeColumn(rank)}열`;}
 
-function parseForcedColumnFromNote(note){
+function parseNoteRule(note){
   const text=String(note||"").trim();
-  const forcedMatch=text.match(/([1-5])\s*열/);
-  if(forcedMatch)return Number(forcedMatch[1]);
-  if(/R4|R5/i.test(text))return 2;
-  return 0;
+  const explicitMatch=text.match(/([1-5])\s*열/);
+  const explicitColumn=explicitMatch?Number(explicitMatch[1]):0;
+  const hasR45=/R4|R5/i.test(text);
+  return {explicitColumn,hasR45};
 }
 
 function getDisplayedRearrangeEntries(entries){
   const capacities={1:10,2:14,3:18,4:18,5:Number.MAX_SAFE_INTEGER};
 
-  const firstColumnFixed=[];
-  const forced={1:[],2:[],3:[],4:[],5:[]};
+  const explicit={1:[],2:[],3:[],4:[],5:[]};
+  const minSecond=[];
   const normal=[];
 
   entries.forEach((entry,idx)=>{
     const originalRank=idx+1;
-    const forcedCol=parseForcedColumnFromNote(entry.note);
+    const rule=parseNoteRule(entry.note);
 
-    if(originalRank<=10&&forcedCol!==1){
-      firstColumnFixed.push(entry);
+    if(rule.explicitColumn>=1&&rule.explicitColumn<=5){
+      explicit[rule.explicitColumn].push({...entry,__originalRank:originalRank});
       return;
     }
 
-    if(forcedCol>=1&&forcedCol<=5){
-      forced[forcedCol].push(entry);
-    }else{
-      normal.push(entry);
+    if(rule.hasR45&&originalRank>10){
+      minSecond.push({...entry,__originalRank:originalRank});
+      return;
     }
+
+    normal.push({...entry,__originalRank:originalRank});
   });
 
   const result=[];
@@ -348,44 +349,21 @@ function getDisplayedRearrangeEntries(entries){
     return true;
   }
 
-  for(const entry of firstColumnFixed){
-    if(result.length>=capacities[1])break;
-    pushEntry(entry);
-  }
-
-  for(const entry of forced[1]){
-    if(result.length>=capacities[1])break;
-    pushEntry(entry);
-  }
-
-  for(const entry of normal){
-    if(result.length>=capacities[1])break;
-    pushEntry(entry);
-  }
-
-  for(let targetCol=2;targetCol<=5;targetCol++){
-    const capacity=capacities[targetCol];
+  function fillColumn(col, preferredGroups, fallbackGroups){
+    const capacity=capacities[col];
     let placed=0;
 
-    for(const entry of forced[targetCol]){
+    for(const group of preferredGroups){
+      for(const entry of group){
+        if(placed>=capacity)break;
+        if(pushEntry(entry))placed++;
+      }
       if(placed>=capacity)break;
-      if(pushEntry(entry))placed++;
     }
 
-    if(targetCol!==5){
-      for(const entry of normal){
-        if(placed>=capacity)break;
-        if(pushEntry(entry))placed++;
-      }
-
-      for(const entry of forced[1]){
-        if(placed>=capacity)break;
-        if(pushEntry(entry))placed++;
-      }
-
-      for(let otherCol=2;otherCol<=5;otherCol++){
-        if(otherCol===targetCol)continue;
-        for(const entry of forced[otherCol]){
+    if(col!==5){
+      for(const group of fallbackGroups){
+        for(const entry of group){
           if(placed>=capacity)break;
           if(pushEntry(entry))placed++;
         }
@@ -394,16 +372,19 @@ function getDisplayedRearrangeEntries(entries){
     }
   }
 
-  for(const entry of normal){
-    pushEntry(entry);
-  }
-  for(let col=1;col<=5;col++){
-    for(const entry of forced[col]){
+  fillColumn(1,[explicit[1]],[normal,explicit[2],explicit[3],explicit[4],explicit[5],minSecond]);
+  fillColumn(2,[explicit[2],minSecond],[normal,explicit[1],explicit[3],explicit[4],explicit[5]]);
+  fillColumn(3,[explicit[3]],[normal,explicit[1],explicit[2],explicit[4],explicit[5],minSecond]);
+  fillColumn(4,[explicit[4]],[normal,explicit[1],explicit[2],explicit[3],explicit[5],minSecond]);
+  fillColumn(5,[explicit[5]],[normal,explicit[1],explicit[2],explicit[3],explicit[4],minSecond]);
+
+  for(const group of [normal,explicit[1],explicit[2],explicit[3],explicit[4],explicit[5],minSecond]){
+    for(const entry of group){
       pushEntry(entry);
     }
   }
 
-  return result;
+  return result.map(({__originalRank,...rest})=>rest);
 }
 
 function renderPartyList(){
