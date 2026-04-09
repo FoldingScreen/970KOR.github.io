@@ -2,7 +2,7 @@ const firebaseConfig={apiKey:"AIzaSyBu2RrQn8cAwwWaLtw5O8Omwn4-NzHWuc0",authDomai
 if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
 const db=firebase.firestore();
 
-const state={currentUser:"",currentEventId:"",isAdmin:false,unsubscribeParties:null,unsubscribeMeta:null,parties:[],rearrangeEntries:[],rearrangePublic:false,events:[{id:"viking",name:"바이킹의 역습",desc:"기존 파티 시스템 유지"},{id:"ruins",name:"유적 쟁탈",desc:"운영진 전용 파티 생성 / 15인 고정"},{id:"rearrange",name:"자리 재배치",desc:"빛나는 첨탑 최고 스테이지 입력 / 순위 관리"}],editingRuinsPartyId:"",editingRearrangeRankUser:""};
+const state={currentUser:"",currentEventId:"",isAdmin:false,unsubscribeParties:null,unsubscribeMeta:null,parties:[],rearrangeEntries:[],rearrangePublic:false,rearrangeTableEditMode:false,events:[{id:"viking",name:"바이킹의 역습",desc:"기존 파티 시스템 유지"},{id:"ruins",name:"유적 쟁탈",desc:"운영진 전용 파티 생성 / 15인 고정"},{id:"rearrange",name:"자리 재배치",desc:"빛나는 첨탑 최고 스테이지 입력 / 순위 관리"}],editingRuinsPartyId:"",editingRearrangeRankUser:""};
 const TEST_HIDDEN_PREFIXES=["test","tester","테스트","운영테스트"];
 
 const el={
@@ -196,6 +196,7 @@ async function logout(){
   state.parties=[];
   state.rearrangeEntries=[];
   state.rearrangePublic=false;
+  state.rearrangeTableEditMode=false;
   state.editingRearrangeRankUser="";
   localStorage.removeItem("partyAppUser");
   localStorage.removeItem("partyAppEvent");
@@ -242,6 +243,7 @@ function renderHomeEventCards(){
 async function goHome(){
   clearSubscriptions();
   state.currentEventId="";
+  state.rearrangeTableEditMode=false;
   localStorage.removeItem("partyAppEvent");
   setTopTabs("home");
   updateEventActionButtons();
@@ -263,18 +265,23 @@ function updateEventActionButtons(){
   if(state.currentEventId==="viking"){
     el.createPartyBtn.classList.remove("hidden");
     el.createPartyBtn.textContent="파티 생성";
+    el.createPartyBtn.onclick=createParty;
   }
   if(state.currentEventId==="ruins"){
     el.createPartyBtn.classList.remove("hidden");
     el.createPartyBtn.textContent="유적 파티 생성";
+    el.createPartyBtn.onclick=createParty;
   }
   if(state.currentEventId==="rearrange"){
     el.rearrangeEditBtn.classList.remove("hidden");
     if(state.isAdmin){
       el.rearrangeManageBtn.classList.remove("hidden");
+      el.rearrangeManageBtn.textContent=state.rearrangeTableEditMode?"순위표 수정 종료":"순위표 수정";
+      el.rearrangeManageBtn.onclick=toggleRearrangeTableEditMode;
       if(canToggleRearrangePublic){
         el.rearrangePublicBtn.classList.remove("hidden");
         el.rearrangePublicBtn.textContent=state.rearrangePublic?"순위 비공개":"순위 공개";
+        el.rearrangePublicBtn.onclick=toggleRearrangePublic;
       }
     }
   }
@@ -282,6 +289,7 @@ function updateEventActionButtons(){
 
 async function openEvent(id){
   state.currentEventId=id;
+  if(id!=="rearrange")state.rearrangeTableEditMode=false;
   localStorage.setItem("partyAppEvent",id);
   setTopTabs(id);
   const meta=state.events.find(v=>v.id===id);
@@ -470,16 +478,35 @@ function renderRuinsCard(p){
 }
 
 function renderRearrangeTable(entries){
-  if(!entries.length)return `<div class="rank-empty">입력된 데이터가 없습니다.</div>`;
+  if(!entries.length&&!state.rearrangeTableEditMode)return `<div class="rank-empty">입력된 데이터가 없습니다.</div>`;
+
   const rows=entries.map((entry,idx)=>{
     const rank=idx+1;
     const rowClass=entry.user===state.currentUser?"rank-row-me":"";
+    const userId=`rr-user-${idx}`;
+    const stageId=`rr-stage-${idx}`;
+    const powerId=`rr-power-${idx}`;
+    const noteId=`rr-note-${idx}`;
+    const moveId=`rr-move-${idx}`;
+
+    if(state.isAdmin&&state.rearrangeTableEditMode){
+      return `<tr class="${rowClass}">
+        <td>${rank}</td>
+        <td>${getLayoutLabel(rank)}</td>
+        <td class="left"><input id="${userId}" class="text-input" type="text" value="${escapeHtml(entry.user)}"></td>
+        <td><input id="${stageId}" class="text-input" type="text" value="${escapeHtml(entry.stageText||"")}"></td>
+        <td><input id="${powerId}" class="text-input" type="number" min="0" step="1" value="${entry.power>0?String(entry.power):""}"></td>
+        <td class="left"><input id="${noteId}" class="text-input" type="text" value="${escapeHtml(entry.note||"")}"></td>
+        <td><input id="${moveId}" type="checkbox" ${entry.moveDone?"checked":""}></td>
+        <td>
+          <button class="rank-edit-btn" onclick="saveInlineRearrangeRow('${escapeJs(entry.user)}', ${idx})">저장</button>
+          <button class="rank-edit-btn" onclick="deleteInlineRearrangeRow('${escapeJs(entry.user)}')">삭제</button>
+        </td>
+      </tr>`;
+    }
+
     const powerText=entry.power>0?Number(entry.power).toLocaleString("ko-KR"):"-";
     const noteText=entry.note?escapeHtml(entry.note):"-";
-    const moveCell=state.isAdmin
-      ? `<input type="checkbox" ${entry.moveDone?"checked":""} onchange="toggleRearrangeMoveDone('${escapeJs(entry.user)}', this.checked)">`
-      : `<input type="checkbox" ${entry.moveDone?"checked":""} disabled>`;
-
     return `<tr class="${rowClass}">
       <td>${rank}</td>
       <td>${getLayoutLabel(rank)}</td>
@@ -487,15 +514,25 @@ function renderRearrangeTable(entries){
       <td>${escapeHtml(entry.stageText||"-")}</td>
       <td>${powerText}</td>
       <td class="left">${noteText}</td>
-      <td>${moveCell}</td>
-      ${state.isAdmin?`<td><button class="rank-edit-btn" onclick="openRearrangeRankEditModal('${escapeJs(entry.user)}')">수정</button></td>`:""}
+      <td><input type="checkbox" ${entry.moveDone?"checked":""} disabled></td>
     </tr>`;
   }).join("");
+
+  const addRow=(state.isAdmin&&state.rearrangeTableEditMode)?`<tr>
+    <td>추가</td>
+    <td>-</td>
+    <td class="left"><input id="rr-new-user" class="text-input" type="text" placeholder="닉네임"></td>
+    <td><input id="rr-new-stage" class="text-input" type="text" placeholder="15-4"></td>
+    <td><input id="rr-new-power" class="text-input" type="number" min="0" step="1" placeholder="전투력"></td>
+    <td class="left"><input id="rr-new-note" class="text-input" type="text" placeholder="비고"></td>
+    <td><input id="rr-new-move" type="checkbox"></td>
+    <td><button class="rank-edit-btn" onclick="addInlineRearrangeRow()">행 추가</button></td>
+  </tr>`:"";
 
   return `<div class="rank-table-wrap">
     <table class="rank-table">
       <colgroup>
-        <col><col><col><col><col><col><col>${state.isAdmin?`<col>`:""}
+        <col><col><col><col><col><col><col>${state.isAdmin&&state.rearrangeTableEditMode?`<col>`:""}
       </colgroup>
       <thead>
         <tr>
@@ -506,10 +543,10 @@ function renderRearrangeTable(entries){
           <th>전투력</th>
           <th>비고</th>
           <th>이동</th>
-          ${state.isAdmin?`<th>관리</th>`:""}
+          ${state.isAdmin&&state.rearrangeTableEditMode?`<th>수정</th>`:""}
         </tr>
       </thead>
-      <tbody>${rows}</tbody>
+      <tbody>${rows}${addRow}</tbody>
     </table>
   </div>`;
 }
@@ -888,19 +925,125 @@ function copyRearrangeColumns(){
 }
 window.copyRearrangeColumns=copyRearrangeColumns;
 
-async function toggleRearrangeMoveDone(userName, checked){
+function toggleRearrangeTableEditMode(){
   if(!state.isAdmin){
     alert("권한이 없습니다.");
     return;
   }
-  await rearrangeRef().doc(userName).set({
-    user:userName,
-    moveDone:!!checked,
-    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
-  },{merge:true});
+  state.rearrangeTableEditMode=!state.rearrangeTableEditMode;
+  updateEventActionButtons();
+  renderRearrangeEvent();
 }
-window.toggleRearrangeMoveDone=toggleRearrangeMoveDone;
-  
+window.toggleRearrangeTableEditMode=toggleRearrangeTableEditMode;
+
+async function saveInlineRearrangeRow(oldUser, idx){
+  if(!state.isAdmin){
+    alert("권한이 없습니다.");
+    return;
+  }
+
+  const nickname=(document.getElementById(`rr-user-${idx}`)?.value||"").trim();
+  const stageText=(document.getElementById(`rr-stage-${idx}`)?.value||"").trim();
+  const powerRaw=(document.getElementById(`rr-power-${idx}`)?.value||"").trim();
+  const note=(document.getElementById(`rr-note-${idx}`)?.value||"").trim();
+  const moveDone=!!document.getElementById(`rr-move-${idx}`)?.checked;
+
+  if(!nickname){
+    alert("닉네임을 입력하세요.");
+    return;
+  }
+
+  const parsed=parseStageText(stageText);
+  if(!parsed){
+    alert("스테이지는 15-4 형식으로 입력하세요.");
+    return;
+  }
+
+  let power=0;
+  if(powerRaw!==""){
+    power=Number(powerRaw);
+    if(!Number.isInteger(power)||power<0){
+      alert("전투력은 0 이상의 정수로 입력하세요.");
+      return;
+    }
+  }
+
+  if(oldUser&&oldUser!==nickname) await rearrangeRef().doc(oldUser).delete();
+  await ensureUserDoc(nickname);
+  await rearrangeRef().doc(nickname).set({
+    user:nickname,
+    stageText,
+    stageMajor:parsed.stageMajor,
+    stageMinor:parsed.stageMinor,
+    power,
+    note,
+    moveDone,
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
+    createdAt:(state.rearrangeEntries.find(v=>v.user===nickname)?.createdAt)||firebase.firestore.FieldValue.serverTimestamp()
+  },{merge:true});
+  await writeAdminLog("update_rearrange_rank_row",{oldUser,newUser:nickname,stageText,power,note,moveDone});
+}
+window.saveInlineRearrangeRow=saveInlineRearrangeRow;
+
+async function deleteInlineRearrangeRow(user){
+  if(!state.isAdmin){
+    alert("권한이 없습니다.");
+    return;
+  }
+  if(!confirm(`${user} 행을 삭제하시겠습니까?`))return;
+  await rearrangeRef().doc(user).delete();
+  await writeAdminLog("delete_rearrange_rank_row",{user});
+}
+window.deleteInlineRearrangeRow=deleteInlineRearrangeRow;
+
+async function addInlineRearrangeRow(){
+  if(!state.isAdmin){
+    alert("권한이 없습니다.");
+    return;
+  }
+
+  const nickname=(document.getElementById("rr-new-user")?.value||"").trim();
+  const stageText=(document.getElementById("rr-new-stage")?.value||"").trim();
+  const powerRaw=(document.getElementById("rr-new-power")?.value||"").trim();
+  const note=(document.getElementById("rr-new-note")?.value||"").trim();
+  const moveDone=!!document.getElementById("rr-new-move")?.checked;
+
+  if(!nickname){
+    alert("닉네임을 입력하세요.");
+    return;
+  }
+
+  const parsed=parseStageText(stageText);
+  if(!parsed){
+    alert("스테이지는 15-4 형식으로 입력하세요.");
+    return;
+  }
+
+  let power=0;
+  if(powerRaw!==""){
+    power=Number(powerRaw);
+    if(!Number.isInteger(power)||power<0){
+      alert("전투력은 0 이상의 정수로 입력하세요.");
+      return;
+    }
+  }
+
+  await ensureUserDoc(nickname);
+  await rearrangeRef().doc(nickname).set({
+    user:nickname,
+    stageText,
+    stageMajor:parsed.stageMajor,
+    stageMinor:parsed.stageMinor,
+    power,
+    note,
+    moveDone,
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
+    createdAt:(state.rearrangeEntries.find(v=>v.user===nickname)?.createdAt)||firebase.firestore.FieldValue.serverTimestamp()
+  },{merge:true});
+  await writeAdminLog("create_rearrange_rank_row",{newUser:nickname,stageText,power,note,moveDone});
+}
+window.addInlineRearrangeRow=addInlineRearrangeRow;
+
 async function showAllUsers(){
   const usersSnap=await db.collection("users").get();
   const joined=new Set();
