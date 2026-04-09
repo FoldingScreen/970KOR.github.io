@@ -97,7 +97,7 @@ async function ensureEventDocs(){
     const snap=await ref.get();
     const payload={name:e.name,desc:e.desc};
 
-    if(!snap.exists && e.id==="rearrange"){
+    if(!snap.exists&&e.id==="rearrange"){
       payload.rankingPublic=false;
     }
 
@@ -170,8 +170,7 @@ async function tryAutoLogin(){
     await ensureUserDoc(savedUser);
     await refreshAdmin();
     const savedEvent=localStorage.getItem("partyAppEvent");
-    if(savedEvent){openEvent(savedEvent);}
-    else{goHome();}
+    if(savedEvent){openEvent(savedEvent);}else{goHome();}
   }catch(e){
     console.error(e);
     alert("기본 데이터를 불러오는 중 오류가 발생했습니다.");
@@ -310,22 +309,28 @@ function getLayoutLabel(rank){return `${getRearrangeColumn(rank)}열`;}
 
 function parseForcedColumnFromNote(note){
   const text=String(note||"").trim();
-
   const forcedMatch=text.match(/([1-5])\s*열/);
   if(forcedMatch)return Number(forcedMatch[1]);
-
   if(/R4|R5/i.test(text))return 2;
-
   return 0;
 }
 
 function getDisplayedRearrangeEntries(entries){
   const capacities={1:10,2:14,3:18,4:18,5:Number.MAX_SAFE_INTEGER};
+
+  const firstColumnFixed=[];
   const forced={1:[],2:[],3:[],4:[],5:[]};
   const normal=[];
 
-  entries.forEach(entry=>{
+  entries.forEach((entry,idx)=>{
+    const originalRank=idx+1;
     const forcedCol=parseForcedColumnFromNote(entry.note);
+
+    if(originalRank<=10&&forcedCol!==1){
+      firstColumnFixed.push(entry);
+      return;
+    }
+
     if(forcedCol>=1&&forcedCol<=5){
       forced[forcedCol].push(entry);
     }else{
@@ -336,50 +341,66 @@ function getDisplayedRearrangeEntries(entries){
   const result=[];
   const usedUsers=new Set();
 
-  function pushForced(col, limit){
+  function pushEntry(entry){
+    if(usedUsers.has(entry.user))return false;
+    result.push(entry);
+    usedUsers.add(entry.user);
+    return true;
+  }
+
+  for(const entry of firstColumnFixed){
+    if(result.length>=capacities[1])break;
+    pushEntry(entry);
+  }
+
+  for(const entry of forced[1]){
+    if(result.length>=capacities[1])break;
+    pushEntry(entry);
+  }
+
+  for(const entry of normal){
+    if(result.length>=capacities[1])break;
+    pushEntry(entry);
+  }
+
+  for(let targetCol=2;targetCol<=5;targetCol++){
+    const capacity=capacities[targetCol];
     let placed=0;
-    for(const entry of forced[col]){
-      if(placed>=limit)break;
-      if(usedUsers.has(entry.user))continue;
-      result.push(entry);
-      usedUsers.add(entry.user);
-      placed++;
-    }
-    return placed;
-  }
 
-  function pushNormal(limit){
-    let placed=0;
-    for(const entry of normal){
-      if(placed>=limit)break;
-      if(usedUsers.has(entry.user))continue;
-      result.push(entry);
-      usedUsers.add(entry.user);
-      placed++;
+    for(const entry of forced[targetCol]){
+      if(placed>=capacity)break;
+      if(pushEntry(entry))placed++;
     }
-    return placed;
-  }
 
-  for(const col of [1,2,3,4,5]){
-    const cap=capacities[col];
-    const forcedPlaced=pushForced(col, cap);
-    if(cap!==Number.MAX_SAFE_INTEGER){
-      pushNormal(cap-forcedPlaced);
-    }
-  }
+    if(targetCol!==5){
+      for(const entry of normal){
+        if(placed>=capacity)break;
+        if(pushEntry(entry))placed++;
+      }
 
-  for(const col of [1,2,3,4,5]){
-    for(const entry of forced[col]){
-      if(usedUsers.has(entry.user))continue;
-      result.push(entry);
-      usedUsers.add(entry.user);
+      for(const entry of forced[1]){
+        if(placed>=capacity)break;
+        if(pushEntry(entry))placed++;
+      }
+
+      for(let otherCol=2;otherCol<=5;otherCol++){
+        if(otherCol===targetCol)continue;
+        for(const entry of forced[otherCol]){
+          if(placed>=capacity)break;
+          if(pushEntry(entry))placed++;
+        }
+        if(placed>=capacity)break;
+      }
     }
   }
 
   for(const entry of normal){
-    if(usedUsers.has(entry.user))continue;
-    result.push(entry);
-    usedUsers.add(entry.user);
+    pushEntry(entry);
+  }
+  for(let col=1;col<=5;col++){
+    for(const entry of forced[col]){
+      pushEntry(entry);
+    }
   }
 
   return result;
@@ -412,7 +433,7 @@ function renderRuinsCard(p){
 }
 
 function renderRearrangeTable(entries){
-  if(!entries.length) return `<div class="rank-empty">입력된 데이터가 없습니다.</div>`;
+  if(!entries.length)return `<div class="rank-empty">입력된 데이터가 없습니다.</div>`;
   const rows=entries.map((entry,idx)=>{
     const rank=idx+1;
     const rowClass=entry.user===state.currentUser?"rank-row-me":"";
