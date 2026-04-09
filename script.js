@@ -391,39 +391,59 @@ function getDisplayedRearrangeEntries(entries){
   const result=[];
   const usedUsers=new Set();
 
+function getDisplayedRearrangeEntries(entries){
+  const capacities={1:10,2:14,3:18,4:18,5:Number.MAX_SAFE_INTEGER};
+  const sorted=[...entries];
+  const fixedByColumn={1:[],2:[],3:[],4:[],5:[]};
+  const normal=[];
+
+  sorted.forEach((entry,idx)=>{
+    const rule=parseNoteRule(entry.note);
+    const baseColumn=getRearrangeColumn(idx+1);
+
+    if(rule.explicitColumn>=1&&rule.explicitColumn<=5){
+      fixedByColumn[rule.explicitColumn].push(entry);
+      return;
+    }
+
+    if(rule.hasR45&&baseColumn>=3){
+      fixedByColumn[2].push(entry);
+      return;
+    }
+
+    normal.push(entry);
+  });
+
+  const result=[];
+  const usedUsers=new Set();
+
   function pushEntry(entry){
-    if(usedUsers.has(entry.user))return false;
-    result.push(entry);
+    if(!entry||usedUsers.has(entry.user))return false;
     usedUsers.add(entry.user);
+    result.push(entry);
     return true;
   }
 
-  function fillColumn(limit, groups){
+  function fillColumn(column){
+    const limit=capacities[column];
     let count=0;
-    for(const group of groups){
-      for(const entry of group){
-        if(count>=limit)break;
-        if(pushEntry(entry))count++;
-      }
+
+    for(const entry of fixedByColumn[column]){
       if(count>=limit)break;
+      if(pushEntry(entry))count++;
+    }
+
+    for(const entry of normal){
+      if(count>=limit)break;
+      if(pushEntry(entry))count++;
     }
   }
 
-  fillColumn(capacities[1],[explicit[1], normal, r45]);
-
-  const remainingNormal=()=>normal.filter(v=>!usedUsers.has(v.user));
-  const remainingR45=()=>r45.filter(v=>!usedUsers.has(v.user));
-  const remainingExplicit=(col)=>explicit[col].filter(v=>!usedUsers.has(v.user));
-
-  fillColumn(capacities[2],[remainingExplicit(2), remainingR45(), remainingNormal(), remainingExplicit(1), remainingExplicit(3), remainingExplicit(4), remainingExplicit(5)]);
-  fillColumn(capacities[3],[remainingExplicit(3), remainingNormal(), remainingExplicit(1), remainingExplicit(2), remainingExplicit(4), remainingExplicit(5), remainingR45()]);
-  fillColumn(capacities[4],[remainingExplicit(4), remainingNormal(), remainingExplicit(1), remainingExplicit(2), remainingExplicit(3), remainingExplicit(5), remainingR45()]);
-
-  for(const group of [remainingExplicit(5), remainingNormal(), remainingExplicit(1), remainingExplicit(2), remainingExplicit(3), remainingExplicit(4), remainingR45()]){
-    for(const entry of group){
-      pushEntry(entry);
-    }
-  }
+  fillColumn(1);
+  fillColumn(2);
+  fillColumn(3);
+  fillColumn(4);
+  fillColumn(5);
 
   return result;
 }
