@@ -401,7 +401,7 @@ function renderRearrangeEvent(){
       <div class="party-title">진척도 순위표</div>
       <div class="party-sub">${state.isAdmin?state.rearrangePublic?"현재 전체 공개 상태입니다.":"현재 운영진만 볼 수 있습니다.":"공개된 순위입니다."}</div>
       <div class="card-actions">
-        <button onclick="copyRearrangeColumns()">순열 복사</button>
+        <button onclick="copyRearrangeColumns()">복사</button>
       </div>
       ${renderRearrangeTable(displayedEntries)}
     </div>`;
