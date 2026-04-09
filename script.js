@@ -2,60 +2,79 @@ const firebaseConfig={apiKey:"AIzaSyBu2RrQn8cAwwWaLtw5O8Omwn4-NzHWuc0",authDomai
 if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
 const db=firebase.firestore();
 
-const state={currentUser:"",currentEventId:"",isAdmin:false,unsubscribeParties:null,unsubscribeMeta:null,parties:[],rearrangeEntries:[],rearrangePublic:false,rearrangeTableEditMode:false,events:[{id:"viking",name:"바이킹의 역습",desc:"기존 파티 시스템 유지"},{id:"ruins",name:"유적 쟁탈",desc:"운영진 전용 파티 생성 / 15인 고정"},{id:"rearrange",name:"자리 재배치",desc:"빛나는 첨탑 최고 스테이지 입력 / 순위 관리"}],editingRuinsPartyId:"",editingRearrangeRankUser:""};
+const state={
+  currentUser:"",
+  currentEventId:"",
+  isAdmin:false,
+  unsubscribeParties:null,
+  unsubscribeMeta:null,
+  parties:[],
+  rearrangeEntries:[],
+  rearrangePublic:false,
+  rearrangeTableEditMode:false,
+  events:[
+    {id:"viking",name:"바이킹의 역습",desc:"기존 파티 시스템 유지"},
+    {id:"ruins",name:"유적 쟁탈",desc:"운영진 전용 파티 생성 / 15인 고정"},
+    {id:"rearrange",name:"자리 재배치",desc:"빛나는 첨탑 최고 스테이지 입력 / 순위 관리"}
+  ],
+  editingRuinsPartyId:"",
+  editingRearrangeRankUser:""
+};
+
 const TEST_HIDDEN_PREFIXES=["test","tester","테스트","운영테스트"];
 
 const el={
-loginScreen:document.getElementById("loginScreen"),
-homeScreen:document.getElementById("homeScreen"),
-eventScreen:document.getElementById("eventScreen"),
-nicknameInput:document.getElementById("nicknameInput"),
-myNameBtn:document.getElementById("myNameBtn"),
-adminMenuBtn:document.getElementById("adminMenuBtn"),
-adminMenu:document.getElementById("adminMenu"),
-homeSummary:document.getElementById("homeSummary"),
-homeEventCards:document.getElementById("homeEventCards"),
-partyList:document.getElementById("partyList"),
-eventTitle:document.getElementById("eventTitle"),
-eventDesc:document.getElementById("eventDesc"),
-createPartyBtn:document.getElementById("createPartyBtn"),
-rearrangeEditBtn:document.getElementById("rearrangeEditBtn"),
-rearrangeManageBtn:document.getElementById("rearrangeManageBtn"),
-rearrangePublicBtn:document.getElementById("rearrangePublicBtn"),
-modalOverlay:document.getElementById("modalOverlay"),
-userModal:document.getElementById("userModal"),
-joinedUsers:document.getElementById("joinedUsers"),
-notJoinedUsers:document.getElementById("notJoinedUsers"),
-logModal:document.getElementById("logModal"),
-logList:document.getElementById("logList"),
-ruinsCreateModal:document.getElementById("ruinsCreateModal"),
-ruinsModalTitle:document.getElementById("ruinsModalTitle"),
-ruinsSubmitBtn:document.getElementById("ruinsSubmitBtn"),
-ruinNameInput:document.getElementById("ruinNameInput"),
-utcMonth:document.getElementById("utcMonth"),
-utcDay:document.getElementById("utcDay"),
-utcHour:document.getElementById("utcHour"),
-rearrangeModal:document.getElementById("rearrangeModal"),
-rearrangeModalTitle:document.getElementById("rearrangeModalTitle"),
-rearrangeStageInput:document.getElementById("rearrangeStageInput"),
-rearrangeSubmitBtn:document.getElementById("rearrangeSubmitBtn"),
-exampleImageModal:document.getElementById("exampleImageModal"),
-exampleImageModalTitle:document.getElementById("exampleImageModalTitle"),
-exampleImageModalImg:document.getElementById("exampleImageModalImg"),
-rearrangeRankEditModal:document.getElementById("rearrangeRankEditModal"),
-rearrangeRankEditTitle:document.getElementById("rearrangeRankEditTitle"),
-rankEditNicknameInput:document.getElementById("rankEditNicknameInput"),
-rankEditStageInput:document.getElementById("rankEditStageInput"),
-rankEditPowerInput:document.getElementById("rankEditPowerInput"),
-rankEditNoteInput:document.getElementById("rankEditNoteInput"),
-rankEditDeleteBtn:document.getElementById("rankEditDeleteBtn"),
-rankEditSubmitBtn:document.getElementById("rankEditSubmitBtn")
+  loginScreen:document.getElementById("loginScreen"),
+  homeScreen:document.getElementById("homeScreen"),
+  eventScreen:document.getElementById("eventScreen"),
+  nicknameInput:document.getElementById("nicknameInput"),
+  myNameBtn:document.getElementById("myNameBtn"),
+  adminMenuBtn:document.getElementById("adminMenuBtn"),
+  adminMenu:document.getElementById("adminMenu"),
+  homeSummary:document.getElementById("homeSummary"),
+  homeEventCards:document.getElementById("homeEventCards"),
+  partyList:document.getElementById("partyList"),
+  eventTitle:document.getElementById("eventTitle"),
+  eventDesc:document.getElementById("eventDesc"),
+  createPartyBtn:document.getElementById("createPartyBtn"),
+  rearrangeEditBtn:document.getElementById("rearrangeEditBtn"),
+  rearrangeManageBtn:document.getElementById("rearrangeManageBtn"),
+  rearrangePublicBtn:document.getElementById("rearrangePublicBtn"),
+  modalOverlay:document.getElementById("modalOverlay"),
+  userModal:document.getElementById("userModal"),
+  joinedUsers:document.getElementById("joinedUsers"),
+  notJoinedUsers:document.getElementById("notJoinedUsers"),
+  logModal:document.getElementById("logModal"),
+  logList:document.getElementById("logList"),
+  ruinsCreateModal:document.getElementById("ruinsCreateModal"),
+  ruinsModalTitle:document.getElementById("ruinsModalTitle"),
+  ruinsSubmitBtn:document.getElementById("ruinsSubmitBtn"),
+  ruinNameInput:document.getElementById("ruinNameInput"),
+  utcMonth:document.getElementById("utcMonth"),
+  utcDay:document.getElementById("utcDay"),
+  utcHour:document.getElementById("utcHour"),
+  rearrangeModal:document.getElementById("rearrangeModal"),
+  rearrangeModalTitle:document.getElementById("rearrangeModalTitle"),
+  rearrangeStageInput:document.getElementById("rearrangeStageInput"),
+  rearrangeSubmitBtn:document.getElementById("rearrangeSubmitBtn"),
+  exampleImageModal:document.getElementById("exampleImageModal"),
+  exampleImageModalTitle:document.getElementById("exampleImageModalTitle"),
+  exampleImageModalImg:document.getElementById("exampleImageModalImg"),
+  rearrangeRankEditModal:document.getElementById("rearrangeRankEditModal"),
+  rearrangeRankEditTitle:document.getElementById("rearrangeRankEditTitle"),
+  rankEditNicknameInput:document.getElementById("rankEditNicknameInput"),
+  rankEditStageInput:document.getElementById("rankEditStageInput"),
+  rankEditPowerInput:document.getElementById("rankEditPowerInput"),
+  rankEditNoteInput:document.getElementById("rankEditNoteInput"),
+  rankEditDeleteBtn:document.getElementById("rankEditDeleteBtn"),
+  rankEditSubmitBtn:document.getElementById("rankEditSubmitBtn")
 };
 
-function escapeHtml(s){return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;").replace(/'/g,"&#39;");}
+function escapeHtml(s){return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
 function escapeJs(s){return String(s??"").replace(/\\/g,"\\\\").replace(/'/g,"\\'");}
 function normalizeMembers(m){return Array.isArray(m)?m.filter(v=>typeof v==="string"&&v.trim()!==""):[];}
 function isHiddenTestNickname(name){const lowered=String(name||"").trim().toLowerCase();return TEST_HIDDEN_PREFIXES.some(prefix=>lowered.startsWith(String(prefix).toLowerCase()));}
+
 function showOnly(name){
   if(el.loginScreen)el.loginScreen.classList.add("hidden");
   if(el.homeScreen)el.homeScreen.classList.add("hidden");
@@ -64,9 +83,11 @@ function showOnly(name){
   if(name==="home"&&el.homeScreen)el.homeScreen.classList.remove("hidden");
   if(name==="event"&&el.eventScreen)el.eventScreen.classList.remove("hidden");
 }
+
 function eventRef(id){return db.collection("events").doc(id);}
 function partiesRef(id){return eventRef(id).collection("parties");}
 function rearrangeRef(){return eventRef("rearrange").collection("progress");}
+
 function setTopTabs(active){
   document.querySelectorAll(".tab-btn").forEach(btn=>btn.classList.remove("active"));
   if(active==="home")document.querySelectorAll(".tab-btn")[0]?.classList.add("active");
@@ -74,6 +95,7 @@ function setTopTabs(active){
   if(active==="ruins")document.querySelectorAll(".tab-btn")[2]?.classList.add("active");
   if(active==="rearrange")document.querySelectorAll(".tab-btn")[3]?.classList.add("active");
 }
+
 function updateUserBadge(){
   if(!el.myNameBtn)return;
   el.myNameBtn.textContent=state.currentUser?`${state.currentUser}${state.isAdmin?" (운영진)":""}`:"로그인 안 됨";
@@ -83,24 +105,60 @@ function updateUserBadge(){
     closeAdminMenu();
   }
 }
+
 function toggleAdminMenu(){el.adminMenu?.classList.toggle("hidden");}
 function closeAdminMenu(){el.adminMenu?.classList.add("hidden");}
 window.toggleAdminMenu=toggleAdminMenu;
 window.closeAdminMenu=closeAdminMenu;
 
 function syncOverlay(){
+  const customChoiceModal=document.getElementById("rearrangeExitChoiceModal");
   const hasOpenModal=
-    el.userModal&&!el.userModal.classList.contains("hidden")||
-    el.logModal&&!el.logModal.classList.contains("hidden")||
-    el.ruinsCreateModal&&!el.ruinsCreateModal.classList.contains("hidden")||
-    el.rearrangeModal&&!el.rearrangeModal.classList.contains("hidden")||
-    el.exampleImageModal&&!el.exampleImageModal.classList.contains("hidden")||
-    el.rearrangeRankEditModal&&!el.rearrangeRankEditModal.classList.contains("hidden");
+    (el.userModal&&!el.userModal.classList.contains("hidden"))||
+    (el.logModal&&!el.logModal.classList.contains("hidden"))||
+    (el.ruinsCreateModal&&!el.ruinsCreateModal.classList.contains("hidden"))||
+    (el.rearrangeModal&&!el.rearrangeModal.classList.contains("hidden"))||
+    (el.exampleImageModal&&!el.exampleImageModal.classList.contains("hidden"))||
+    (el.rearrangeRankEditModal&&!el.rearrangeRankEditModal.classList.contains("hidden"))||
+    !!customChoiceModal;
 
   if(!el.modalOverlay)return;
   if(hasOpenModal) el.modalOverlay.classList.remove("hidden");
   else el.modalOverlay.classList.add("hidden");
 }
+
+function removeExitChoiceModal(){
+  const modal=document.getElementById("rearrangeExitChoiceModal");
+  if(modal)modal.remove();
+  syncOverlay();
+}
+
+function showExitChoiceModal(){
+  removeExitChoiceModal();
+
+  const modal=document.createElement("div");
+  modal.id="rearrangeExitChoiceModal";
+  modal.className="modal";
+  modal.innerHTML=`
+    <div class="modal-header">
+      <h3>편집 종료</h3>
+      <button class="close-btn" type="button" onclick="removeExitChoiceModal()">닫기</button>
+    </div>
+    <div class="form-group">
+      <p class="muted">종료 방법을 선택하세요.</p>
+    </div>
+    <div class="actions right-wrap">
+      <button type="button" onclick="saveAndCloseRearrangeEdit()">저장 후 종료</button>
+      <button type="button" onclick="discardAndCloseRearrangeEdit()">저장 안 하고 종료</button>
+      <button type="button" onclick="removeExitChoiceModal()">취소</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  syncOverlay();
+}
+
+window.removeExitChoiceModal=removeExitChoiceModal;
+
 if(el.modalOverlay){
   el.modalOverlay.addEventListener("click",()=>{
     closeExampleImageModal();
@@ -109,6 +167,7 @@ if(el.modalOverlay){
     closeRuinsCreateModal();
     closeRearrangeModal();
     closeRearrangeRankEditModal();
+    removeExitChoiceModal();
     syncOverlay();
   });
 }
@@ -127,9 +186,11 @@ async function ensureEventDocs(){
     await ref.set(payload,{merge:true});
   }
 }
+
 async function ensureUserDoc(name){
   await db.collection("users").doc(name).set({nickname:name,lastLoginAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
 }
+
 async function refreshAdmin(){
   if(!state.currentUser){
     state.isAdmin=false;
@@ -141,9 +202,17 @@ async function refreshAdmin(){
   updateUserBadge();
   updateEventActionButtons();
 }
+
 async function writeAdminLog(action,payload){
   if(!state.isAdmin)return;
-  await db.collection("adminLogs").add({action,payload:payload||{},event:state.currentEventId||"",admin:state.currentUser,createdAt:firebase.firestore.FieldValue.serverTimestamp(),undone:false});
+  await db.collection("adminLogs").add({
+    action,
+    payload:payload||{},
+    event:state.currentEventId||"",
+    admin:state.currentUser,
+    createdAt:firebase.firestore.FieldValue.serverTimestamp(),
+    undone:false
+  });
 }
 
 function initRuinsSelects(){
@@ -237,9 +306,11 @@ async function renderHomeSummary(){
   const adminsSnap=await db.collection("admins").get();
   el.homeSummary.innerHTML=`<div class="summary-card"><div class="muted">전체 유저</div><div class="big-number">${usersSnap.size}</div></div><div class="summary-card"><div class="muted">이벤트 수</div><div class="big-number">${state.events.length}</div></div><div class="summary-card"><div class="muted">운영진 수</div><div class="big-number">${adminsSnap.size}</div></div>`;
 }
+
 function renderHomeEventCards(){
   el.homeEventCards.innerHTML=state.events.map(e=>`<div class="event-card"><h3>${escapeHtml(e.name)}</h3><p>${escapeHtml(e.desc)}</p><div class="actions"><button onclick="openEvent('${escapeJs(e.id)}')">들어가기</button></div></div>`).join("");
 }
+
 async function goHome(){
   clearSubscriptions();
   state.currentEventId="";
@@ -255,6 +326,7 @@ window.goHome=goHome;
 
 function updateEventActionButtons(){
   if(!el.createPartyBtn||!el.rearrangeEditBtn||!el.rearrangePublicBtn||!el.rearrangeManageBtn)return;
+
   el.createPartyBtn.classList.add("hidden");
   el.rearrangeEditBtn.classList.add("hidden");
   el.rearrangePublicBtn.classList.add("hidden");
@@ -267,21 +339,35 @@ function updateEventActionButtons(){
     el.createPartyBtn.textContent="파티 생성";
     el.createPartyBtn.onclick=createParty;
   }
+
   if(state.currentEventId==="ruins"){
     el.createPartyBtn.classList.remove("hidden");
     el.createPartyBtn.textContent="유적 파티 생성";
     el.createPartyBtn.onclick=createParty;
   }
+
   if(state.currentEventId==="rearrange"){
     el.rearrangeEditBtn.classList.remove("hidden");
+
     if(state.isAdmin){
       el.rearrangeManageBtn.classList.remove("hidden");
-      el.rearrangeManageBtn.textContent=state.rearrangeTableEditMode?"순위표 수정 종료":"순위표 수정";
-      el.rearrangeManageBtn.onclick=toggleRearrangeTableEditMode;
-      if(canToggleRearrangePublic){
+
+      if(state.rearrangeTableEditMode){
+        el.rearrangeManageBtn.textContent="저장";
+        el.rearrangeManageBtn.onclick=saveAllInlineRearrangeRows;
+
         el.rearrangePublicBtn.classList.remove("hidden");
-        el.rearrangePublicBtn.textContent=state.rearrangePublic?"순위 비공개":"순위 공개";
-        el.rearrangePublicBtn.onclick=toggleRearrangePublic;
+        el.rearrangePublicBtn.textContent="종료";
+        el.rearrangePublicBtn.onclick=showExitChoiceModal;
+      }else{
+        el.rearrangeManageBtn.textContent="순위표 수정";
+        el.rearrangeManageBtn.onclick=toggleRearrangeTableEditMode;
+
+        if(canToggleRearrangePublic){
+          el.rearrangePublicBtn.classList.remove("hidden");
+          el.rearrangePublicBtn.textContent=state.rearrangePublic?"순위 비공개":"순위 공개";
+          el.rearrangePublicBtn.onclick=toggleRearrangePublic;
+        }
       }
     }
   }
@@ -307,7 +393,19 @@ function subscribeParties(){
   state.unsubscribeParties=partiesRef(state.currentEventId).onSnapshot(snap=>{
     state.parties=snap.docs.map(doc=>{
       const d=doc.data()||{};
-      return{id:doc.id,name:d.name||"",ruinName:d.ruinName||"",event:d.event||state.currentEventId,createdBy:d.createdBy||"",members:normalizeMembers(d.members),rallyLeader:d.rallyLeader||"",timeUTC:d.timeUTC||null,maxMembers:Number(d.maxMembers||0),type:d.type||"",createdAt:d.createdAt||null};
+      return{
+        id:doc.id,
+        name:d.name||"",
+        ruinName:d.ruinName||"",
+        event:d.event||state.currentEventId,
+        createdBy:d.createdBy||"",
+        members:normalizeMembers(d.members),
+        rallyLeader:d.rallyLeader||"",
+        timeUTC:d.timeUTC||null,
+        maxMembers:Number(d.maxMembers||0),
+        type:d.type||"",
+        createdAt:d.createdAt||null
+      };
     });
     state.parties.sort(sortParties);
     renderPartyList();
@@ -357,12 +455,14 @@ function sortParties(a,b){
   if(state.currentEventId==="ruins")return getTimeValue(a.timeUTC)-getTimeValue(b.timeUTC);
   return String(a.name).localeCompare(String(b.name),"ko");
 }
+
 function sortRearrangeEntries(a,b){
   if(b.stageMajor!==a.stageMajor)return b.stageMajor-a.stageMajor;
   if(b.stageMinor!==a.stageMinor)return b.stageMinor-a.stageMinor;
   if((Number(b.power)||0)!==(Number(a.power)||0))return (Number(b.power)||0)-(Number(a.power)||0);
   return getTimeValue(b.updatedAt)-getTimeValue(a.updatedAt);
 }
+
 function getTimeValue(t){
   if(!t)return 0;
   if(typeof t.toDate==="function")return t.toDate().getTime();
@@ -370,6 +470,7 @@ function getTimeValue(t){
   const n=new Date(t).getTime();
   return Number.isFinite(n)?n:0;
 }
+
 function toDate(t){
   if(!t)return null;
   if(typeof t.toDate==="function")return t.toDate();
@@ -377,6 +478,7 @@ function toDate(t){
   const d=new Date(t);
   return Number.isNaN(d.getTime())?null:d;
 }
+
 function formatKST(t){const d=toDate(t);if(!d)return"-";return`${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:00`;}
 function formatUTC(t){const d=toDate(t);if(!d)return"-";return`${d.getUTCMonth()+1}/${d.getUTCDate()} ${String(d.getUTCHours()).padStart(2,"0")}:00`;}
 function formatDateTime(t){const d=toDate(t);if(!d)return"-";return`${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;}
@@ -488,6 +590,7 @@ function renderRearrangeTable(entries){
     const powerId=`rr-power-${idx}`;
     const noteId=`rr-note-${idx}`;
     const moveId=`rr-move-${idx}`;
+    const deleteId=`rr-delete-${idx}`;
 
     if(state.isAdmin&&state.rearrangeTableEditMode){
       return `<tr class="${rowClass}">
@@ -498,10 +601,7 @@ function renderRearrangeTable(entries){
         <td><input id="${powerId}" class="text-input" type="number" min="0" step="1" value="${entry.power>0?String(entry.power):""}"></td>
         <td class="left"><input id="${noteId}" class="text-input" type="text" value="${escapeHtml(entry.note||"")}"></td>
         <td><input id="${moveId}" type="checkbox" ${entry.moveDone?"checked":""}></td>
-        <td>
-          <button class="rank-edit-btn" onclick="saveInlineRearrangeRow('${escapeJs(entry.user)}', ${idx})">저장</button>
-          <button class="rank-edit-btn" onclick="deleteInlineRearrangeRow('${escapeJs(entry.user)}')">삭제</button>
-        </td>
+        <td><input id="${deleteId}" type="checkbox"></td>
       </tr>`;
     }
 
@@ -526,7 +626,7 @@ function renderRearrangeTable(entries){
     <td><input id="rr-new-power" class="text-input" type="number" min="0" step="1" placeholder="전투력"></td>
     <td class="left"><input id="rr-new-note" class="text-input" type="text" placeholder="비고"></td>
     <td><input id="rr-new-move" type="checkbox"></td>
-    <td><button class="rank-edit-btn" onclick="addInlineRearrangeRow()">행 추가</button></td>
+    <td>-</td>
   </tr>`:"";
 
   return `<div class="rank-table-wrap">
@@ -543,7 +643,7 @@ function renderRearrangeTable(entries){
           <th>전투력</th>
           <th>비고</th>
           <th>이동</th>
-          ${state.isAdmin&&state.rearrangeTableEditMode?`<th>수정</th>`:""}
+          ${state.isAdmin&&state.rearrangeTableEditMode?`<th>삭제</th>`:""}
         </tr>
       </thead>
       <tbody>${rows}${addRow}</tbody>
@@ -566,6 +666,7 @@ function renderRearrangeEvent(){
 
   let rankingCard="";
   let guideCard="";
+
   if(state.isAdmin||state.rearrangePublic){
     rankingCard=`<div class="party-card rank-table-card">
       <div class="party-title">진척도 순위표</div>
@@ -591,7 +692,10 @@ function renderRearrangeEvent(){
   el.partyList.innerHTML=mineCard+rankingCard+guideCard;
 }
 
-async function createParty(){if(state.currentEventId==="viking")return createVikingParty();if(state.currentEventId==="ruins")return openRuinsCreateModal();}
+async function createParty(){
+  if(state.currentEventId==="viking")return createVikingParty();
+  if(state.currentEventId==="ruins")return openRuinsCreateModal();
+}
 window.createParty=createParty;
 
 async function createVikingParty(){
@@ -618,6 +722,7 @@ function openRuinsCreateModal(){
   el.ruinsCreateModal.classList.remove("hidden");
   syncOverlay();
 }
+
 async function openRuinsEditModal(partyId){
   if(!state.isAdmin){alert("권한이 없습니다.");return;}
   const p=state.parties.find(v=>v.id===partyId);
@@ -713,7 +818,14 @@ async function submitRearrangeProgress(){
   const raw=(el.rearrangeStageInput.value||"").trim();
   const parsed=parseStageText(raw);
   if(!parsed){alert("최고 스테이지는 15-4 형식으로 입력하세요.");return;}
-  await rearrangeRef().doc(state.currentUser).set({user:state.currentUser,stageText:raw,stageMajor:parsed.stageMajor,stageMinor:parsed.stageMinor,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),createdAt:myRearrangeEntry()?.createdAt||firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+  await rearrangeRef().doc(state.currentUser).set({
+    user:state.currentUser,
+    stageText:raw,
+    stageMajor:parsed.stageMajor,
+    stageMinor:parsed.stageMinor,
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
+    createdAt:myRearrangeEntry()?.createdAt||firebase.firestore.FieldValue.serverTimestamp()
+  },{merge:true});
   closeExampleImageModal();
   closeRearrangeModal();
   syncOverlay();
@@ -792,6 +904,152 @@ async function deleteRearrangeRankRow(){
   closeRearrangeRankEditModal();
 }
 window.deleteRearrangeRankRow=deleteRearrangeRankRow;
+
+function toggleRearrangeTableEditMode(){
+  if(!state.isAdmin){
+    alert("권한이 없습니다.");
+    return;
+  }
+  state.rearrangeTableEditMode=true;
+  updateEventActionButtons();
+  renderRearrangeEvent();
+}
+window.toggleRearrangeTableEditMode=toggleRearrangeTableEditMode;
+
+async function saveAllInlineRearrangeRows(){
+  if(!state.isAdmin){
+    alert("권한이 없습니다.");
+    return;
+  }
+
+  const existingEntries=[...state.rearrangeEntries];
+  const seenUsers=new Set();
+
+  for(let idx=0; idx<existingEntries.length; idx++){
+    const oldUser=existingEntries[idx].user;
+    const nickname=(document.getElementById(`rr-user-${idx}`)?.value||"").trim();
+    const stageText=(document.getElementById(`rr-stage-${idx}`)?.value||"").trim();
+    const powerRaw=(document.getElementById(`rr-power-${idx}`)?.value||"").trim();
+    const note=(document.getElementById(`rr-note-${idx}`)?.value||"").trim();
+    const moveDone=!!document.getElementById(`rr-move-${idx}`)?.checked;
+    const deleteChecked=!!document.getElementById(`rr-delete-${idx}`)?.checked;
+
+    if(deleteChecked){
+      await rearrangeRef().doc(oldUser).delete();
+      await writeAdminLog("delete_rearrange_rank_row",{user:oldUser});
+      continue;
+    }
+
+    if(!nickname){
+      alert(`${idx+1}행 닉네임을 입력하세요.`);
+      return false;
+    }
+
+    if(seenUsers.has(nickname)){
+      alert(`중복 닉네임이 있습니다: ${nickname}`);
+      return false;
+    }
+    seenUsers.add(nickname);
+
+    const parsed=parseStageText(stageText);
+    if(!parsed){
+      alert(`${nickname}의 스테이지는 15-4 형식으로 입력하세요.`);
+      return false;
+    }
+
+    let power=0;
+    if(powerRaw!==""){
+      power=Number(powerRaw);
+      if(!Number.isInteger(power)||power<0){
+        alert(`${nickname}의 전투력은 0 이상의 정수로 입력하세요.`);
+        return false;
+      }
+    }
+
+    if(oldUser&&oldUser!==nickname) await rearrangeRef().doc(oldUser).delete();
+    await ensureUserDoc(nickname);
+    await rearrangeRef().doc(nickname).set({
+      user:nickname,
+      stageText,
+      stageMajor:parsed.stageMajor,
+      stageMinor:parsed.stageMinor,
+      power,
+      note,
+      moveDone,
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
+      createdAt:(state.rearrangeEntries.find(v=>v.user===nickname)?.createdAt)||existingEntries[idx].createdAt||firebase.firestore.FieldValue.serverTimestamp()
+    },{merge:true});
+    await writeAdminLog("update_rearrange_rank_row",{oldUser,newUser:nickname,stageText,power,note,moveDone});
+  }
+
+  const newNickname=(document.getElementById("rr-new-user")?.value||"").trim();
+  const newStageText=(document.getElementById("rr-new-stage")?.value||"").trim();
+  const newPowerRaw=(document.getElementById("rr-new-power")?.value||"").trim();
+  const newNote=(document.getElementById("rr-new-note")?.value||"").trim();
+  const newMoveDone=!!document.getElementById("rr-new-move")?.checked;
+
+  if(newNickname||newStageText||newPowerRaw||newNote||newMoveDone){
+    if(!newNickname){
+      alert("추가 행 닉네임을 입력하세요.");
+      return false;
+    }
+    if(seenUsers.has(newNickname)){
+      alert(`중복 닉네임이 있습니다: ${newNickname}`);
+      return false;
+    }
+
+    const parsed=parseStageText(newStageText);
+    if(!parsed){
+      alert("추가 행 스테이지는 15-4 형식으로 입력하세요.");
+      return false;
+    }
+
+    let power=0;
+    if(newPowerRaw!==""){
+      power=Number(newPowerRaw);
+      if(!Number.isInteger(power)||power<0){
+        alert("추가 행 전투력은 0 이상의 정수로 입력하세요.");
+        return false;
+      }
+    }
+
+    await ensureUserDoc(newNickname);
+    await rearrangeRef().doc(newNickname).set({
+      user:newNickname,
+      stageText:newStageText,
+      stageMajor:parsed.stageMajor,
+      stageMinor:parsed.stageMinor,
+      power,
+      note:newNote,
+      moveDone:newMoveDone,
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
+      createdAt:(state.rearrangeEntries.find(v=>v.user===newNickname)?.createdAt)||firebase.firestore.FieldValue.serverTimestamp()
+    },{merge:true});
+    await writeAdminLog("create_rearrange_rank_row",{newUser:newNickname,stageText:newStageText,power,note:newNote,moveDone:newMoveDone});
+  }
+
+  alert("저장되었습니다.");
+  return true;
+}
+window.saveAllInlineRearrangeRows=saveAllInlineRearrangeRows;
+
+async function saveAndCloseRearrangeEdit(){
+  const ok=await saveAllInlineRearrangeRows();
+  if(!ok)return;
+  state.rearrangeTableEditMode=false;
+  removeExitChoiceModal();
+  updateEventActionButtons();
+  renderRearrangeEvent();
+}
+window.saveAndCloseRearrangeEdit=saveAndCloseRearrangeEdit;
+
+function discardAndCloseRearrangeEdit(){
+  state.rearrangeTableEditMode=false;
+  removeExitChoiceModal();
+  updateEventActionButtons();
+  renderRearrangeEvent();
+}
+window.discardAndCloseRearrangeEdit=discardAndCloseRearrangeEdit;
 
 async function toggleRearrangePublic(){
   if(!state.isAdmin){alert("권한이 없습니다.");return;}
@@ -887,6 +1145,7 @@ function copyRuinsNotice(partyId){
   if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(()=>alert("복사되었습니다."),()=>fallbackCopy(text));}
   else fallbackCopy(text);
 }
+
 function fallbackCopy(text){
   const ta=document.createElement("textarea");
   ta.value=text;
@@ -900,7 +1159,6 @@ function fallbackCopy(text){
 function copyRearrangeColumns(){
   const visibleEntries=state.rearrangeEntries.filter(v=>!isHiddenTestNickname(v.user));
   const displayedEntries=getDisplayedRearrangeEntries(visibleEntries);
-
   const columns={1:[],2:[],3:[],4:[],5:[]};
 
   displayedEntries.forEach((entry,idx)=>{
@@ -924,125 +1182,6 @@ function copyRearrangeColumns(){
   }
 }
 window.copyRearrangeColumns=copyRearrangeColumns;
-
-function toggleRearrangeTableEditMode(){
-  if(!state.isAdmin){
-    alert("권한이 없습니다.");
-    return;
-  }
-  state.rearrangeTableEditMode=!state.rearrangeTableEditMode;
-  updateEventActionButtons();
-  renderRearrangeEvent();
-}
-window.toggleRearrangeTableEditMode=toggleRearrangeTableEditMode;
-
-async function saveInlineRearrangeRow(oldUser, idx){
-  if(!state.isAdmin){
-    alert("권한이 없습니다.");
-    return;
-  }
-
-  const nickname=(document.getElementById(`rr-user-${idx}`)?.value||"").trim();
-  const stageText=(document.getElementById(`rr-stage-${idx}`)?.value||"").trim();
-  const powerRaw=(document.getElementById(`rr-power-${idx}`)?.value||"").trim();
-  const note=(document.getElementById(`rr-note-${idx}`)?.value||"").trim();
-  const moveDone=!!document.getElementById(`rr-move-${idx}`)?.checked;
-
-  if(!nickname){
-    alert("닉네임을 입력하세요.");
-    return;
-  }
-
-  const parsed=parseStageText(stageText);
-  if(!parsed){
-    alert("스테이지는 15-4 형식으로 입력하세요.");
-    return;
-  }
-
-  let power=0;
-  if(powerRaw!==""){
-    power=Number(powerRaw);
-    if(!Number.isInteger(power)||power<0){
-      alert("전투력은 0 이상의 정수로 입력하세요.");
-      return;
-    }
-  }
-
-  if(oldUser&&oldUser!==nickname) await rearrangeRef().doc(oldUser).delete();
-  await ensureUserDoc(nickname);
-  await rearrangeRef().doc(nickname).set({
-    user:nickname,
-    stageText,
-    stageMajor:parsed.stageMajor,
-    stageMinor:parsed.stageMinor,
-    power,
-    note,
-    moveDone,
-    updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
-    createdAt:(state.rearrangeEntries.find(v=>v.user===nickname)?.createdAt)||firebase.firestore.FieldValue.serverTimestamp()
-  },{merge:true});
-  await writeAdminLog("update_rearrange_rank_row",{oldUser,newUser:nickname,stageText,power,note,moveDone});
-}
-window.saveInlineRearrangeRow=saveInlineRearrangeRow;
-
-async function deleteInlineRearrangeRow(user){
-  if(!state.isAdmin){
-    alert("권한이 없습니다.");
-    return;
-  }
-  if(!confirm(`${user} 행을 삭제하시겠습니까?`))return;
-  await rearrangeRef().doc(user).delete();
-  await writeAdminLog("delete_rearrange_rank_row",{user});
-}
-window.deleteInlineRearrangeRow=deleteInlineRearrangeRow;
-
-async function addInlineRearrangeRow(){
-  if(!state.isAdmin){
-    alert("권한이 없습니다.");
-    return;
-  }
-
-  const nickname=(document.getElementById("rr-new-user")?.value||"").trim();
-  const stageText=(document.getElementById("rr-new-stage")?.value||"").trim();
-  const powerRaw=(document.getElementById("rr-new-power")?.value||"").trim();
-  const note=(document.getElementById("rr-new-note")?.value||"").trim();
-  const moveDone=!!document.getElementById("rr-new-move")?.checked;
-
-  if(!nickname){
-    alert("닉네임을 입력하세요.");
-    return;
-  }
-
-  const parsed=parseStageText(stageText);
-  if(!parsed){
-    alert("스테이지는 15-4 형식으로 입력하세요.");
-    return;
-  }
-
-  let power=0;
-  if(powerRaw!==""){
-    power=Number(powerRaw);
-    if(!Number.isInteger(power)||power<0){
-      alert("전투력은 0 이상의 정수로 입력하세요.");
-      return;
-    }
-  }
-
-  await ensureUserDoc(nickname);
-  await rearrangeRef().doc(nickname).set({
-    user:nickname,
-    stageText,
-    stageMajor:parsed.stageMajor,
-    stageMinor:parsed.stageMinor,
-    power,
-    note,
-    moveDone,
-    updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
-    createdAt:(state.rearrangeEntries.find(v=>v.user===nickname)?.createdAt)||firebase.firestore.FieldValue.serverTimestamp()
-  },{merge:true});
-  await writeAdminLog("create_rearrange_rank_row",{newUser:nickname,stageText,power,note,moveDone});
-}
-window.addInlineRearrangeRow=addInlineRearrangeRow;
 
 async function showAllUsers(){
   const usersSnap=await db.collection("users").get();
