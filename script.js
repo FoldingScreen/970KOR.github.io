@@ -320,6 +320,7 @@ function subscribeRearrange(){
     console.error(err);
     alert("기본 데이터를 불러오는 중 오류가 발생했습니다.");
   });
+
   state.unsubscribeParties=rearrangeRef().onSnapshot(snap=>{
     state.rearrangeEntries=snap.docs.map(doc=>{
       const d=doc.data()||{};
@@ -335,6 +336,7 @@ function subscribeRearrange(){
         updatedAt:d.updatedAt||null,
         createdAt:d.createdAt||null
       };
+    });
     state.rearrangeEntries.sort(sortRearrangeEntries);
     renderRearrangeEvent();
   },err=>{
