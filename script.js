@@ -8,10 +8,12 @@ const state={
   isAdmin:false,
   unsubscribeParties:null,
   unsubscribeMeta:null,
+  unsubscribeRanking:null,
   parties:[],
+  rearrangeProgressEntries:[],
+  rearrangeRankingMap:{},
   rearrangeEntries:[],
   rearrangePublic:false,
-  rearrangeTableEditMode:false,
   events:[
     {id:"viking",name:"바이킹의 역습",desc:"기존 파티 시스템 유지"},
     {id:"ruins",name:"유적 쟁탈",desc:"운영진 전용 파티 생성 / 15인 고정"},
@@ -86,7 +88,8 @@ function showOnly(name){
 
 function eventRef(id){return db.collection("events").doc(id);}
 function partiesRef(id){return eventRef(id).collection("parties");}
-function rearrangeRef(){return eventRef("rearrange").collection("progress");}
+function rearrangeProgressRef(){return eventRef("rearrange").collection("progress");}
+function rearrangeRankingRef(){return eventRef("rearrange").collection("ranking");}
 
 function setTopTabs(active){
   document.querySelectorAll(".tab-btn").forEach(btn=>btn.classList.remove("active"));
@@ -112,52 +115,18 @@ window.toggleAdminMenu=toggleAdminMenu;
 window.closeAdminMenu=closeAdminMenu;
 
 function syncOverlay(){
-  const customChoiceModal=document.getElementById("rearrangeExitChoiceModal");
   const hasOpenModal=
     (el.userModal&&!el.userModal.classList.contains("hidden"))||
     (el.logModal&&!el.logModal.classList.contains("hidden"))||
     (el.ruinsCreateModal&&!el.ruinsCreateModal.classList.contains("hidden"))||
     (el.rearrangeModal&&!el.rearrangeModal.classList.contains("hidden"))||
     (el.exampleImageModal&&!el.exampleImageModal.classList.contains("hidden"))||
-    (el.rearrangeRankEditModal&&!el.rearrangeRankEditModal.classList.contains("hidden"))||
-    !!customChoiceModal;
+    (el.rearrangeRankEditModal&&!el.rearrangeRankEditModal.classList.contains("hidden"));
 
   if(!el.modalOverlay)return;
   if(hasOpenModal) el.modalOverlay.classList.remove("hidden");
   else el.modalOverlay.classList.add("hidden");
 }
-
-function removeExitChoiceModal(){
-  const modal=document.getElementById("rearrangeExitChoiceModal");
-  if(modal)modal.remove();
-  syncOverlay();
-}
-
-function showExitChoiceModal(){
-  removeExitChoiceModal();
-
-  const modal=document.createElement("div");
-  modal.id="rearrangeExitChoiceModal";
-  modal.className="modal";
-  modal.innerHTML=`
-    <div class="modal-header">
-      <h3>편집 종료</h3>
-      <button class="close-btn" type="button" onclick="removeExitChoiceModal()">닫기</button>
-    </div>
-    <div class="form-group">
-      <p class="muted">종료 방법을 선택하세요.</p>
-    </div>
-    <div class="actions right-wrap">
-      <button type="button" onclick="saveAndCloseRearrangeEdit()">저장 후 종료</button>
-      <button type="button" onclick="discardAndCloseRearrangeEdit()">저장 안 하고 종료</button>
-      <button type="button" onclick="removeExitChoiceModal()">취소</button>
-    </div>
-  `;
-  document.body.appendChild(modal);
-  syncOverlay();
-}
-
-window.removeExitChoiceModal=removeExitChoiceModal;
 
 if(el.modalOverlay){
   el.modalOverlay.addEventListener("click",()=>{
@@ -167,7 +136,6 @@ if(el.modalOverlay){
     closeRuinsCreateModal();
     closeRearrangeModal();
     closeRearrangeRankEditModal();
-    removeExitChoiceModal();
     syncOverlay();
   });
 }
@@ -175,6 +143,7 @@ if(el.modalOverlay){
 function clearSubscriptions(){
   if(state.unsubscribeParties){state.unsubscribeParties();state.unsubscribeParties=null;}
   if(state.unsubscribeMeta){state.unsubscribeMeta();state.unsubscribeMeta=null;}
+  if(state.unsubscribeRanking){state.unsubscribeRanking();state.unsubscribeRanking=null;}
 }
 
 async function ensureEventDocs(){
@@ -223,6 +192,21 @@ function initRuinsSelects(){
   for(let i=0;i<=23;i++)el.utcHour.insertAdjacentHTML("beforeend",`<option value="${i}">${String(i).padStart(2,"0")}:00</option>`);
 }
 
+function ensureRankingMoveField(){
+  if(document.getElementById("rankEditMoveWrap"))return;
+
+  const noteInput=el.rankEditNoteInput;
+  if(!noteInput||!noteInput.parentElement)return;
+
+  const wrap=document.createElement("div");
+  wrap.className="form-group";
+  wrap.id="rankEditMoveWrap";
+  wrap.innerHTML=`
+    <label><input type="checkbox" id="rankEditMoveDoneInput"> 이동 완료</label>
+  `;
+  noteInput.parentElement.insertAdjacentElement("afterend",wrap);
+}
+
 function getNicknameValue(){
   const direct=el.nicknameInput&&typeof el.nicknameInput.value==="string"?el.nicknameInput.value:"";
   const byId1=document.getElementById("nicknameInput")?.value||"";
@@ -264,8 +248,9 @@ async function logout(){
   state.isAdmin=false;
   state.parties=[];
   state.rearrangeEntries=[];
+  state.rearrangeProgressEntries=[];
+  state.rearrangeRankingMap={};
   state.rearrangePublic=false;
-  state.rearrangeTableEditMode=false;
   state.editingRearrangeRankUser="";
   localStorage.removeItem("partyAppUser");
   localStorage.removeItem("partyAppEvent");
@@ -279,6 +264,7 @@ window.logout=logout;
 async function tryAutoLogin(){
   try{
     initRuinsSelects();
+    ensureRankingMoveField();
     updateUserBadge();
     updateEventActionButtons();
     showOnly("login");
@@ -314,7 +300,6 @@ function renderHomeEventCards(){
 async function goHome(){
   clearSubscriptions();
   state.currentEventId="";
-  state.rearrangeTableEditMode=false;
   localStorage.removeItem("partyAppEvent");
   setTopTabs("home");
   updateEventActionButtons();
@@ -349,33 +334,16 @@ function updateEventActionButtons(){
   if(state.currentEventId==="rearrange"){
     el.rearrangeEditBtn.classList.remove("hidden");
 
-    if(state.isAdmin){
-      el.rearrangeManageBtn.classList.remove("hidden");
-
-      if(state.rearrangeTableEditMode){
-        el.rearrangeManageBtn.textContent="저장";
-        el.rearrangeManageBtn.onclick=saveAllInlineRearrangeRows;
-
-        el.rearrangePublicBtn.classList.remove("hidden");
-        el.rearrangePublicBtn.textContent="종료";
-        el.rearrangePublicBtn.onclick=showExitChoiceModal;
-      }else{
-        el.rearrangeManageBtn.textContent="순위표 수정";
-        el.rearrangeManageBtn.onclick=toggleRearrangeTableEditMode;
-
-        if(canToggleRearrangePublic){
-          el.rearrangePublicBtn.classList.remove("hidden");
-          el.rearrangePublicBtn.textContent=state.rearrangePublic?"순위 비공개":"순위 공개";
-          el.rearrangePublicBtn.onclick=toggleRearrangePublic;
-        }
-      }
+    if(state.isAdmin&&canToggleRearrangePublic){
+      el.rearrangePublicBtn.classList.remove("hidden");
+      el.rearrangePublicBtn.textContent=state.rearrangePublic?"순위 비공개":"순위 공개";
+      el.rearrangePublicBtn.onclick=toggleRearrangePublic;
     }
   }
 }
 
 async function openEvent(id){
   state.currentEventId=id;
-  if(id!=="rearrange")state.rearrangeTableEditMode=false;
   localStorage.setItem("partyAppEvent",id);
   setTopTabs(id);
   const meta=state.events.find(v=>v.id===id);
@@ -415,8 +383,22 @@ function subscribeParties(){
   });
 }
 
+function rebuildMergedRearrangeEntries(){
+  state.rearrangeEntries=state.rearrangeProgressEntries.map(progress=>{
+    const ranking=state.rearrangeRankingMap[progress.user]||{};
+    return{
+      ...progress,
+      power:Number(ranking.power||0),
+      note:String(ranking.note||""),
+      moveDone:!!ranking.moveDone
+    };
+  });
+  state.rearrangeEntries.sort(sortRearrangeEntries);
+}
+
 function subscribeRearrange(){
   clearSubscriptions();
+
   state.unsubscribeMeta=eventRef("rearrange").onSnapshot(doc=>{
     const d=doc.data()||{};
     state.rearrangePublic=!!d.rankingPublic;
@@ -427,8 +409,8 @@ function subscribeRearrange(){
     alert("기본 데이터를 불러오는 중 오류가 발생했습니다.");
   });
 
-  state.unsubscribeParties=rearrangeRef().onSnapshot(snap=>{
-    state.rearrangeEntries=snap.docs.map(doc=>{
+  state.unsubscribeParties=rearrangeProgressRef().onSnapshot(snap=>{
+    state.rearrangeProgressEntries=snap.docs.map(doc=>{
       const d=doc.data()||{};
       return{
         id:doc.id,
@@ -436,14 +418,30 @@ function subscribeRearrange(){
         stageText:String(d.stageText||d.stage||""),
         stageMajor:Number(d.stageMajor||0),
         stageMinor:Number(d.stageMinor||0),
-        power:Number(d.power||0),
-        note:String(d.note||""),
-        moveDone:!!d.moveDone,
         updatedAt:d.updatedAt||null,
         createdAt:d.createdAt||null
       };
     });
-    state.rearrangeEntries.sort(sortRearrangeEntries);
+    rebuildMergedRearrangeEntries();
+    renderRearrangeEvent();
+  },err=>{
+    console.error(err);
+    alert("기본 데이터를 불러오는 중 오류가 발생했습니다.");
+  });
+
+  state.unsubscribeRanking=rearrangeRankingRef().onSnapshot(snap=>{
+    const map={};
+    snap.docs.forEach(doc=>{
+      const d=doc.data()||{};
+      map[doc.id]={
+        user:d.user||doc.id,
+        power:Number(d.power||0),
+        note:String(d.note||""),
+        moveDone:!!d.moveDone
+      };
+    });
+    state.rearrangeRankingMap=map;
+    rebuildMergedRearrangeEntries();
     renderRearrangeEvent();
   },err=>{
     console.error(err);
@@ -580,31 +578,11 @@ function renderRuinsCard(p){
 }
 
 function renderRearrangeTable(entries){
-  if(!entries.length&&!state.rearrangeTableEditMode)return `<div class="rank-empty">입력된 데이터가 없습니다.</div>`;
+  if(!entries.length)return `<div class="rank-empty">입력된 데이터가 없습니다.</div>`;
 
   const rows=entries.map((entry,idx)=>{
     const rank=idx+1;
     const rowClass=entry.user===state.currentUser?"rank-row-me":"";
-    const userId=`rr-user-${idx}`;
-    const stageId=`rr-stage-${idx}`;
-    const powerId=`rr-power-${idx}`;
-    const noteId=`rr-note-${idx}`;
-    const moveId=`rr-move-${idx}`;
-    const deleteId=`rr-delete-${idx}`;
-
-    if(state.isAdmin&&state.rearrangeTableEditMode){
-      return `<tr class="${rowClass}">
-        <td>${rank}</td>
-        <td>${getLayoutLabel(rank)}</td>
-        <td class="left"><input id="${userId}" class="text-input" type="text" value="${escapeHtml(entry.user)}"></td>
-        <td><input id="${stageId}" class="text-input" type="text" value="${escapeHtml(entry.stageText||"")}"></td>
-        <td><input id="${powerId}" class="text-input" type="number" min="0" step="1" value="${entry.power>0?String(entry.power):""}"></td>
-        <td class="left"><input id="${noteId}" class="text-input" type="text" value="${escapeHtml(entry.note||"")}"></td>
-        <td><input id="${moveId}" type="checkbox" ${entry.moveDone?"checked":""}></td>
-        <td><input id="${deleteId}" type="checkbox"></td>
-      </tr>`;
-    }
-
     const powerText=entry.power>0?Number(entry.power).toLocaleString("ko-KR"):"-";
     const noteText=entry.note?escapeHtml(entry.note):"-";
     return `<tr class="${rowClass}">
@@ -614,25 +592,15 @@ function renderRearrangeTable(entries){
       <td>${escapeHtml(entry.stageText||"-")}</td>
       <td>${powerText}</td>
       <td class="left">${noteText}</td>
-      <td><input type="checkbox" ${entry.moveDone?"checked":""} disabled></td>
+      <td><input type="checkbox" ${entry.moveDone?"checked":""} ${state.isAdmin?`onchange="toggleRearrangeMoveDone('${escapeJs(entry.user)}', this.checked)"`:`disabled`}></td>
+      ${state.isAdmin?`<td><button class="rank-edit-btn" onclick="openRearrangeRankEditModal('${escapeJs(entry.user)}')">관리</button></td>`:""}
     </tr>`;
   }).join("");
-
-  const addRow=(state.isAdmin&&state.rearrangeTableEditMode)?`<tr>
-    <td>추가</td>
-    <td>-</td>
-    <td class="left"><input id="rr-new-user" class="text-input" type="text" placeholder="닉네임"></td>
-    <td><input id="rr-new-stage" class="text-input" type="text" placeholder="15-4"></td>
-    <td><input id="rr-new-power" class="text-input" type="number" min="0" step="1" placeholder="전투력"></td>
-    <td class="left"><input id="rr-new-note" class="text-input" type="text" placeholder="비고"></td>
-    <td><input id="rr-new-move" type="checkbox"></td>
-    <td>-</td>
-  </tr>`:"";
 
   return `<div class="rank-table-wrap">
     <table class="rank-table">
       <colgroup>
-        <col><col><col><col><col><col><col>${state.isAdmin&&state.rearrangeTableEditMode?`<col>`:""}
+        <col><col><col><col><col><col><col>${state.isAdmin?`<col>`:""}
       </colgroup>
       <thead>
         <tr>
@@ -643,10 +611,10 @@ function renderRearrangeTable(entries){
           <th>전투력</th>
           <th>비고</th>
           <th>이동</th>
-          ${state.isAdmin&&state.rearrangeTableEditMode?`<th>삭제</th>`:""}
+          ${state.isAdmin?`<th>관리</th>`:""}
         </tr>
       </thead>
-      <tbody>${rows}${addRow}</tbody>
+      <tbody>${rows}</tbody>
     </table>
   </div>`;
 }
@@ -818,13 +786,13 @@ async function submitRearrangeProgress(){
   const raw=(el.rearrangeStageInput.value||"").trim();
   const parsed=parseStageText(raw);
   if(!parsed){alert("최고 스테이지는 15-4 형식으로 입력하세요.");return;}
-  await rearrangeRef().doc(state.currentUser).set({
+  await rearrangeProgressRef().doc(state.currentUser).set({
     user:state.currentUser,
     stageText:raw,
     stageMajor:parsed.stageMajor,
     stageMinor:parsed.stageMinor,
     updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
-    createdAt:myRearrangeEntry()?.createdAt||firebase.firestore.FieldValue.serverTimestamp()
+    createdAt:state.rearrangeProgressEntries.find(v=>v.user===state.currentUser)?.createdAt||firebase.firestore.FieldValue.serverTimestamp()
   },{merge:true});
   closeExampleImageModal();
   closeRearrangeModal();
@@ -834,62 +802,69 @@ window.submitRearrangeProgress=submitRearrangeProgress;
 
 function openRearrangeRankEditModal(userName=""){
   if(!state.isAdmin){alert("권한이 없습니다.");return;}
+  ensureRankingMoveField();
+
   const entry=userName?state.rearrangeEntries.find(v=>v.user===userName):null;
-  state.editingRearrangeRankUser=entry?entry.user:"";
-  if(entry){
-    el.rearrangeRankEditTitle.textContent="순위표 행 수정";
-    el.rankEditSubmitBtn.textContent="저장";
-    el.rankEditDeleteBtn.classList.remove("hidden");
-    el.rankEditNicknameInput.value=entry.user||"";
-    el.rankEditStageInput.value=entry.stageText||"";
-    el.rankEditPowerInput.value=entry.power>0?String(entry.power):"";
-    el.rankEditNoteInput.value=entry.note||"";
-  }else{
-    el.rearrangeRankEditTitle.textContent="순위표 행 추가";
-    el.rankEditSubmitBtn.textContent="추가";
-    el.rankEditDeleteBtn.classList.add("hidden");
-    el.rankEditNicknameInput.value="";
-    el.rankEditStageInput.value="";
-    el.rankEditPowerInput.value="";
-    el.rankEditNoteInput.value="";
-  }
+  if(!entry){alert("대상을 찾을 수 없습니다.");return;}
+
+  state.editingRearrangeRankUser=entry.user;
+  el.rearrangeRankEditTitle.textContent="순위표 관리";
+  el.rankEditSubmitBtn.textContent="저장";
+  el.rankEditDeleteBtn.classList.remove("hidden");
+
+  el.rankEditNicknameInput.value=entry.user||"";
+  el.rankEditStageInput.value=entry.stageText||"";
+  el.rankEditPowerInput.value=entry.power>0?String(entry.power):"";
+  el.rankEditNoteInput.value=entry.note||"";
+
+  el.rankEditNicknameInput.readOnly=true;
+  el.rankEditStageInput.readOnly=true;
+
+  const moveInput=document.getElementById("rankEditMoveDoneInput");
+  if(moveInput)moveInput.checked=!!entry.moveDone;
+
+  el.rankEditDeleteBtn.textContent="관리값 삭제";
   el.rearrangeRankEditModal.classList.remove("hidden");
   syncOverlay();
 }
-function closeRearrangeRankEditModal(){state.editingRearrangeRankUser="";el.rearrangeRankEditModal?.classList.add("hidden");syncOverlay();}
+function closeRearrangeRankEditModal(){
+  state.editingRearrangeRankUser="";
+  el.rankEditNicknameInput.readOnly=false;
+  el.rankEditStageInput.readOnly=false;
+  el.rearrangeRankEditModal?.classList.add("hidden");
+  syncOverlay();
+}
 window.openRearrangeRankEditModal=openRearrangeRankEditModal;
 window.closeRearrangeRankEditModal=closeRearrangeRankEditModal;
 
 async function submitRearrangeRankEdit(){
   if(!state.isAdmin){alert("권한이 없습니다.");return;}
-  const nickname=(el.rankEditNicknameInput.value||"").trim();
-  const stageText=(el.rankEditStageInput.value||"").trim();
+
+  const user=state.editingRearrangeRankUser||"";
+  if(!user){alert("대상을 찾을 수 없습니다.");return;}
+
   const powerRaw=(el.rankEditPowerInput.value||"").trim();
   const note=(el.rankEditNoteInput.value||"").trim();
-  if(!nickname){alert("닉네임을 입력하세요.");return;}
-  const parsed=parseStageText(stageText);
-  if(!parsed){alert("스테이지는 15-4 형식으로 입력하세요.");return;}
+  const moveDone=!!document.getElementById("rankEditMoveDoneInput")?.checked;
+
   let power=0;
   if(powerRaw!==""){
     power=Number(powerRaw);
-    if(!Number.isInteger(power)||power<0){alert("전투력은 0 이상의 정수로 입력하세요.");return;}
+    if(!Number.isInteger(power)||power<0){
+      alert("전투력은 0 이상의 정수로 입력하세요.");
+      return;
+    }
   }
-  const oldUser=state.editingRearrangeRankUser||"";
-  const newUser=nickname;
-  if(oldUser&&oldUser!==newUser) await rearrangeRef().doc(oldUser).delete();
-  await ensureUserDoc(newUser);
-  await rearrangeRef().doc(newUser).set({
-    user:newUser,
-    stageText,
-    stageMajor:parsed.stageMajor,
-    stageMinor:parsed.stageMinor,
+
+  await rearrangeRankingRef().doc(user).set({
+    user,
     power,
     note,
-    moveDone:state.rearrangeEntries.find(v=>v.user===newUser)?.moveDone||false,
-    updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
-    createdAt:(state.rearrangeEntries.find(v=>v.user===newUser)?.createdAt)||firebase.firestore.FieldValue.serverTimestamp()
+    moveDone,
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
   },{merge:true});
-  await writeAdminLog(oldUser?"update_rearrange_rank_row":"create_rearrange_rank_row",{oldUser,newUser,stageText,power,note});
+
+  await writeAdminLog("update_rearrange_ranking_meta",{user,power,note,moveDone});
   closeRearrangeRankEditModal();
 }
 window.submitRearrangeRankEdit=submitRearrangeRankEdit;
@@ -898,158 +873,27 @@ async function deleteRearrangeRankRow(){
   if(!state.isAdmin){alert("권한이 없습니다.");return;}
   const user=state.editingRearrangeRankUser||"";
   if(!user)return;
-  if(!confirm(`${user} 행을 삭제하시겠습니까?`))return;
-  await rearrangeRef().doc(user).delete();
-  await writeAdminLog("delete_rearrange_rank_row",{user});
+  if(!confirm(`${user}의 관리값(비고/이동/전투력)을 삭제하시겠습니까?\n원본 진척도 데이터는 삭제되지 않습니다.`))return;
+
+  await rearrangeRankingRef().doc(user).delete();
+  await writeAdminLog("delete_rearrange_ranking_meta",{user});
   closeRearrangeRankEditModal();
 }
 window.deleteRearrangeRankRow=deleteRearrangeRankRow;
 
-function toggleRearrangeTableEditMode(){
+async function toggleRearrangeMoveDone(userName, checked){
   if(!state.isAdmin){
     alert("권한이 없습니다.");
     return;
   }
-  state.rearrangeTableEditMode=true;
-  updateEventActionButtons();
-  renderRearrangeEvent();
+  await rearrangeRankingRef().doc(userName).set({
+    user:userName,
+    moveDone:!!checked,
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+  },{merge:true});
+  await writeAdminLog("toggle_rearrange_move_done",{user:userName,moveDone:!!checked});
 }
-window.toggleRearrangeTableEditMode=toggleRearrangeTableEditMode;
-
-async function saveAllInlineRearrangeRows(){
-  if(!state.isAdmin){
-    alert("권한이 없습니다.");
-    return;
-  }
-
-  const existingEntries=[...state.rearrangeEntries];
-  const seenUsers=new Set();
-
-  for(let idx=0; idx<existingEntries.length; idx++){
-    const oldUser=existingEntries[idx].user;
-    const nickname=(document.getElementById(`rr-user-${idx}`)?.value||"").trim();
-    const stageText=(document.getElementById(`rr-stage-${idx}`)?.value||"").trim();
-    const powerRaw=(document.getElementById(`rr-power-${idx}`)?.value||"").trim();
-    const note=(document.getElementById(`rr-note-${idx}`)?.value||"").trim();
-    const moveDone=!!document.getElementById(`rr-move-${idx}`)?.checked;
-    const deleteChecked=!!document.getElementById(`rr-delete-${idx}`)?.checked;
-
-    if(deleteChecked){
-      await rearrangeRef().doc(oldUser).delete();
-      await writeAdminLog("delete_rearrange_rank_row",{user:oldUser});
-      continue;
-    }
-
-    if(!nickname){
-      alert(`${idx+1}행 닉네임을 입력하세요.`);
-      return false;
-    }
-
-    if(seenUsers.has(nickname)){
-      alert(`중복 닉네임이 있습니다: ${nickname}`);
-      return false;
-    }
-    seenUsers.add(nickname);
-
-    const parsed=parseStageText(stageText);
-    if(!parsed){
-      alert(`${nickname}의 스테이지는 15-4 형식으로 입력하세요.`);
-      return false;
-    }
-
-    let power=0;
-    if(powerRaw!==""){
-      power=Number(powerRaw);
-      if(!Number.isInteger(power)||power<0){
-        alert(`${nickname}의 전투력은 0 이상의 정수로 입력하세요.`);
-        return false;
-      }
-    }
-
-    if(oldUser&&oldUser!==nickname) await rearrangeRef().doc(oldUser).delete();
-    await ensureUserDoc(nickname);
-    await rearrangeRef().doc(nickname).set({
-      user:nickname,
-      stageText,
-      stageMajor:parsed.stageMajor,
-      stageMinor:parsed.stageMinor,
-      power,
-      note,
-      moveDone,
-      updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
-      createdAt:(state.rearrangeEntries.find(v=>v.user===nickname)?.createdAt)||existingEntries[idx].createdAt||firebase.firestore.FieldValue.serverTimestamp()
-    },{merge:true});
-    await writeAdminLog("update_rearrange_rank_row",{oldUser,newUser:nickname,stageText,power,note,moveDone});
-  }
-
-  const newNickname=(document.getElementById("rr-new-user")?.value||"").trim();
-  const newStageText=(document.getElementById("rr-new-stage")?.value||"").trim();
-  const newPowerRaw=(document.getElementById("rr-new-power")?.value||"").trim();
-  const newNote=(document.getElementById("rr-new-note")?.value||"").trim();
-  const newMoveDone=!!document.getElementById("rr-new-move")?.checked;
-
-  if(newNickname||newStageText||newPowerRaw||newNote||newMoveDone){
-    if(!newNickname){
-      alert("추가 행 닉네임을 입력하세요.");
-      return false;
-    }
-    if(seenUsers.has(newNickname)){
-      alert(`중복 닉네임이 있습니다: ${newNickname}`);
-      return false;
-    }
-
-    const parsed=parseStageText(newStageText);
-    if(!parsed){
-      alert("추가 행 스테이지는 15-4 형식으로 입력하세요.");
-      return false;
-    }
-
-    let power=0;
-    if(newPowerRaw!==""){
-      power=Number(newPowerRaw);
-      if(!Number.isInteger(power)||power<0){
-        alert("추가 행 전투력은 0 이상의 정수로 입력하세요.");
-        return false;
-      }
-    }
-
-    await ensureUserDoc(newNickname);
-    await rearrangeRef().doc(newNickname).set({
-      user:newNickname,
-      stageText:newStageText,
-      stageMajor:parsed.stageMajor,
-      stageMinor:parsed.stageMinor,
-      power,
-      note:newNote,
-      moveDone:newMoveDone,
-      updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
-      createdAt:(state.rearrangeEntries.find(v=>v.user===newNickname)?.createdAt)||firebase.firestore.FieldValue.serverTimestamp()
-    },{merge:true});
-    await writeAdminLog("create_rearrange_rank_row",{newUser:newNickname,stageText:newStageText,power,note:newNote,moveDone:newMoveDone});
-  }
-
-  alert("저장되었습니다.");
-  return true;
-}
-window.saveAllInlineRearrangeRows=saveAllInlineRearrangeRows;
-
-async function saveAndCloseRearrangeEdit(){
-  const ok=await saveAllInlineRearrangeRows();
-  if(!ok)return;
-  state.rearrangeTableEditMode=false;
-  removeExitChoiceModal();
-  updateEventActionButtons();
-  renderRearrangeEvent();
-}
-window.saveAndCloseRearrangeEdit=saveAndCloseRearrangeEdit;
-
-function discardAndCloseRearrangeEdit(){
-  state.rearrangeTableEditMode=false;
-  removeExitChoiceModal();
-  updateEventActionButtons();
-  renderRearrangeEvent();
-}
-window.discardAndCloseRearrangeEdit=discardAndCloseRearrangeEdit;
+window.toggleRearrangeMoveDone=toggleRearrangeMoveDone;
 
 async function toggleRearrangePublic(){
   if(!state.isAdmin){alert("권한이 없습니다.");return;}
@@ -1235,6 +1079,9 @@ async function undoAdminLog(id){
   }
   if((log.action==="publish_rearrange_ranking"||log.action==="hide_rearrange_ranking")&&typeof p.rankingPublic==="boolean"){
     await eventRef("rearrange").set({rankingPublic:!p.rankingPublic},{merge:true});
+  }
+  if(log.action==="delete_rearrange_ranking_meta"&&p.user){
+    await rearrangeRankingRef().doc(p.user).set({user:p.user},{merge:true});
   }
   await ref.update({undone:true,undoneAt:firebase.firestore.FieldValue.serverTimestamp(),undoneBy:state.currentUser});
   showAdminLogs();
