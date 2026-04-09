@@ -309,11 +309,46 @@ function getRearrangeColumn(rank){if(rank<=10)return 1;if(rank<=24)return 2;if(r
 function getLayoutLabel(rank){return `${getRearrangeColumn(rank)}열`;}
 
 function getDisplayedRearrangeEntries(entries){
-  const firstColumn=entries.slice(0,10);
-  const rest=entries.slice(10);
-  const pinnedToSecondColumnTop=rest.filter(entry=>String(entry.note||"").trim()!=="");
-  const normalRest=rest.filter(entry=>String(entry.note||"").trim()==="");
-  return [...firstColumn,...pinnedToSecondColumnTop,...normalRest];
+  const forceSecondColumn = [];
+  const firstColumnKeep = [];
+  const pinnedByNote = [];
+  const normalRest = [];
+
+  entries.forEach((entry, idx) => {
+    const originalRank = idx + 1;
+    const note = String(entry.note || "").trim();
+
+    if (note.includes("2열")) {
+      forceSecondColumn.push(entry);
+      return;
+    }
+
+    if (originalRank <= 10) {
+      firstColumnKeep.push(entry);
+      return;
+    }
+
+    if (note !== "") {
+      pinnedByNote.push(entry);
+      return;
+    }
+
+    normalRest.push(entry);
+  });
+
+  const finalFirstColumn = [...firstColumnKeep, ...normalRest].slice(0, 10);
+  const usedUsers = new Set(finalFirstColumn.map(v => v.user));
+
+  const remainingForceSecond = forceSecondColumn.filter(v => !usedUsers.has(v.user));
+  const remainingPinned = pinnedByNote.filter(v => !usedUsers.has(v.user));
+  const remainingNormal = [...firstColumnKeep, ...normalRest].filter(v => !usedUsers.has(v.user));
+
+  return [
+    ...finalFirstColumn,
+    ...remainingForceSecond,
+    ...remainingPinned,
+    ...remainingNormal
+  ];
 }
 
 function renderPartyList(){
