@@ -323,8 +323,18 @@ function subscribeRearrange(){
   state.unsubscribeParties=rearrangeRef().onSnapshot(snap=>{
     state.rearrangeEntries=snap.docs.map(doc=>{
       const d=doc.data()||{};
-      return{id:doc.id,user:d.user||doc.id,stageText:String(d.stageText||d.stage||""),stageMajor:Number(d.stageMajor||0),stageMinor:Number(d.stageMinor||0),power:Number(d.power||0),note:String(d.note||""),updatedAt:d.updatedAt||null,createdAt:d.createdAt||null};
-    });
+      return{
+        id:doc.id,
+        user:d.user||doc.id,
+        stageText:String(d.stageText||d.stage||""),
+        stageMajor:Number(d.stageMajor||0),
+        stageMinor:Number(d.stageMinor||0),
+        power:Number(d.power||0),
+        note:String(d.note||""),
+        moveDone:!!d.moveDone,
+        updatedAt:d.updatedAt||null,
+        createdAt:d.createdAt||null
+      };
     state.rearrangeEntries.sort(sortRearrangeEntries);
     renderRearrangeEvent();
   },err=>{
@@ -464,6 +474,10 @@ function renderRearrangeTable(entries){
     const rowClass=entry.user===state.currentUser?"rank-row-me":"";
     const powerText=entry.power>0?Number(entry.power).toLocaleString("ko-KR"):"-";
     const noteText=entry.note?escapeHtml(entry.note):"-";
+    const moveCell=state.isAdmin
+      ? `<input type="checkbox" ${entry.moveDone?"checked":""} onchange="toggleRearrangeMoveDone('${escapeJs(entry.user)}', this.checked)">`
+      : `<input type="checkbox" ${entry.moveDone?"checked":""} disabled>`;
+
     return `<tr class="${rowClass}">
       <td>${rank}</td>
       <td>${getLayoutLabel(rank)}</td>
@@ -471,6 +485,7 @@ function renderRearrangeTable(entries){
       <td>${escapeHtml(entry.stageText||"-")}</td>
       <td>${powerText}</td>
       <td class="left">${noteText}</td>
+      <td>${moveCell}</td>
       ${state.isAdmin?`<td><button class="rank-edit-btn" onclick="openRearrangeRankEditModal('${escapeJs(entry.user)}')">수정</button></td>`:""}
     </tr>`;
   }).join("");
@@ -478,7 +493,7 @@ function renderRearrangeTable(entries){
   return `<div class="rank-table-wrap">
     <table class="rank-table">
       <colgroup>
-        <col><col><col><col><col><col>${state.isAdmin?`<col>`:""}
+        <col><col><col><col><col><col><col>${state.isAdmin?`<col>`:""}
       </colgroup>
       <thead>
         <tr>
@@ -488,6 +503,7 @@ function renderRearrangeTable(entries){
           <th>스테이지</th>
           <th>전투력</th>
           <th>비고</th>
+          <th>이동</th>
           ${state.isAdmin?`<th>관리</th>`:""}
         </tr>
       </thead>
@@ -711,7 +727,17 @@ async function submitRearrangeRankEdit(){
   const newUser=nickname;
   if(oldUser&&oldUser!==newUser) await rearrangeRef().doc(oldUser).delete();
   await ensureUserDoc(newUser);
-  await rearrangeRef().doc(newUser).set({user:newUser,stageText,stageMajor:parsed.stageMajor,stageMinor:parsed.stageMinor,power,note,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),createdAt:(state.rearrangeEntries.find(v=>v.user===newUser)?.createdAt)||firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+  await rearrangeRef().doc(newUser).set({
+    user:newUser,
+    stageText,
+    stageMajor:parsed.stageMajor,
+    stageMinor:parsed.stageMinor,
+    power,
+    note,
+    moveDone:state.rearrangeEntries.find(v=>v.user===newUser)?.moveDone||false,
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
+    createdAt:(state.rearrangeEntries.find(v=>v.user===newUser)?.createdAt)||firebase.firestore.FieldValue.serverTimestamp()
+  },{merge:true});
   await writeAdminLog(oldUser?"update_rearrange_rank_row":"create_rearrange_rank_row",{oldUser,newUser,stageText,power,note});
   closeRearrangeRankEditModal();
 }
@@ -860,6 +886,19 @@ function copyRearrangeColumns(){
 }
 window.copyRearrangeColumns=copyRearrangeColumns;
 
+async function toggleRearrangeMoveDone(userName, checked){
+  if(!state.isAdmin){
+    alert("권한이 없습니다.");
+    return;
+  }
+  await rearrangeRef().doc(userName).set({
+    user:userName,
+    moveDone:!!checked,
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+  },{merge:true});
+}
+window.toggleRearrangeMoveDone=toggleRearrangeMoveDone;
+  
 async function showAllUsers(){
   const usersSnap=await db.collection("users").get();
   const joined=new Set();
