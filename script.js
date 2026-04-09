@@ -309,8 +309,14 @@ function getRearrangeColumn(rank){if(rank<=10)return 1;if(rank<=24)return 2;if(r
 function getLayoutLabel(rank){return `${getRearrangeColumn(rank)}열`;}
 
 function parseForcedColumnFromNote(note){
-  const match=String(note||"").match(/([1-5])\s*열/);
-  return match?Number(match[1]):0;
+  const text=String(note||"").trim();
+
+  const forcedMatch=text.match(/([1-5])\s*열/);
+  if(forcedMatch)return Number(forcedMatch[1]);
+
+  if(/R4|R5/i.test(text))return 2;
+
+  return 0;
 }
 
 function getDisplayedRearrangeEntries(entries){
