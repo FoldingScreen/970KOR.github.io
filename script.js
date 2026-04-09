@@ -1,91 +1,216 @@
-function getDisplayedRearrangeEntries(entries){
-  const capacities={1:10,2:14,3:18,4:18,5:Number.MAX_SAFE_INTEGER};
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>970KOR</title>
+  <link rel="stylesheet" href="style.css?v=stable5" />
 
-  const explicit={1:[],2:[],3:[],4:[],5:[]};
-  const r45Candidates=[];
-  const normal=[];
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div class="brand">970KOR</div>
 
-  entries.forEach(entry=>{
-    const text=String(entry.note||"").trim();
-    const explicitMatch=text.match(/([1-5])\s*열/);
-    const explicitCol=explicitMatch?Number(explicitMatch[1]):0;
-    const hasR45=/R4|R5/i.test(text);
+      <nav class="top-tabs" id="topTabs">
+        <button class="tab-btn active" onclick="goHome()">홈</button>
+        <button class="tab-btn" onclick="openEvent('viking')">바이킹</button>
+        <button class="tab-btn" onclick="openEvent('ruins')">유적쟁탈</button>
+        <button class="tab-btn" onclick="openEvent('rearrange')">자리재배치</button>
+      </nav>
 
-    if(explicitCol>=1&&explicitCol<=5){
-      explicit[explicitCol].push(entry);
-    }else if(hasR45){
-      r45Candidates.push(entry);
-    }else{
-      normal.push(entry);
-    }
-  });
+      <div class="top-right">
+        <button id="adminMenuBtn" class="pill hidden" onclick="toggleAdminMenu()">운영진 메뉴</button>
+        <button class="pill" id="myNameBtn" disabled>로그인 안 됨</button>
+        <button class="pill" onclick="logout()">로그아웃</button>
+      </div>
+    </header>
 
-  const result=[];
-  const usedUsers=new Set();
+    <div id="adminMenu" class="admin-menu hidden">
+      <button onclick="showAllUsers()">전체 사용자</button>
+      <button onclick="showAdminLogs()">운영 로그</button>
+      <button onclick="closeAdminMenu()">닫기</button>
+    </div>
 
-  function pushEntry(entry){
-    if(usedUsers.has(entry.user))return false;
-    result.push(entry);
-    usedUsers.add(entry.user);
-    return true;
-  }
+    <main class="container">
+      <section id="loginScreen" class="screen hidden">
+        <div class="card narrow">
+          <h1>970KOR 입장</h1>
+          <p class="muted">닉네임으로 입장합니다.</p>
+          <input id="nicknameInput" class="text-input" placeholder="닉네임 입력" />
+          <div class="actions single">
+            <button onclick="login()">입장</button>
+          </div>
+        </div>
+      </section>
 
-  function fillFromGroup(group, limitObj){
-    for(const entry of group){
-      if(limitObj.count>=limitObj.limit)break;
-      if(pushEntry(entry))limitObj.count++;
-    }
-  }
+      <section id="homeScreen" class="screen hidden">
+        <div class="hero card">
+          <h1>970KOR 이벤트 로비</h1>
+          <p class="muted">사바나가 보고있다</p>
+        </div>
 
-  function remainingNormal(){
-    return normal.filter(v=>!usedUsers.has(v.user));
-  }
-  function remainingR45(){
-    return r45Candidates.filter(v=>!usedUsers.has(v.user));
-  }
-  function remainingExplicit(col){
-    return explicit[col].filter(v=>!usedUsers.has(v.user));
-  }
+        <h2 class="section-title">이벤트 바로가기</h2>
+        <div id="homeEventCards" class="home-event-grid"></div>
 
-  // 1열: 명시 1열 우선, 그 다음 일반 인원으로 채움
-  {
-    const limitObj={count:0,limit:10};
-    fillFromGroup(explicit[1],limitObj);
-    fillFromGroup(remainingNormal(),limitObj);
-    fillFromGroup(remainingR45(),limitObj);
-    fillFromGroup(remainingExplicit(2),limitObj);
-    fillFromGroup(remainingExplicit(3),limitObj);
-    fillFromGroup(remainingExplicit(4),limitObj);
-    fillFromGroup(remainingExplicit(5),limitObj);
-  }
+        <h2 class="section-title">전체 현황</h2>
+        <div id="homeSummary" class="summary-grid"></div>
+      </section>
 
-  // 방금 1열에 못 들어간 R4/R5만 이제 최소 2열 대상이 됨
-  const deferredR45=remainingR45();
+      <section id="eventScreen" class="screen hidden">
+        <div class="event-top-row">
+          <div>
+            <h1 id="eventTitle">이벤트</h1>
+            <div id="eventDesc" class="muted"></div>
+          </div>
+          <div class="actions right-wrap">
+            <button id="createPartyBtn" onclick="createParty()">파티 생성</button>
+            <button id="rearrangeEditBtn" class="hidden" onclick="openMyRearrangeModal()">내 진척도 입력</button>
+            <button id="rearrangeManageBtn" class="hidden" onclick="openRearrangeRankEditModal()">순위표 행 추가</button>
+            <button id="rearrangePublicBtn" class="hidden" onclick="toggleRearrangePublic()">순위 공개</button>
+            <button onclick="showAllUsers()">전체 사용자</button>
+          </div>
+        </div>
 
-  function fillColumn(col, preferredGroups){
-    const limit=capacities[col];
-    let count=0;
+        <div id="partyList" class="party-grid"></div>
+      </section>
+    </main>
+  </div>
 
-    for(const group of preferredGroups){
-      for(const entry of group){
-        if(count>=limit)break;
-        if(pushEntry(entry))count++;
-      }
-      if(count>=limit)break;
-    }
-  }
+  <div id="modalOverlay" class="modal-overlay hidden"></div>
 
-  fillColumn(2,[remainingExplicit(2), deferredR45, remainingNormal(), remainingExplicit(3), remainingExplicit(4), remainingExplicit(5)]);
-  fillColumn(3,[remainingExplicit(3), remainingNormal(), remainingExplicit(2), remainingExplicit(4), remainingExplicit(5)]);
-  fillColumn(4,[remainingExplicit(4), remainingNormal(), remainingExplicit(2), remainingExplicit(3), remainingExplicit(5)]);
-  fillColumn(5,[remainingExplicit(5), remainingNormal(), remainingExplicit(2), remainingExplicit(3), remainingExplicit(4)]);
+  <div id="userModal" class="modal hidden">
+    <div class="modal-header">
+      <h3>전체 사용자</h3>
+      <button class="close-btn" onclick="closeUserModal()">닫기</button>
+    </div>
+    <div class="user-modal-grid">
+      <div>
+        <h4>참여</h4>
+        <div id="joinedUsers" class="name-columns"></div>
+      </div>
+      <div>
+        <h4>미참여</h4>
+        <div id="notJoinedUsers" class="name-columns"></div>
+      </div>
+    </div>
+  </div>
 
-  // 남은 사람 마저 뒤에
-  for(const group of [remainingNormal(), remainingExplicit(1), remainingExplicit(2), remainingExplicit(3), remainingExplicit(4), remainingExplicit(5), remainingR45()]){
-    for(const entry of group){
-      pushEntry(entry);
-    }
-  }
+  <div id="logModal" class="modal hidden">
+    <div class="modal-header">
+      <h3>운영 로그</h3>
+      <button class="close-btn" onclick="closeLogModal()">닫기</button>
+    </div>
+    <div id="logList" class="log-list"></div>
+  </div>
 
-  return result;
-}
+  <div id="ruinsCreateModal" class="modal hidden">
+    <div class="modal-header">
+      <h3 id="ruinsModalTitle">유적 파티 생성</h3>
+      <button class="close-btn" onclick="closeRuinsCreateModal()">닫기</button>
+    </div>
+
+    <div class="form-group">
+      <label>유적명</label>
+      <input id="ruinNameInput" class="text-input" placeholder="예: 4번 성채" />
+    </div>
+
+    <div class="form-group">
+      <label>UTC 월/일/시간</label>
+      <div class="triple-grid">
+        <select id="utcMonth"></select>
+        <select id="utcDay"></select>
+        <select id="utcHour"></select>
+      </div>
+    </div>
+
+    <div class="actions right-wrap">
+      <button id="ruinsSubmitBtn" onclick="submitRuinsParty()">생성</button>
+    </div>
+  </div>
+
+  <div id="rearrangeModal" class="modal hidden">
+    <div class="modal-header">
+      <h3 id="rearrangeModalTitle">내 진척도 입력</h3>
+      <button class="close-btn" onclick="closeRearrangeModal()">닫기</button>
+    </div>
+
+    <div class="rearrange-modal-body">
+      <div class="form-group">
+        <label>'빛나는 첨탑' 도달한 최고 스테이지</label>
+        <input
+          id="rearrangeStageInput"
+          class="text-input"
+          type="text"
+          inputmode="text"
+          autocapitalize="off"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="예: 15-4"
+        />
+        <p class="muted form-help">입력 형식: 큰 스테이지-세부 스테이지 (예: 15-4)</p>
+      </div>
+
+      <div class="form-group rearrange-example-wrap">
+        <label>입력 예시</label>
+        <img
+          src="빛나는첨탑순위.png"
+          alt="빛나는 첨탑 순위 예시"
+          class="example-image"
+          onclick="openExampleImageModal('tower')"
+        />
+      </div>
+    </div>
+
+    <div class="actions right-wrap">
+      <button id="rearrangeSubmitBtn" onclick="submitRearrangeProgress()">저장</button>
+    </div>
+  </div>
+
+  <div id="exampleImageModal" class="modal hidden image-modal">
+    <div class="modal-header">
+      <h3 id="exampleImageModalTitle">예시 보기</h3>
+      <button class="close-btn" onclick="closeExampleImageModal()">닫기</button>
+    </div>
+    <div class="image-modal-body">
+      <img id="exampleImageModalImg" src="" alt="예시 이미지" class="example-image-large" />
+    </div>
+  </div>
+
+  <div id="rearrangeRankEditModal" class="modal hidden">
+    <div class="modal-header">
+      <h3 id="rearrangeRankEditTitle">순위표 행 추가</h3>
+      <button class="close-btn" onclick="closeRearrangeRankEditModal()">닫기</button>
+    </div>
+
+    <div class="form-group">
+      <label>닉네임</label>
+      <input id="rankEditNicknameInput" class="text-input" type="text" placeholder="닉네임 입력" />
+    </div>
+
+    <div class="form-group">
+      <label>스테이지</label>
+      <input id="rankEditStageInput" class="text-input" type="text" placeholder="예: 15-4" />
+    </div>
+
+    <div class="form-group">
+      <label>전투력</label>
+      <input id="rankEditPowerInput" class="text-input" type="number" min="0" step="1" placeholder="예: 123456789" />
+    </div>
+
+    <div class="form-group">
+      <label>비고</label>
+      <input id="rankEditNoteInput" class="text-input" type="text" placeholder="비고 입력" />
+    </div>
+
+    <div class="actions right-wrap">
+      <button id="rankEditDeleteBtn" class="hidden" onclick="deleteRearrangeRankRow()">삭제</button>
+      <button id="rankEditSubmitBtn" onclick="submitRearrangeRankEdit()">저장</button>
+    </div>
+  </div>
+
+  <script src="script.js?v=stable5"></script>
+</body>
+</html>
