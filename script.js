@@ -497,7 +497,9 @@ function parseNoteRule(note){
 function getDisplayedRearrangeEntries(entries){
   const capacities={1:10,2:14,3:18,4:17,5:Number.MAX_SAFE_INTEGER};
   const sorted=[...entries];
-  const fixedByColumn={1:[],2:[],3:[],4:[],5:[]};
+
+  const explicitByColumn={1:[],2:[],3:[],4:[],5:[]};
+  const r45ToColumn2=[];
   const normal=[];
 
   sorted.forEach((entry,idx)=>{
@@ -505,48 +507,96 @@ function getDisplayedRearrangeEntries(entries){
     const baseColumn=getRearrangeColumn(idx+1);
 
     if(rule.explicitColumn>=1&&rule.explicitColumn<=5){
-      fixedByColumn[rule.explicitColumn].push(entry);
+      explicitByColumn[rule.explicitColumn].push(entry);
       return;
     }
 
     if(rule.hasR45&&baseColumn>=3){
-      fixedByColumn[2].push(entry);
+      r45ToColumn2.push(entry);
       return;
     }
 
     normal.push(entry);
   });
 
-  const result=[];
   const usedUsers=new Set();
+  const result=[];
 
-  function pushEntry(entry){
-    if(!entry||usedUsers.has(entry.user))return false;
-    usedUsers.add(entry.user);
-    result.push(entry);
-    return true;
+  function takeEntryFrom(list){
+    while(list.length){
+      const entry=list.shift();
+      if(entry&&!usedUsers.has(entry.user)){
+        usedUsers.add(entry.user);
+        return entry;
+      }
+    }
+    return null;
   }
 
-  function fillColumn(column){
+  function fillFixedColumn(column){
     const limit=capacities[column];
     let count=0;
 
-    for(const entry of fixedByColumn[column]){
-      if(count>=limit)break;
-      if(pushEntry(entry))count++;
+    if(column===2){
+      while(count<limit){
+        const explicitEntry=takeEntryFrom(explicitByColumn[2]);
+        if(explicitEntry){
+          result.push(explicitEntry);
+          count++;
+          continue;
+        }
+
+        const r45Entry=takeEntryFrom(r45ToColumn2);
+        if(r45Entry){
+          result.push(r45Entry);
+          count++;
+          continue;
+        }
+
+        break;
+      }
+      while(count<limit){
+        result.push(null);
+        count++;
+      }
+      return;
     }
 
-    for(const entry of normal){
-      if(count>=limit)break;
-      if(pushEntry(entry))count++;
+    while(count<limit){
+      const explicitEntry=takeEntryFrom(explicitByColumn[column]);
+      if(explicitEntry){
+        result.push(explicitEntry);
+        count++;
+        continue;
+      }
+      break;
+    }
+
+    while(count<limit){
+      result.push(null);
+      count++;
     }
   }
 
-  fillColumn(1);
-  fillColumn(2);
-  fillColumn(3);
-  fillColumn(4);
-  fillColumn(5);
+  fillFixedColumn(1);
+  fillFixedColumn(2);
+  fillFixedColumn(3);
+  fillFixedColumn(4);
+
+  const remainingExplicit5=[];
+  while(explicitByColumn[5].length){
+    const entry=takeEntryFrom(explicitByColumn[5]);
+    if(entry)remainingExplicit5.push(entry);
+  }
+
+  const remainingNormal=[];
+  while(normal.length){
+    const entry=takeEntryFrom(normal);
+    if(entry)remainingNormal.push(entry);
+  }
+
+  result.push(...remainingExplicit5);
+  result.push(...remainingNormal);
 
   return result;
 }
@@ -582,7 +632,21 @@ function renderRearrangeTable(entries){
 
   const rows=entries.map((entry,idx)=>{
     const rank=idx+1;
-    const rowClass=entry.user===state.currentUser?"rank-row-me":"";
+    const rowClass=entry&&entry.user===state.currentUser?"rank-row-me":"";
+
+    if(!entry){
+      return `<tr class="${rowClass}">
+        <td>${rank}</td>
+        <td>${getLayoutLabel(rank)}</td>
+        <td class="left muted">공란</td>
+        <td>-</td>
+        <td>-</td>
+        <td class="left">-</td>
+        <td>-</td>
+        ${state.isAdmin?`<td>-</td>`:""}
+      </tr>`;
+    }
+
     const powerText=entry.power>0?Number(entry.power).toLocaleString("ko-KR"):"-";
     const noteText=entry.note?escapeHtml(entry.note):"-";
     return `<tr class="${rowClass}">
@@ -1008,7 +1072,7 @@ function copyRearrangeColumns(){
   displayedEntries.forEach((entry,idx)=>{
     const rank=idx+1;
     const col=getRearrangeColumn(rank);
-    columns[col].push(entry.user);
+    if(entry)columns[col].push(entry.user);
   });
 
   const text=[
