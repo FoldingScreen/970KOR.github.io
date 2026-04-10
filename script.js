@@ -483,7 +483,7 @@ function formatDateTime(t){const d=toDate(t);if(!d)return"-";return`${d.getMonth
 function calcPower(memberCount){const base=Math.max(memberCount-1,1);return Math.floor((920000/base)/1000)*1000;}
 function myParty(){if(state.currentEventId!=="viking")return null;return state.parties.find(p=>p.members.includes(state.currentUser))||null;}
 function myRearrangeEntry(){return state.rearrangeEntries.find(v=>v.user===state.currentUser)||null;}
-function getRearrangeColumn(rank){if(rank<=10)return 1;if(rank<=24)return 2;if(rank<=42)return 3;if(rank<=58)return 4;return 5;}
+function getRearrangeColumn(rank){if(rank<=10)return 1;if(rank<=24)return 2;if(rank<=42)return 3;if(rank<=59)return 4;return 5;}
 function getLayoutLabel(rank){return `${getRearrangeColumn(rank)}열`;}
 
 function parseNoteRule(note){
@@ -495,7 +495,7 @@ function parseNoteRule(note){
 }
 
 function getDisplayedRearrangeEntries(entries){
-  const capacities={1:10,2:14,3:18,4:16,5:Number.MAX_SAFE_INTEGER};
+  const capacities={1:10,2:14,3:18,4:17,5:Number.MAX_SAFE_INTEGER};
   const sorted=[...entries];
   const fixedByColumn={1:[],2:[],3:[],4:[],5:[]};
   const normal=[];
