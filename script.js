@@ -16,7 +16,7 @@ const state={
   rearrangePublic:false,
   events:[
     {id:"viking",name:"바이킹의 역습",desc:"'전하, 퇴청하시옵소서'를 영어로? 바이킹~ 엌ㅋㅋㅋ"},
-    {id:"ruins",name:"가장 강력한 유적은? 무적 엌ㅋㅋㅋ",desc:""},
+    {id:"ruins",name:"유적 쟁탈",desc:"가장 강력한 유적은? 무적 엌ㅋㅋㅋ"},
     {id:"rearrange",name:"자리 재배치",desc:"자동차에서 가장 시원한 자리는? 차가운데 엌ㅋㅋㅋ"}
   ],
   editingRuinsPartyId:"",
