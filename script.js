@@ -496,10 +496,11 @@ function parseNoteRule(note){
 
 function getDisplayedRearrangeEntries(entries){
   const capacities={1:10,2:14,3:18,4:17,5:Number.MAX_SAFE_INTEGER};
-  const sorted=[...entries];
+  const totalFixedSlots=capacities[1]+capacities[2]+capacities[3]+capacities[4];
 
+  const sorted=[...entries];
   const explicitByColumn={1:[],2:[],3:[],4:[],5:[]};
-  const r45ToColumn2=[];
+  const reservedTo2=[];
   const normal=[];
 
   sorted.forEach((entry,idx)=>{
@@ -512,7 +513,7 @@ function getDisplayedRearrangeEntries(entries){
     }
 
     if(rule.hasR45&&baseColumn>=3){
-      r45ToColumn2.push(entry);
+      reservedTo2.push(entry);
       return;
     }
 
@@ -520,9 +521,8 @@ function getDisplayedRearrangeEntries(entries){
   });
 
   const usedUsers=new Set();
-  const result=[];
 
-  function takeEntryFrom(list){
+  function takeFrom(list){
     while(list.length){
       const entry=list.shift();
       if(entry&&!usedUsers.has(entry.user)){
@@ -533,72 +533,59 @@ function getDisplayedRearrangeEntries(entries){
     return null;
   }
 
-  function fillFixedColumn(column){
-    const limit=capacities[column];
-    let count=0;
+  const columnPools={
+    1:[...explicitByColumn[1]],
+    2:[...explicitByColumn[2],...reservedTo2],
+    3:[...explicitByColumn[3]],
+    4:[...explicitByColumn[4]]
+  };
 
-    if(column===2){
-      while(count<limit){
-        const explicitEntry=takeEntryFrom(explicitByColumn[2]);
-        if(explicitEntry){
-          result.push(explicitEntry);
-          count++;
-          continue;
-        }
+  const slots=[];
 
-        const r45Entry=takeEntryFrom(r45ToColumn2);
-        if(r45Entry){
-          result.push(r45Entry);
-          count++;
-          continue;
-        }
-
-        break;
+  for(let col=1; col<=4; col++){
+    const limit=capacities[col];
+    for(let i=0; i<limit; i++){
+      const forced=takeFrom(columnPools[col]);
+      if(forced){
+        slots.push(forced);
+      }else{
+        slots.push("__EMPTY__");
       }
-      while(count<limit){
-        result.push(null);
-        count++;
-      }
-      return;
     }
+  }
 
-    while(count<limit){
-      const explicitEntry=takeEntryFrom(explicitByColumn[column]);
-      if(explicitEntry){
-        result.push(explicitEntry);
-        count++;
-        continue;
-      }
+  for(const entry of normal){
+    let placed=false;
+
+    for(let i=0; i<slots.length; i++){
+      if(slots[i]!=="__EMPTY__") continue;
+
+      const targetColumn=getRearrangeColumn(i+1);
+      const rule=parseNoteRule(entry.note);
+
+      if(rule.explicitColumn&&rule.explicitColumn!==targetColumn) continue;
+      if(rule.hasR45&&targetColumn<2) continue;
+
+      slots[i]=entry;
+      usedUsers.add(entry.user);
+      placed=true;
       break;
     }
 
-    while(count<limit){
-      result.push(null);
-      count++;
+    if(!placed){
+      slots.push(entry);
+      usedUsers.add(entry.user);
     }
   }
 
-  fillFixedColumn(1);
-  fillFixedColumn(2);
-  fillFixedColumn(3);
-  fillFixedColumn(4);
-
-  const remainingExplicit5=[];
+  const remain5=[];
   while(explicitByColumn[5].length){
-    const entry=takeEntryFrom(explicitByColumn[5]);
-    if(entry)remainingExplicit5.push(entry);
+    const e=takeFrom(explicitByColumn[5]);
+    if(e)remain5.push(e);
   }
+  slots.push(...remain5);
 
-  const remainingNormal=[];
-  while(normal.length){
-    const entry=takeEntryFrom(normal);
-    if(entry)remainingNormal.push(entry);
-  }
-
-  result.push(...remainingExplicit5);
-  result.push(...remainingNormal);
-
-  return result;
+  return slots.map(v=>v==="__EMPTY__"?null:v);
 }
 
 function renderPartyList(){
