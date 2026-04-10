@@ -15,9 +15,9 @@ const state={
   rearrangeEntries:[],
   rearrangePublic:false,
   events:[
-    {id:"viking",name:"바이킹의 역습",desc:"기존 파티 시스템 유지"},
-    {id:"ruins",name:"유적 쟁탈",desc:"운영진 전용 파티 생성 / 15인 고정"},
-    {id:"rearrange",name:"자리 재배치",desc:"빛나는 첨탑 최고 스테이지 입력 / 순위 관리"}
+    {id:"viking",name:"바이킹의 역습",desc:"'전하, 퇴청하시옵소서'를 영어로? 바이킹~ 엌ㅋㅋㅋ"},
+    {id:"ruins",name:"가장 강력한 유적은? 무적 엌ㅋㅋㅋ",desc:""},
+    {id:"rearrange",name:"자리 재배치",desc:"자동차에서 가장 시원한 자리는? 차가운데 엌ㅋㅋㅋ"}
   ],
   editingRuinsPartyId:"",
   editingRearrangeRankUser:""
