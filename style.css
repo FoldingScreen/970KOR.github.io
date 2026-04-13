@@ -503,14 +503,13 @@ img{max-width:100%;height:auto}
   .brand{font-size:17px}
   .event-card h3,.party-title{font-size:20px}
 
-  
-.move-up{color:red;font-weight:700}
-.move-down{color:blue;font-weight:700}
-.move-done{color:#9aa7bd;font-weight:700}
-.move-neutral{color:#9aa7bd}
-
   .party-sub,.muted{font-size:15px}
   .tab-btn{font-size:12px;padding:8px 4px}
   .rank-table th{font-size:10px}
   .rank-table td{font-size:10px}
 }
+
+.move-up{color:red;font-weight:700}
+.move-down{color:blue;font-weight:700}
+.move-done{color:#9aa7bd;font-weight:700}
+.move-neutral{color:#9aa7bd}
