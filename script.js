@@ -15,9 +15,9 @@ const state={
   rearrangeEntries:[],
   rearrangePublic:false,
   events:[
-    {id:"viking",name:"바이킹의 역습",desc:"'전하, 퇴청하시옵소서'를 영어로? 바이킹~ 엌ㅋㅋㅋ"},
-    {id:"ruins",name:"유적 쟁탈",desc:"가장 강력한 유적은? 무적 엌ㅋㅋㅋ"},
-    {id:"rearrange",name:"자리 재배치",desc:"자동차에서 가장 시원한 자리는? 차가운데 엌ㅋㅋㅋ"}
+    {id:"viking",name:"바이킹의 역습",desc:"기존 파티 시스템 유지"},
+    {id:"ruins",name:"유적 쟁탈",desc:"운영진 전용 파티 생성 / 15인 고정"},
+    {id:"rearrange",name:"자리 재배치",desc:"빛나는 첨탑 최고 스테이지 입력 / 순위 관리"}
   ],
   editingRuinsPartyId:"",
   editingRearrangeRankUser:""
@@ -192,19 +192,17 @@ function initRuinsSelects(){
   for(let i=0;i<=23;i++)el.utcHour.insertAdjacentHTML("beforeend",`<option value="${i}">${String(i).padStart(2,"0")}:00</option>`);
 }
 
-function ensureRankingMoveField(){
-  if(document.getElementById("rankEditMoveWrap"))return;
-
-  const noteInput=el.rankEditNoteInput;
-  if(!noteInput||!noteInput.parentElement)return;
-
-  const wrap=document.createElement("div");
-  wrap.className="form-group";
-  wrap.id="rankEditMoveWrap";
-  wrap.innerHTML=`
-    <label><input type="checkbox" id="rankEditMoveDoneInput"> 이동 완료</label>
-  `;
-  noteInput.parentElement.insertAdjacentElement("afterend",wrap);
+function ensureRankingExtraFields(){
+  if(!document.getElementById("rankEditExistingWrap")){
+    const noteInput=el.rankEditNoteInput;
+    if(noteInput&&noteInput.parentElement){
+      const wrap=document.createElement("div");
+      wrap.className="form-group";
+      wrap.id="rankEditExistingWrap";
+      wrap.innerHTML=`<label for="rankEditExistingInput">기존</label><input id="rankEditExistingInput" class="text-input" type="number" min="1" step="1" placeholder="예: 3">`;
+      noteInput.parentElement.insertAdjacentElement("afterend",wrap);
+    }
+  }
 }
 
 function getNicknameValue(){
@@ -264,7 +262,7 @@ window.logout=logout;
 async function tryAutoLogin(){
   try{
     initRuinsSelects();
-    ensureRankingMoveField();
+    ensureRankingExtraFields();
     updateUserBadge();
     updateEventActionButtons();
     showOnly("login");
@@ -390,7 +388,7 @@ function rebuildMergedRearrangeEntries(){
       ...progress,
       power:Number(ranking.power||0),
       note:String(ranking.note||""),
-      moveDone:!!ranking.moveDone
+      existingColumn:Number(ranking.existingColumn||0)
     };
   });
   state.rearrangeEntries.sort(sortRearrangeEntries);
@@ -437,7 +435,7 @@ function subscribeRearrange(){
         user:d.user||doc.id,
         power:Number(d.power||0),
         note:String(d.note||""),
-        moveDone:!!d.moveDone
+        existingColumn:Number(d.existingColumn||0)
       };
     });
     state.rearrangeRankingMap=map;
@@ -564,7 +562,6 @@ function getDisplayedRearrangeEntries(entries){
       const rule=parseNoteRule(entry.note);
 
       if(rule.explicitColumn&&rule.explicitColumn!==targetColumn) continue;
-
       if(rule.hasR45&&(entry.__baseColumn>=3)&&targetColumn<2) continue;
 
       slots[i]=entry;
@@ -594,6 +591,13 @@ function getDisplayedRearrangeEntries(entries){
     }
     return v;
   });
+}
+
+function getMoveDisplay(existingColumn,currentColumn){
+  if(!existingColumn||!currentColumn)return {text:"-",className:"move-neutral"};
+  if(existingColumn===currentColumn)return {text:"완료",className:"move-done"};
+  if(existingColumn<currentColumn)return {text:`${existingColumn}→${currentColumn}`,className:"move-up"};
+  return {text:`${existingColumn}→${currentColumn}`,className:"move-down"};
 }
 
 function renderPartyList(){
@@ -627,6 +631,7 @@ function renderRearrangeTable(entries){
 
   const rows=entries.map((entry,idx)=>{
     const rank=idx+1;
+    const currentColumn=getRearrangeColumn(rank);
     const rowClass=entry&&entry.user===state.currentUser?"rank-row-me":"";
 
     if(!entry){
@@ -638,12 +643,15 @@ function renderRearrangeTable(entries){
         <td>-</td>
         <td class="left">-</td>
         <td>-</td>
-        ${state.isAdmin?`<td>-</td>`:""}
+        <td>-</td>
       </tr>`;
     }
 
     const powerText=entry.power>0?Number(entry.power).toLocaleString("ko-KR"):"-";
     const noteText=entry.note?escapeHtml(entry.note):"-";
+    const existingText=entry.existingColumn>0?String(entry.existingColumn):"-";
+    const move=getMoveDisplay(entry.existingColumn,currentColumn);
+
     return `<tr class="${rowClass}">
       <td>${rank}</td>
       <td>${getLayoutLabel(rank)}</td>
@@ -651,15 +659,15 @@ function renderRearrangeTable(entries){
       <td>${escapeHtml(entry.stageText||"-")}</td>
       <td>${powerText}</td>
       <td class="left">${noteText}</td>
-      <td><input type="checkbox" ${entry.moveDone?"checked":""} ${state.isAdmin?`onchange="toggleRearrangeMoveDone('${escapeJs(entry.user)}', this.checked)"`:`disabled`}></td>
-      ${state.isAdmin?`<td><button class="rank-edit-btn" onclick="openRearrangeRankEditModal('${escapeJs(entry.user)}')">관리</button></td>`:""}
+      <td>${existingText}</td>
+      <td><span class="${move.className}">${escapeHtml(move.text)}</span>${state.isAdmin?` <button class="rank-edit-btn" onclick="openRearrangeRankEditModal('${escapeJs(entry.user)}')">관리</button>`:""}</td>
     </tr>`;
   }).join("");
 
   return `<div class="rank-table-wrap">
     <table class="rank-table">
       <colgroup>
-        <col><col><col><col><col><col><col>${state.isAdmin?`<col>`:""}
+        <col><col><col><col><col><col><col><col>
       </colgroup>
       <thead>
         <tr>
@@ -669,8 +677,8 @@ function renderRearrangeTable(entries){
           <th>스테이지</th>
           <th>전투력</th>
           <th>비고</th>
+          <th>기존</th>
           <th>이동</th>
-          ${state.isAdmin?`<th>관리</th>`:""}
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -861,7 +869,7 @@ window.submitRearrangeProgress=submitRearrangeProgress;
 
 function openRearrangeRankEditModal(userName=""){
   if(!state.isAdmin){alert("권한이 없습니다.");return;}
-  ensureRankingMoveField();
+  ensureRankingExtraFields();
 
   const entry=userName?state.rearrangeEntries.find(v=>v.user===userName):null;
   if(!entry){alert("대상을 찾을 수 없습니다.");return;}
@@ -875,12 +883,11 @@ function openRearrangeRankEditModal(userName=""){
   el.rankEditStageInput.value=entry.stageText||"";
   el.rankEditPowerInput.value=entry.power>0?String(entry.power):"";
   el.rankEditNoteInput.value=entry.note||"";
+  const existingInput=document.getElementById("rankEditExistingInput");
+  if(existingInput)existingInput.value=entry.existingColumn>0?String(entry.existingColumn):"";
 
   el.rankEditNicknameInput.readOnly=true;
   el.rankEditStageInput.readOnly=true;
-
-  const moveInput=document.getElementById("rankEditMoveDoneInput");
-  if(moveInput)moveInput.checked=!!entry.moveDone;
 
   el.rankEditDeleteBtn.textContent="관리값 삭제";
   el.rearrangeRankEditModal.classList.remove("hidden");
@@ -904,7 +911,7 @@ async function submitRearrangeRankEdit(){
 
   const powerRaw=(el.rankEditPowerInput.value||"").trim();
   const note=(el.rankEditNoteInput.value||"").trim();
-  const moveDone=!!document.getElementById("rankEditMoveDoneInput")?.checked;
+  const existingRaw=(document.getElementById("rankEditExistingInput")?.value||"").trim();
 
   let power=0;
   if(powerRaw!==""){
@@ -915,15 +922,24 @@ async function submitRearrangeRankEdit(){
     }
   }
 
+  let existingColumn=0;
+  if(existingRaw!==""){
+    existingColumn=Number(existingRaw);
+    if(!Number.isInteger(existingColumn)||existingColumn<1){
+      alert("기존은 1 이상의 정수로 입력하세요.");
+      return;
+    }
+  }
+
   await rearrangeRankingRef().doc(user).set({
     user,
     power,
     note,
-    moveDone,
+    existingColumn,
     updatedAt:firebase.firestore.FieldValue.serverTimestamp()
   },{merge:true});
 
-  await writeAdminLog("update_rearrange_ranking_meta",{user,power,note,moveDone});
+  await writeAdminLog("update_rearrange_ranking_meta",{user,power,note,existingColumn});
   closeRearrangeRankEditModal();
 }
 window.submitRearrangeRankEdit=submitRearrangeRankEdit;
@@ -932,27 +948,13 @@ async function deleteRearrangeRankRow(){
   if(!state.isAdmin){alert("권한이 없습니다.");return;}
   const user=state.editingRearrangeRankUser||"";
   if(!user)return;
-  if(!confirm(`${user}의 관리값(비고/이동/전투력)을 삭제하시겠습니까?\n원본 진척도 데이터는 삭제되지 않습니다.`))return;
+  if(!confirm(`${user}의 관리값(비고/전투력/기존)을 삭제하시겠습니까?\n원본 진척도 데이터는 삭제되지 않습니다.`))return;
 
   await rearrangeRankingRef().doc(user).delete();
   await writeAdminLog("delete_rearrange_ranking_meta",{user});
   closeRearrangeRankEditModal();
 }
 window.deleteRearrangeRankRow=deleteRearrangeRankRow;
-
-async function toggleRearrangeMoveDone(userName, checked){
-  if(!state.isAdmin){
-    alert("권한이 없습니다.");
-    return;
-  }
-  await rearrangeRankingRef().doc(userName).set({
-    user:userName,
-    moveDone:!!checked,
-    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
-  },{merge:true});
-  await writeAdminLog("toggle_rearrange_move_done",{user:userName,moveDone:!!checked});
-}
-window.toggleRearrangeMoveDone=toggleRearrangeMoveDone;
 
 async function toggleRearrangePublic(){
   if(!state.isAdmin){alert("권한이 없습니다.");return;}
