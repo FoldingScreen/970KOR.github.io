@@ -325,16 +325,16 @@ img{max-width:100%;height:auto}
 
 .rank-table col:nth-child(1){width:6%}
 .rank-table col:nth-child(2){width:8%}
-.rank-table col:nth-child(3){width:18%}
-.rank-table col:nth-child(4){width:12%}
-.rank-table col:nth-child(5){width:12%}
-.rank-table col:nth-child(6){width:18%}
+.rank-table col:nth-child(3){width:16%}
+.rank-table col:nth-child(4){width:11%}
+.rank-table col:nth-child(5){width:11%}
+.rank-table col:nth-child(6){width:14%}
 .rank-table col:nth-child(7){width:8%}
-.rank-table col:nth-child(8){width:10%}
+.rank-table col:nth-child(8){width:12%}
 
 .rank-table th,
 .rank-table td{
-  padding:6px 4px;
+  padding:5px 3px;
   border-bottom:1px solid #16243a;
   text-align:center;
   vertical-align:middle;
