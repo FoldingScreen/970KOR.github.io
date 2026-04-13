@@ -1065,20 +1065,40 @@ function copyRearrangeColumns(){
   const visibleEntries=state.rearrangeEntries.filter(v=>!isHiddenTestNickname(v.user));
   const displayedEntries=getDisplayedRearrangeEntries(visibleEntries);
   const columns={1:[],2:[],3:[],4:[],5:[]};
+  const moveNeeded=[];
 
   displayedEntries.forEach((entry,idx)=>{
     const rank=idx+1;
     const col=getRearrangeColumn(rank);
-    if(entry)columns[col].push(entry.user);
+    if(!entry)return;
+
+    columns[col].push(entry.user);
+
+    const existingColumn=Number(entry.existingColumn||0);
+    if(existingColumn>0&&existingColumn!==col){
+      moveNeeded.push(`${entry.user}(${existingColumn}→${col})`);
+    }
   });
 
-  const text=[
+  const lines=[
+    "[자리 재배치 결과]",
     `1열: ${columns[1].join(", ")}`,
     `2열: ${columns[2].join(", ")}`,
     `3열: ${columns[3].join(", ")}`,
     `4열: ${columns[4].join(", ")}`,
     `5열: ${columns[5].join(", ")}`
-  ].join("\n");
+  ];
+
+  lines.push("");
+  lines.push("[이동 필요 인원]");
+
+  if(moveNeeded.length){
+    lines.push(...moveNeeded);
+  }else{
+    lines.push("없음");
+  }
+
+  const text=lines.join("\n");
 
   if(navigator.clipboard&&navigator.clipboard.writeText){
     navigator.clipboard.writeText(text).then(()=>alert("순열이 복사되었습니다."),()=>fallbackCopy(text));
