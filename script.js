@@ -2,6 +2,28 @@ const firebaseConfig={apiKey:"AIzaSyBu2RrQn8cAwwWaLtw5O8Omwn4-NzHWuc0",authDomai
 if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
 const db=firebase.firestore();
 
+const HOLY_SWORD_AREAS=[
+  "마구간",
+  "시계탑",
+  "수도원 1",
+  "수도원 2",
+  "수도원 3",
+  "수도원 4",
+  "성소 1",
+  "성소 2"
+];
+
+const HOLY_SWORD_CLOCK_ORDER=[
+  {label:"11시",area:"시계탑"},
+  {label:"1시",area:"수도원 1"},
+  {label:"2시",area:"수도원 2"},
+  {label:"4시",area:"성소 1"},
+  {label:"5시",area:"마구간"},
+  {label:"7시",area:"수도원 3"},
+  {label:"8시",area:"수도원 4"},
+  {label:"10시",area:"성소 2"}
+];
+
 const state={
   currentUser:"",
   currentEventId:"",
@@ -14,9 +36,12 @@ const state={
   rearrangeRankingMap:{},
   rearrangeEntries:[],
   rearrangePublic:false,
+  holySwordSelectedSide:localStorage.getItem("holySwordSelectedSide")||"",
+  editingHolySwordPartyId:"",
   events:[
     {id:"viking",name:"바이킹의 역습",desc:"기존 파티 시스템 유지"},
     {id:"ruins",name:"유적 쟁탈",desc:"운영진 전용 파티 생성 / 15인 고정"},
+    {id:"holy_sword",name:"성검 쟁탈",desc:"소속별 성검 파티 / 구역장 지정"},
     {id:"rearrange",name:"자리 재배치",desc:"빛나는 첨탑 최고 스테이지 입력 / 순위 관리"}
   ],
   editingRuinsPartyId:"",
@@ -69,12 +94,20 @@ const el={
   rankEditPowerInput:document.getElementById("rankEditPowerInput"),
   rankEditNoteInput:document.getElementById("rankEditNoteInput"),
   rankEditDeleteBtn:document.getElementById("rankEditDeleteBtn"),
-  rankEditSubmitBtn:document.getElementById("rankEditSubmitBtn")
+  rankEditSubmitBtn:document.getElementById("rankEditSubmitBtn"),
+
+  holySwordSideModal:document.getElementById("holySwordSideModal"),
+  holySwordAreaModal:document.getElementById("holySwordAreaModal"),
+  holySwordAreaModalTitle:document.getElementById("holySwordAreaModalTitle"),
+  holySwordAreaUserSelect:document.getElementById("holySwordAreaUserSelect"),
+  holySwordAreaSelect:document.getElementById("holySwordAreaSelect"),
+  holySwordAreaAssignmentList:document.getElementById("holySwordAreaAssignmentList")
 };
 
 function escapeHtml(s){return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
 function escapeJs(s){return String(s??"").replace(/\\/g,"\\\\").replace(/'/g,"\\'");}
 function normalizeMembers(m){return Array.isArray(m)?m.filter(v=>typeof v==="string"&&v.trim()!==""):[];}
+function normalizeAssignments(v){return Array.isArray(v)?v.filter(x=>x&&typeof x.user==="string"&&typeof x.area==="string"):[];}
 function isHiddenTestNickname(name){const lowered=String(name||"").trim().toLowerCase();return TEST_HIDDEN_PREFIXES.some(prefix=>lowered.startsWith(String(prefix).toLowerCase()));}
 
 function showOnly(name){
@@ -96,7 +129,8 @@ function setTopTabs(active){
   if(active==="home")document.querySelectorAll(".tab-btn")[0]?.classList.add("active");
   if(active==="viking")document.querySelectorAll(".tab-btn")[1]?.classList.add("active");
   if(active==="ruins")document.querySelectorAll(".tab-btn")[2]?.classList.add("active");
-  if(active==="rearrange")document.querySelectorAll(".tab-btn")[3]?.classList.add("active");
+  if(active==="holy_sword")document.querySelectorAll(".tab-btn")[3]?.classList.add("active");
+  if(active==="rearrange")document.querySelectorAll(".tab-btn")[4]?.classList.add("active");
 }
 
 function updateUserBadge(){
@@ -121,7 +155,9 @@ function syncOverlay(){
     (el.ruinsCreateModal&&!el.ruinsCreateModal.classList.contains("hidden"))||
     (el.rearrangeModal&&!el.rearrangeModal.classList.contains("hidden"))||
     (el.exampleImageModal&&!el.exampleImageModal.classList.contains("hidden"))||
-    (el.rearrangeRankEditModal&&!el.rearrangeRankEditModal.classList.contains("hidden"));
+    (el.rearrangeRankEditModal&&!el.rearrangeRankEditModal.classList.contains("hidden"))||
+    (el.holySwordSideModal&&!el.holySwordSideModal.classList.contains("hidden"))||
+    (el.holySwordAreaModal&&!el.holySwordAreaModal.classList.contains("hidden"));
 
   if(!el.modalOverlay)return;
   if(hasOpenModal) el.modalOverlay.classList.remove("hidden");
@@ -136,6 +172,8 @@ if(el.modalOverlay){
     closeRuinsCreateModal();
     closeRearrangeModal();
     closeRearrangeRankEditModal();
+    closeHolySwordSideModal();
+    closeHolySwordAreaModal();
     syncOverlay();
   });
 }
@@ -261,6 +299,7 @@ async function logout(){
   state.rearrangeRankingMap={};
   state.rearrangePublic=false;
   state.editingRearrangeRankUser="";
+  state.editingHolySwordPartyId="";
   localStorage.removeItem("partyAppUser");
   localStorage.removeItem("partyAppEvent");
   updateUserBadge();
@@ -340,6 +379,12 @@ function updateEventActionButtons(){
     el.createPartyBtn.onclick=createParty;
   }
 
+  if(state.currentEventId==="holy_sword"){
+    el.createPartyBtn.classList.remove("hidden");
+    el.createPartyBtn.textContent="성검 파티 생성";
+    el.createPartyBtn.onclick=createParty;
+  }
+
   if(state.currentEventId==="rearrange"){
     el.rearrangeEditBtn.classList.remove("hidden");
 
@@ -360,6 +405,11 @@ async function openEvent(id){
   el.eventDesc.textContent=meta?meta.desc:"";
   updateEventActionButtons();
   showOnly("event");
+
+  if(id==="holy_sword"&&!state.holySwordSelectedSide){
+    openHolySwordSideModal();
+  }
+
   if(id==="rearrange") subscribeRearrange();
   else subscribeParties();
 }
@@ -374,9 +424,11 @@ function subscribeParties(){
         id:doc.id,
         name:d.name||"",
         ruinName:d.ruinName||"",
+        side:d.side||"",
         event:d.event||state.currentEventId,
         createdBy:d.createdBy||"",
         members:normalizeMembers(d.members),
+        areaAssignments:normalizeAssignments(d.areaAssignments),
         rallyLeader:d.rallyLeader||"",
         timeUTC:d.timeUTC||null,
         maxMembers:Number(d.maxMembers||0),
@@ -390,6 +442,15 @@ function subscribeParties(){
     console.error(err);
     alert("기본 데이터를 불러오는 중 오류가 발생했습니다.");
   });
+
+  if(state.currentEventId==="holy_sword"){
+    state.unsubscribeRanking=rearrangeRankingRef().onSnapshot(()=>{
+      renderPartyList();
+    },err=>{
+      console.error(err);
+      alert("기본 데이터를 불러오는 중 오류가 발생했습니다.");
+    });
+  }
 }
 
 function rebuildMergedRearrangeEntries(){
@@ -461,7 +522,13 @@ function subscribeRearrange(){
 }
 
 function sortParties(a,b){
-  if(state.currentEventId==="ruins")return getTimeValue(a.timeUTC)-getTimeValue(b.timeUTC);
+  if(state.currentEventId==="ruins") return getTimeValue(a.timeUTC)-getTimeValue(b.timeUTC);
+  if(state.currentEventId==="holy_sword"){
+    const sideOrder=(v)=>v==="KOR"?0:v==="kor"?1:9;
+    const sideDiff=sideOrder(a.side)-sideOrder(b.side);
+    if(sideDiff!==0) return sideDiff;
+    return getTimeValue(a.timeUTC)-getTimeValue(b.timeUTC);
+  }
   return String(a.name).localeCompare(String(b.name),"ko");
 }
 
@@ -496,6 +563,40 @@ function myParty(){if(state.currentEventId!=="viking")return null;return state.p
 function myRearrangeEntry(){return state.rearrangeEntries.find(v=>v.user===state.currentUser)||null;}
 function getRearrangeColumn(rank){if(rank<=10)return 1;if(rank<=24)return 2;if(rank<=42)return 3;if(rank<=59)return 4;return 5;}
 function getLayoutLabel(rank){return `${getRearrangeColumn(rank)}열`;}
+
+function getRearrangeRankMap(){
+  const activeEntries=state.rearrangeEntries.filter(v=>!isHiddenTestNickname(v.user)&&!v.excluded);
+  const displayedEntries=getDisplayedRearrangeEntries(activeEntries);
+  const map={};
+  let n=1;
+  displayedEntries.forEach(entry=>{
+    if(!entry) return;
+    map[entry.user]=n;
+    n++;
+  });
+  return map;
+}
+
+function getHolySwordSortedMembers(members){
+  const rankMap=getRearrangeRankMap();
+  return [...members].sort((a,b)=>{
+    const ra=rankMap[a]||999999;
+    const rb=rankMap[b]||999999;
+    if(ra!==rb) return ra-rb;
+    return String(a).localeCompare(String(b),"ko");
+  });
+}
+
+function getHolySwordDisplayIndex(idx){
+  if(idx<30) return `${idx+1}.`;
+  return `예비${idx-29}.`;
+}
+
+function getHolySwordSideLabel(side){
+  if(side==="KOR") return "본연맹(KOR)";
+  if(side==="kor") return "아카데미(kor)";
+  return side||"-";
+}
 
 function parseNoteRule(note){
   const text=String(note||"").trim();
@@ -613,12 +714,60 @@ function getMoveDisplay(existingColumn,currentColumn){
   return {text:`${existingColumn}→${currentColumn}`,className:"move-down"};
 }
 
+function getHolySwordAreaAssignmentsByUser(assignments){
+  const map={};
+  normalizeAssignments(assignments).forEach(item=>{
+    if(!map[item.user]) map[item.user]=[];
+    map[item.user].push(item.area);
+  });
+  return map;
+}
+
+function renderHolySwordBadge(area){
+  if(area==="마구간") return `<span class="area-badge horse">🐴</span>`;
+  if(area==="시계탑") return `<span class="area-badge clock">⏳</span>`;
+  if(area.startsWith("성소")){
+    const num=area.split(" ")[1]||"";
+    return `<span class="area-badge sanctuary">${escapeHtml(num)}</span>`;
+  }
+  if(area.startsWith("수도원")){
+    const num=area.split(" ")[1]||"";
+    return `<span class="area-badge monastery"><span>${escapeHtml(num)}</span></span>`;
+  }
+  return "";
+}
+
+function renderHolySwordBadges(areas){
+  if(!areas||!areas.length) return "";
+  return `<span class="area-badges">${areas.map(renderHolySwordBadge).join("")}</span>`;
+}
+
+function renderHolySwordAreaBoard(assignments){
+  const byArea={};
+  HOLY_SWORD_AREAS.forEach(area=>byArea[area]=[]);
+  normalizeAssignments(assignments).forEach(item=>{
+    if(!byArea[item.area]) byArea[item.area]=[];
+    byArea[item.area].push(item.user);
+  });
+
+  return `<div class="holy-area-board">${
+    HOLY_SWORD_CLOCK_ORDER.map(item=>`<div class="holy-area-slot">
+      <div class="holy-area-slot-title">${escapeHtml(item.label)} · ${escapeHtml(item.area)}</div>
+      <div class="holy-area-slot-users">${byArea[item.area].length?byArea[item.area].map(escapeHtml).join("<br>"):"-"}</div>
+    </div>`).join("")
+  }</div>`;
+}
+
 function renderPartyList(){
   if(!state.parties.length){
     el.partyList.innerHTML=`<div class="empty-card">아직 생성된 파티가 없습니다.</div>`;
     return;
   }
-  el.partyList.innerHTML=state.parties.map(p=>state.currentEventId==="ruins"?renderRuinsCard(p):renderVikingCard(p)).join("");
+  el.partyList.innerHTML=state.parties.map(p=>{
+    if(state.currentEventId==="ruins") return renderRuinsCard(p);
+    if(state.currentEventId==="holy_sword") return renderHolySwordCard(p);
+    return renderVikingCard(p);
+  }).join("");
 }
 
 function renderVikingCard(p){
@@ -639,12 +788,46 @@ function renderRuinsCard(p){
   return`<div class="party-card"><div class="party-title">유적명: ${escapeHtml(p.ruinName||p.name)}</div><div class="party-sub">시간: ${formatKST(p.timeUTC)}</div><div class="party-sub">UTC ${formatUTC(p.timeUTC)}</div><div class="party-sub">병력수: ${power}명</div><div class="party-sub">인원: ${members.length}/15</div><div class="member-list compact">${membersHtml||'<div class="member-line"><span>참가자가 없습니다.</span></div>'}</div><div class="card-actions">${!meJoined&&members.length<15?`<button onclick="joinParty('${escapeJs(p.id)}')">참가</button>`:""}${meJoined?`<button onclick="leaveParty('${escapeJs(p.id)}')">취소</button>`:""}${state.isAdmin?`<button onclick="openRuinsEditModal('${escapeJs(p.id)}')">수정</button><button onclick="deleteParty('${escapeJs(p.id)}')">삭제</button>`:""}<button onclick="copyRuinsNotice('${escapeJs(p.id)}')">복사</button></div></div>`;
 }
 
+function renderHolySwordCard(p){
+  const members=getHolySwordSortedMembers(p.members);
+  const meJoined=members.includes(state.currentUser);
+  const canManage=state.isAdmin;
+  const byUser=getHolySwordAreaAssignmentsByUser(p.areaAssignments);
+
+  const membersHtml=members.map((name,idx)=>{
+    const badges=renderHolySwordBadges(byUser[name]||[]);
+    return `<div class="member-line">
+      <span class="${name===state.currentUser?"my-name":""}">
+        <span class="holy-member-rank">${escapeHtml(getHolySwordDisplayIndex(idx))}</span> ${escapeHtml(name)}${badges}
+      </span>
+    </div>`;
+  }).join("");
+
+  return `<div class="party-card">
+    <div class="party-title">${escapeHtml(p.name)}</div>
+    <div class="party-sub">소속: <span class="holy-side-badge">${escapeHtml(getHolySwordSideLabel(p.side))}</span></div>
+    <div class="party-sub">시간: ${formatKST(p.timeUTC)}</div>
+    <div class="party-sub">UTC ${formatUTC(p.timeUTC)}</div>
+    <div class="party-sub">인원: ${members.length}명</div>
+    ${renderHolySwordAreaBoard(p.areaAssignments)}
+    <div class="member-list">${membersHtml||'<div class="member-line"><span>참가자가 없습니다.</span></div>'}</div>
+    <div class="card-actions">
+      ${!meJoined?`<button onclick="joinParty('${escapeJs(p.id)}')">참가</button>`:""}
+      ${meJoined?`<button onclick="leaveParty('${escapeJs(p.id)}')">취소</button>`:""}
+      ${canManage?`<button onclick="openRuinsEditModal('${escapeJs(p.id)}')">수정</button>`:""}
+      ${canManage?`<button onclick="deleteParty('${escapeJs(p.id)}')">삭제</button>`:""}
+      ${canManage?`<button onclick="openHolySwordAreaModal('${escapeJs(p.id)}')">구역장 지정</button>`:""}
+      <button onclick="copyHolySwordNotice('${escapeJs(p.id)}')">복사</button>
+    </div>
+  </div>`;
+}
+
 function renderExcludedRearrangeList(entries){
   if(!state.isAdmin||!entries.length) return "";
   const items=entries.map(entry=>`<div class="member-line"><span>${escapeHtml(entry.user)}</span><button class="rank-edit-btn" onclick="openRearrangeRankEditModal('${escapeJs(entry.user)}')">관리</button></div>`).join("");
   return `<div class="party-card">
     <div class="party-title">제외 인원</div>
-    <div class="party-sub">복구하려면 관리 버튼에서 제외 체크를 해제하세요.</div>
+    <div class="party-sub">복구하려면 관리 버튼에서 제외 해제를 하세요.</div>
     <div class="member-list">${items}</div>
   </div>`;
 }
@@ -756,6 +939,7 @@ function renderRearrangeEvent(){
 async function createParty(){
   if(state.currentEventId==="viking")return createVikingParty();
   if(state.currentEventId==="ruins")return openRuinsCreateModal();
+  if(state.currentEventId==="holy_sword")return openHolySwordCreateModal();
 }
 window.createParty=createParty;
 
@@ -784,12 +968,25 @@ function openRuinsCreateModal(){
   syncOverlay();
 }
 
+function openHolySwordCreateModal(){
+  if(!state.isAdmin){alert("성검 파티는 운영진만 생성할 수 있습니다.");return;}
+  state.editingRuinsPartyId="";
+  el.ruinsModalTitle.textContent="성검 파티 생성";
+  el.ruinsSubmitBtn.textContent="생성";
+  el.ruinNameInput.value="";
+  el.utcMonth.value="1";
+  el.utcDay.value="1";
+  el.utcHour.value="0";
+  el.ruinsCreateModal.classList.remove("hidden");
+  syncOverlay();
+}
+
 async function openRuinsEditModal(partyId){
   if(!state.isAdmin){alert("권한이 없습니다.");return;}
   const p=state.parties.find(v=>v.id===partyId);
   if(!p){alert("파티를 찾을 수 없습니다.");return;}
   state.editingRuinsPartyId=partyId;
-  el.ruinsModalTitle.textContent="유적 파티 수정";
+  el.ruinsModalTitle.textContent=state.currentEventId==="holy_sword"?"성검 파티 수정":"유적 파티 수정";
   el.ruinsSubmitBtn.textContent="수정";
   el.ruinNameInput.value=p.ruinName||p.name||"";
   const d=toDate(p.timeUTC);
@@ -808,19 +1005,43 @@ window.closeRuinsCreateModal=closeRuinsCreateModal;
 
 async function submitRuinsParty(){
   if(!state.isAdmin){alert("권한이 없습니다.");return;}
-  const ruinName=(el.ruinNameInput.value||"").trim();
+  const name=(el.ruinNameInput.value||"").trim();
   const m=Number(el.utcMonth.value),d=Number(el.utcDay.value),h=Number(el.utcHour.value);
-  if(!ruinName){alert("유적명을 입력하세요.");return;}
+  if(!name){alert(state.currentEventId==="holy_sword"?"파티명을 입력하세요.":"유적명을 입력하세요.");return;}
   if(!m||!d||h<0||h>23){alert("UTC 날짜/시간을 선택하세요.");return;}
   const year=new Date().getUTCFullYear();
   const utcDate=new Date(Date.UTC(year,m-1,d,h,0,0,0));
+
+  if(state.currentEventId==="holy_sword"){
+    const side=state.holySwordSelectedSide||"KOR";
+    if(state.editingRuinsPartyId){
+      await partiesRef("holy_sword").doc(state.editingRuinsPartyId).update({name,timeUTC:utcDate,side});
+      await writeAdminLog("update_holy_sword_party",{partyId:state.editingRuinsPartyId,name,month:m,day:d,hour:h,side});
+    }else{
+      await partiesRef("holy_sword").add({
+        type:"holy_sword",
+        event:"holy_sword",
+        name,
+        side,
+        createdBy:state.currentUser,
+        members:[],
+        areaAssignments:[],
+        timeUTC:utcDate,
+        createdAt:firebase.firestore.FieldValue.serverTimestamp()
+      });
+      await writeAdminLog("create_holy_sword_party",{name,month:m,day:d,hour:h,side});
+    }
+    closeRuinsCreateModal();
+    return;
+  }
+
   if(state.editingRuinsPartyId){
     const ref=partiesRef("ruins").doc(state.editingRuinsPartyId);
-    await ref.update({name:ruinName,ruinName,timeUTC:utcDate});
-    await writeAdminLog("update_ruins_party",{partyId:state.editingRuinsPartyId,ruinName,month:m,day:d,hour:h});
+    await ref.update({name,ruinName:name,timeUTC:utcDate});
+    await writeAdminLog("update_ruins_party",{partyId:state.editingRuinsPartyId,ruinName:name,month:m,day:d,hour:h});
   }else{
-    await partiesRef("ruins").add({type:"ruins",event:"ruins",name:ruinName,ruinName,createdBy:state.currentUser,members:[],rallyLeader:"",maxMembers:15,timeUTC:utcDate,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-    await writeAdminLog("create_ruins_party",{ruinName,month:m,day:d,hour:h});
+    await partiesRef("ruins").add({type:"ruins",event:"ruins",name,ruinName:name,createdBy:state.currentUser,members:[],rallyLeader:"",maxMembers:15,timeUTC:utcDate,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+    await writeAdminLog("create_ruins_party",{ruinName:name,month:m,day:d,hour:h});
   }
   closeRuinsCreateModal();
 }
@@ -864,6 +1085,75 @@ window.openMyRearrangeModal=openMyRearrangeModal;
 window.closeRearrangeModal=closeRearrangeModal;
 window.openExampleImageModal=openExampleImageModal;
 window.closeExampleImageModal=closeExampleImageModal;
+
+function openHolySwordSideModal(){
+  if(!el.holySwordSideModal) return;
+  el.holySwordSideModal.classList.remove("hidden");
+  syncOverlay();
+}
+function closeHolySwordSideModal(){
+  el.holySwordSideModal?.classList.add("hidden");
+  syncOverlay();
+}
+window.closeHolySwordSideModal=closeHolySwordSideModal;
+
+function selectHolySwordSide(side){
+  state.holySwordSelectedSide=side;
+  localStorage.setItem("holySwordSelectedSide",side);
+  closeHolySwordSideModal();
+}
+window.selectHolySwordSide=selectHolySwordSide;
+
+function openHolySwordAreaModal(partyId){
+  if(!state.isAdmin){alert("권한이 없습니다.");return;}
+  const party=state.parties.find(v=>v.id===partyId);
+  if(!party){alert("파티를 찾을 수 없습니다.");return;}
+  state.editingHolySwordPartyId=partyId;
+  el.holySwordAreaModalTitle.textContent=`구역장 지정 - ${party.name}`;
+  el.holySwordAreaUserSelect.innerHTML=party.members.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
+  el.holySwordAreaSelect.value="마구간";
+  renderHolySwordAreaAssignmentList(party);
+  el.holySwordAreaModal.classList.remove("hidden");
+  syncOverlay();
+}
+function closeHolySwordAreaModal(){
+  state.editingHolySwordPartyId="";
+  el.holySwordAreaModal?.classList.add("hidden");
+  syncOverlay();
+}
+window.openHolySwordAreaModal=openHolySwordAreaModal;
+window.closeHolySwordAreaModal=closeHolySwordAreaModal;
+
+function renderHolySwordAreaAssignmentList(party){
+  const assignments=normalizeAssignments(party.areaAssignments);
+  el.holySwordAreaAssignmentList.innerHTML=assignments.length?assignments.map((item,idx)=>`<div class="holy-sword-assign-item"><span>${escapeHtml(item.user)} - ${escapeHtml(item.area)}</span><button type="button" class="rank-edit-btn" onclick="removeHolySwordAreaAssignment(${idx})">삭제</button></div>`).join(""):`<div class="muted">지정된 구역장이 없습니다.</div>`;
+}
+
+async function addHolySwordAreaAssignment(){
+  if(!state.isAdmin){alert("권한이 없습니다.");return;}
+  const party=state.parties.find(v=>v.id===state.editingHolySwordPartyId);
+  if(!party){alert("파티를 찾을 수 없습니다.");return;}
+  const user=el.holySwordAreaUserSelect.value;
+  const area=el.holySwordAreaSelect.value;
+  if(!user||!area){alert("파티원과 구역을 선택하세요.");return;}
+  const areaAssignments=[...normalizeAssignments(party.areaAssignments),{user,area}];
+  await partiesRef("holy_sword").doc(party.id).update({areaAssignments});
+  await writeAdminLog("add_holy_sword_area_assignment",{partyId:party.id,user,area});
+}
+window.addHolySwordAreaAssignment=addHolySwordAreaAssignment;
+
+async function removeHolySwordAreaAssignment(index){
+  if(!state.isAdmin){alert("권한이 없습니다.");return;}
+  const party=state.parties.find(v=>v.id===state.editingHolySwordPartyId);
+  if(!party){alert("파티를 찾을 수 없습니다.");return;}
+  const areaAssignments=[...normalizeAssignments(party.areaAssignments)];
+  if(index<0||index>=areaAssignments.length) return;
+  const removed=areaAssignments[index];
+  areaAssignments.splice(index,1);
+  await partiesRef("holy_sword").doc(party.id).update({areaAssignments});
+  await writeAdminLog("remove_holy_sword_area_assignment",{partyId:party.id,user:removed.user,area:removed.area});
+}
+window.removeHolySwordAreaAssignment=removeHolySwordAreaAssignment;
 
 function parseStageText(raw){
   const value=String(raw||"").trim();
@@ -956,7 +1246,6 @@ async function toggleRearrangeExcluded(){
   },{merge:true});
 
   await writeAdminLog("toggle_rearrange_excluded",{user,excluded:nextExcluded});
-
   closeRearrangeRankEditModal();
 }
 window.toggleRearrangeExcluded=toggleRearrangeExcluded;
@@ -1027,15 +1316,22 @@ async function toggleRearrangePublic(){
 window.toggleRearrangePublic=toggleRearrangePublic;
 
 async function joinParty(id){
-  if(state.currentEventId==="viking"&&myParty()){alert("이미 다른 파티에 참여 중입니다.");return;}
   const ref=partiesRef(state.currentEventId).doc(id);
   const snap=await ref.get();
   if(!snap.exists){alert("파티를 찾을 수 없습니다.");return;}
   const d=snap.data()||{};
   const members=normalizeMembers(d.members);
+
+  if(state.currentEventId==="viking"&&myParty()){alert("이미 다른 파티에 참여 중입니다.");return;}
+  if(members.includes(state.currentUser)){
+    if(state.currentEventId==="ruins"){alert("이미 이 유적 파티에 신청되어 있습니다.");}
+    if(state.currentEventId==="holy_sword"){alert("이미 이 성검 파티에 신청되어 있습니다.");}
+    return;
+  }
+
   if(state.currentEventId==="ruins"&&members.length>=15){alert("유적 파티는 최대 15명입니다.");return;}
   if(state.currentEventId==="viking"&&Number(d.maxMembers||0)>0&&members.length>=Number(d.maxMembers)){alert("이 파티는 정원이 가득 찼습니다.");return;}
-  if(members.includes(state.currentUser)){if(state.currentEventId==="ruins"){alert("이미 이 유적 파티에 신청되어 있습니다.");}return;}
+
   members.push(state.currentUser);
   await ref.update({members});
 }
@@ -1048,7 +1344,13 @@ async function leaveParty(id){
   const d=snap.data()||{};
   const members=normalizeMembers(d.members).filter(v=>v!==state.currentUser);
   const updates={members};
+
   if(state.currentEventId==="ruins"&&d.rallyLeader===state.currentUser)updates.rallyLeader=members[0]||"";
+
+  if(state.currentEventId==="holy_sword"){
+    updates.areaAssignments=normalizeAssignments(d.areaAssignments).filter(v=>v.user!==state.currentUser);
+  }
+
   await ref.update(updates);
 }
 window.leaveParty=leaveParty;
@@ -1060,9 +1362,12 @@ async function deleteParty(id){
   const d=snap.data()||{};
   const ok=state.isAdmin||d.createdBy===state.currentUser;
   if(!ok){alert("삭제 권한이 없습니다.");return;}
-  if(!confirm(state.currentEventId==="ruins"?"정말 이 유적 파티를 삭제하시겠습니까?":"정말 이 파티를 삭제하시겠습니까?"))return;
+
+  const msg=state.currentEventId==="ruins"?"정말 이 유적 파티를 삭제하시겠습니까?":state.currentEventId==="holy_sword"?"정말 이 성검 파티를 삭제하시겠습니까?":"정말 이 파티를 삭제하시겠습니까?";
+  if(!confirm(msg))return;
+
   await ref.delete();
-  if(state.isAdmin)await writeAdminLog("delete_party",{partyId:id,name:d.name||"",ruinName:d.ruinName||""});
+  if(state.isAdmin)await writeAdminLog("delete_party",{partyId:id,name:d.name||"",ruinName:d.ruinName||"",side:d.side||""});
 }
 window.deleteParty=deleteParty;
 
@@ -1075,7 +1380,10 @@ async function kickMember(id,name){
   const ref=partiesRef(state.currentEventId).doc(id);
   const members=normalizeMembers(p.members).filter(v=>v!==name);
   const updates={members};
+
   if(state.currentEventId==="ruins"&&p.rallyLeader===name)updates.rallyLeader=members[0]||"";
+  if(state.currentEventId==="holy_sword")updates.areaAssignments=normalizeAssignments(p.areaAssignments).filter(v=>v.user!==name);
+
   await ref.update(updates);
   if(state.isAdmin)await writeAdminLog("kick_member",{partyId:id,memberName:name});
 }
@@ -1110,6 +1418,46 @@ function copyRuinsNotice(partyId){
   if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(()=>alert("복사되었습니다."),()=>fallbackCopy(text));}
   else fallbackCopy(text);
 }
+
+function copyHolySwordNotice(partyId){
+  const p=state.parties.find(v=>v.id===partyId);
+  if(!p)return;
+
+  const members=getHolySwordSortedMembers(p.members);
+  const byArea={};
+  HOLY_SWORD_AREAS.forEach(area=>byArea[area]=[]);
+  normalizeAssignments(p.areaAssignments).forEach(item=>{
+    if(!byArea[item.area]) byArea[item.area]=[];
+    byArea[item.area].push(item.user);
+  });
+
+  const memberLines=members.map((name,idx)=>`${getHolySwordDisplayIndex(idx)} ${name}`);
+  const text=[
+    "[성검 쟁탈]",
+    `소속: ${getHolySwordSideLabel(p.side)}`,
+    `시간: ${formatKST(p.timeUTC)} (UTC ${formatUTC(p.timeUTC)})`,
+    "",
+    "[구역장]",
+    `수도원 1: ${byArea["수도원 1"].join(", ")||"-"}`,
+    `수도원 2: ${byArea["수도원 2"].join(", ")||"-"}`,
+    `성소 1: ${byArea["성소 1"].join(", ")||"-"}`,
+    `마구간: ${byArea["마구간"].join(", ")||"-"}`,
+    `수도원 3: ${byArea["수도원 3"].join(", ")||"-"}`,
+    `수도원 4: ${byArea["수도원 4"].join(", ")||"-"}`,
+    `성소 2: ${byArea["성소 2"].join(", ")||"-"}`,
+    `시계탑: ${byArea["시계탑"].join(", ")||"-"}`,
+    "",
+    "[참가인원]",
+    ...memberLines
+  ].join("\n");
+
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=>alert("복사되었습니다."),()=>fallbackCopy(text));
+  }else{
+    fallbackCopy(text);
+  }
+}
+window.copyHolySwordNotice=copyHolySwordNotice;
 
 function fallbackCopy(text){
   const ta=document.createElement("textarea");
