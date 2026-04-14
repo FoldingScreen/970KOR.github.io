@@ -509,6 +509,132 @@ img{max-width:100%;height:auto}
   .rank-table td{font-size:10px}
 }
 
+.holy-side-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:84px;
+  padding:4px 10px;
+  border-radius:999px;
+  border:1px solid #22304a;
+  background:#0b1220;
+  font-size:12px;
+  font-weight:700;
+  margin-left:6px;
+}
+
+.holy-area-board{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+  margin-top:12px;
+  margin-bottom:12px;
+}
+
+.holy-area-slot{
+  border:1px solid #22304a;
+  border-radius:14px;
+  padding:10px;
+  background:#0b1220;
+  min-height:82px;
+}
+
+.holy-area-slot-title{
+  font-size:12px;
+  font-weight:700;
+  color:#92a3bf;
+  margin-bottom:6px;
+  text-align:center;
+}
+
+.holy-area-slot-users{
+  font-size:13px;
+  line-height:1.5;
+  text-align:center;
+}
+
+.holy-member-rank{
+  display:inline-block;
+  min-width:44px;
+  color:#92a3bf;
+  font-weight:700;
+}
+
+.area-badges{
+  display:inline-flex;
+  gap:4px;
+  flex-wrap:wrap;
+  margin-left:6px;
+  vertical-align:middle;
+}
+
+.area-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:22px;
+  height:22px;
+  font-size:11px;
+  font-weight:700;
+  color:#fff;
+  border:1px solid rgba(255,255,255,.18);
+}
+
+.area-badge.horse{
+  border-radius:999px;
+  background:#7a5b2f;
+  font-size:12px;
+}
+
+.area-badge.clock{
+  border-radius:999px;
+  background:#4d6a86;
+  font-size:12px;
+}
+
+.area-badge.sanctuary{
+  border-radius:999px;
+  background:#2563eb;
+}
+
+.area-badge.monastery{
+  background:#2563eb;
+  transform:rotate(45deg);
+}
+
+.area-badge.monastery span{
+  transform:rotate(-45deg);
+  display:inline-block;
+}
+
+.holy-sword-assign-item{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  padding:8px 0;
+}
+
+.holy-sword-assign-item:last-child{
+  border-bottom:none;
+}
+
+@media (max-width:720px){
+  .holy-area-board{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .holy-area-slot{
+    min-height:76px;
+    padding:8px;
+  }
+
+  .holy-area-slot-users{
+    font-size:12px;
+  }
+}
+
 .move-up{color:red;font-weight:700}
 .move-down{color:blue;font-weight:700}
 .move-done{color:#9aa7bd;font-weight:700}
