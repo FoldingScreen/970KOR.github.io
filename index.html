@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>970KOR</title>
-  <link rel="stylesheet" href="style.css?v=stable5" />
+  <link rel="stylesheet" href="style.css?v=holy1" />
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -18,6 +18,7 @@
         <button class="tab-btn active" onclick="goHome()">홈</button>
         <button class="tab-btn" onclick="openEvent('viking')">바이킹</button>
         <button class="tab-btn" onclick="openEvent('ruins')">유적쟁탈</button>
+        <button class="tab-btn" onclick="openEvent('holy_sword')">성검쟁탈</button>
         <button class="tab-btn" onclick="openEvent('rearrange')">자리재배치</button>
       </nav>
 
@@ -113,8 +114,8 @@
     </div>
 
     <div class="form-group">
-      <label>유적명</label>
-      <input id="ruinNameInput" class="text-input" placeholder="예: 4번 성채" />
+      <label>이름</label>
+      <input id="ruinNameInput" class="text-input" placeholder="예: 4번 성채 / 성검 1파티" />
     </div>
 
     <div class="form-group">
@@ -212,53 +213,53 @@
   </div>
 
   <div id="holySwordSideModal" class="modal hidden">
-  <div class="modal-header">
-    <h3>성검 쟁탈 소속 선택</h3>
-    <button class="close-btn" type="button" onclick="closeHolySwordSideModal()">닫기</button>
-  </div>
-  <div class="form-group">
-    <p class="muted">성검 쟁탈에서 사용할 기본 소속을 선택하세요.</p>
-  </div>
-  <div class="actions">
-    <button type="button" onclick="selectHolySwordSide('KOR')">본연맹(KOR)</button>
-    <button type="button" onclick="selectHolySwordSide('kor')">아카데미(kor)</button>
-  </div>
-</div>
-
-<div id="holySwordAreaModal" class="modal hidden">
-  <div class="modal-header">
-    <h3 id="holySwordAreaModalTitle">구역장 지정</h3>
-    <button class="close-btn" type="button" onclick="closeHolySwordAreaModal()">닫기</button>
+    <div class="modal-header">
+      <h3>성검 쟁탈 소속 선택</h3>
+      <button class="close-btn" type="button" onclick="closeHolySwordSideModal()">닫기</button>
+    </div>
+    <div class="form-group">
+      <p class="muted">성검 쟁탈에서 사용할 기본 소속을 선택하세요.</p>
+    </div>
+    <div class="actions">
+      <button type="button" onclick="selectHolySwordSide('KOR')">본연맹(KOR)</button>
+      <button type="button" onclick="selectHolySwordSide('kor')">아카데미(kor)</button>
+    </div>
   </div>
 
-  <div class="form-group">
-    <label for="holySwordAreaUserSelect">파티원</label>
-    <select id="holySwordAreaUserSelect"></select>
+  <div id="holySwordAreaModal" class="modal hidden">
+    <div class="modal-header">
+      <h3 id="holySwordAreaModalTitle">구역장 지정</h3>
+      <button class="close-btn" type="button" onclick="closeHolySwordAreaModal()">닫기</button>
+    </div>
+
+    <div class="form-group">
+      <label for="holySwordAreaUserSelect">파티원</label>
+      <select id="holySwordAreaUserSelect"></select>
+    </div>
+
+    <div class="form-group">
+      <label for="holySwordAreaSelect">구역</label>
+      <select id="holySwordAreaSelect">
+        <option value="마구간">마구간</option>
+        <option value="시계탑">시계탑</option>
+        <option value="수도원 1">수도원 1</option>
+        <option value="수도원 2">수도원 2</option>
+        <option value="수도원 3">수도원 3</option>
+        <option value="수도원 4">수도원 4</option>
+        <option value="성소 1">성소 1</option>
+        <option value="성소 2">성소 2</option>
+      </select>
+    </div>
+
+    <div class="actions">
+      <button type="button" onclick="addHolySwordAreaAssignment()">추가</button>
+    </div>
+
+    <div class="form-group">
+      <div id="holySwordAreaAssignmentList"></div>
+    </div>
   </div>
 
-  <div class="form-group">
-    <label for="holySwordAreaSelect">구역</label>
-    <select id="holySwordAreaSelect">
-      <option value="마구간">마구간</option>
-      <option value="시계탑">시계탑</option>
-      <option value="수도원 1">수도원 1</option>
-      <option value="수도원 2">수도원 2</option>
-      <option value="수도원 3">수도원 3</option>
-      <option value="수도원 4">수도원 4</option>
-      <option value="성소 1">성소 1</option>
-      <option value="성소 2">성소 2</option>
-    </select>
-  </div>
-
-  <div class="actions">
-    <button type="button" onclick="addHolySwordAreaAssignment()">추가</button>
-  </div>
-
-  <div class="form-group">
-    <div id="holySwordAreaAssignmentList"></div>
-  </div>
-</div>
-  
-  <script src="script.js?v=stable5"></script>
+  <script src="script.js?v=holy1"></script>
 </body>
 </html>
