@@ -405,6 +405,7 @@ img{max-width:100%;height:auto}
 .holy-area-board{
   display:grid;
   grid-template-columns:repeat(4,minmax(0,1fr));
+  grid-template-rows:repeat(4,minmax(56px,auto));
   gap:10px;
   margin-top:12px;
   margin-bottom:12px;
@@ -413,30 +414,35 @@ img{max-width:100%;height:auto}
 .holy-area-slot{
   border:1px solid #22304a;
   border-radius:14px;
-  padding:10px;
+  padding:8px;
   background:#0b1220;
-  min-height:82px;
+  min-height:56px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
 }
 
 .holy-area-slot-title{
   font-size:12px;
   font-weight:700;
   color:#92a3bf;
-  margin-bottom:6px;
+  margin-bottom:4px;
   text-align:center;
 }
 
 .holy-area-slot-users{
   font-size:13px;
-  line-height:1.5;
+  line-height:1.4;
   text-align:center;
 }
 
 .holy-member-rank{
   display:inline-block;
-  min-width:44px;
+  min-width:36px;
   color:#92a3bf;
-  font-weight:700;
+  font-weight:600;
+  font-size:13px;
 }
 
 .area-badges{
@@ -452,15 +458,15 @@ img{max-width:100%;height:auto}
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  width:28px;
-  height:28px;
-  font-size:14px;
+  width:30px;
+  height:30px;
+  font-size:15px;
   font-weight:800;
   color:#fff;
   border:1px solid rgba(255,255,255,.25);
   line-height:1;
   box-sizing:border-box;
-  flex:0 0 28px;
+  flex:0 0 30px;
   text-align:center;
 }
 
@@ -483,12 +489,12 @@ img{max-width:100%;height:auto}
 
 .area-badge.monastery{
   background:#2563eb;
-  transform:rotate(45deg);
+  transform:rotate(45deg) scale(0.7071);
   position:relative;
 }
 
 .area-badge.monastery span{
-  transform:rotate(-45deg);
+  transform:rotate(-45deg) scale(1.4142);
   display:flex;
   align-items:center;
   justify-content:center;
