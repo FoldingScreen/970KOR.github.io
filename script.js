@@ -581,7 +581,13 @@ function myParty(){
   return state.parties.find(p=>p.members.includes(state.currentUser))||null;
 }
 function myRearrangeEntry(){return state.rearrangeEntries.find(v=>v.user===state.currentUser)||null;}
-function getRearrangeColumn(rank){if(rank<=10)return 1;if(rank<=24)return 2;if(rank<=42)return 3;if(rank<=59)return 4;return 5;}
+function getRearrangeColumn(rank){
+  if(rank<=18)return 3;
+  if(rank<=28)return 1;
+  if(rank<=42)return 2;
+  if(rank<=59)return 4;
+  return 5;
+}
 function getLayoutLabel(rank){return `${getRearrangeColumn(rank)}열`;}
 
 function getRearrangeRankMap(){
@@ -627,7 +633,8 @@ function parseNoteRule(note){
 }
 
 function getDisplayedRearrangeEntries(entries){
-  const capacities={1:10,2:14,3:18,4:17,5:Number.MAX_SAFE_INTEGER};
+  const capacities={1:14,2:18,3:10,4:17,5:Number.MAX_SAFE_INTEGER};
+  const primaryColumnOrder=[3,1,2,4];
 
   const sorted=[...entries];
   const explicitByColumn={1:[],2:[],3:[],4:[],5:[]};
@@ -672,7 +679,7 @@ function getDisplayedRearrangeEntries(entries){
 
   const slots=[];
 
-  for(let col=1;col<=4;col++){
+  for(const col of primaryColumnOrder){
     const limit=capacities[col];
     for(let i=0;i<limit;i++){
       const forced=takeFrom(columnPools[col]);
@@ -683,6 +690,7 @@ function getDisplayedRearrangeEntries(entries){
 
   for(const entry of normal){
     let placed=false;
+
     for(let i=0;i<slots.length;i++){
       if(slots[i]!=="__EMPTY__")continue;
 
@@ -697,6 +705,7 @@ function getDisplayedRearrangeEntries(entries){
       placed=true;
       break;
     }
+
     if(!placed){
       slots.push(entry);
       usedUsers.add(entry.user);
