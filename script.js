@@ -847,7 +847,7 @@ function renderHolySwordCard(p){
   }).join("");
 
   return `<div class="party-card">
-    <div class="party-title">${escapeHtml(p.name)}</div>
+    <div class="party-title holy-party-title">${escapeHtml(p.name)}</div>
     <div class="party-sub">소속: <span class="holy-side-badge">${escapeHtml(getHolySwordSideLabel(p.side))}</span></div>
     <div class="party-sub">시간: ${formatKST(p.timeUTC)}</div>
     <div class="party-sub">UTC ${formatUTC(p.timeUTC)}</div>
