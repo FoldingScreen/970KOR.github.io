@@ -633,7 +633,7 @@ function parseNoteRule(note){
 }
 
 function getDisplayedRearrangeEntries(entries){
-  const capacities={1:14,2:18,3:10,4:17,5:Number.MAX_SAFE_INTEGER};
+  const capacities={1:10,2:14,3:18,4:17,5:Number.MAX_SAFE_INTEGER};
   const primaryColumnOrder=[3,1,2,4];
 
   const sorted=[...entries];
