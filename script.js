@@ -7,9 +7,9 @@ const HOLY_SWORD_AREAS=[
   "시계탑",
   "수도원 1",
   "수도원 2",
+  "성소 1",
   "수도원 3",
   "수도원 4",
-  "성소 1",
   "성소 2"
 ];
 
@@ -36,16 +36,16 @@ const state={
   rearrangeRankingMap:{},
   rearrangeEntries:[],
   rearrangePublic:false,
-  holySwordSelectedSide:localStorage.getItem("holySwordSelectedSide")||"",
+  holySwordSelectedSide:localStorage.getItem("holySwordSelectedSide")||"KOR",
+  editingRuinsPartyId:"",
+  editingRearrangeRankUser:"",
   editingHolySwordPartyId:"",
   events:[
     {id:"viking",name:"바이킹의 역습",desc:"기존 파티 시스템 유지"},
     {id:"ruins",name:"유적 쟁탈",desc:"운영진 전용 파티 생성 / 15인 고정"},
     {id:"holy_sword",name:"성검 쟁탈",desc:"소속별 성검 파티 / 구역장 지정"},
     {id:"rearrange",name:"자리 재배치",desc:"빛나는 첨탑 최고 스테이지 입력 / 순위 관리"}
-  ],
-  editingRuinsPartyId:"",
-  editingRearrangeRankUser:""
+  ]
 };
 
 const TEST_HIDDEN_PREFIXES=["test","tester","테스트","운영테스트"];
@@ -95,8 +95,6 @@ const el={
   rankEditNoteInput:document.getElementById("rankEditNoteInput"),
   rankEditDeleteBtn:document.getElementById("rankEditDeleteBtn"),
   rankEditSubmitBtn:document.getElementById("rankEditSubmitBtn"),
-
-  holySwordSideModal:document.getElementById("holySwordSideModal"),
   holySwordAreaModal:document.getElementById("holySwordAreaModal"),
   holySwordAreaModalTitle:document.getElementById("holySwordAreaModalTitle"),
   holySwordAreaUserSelect:document.getElementById("holySwordAreaUserSelect"),
@@ -156,11 +154,10 @@ function syncOverlay(){
     (el.rearrangeModal&&!el.rearrangeModal.classList.contains("hidden"))||
     (el.exampleImageModal&&!el.exampleImageModal.classList.contains("hidden"))||
     (el.rearrangeRankEditModal&&!el.rearrangeRankEditModal.classList.contains("hidden"))||
-    (el.holySwordSideModal&&!el.holySwordSideModal.classList.contains("hidden"))||
     (el.holySwordAreaModal&&!el.holySwordAreaModal.classList.contains("hidden"));
 
   if(!el.modalOverlay)return;
-  if(hasOpenModal) el.modalOverlay.classList.remove("hidden");
+  if(hasOpenModal)el.modalOverlay.classList.remove("hidden");
   else el.modalOverlay.classList.add("hidden");
 }
 
@@ -172,7 +169,6 @@ if(el.modalOverlay){
     closeRuinsCreateModal();
     closeRearrangeModal();
     closeRearrangeRankEditModal();
-    closeHolySwordSideModal();
     closeHolySwordAreaModal();
     syncOverlay();
   });
@@ -195,7 +191,10 @@ async function ensureEventDocs(){
 }
 
 async function ensureUserDoc(name){
-  await db.collection("users").doc(name).set({nickname:name,lastLoginAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+  await db.collection("users").doc(name).set({
+    nickname:name,
+    lastLoginAt:firebase.firestore.FieldValue.serverTimestamp()
+  },{merge:true});
 }
 
 async function refreshAdmin(){
@@ -230,6 +229,13 @@ function initRuinsSelects(){
   for(let i=0;i<=23;i++)el.utcHour.insertAdjacentHTML("beforeend",`<option value="${i}">${String(i).padStart(2,"0")}:00</option>`);
 }
 
+function ensureHolySwordFields(){
+  const wrap=document.getElementById("holySwordSideWrap");
+  if(wrap&&!document.getElementById("holySwordSideSelect")){
+    wrap.innerHTML=`<label>소속</label><select id="holySwordSideSelect"><option value="KOR">본연맹(KOR)</option><option value="kor">아카데미(kor)</option></select>`;
+  }
+}
+
 function ensureRankingExtraFields(){
   if(!document.getElementById("rankEditExistingWrap")){
     const noteInput=el.rankEditNoteInput;
@@ -241,7 +247,6 @@ function ensureRankingExtraFields(){
       noteInput.parentElement.insertAdjacentElement("afterend",wrap);
     }
   }
-
   if(!document.getElementById("rankEditExcludeBtnWrap")){
     const existingWrap=document.getElementById("rankEditExistingWrap");
     if(existingWrap){
@@ -284,7 +289,12 @@ async function login(){
   }
 }
 if(el.nicknameInput){
-  el.nicknameInput.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();login();}});
+  el.nicknameInput.addEventListener("keydown",e=>{
+    if(e.key==="Enter"){
+      e.preventDefault();
+      login();
+    }
+  });
 }
 window.login=login;
 
@@ -298,6 +308,7 @@ async function logout(){
   state.rearrangeProgressEntries=[];
   state.rearrangeRankingMap={};
   state.rearrangePublic=false;
+  state.editingRuinsPartyId="";
   state.editingRearrangeRankUser="";
   state.editingHolySwordPartyId="";
   localStorage.removeItem("partyAppUser");
@@ -313,6 +324,7 @@ async function tryAutoLogin(){
   try{
     initRuinsSelects();
     ensureRankingExtraFields();
+    ensureHolySwordFields();
     updateUserBadge();
     updateEventActionButtons();
     showOnly("login");
@@ -326,7 +338,8 @@ async function tryAutoLogin(){
     await ensureEventDocs();
 
     const savedEvent=localStorage.getItem("partyAppEvent");
-    if(savedEvent){openEvent(savedEvent);}else{goHome();}
+    if(savedEvent)openEvent(savedEvent);
+    else goHome();
   }catch(e){
     console.error(e);
     updateUserBadge();
@@ -338,7 +351,10 @@ async function tryAutoLogin(){
 async function renderHomeSummary(){
   const usersSnap=await db.collection("users").get();
   const adminsSnap=await db.collection("admins").get();
-  el.homeSummary.innerHTML=`<div class="summary-card"><div class="muted">전체 유저</div><div class="big-number">${usersSnap.size}</div></div><div class="summary-card"><div class="muted">이벤트 수</div><div class="big-number">${state.events.length}</div></div><div class="summary-card"><div class="muted">운영진 수</div><div class="big-number">${adminsSnap.size}</div></div>`;
+  el.homeSummary.innerHTML=
+    `<div class="summary-card"><div class="muted">전체 유저</div><div class="big-number">${usersSnap.size}</div></div>`+
+    `<div class="summary-card"><div class="muted">이벤트 수</div><div class="big-number">${state.events.length}</div></div>`+
+    `<div class="summary-card"><div class="muted">운영진 수</div><div class="big-number">${adminsSnap.size}</div></div>`;
 }
 
 function renderHomeEventCards(){
@@ -382,12 +398,11 @@ function updateEventActionButtons(){
   if(state.currentEventId==="holy_sword"){
     el.createPartyBtn.classList.remove("hidden");
     el.createPartyBtn.textContent="성검 파티 생성";
-    el.createPartyBtn.onclick=openRuinsCreateModal;
+    el.createPartyBtn.onclick=createParty;
   }
 
   if(state.currentEventId==="rearrange"){
     el.rearrangeEditBtn.classList.remove("hidden");
-
     if(state.isAdmin&&canToggleRearrangePublic){
       el.rearrangePublicBtn.classList.remove("hidden");
       el.rearrangePublicBtn.textContent=state.rearrangePublic?"순위 비공개":"순위 공개";
@@ -406,11 +421,7 @@ async function openEvent(id){
   updateEventActionButtons();
   showOnly("event");
 
-  if(id==="holy_sword"&&!state.holySwordSelectedSide){
-    openHolySwordSideModal();
-  }
-
-  if(id==="rearrange") subscribeRearrange();
+  if(id==="rearrange")subscribeRearrange();
   else subscribeParties();
 }
 window.openEvent=openEvent;
@@ -523,13 +534,13 @@ function subscribeRearrange(){
 
 function sortParties(a,b){
   if(state.currentEventId==="holy_sword"){
-    if(a.side !== b.side){
-      return a.side === "KOR" ? -1 : 1;
+    if(a.side!==b.side){
+      return a.side==="KOR"?-1:1;
     }
-    return getTimeValue(a.timeUTC) - getTimeValue(b.timeUTC);
+    return getTimeValue(a.timeUTC)-getTimeValue(b.timeUTC);
   }
   if(state.currentEventId==="ruins"){
-    return getTimeValue(a.timeUTC) - getTimeValue(b.timeUTC);
+    return getTimeValue(a.timeUTC)-getTimeValue(b.timeUTC);
   }
   return String(a.name).localeCompare(String(b.name),"ko");
 }
@@ -557,11 +568,29 @@ function toDate(t){
   return Number.isNaN(d.getTime())?null:d;
 }
 
-function formatKST(t){const d=toDate(t);if(!d)return"-";return`${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:00`;}
-function formatUTC(t){const d=toDate(t);if(!d)return"-";return`${d.getUTCMonth()+1}/${d.getUTCDate()} ${String(d.getUTCHours()).padStart(2,"0")}:00`;}
-function formatDateTime(t){const d=toDate(t);if(!d)return"-";return`${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;}
-function calcPower(memberCount){const base=Math.max(memberCount-1,1);return Math.floor((920000/base)/1000)*1000;}
-function myParty(){if(state.currentEventId!=="viking")return null;return state.parties.find(p=>p.members.includes(state.currentUser))||null;}
+function formatKST(t){
+  const d=toDate(t);
+  if(!d)return"-";
+  return`${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:00`;
+}
+function formatUTC(t){
+  const d=toDate(t);
+  if(!d)return"-";
+  return`${d.getUTCMonth()+1}/${d.getUTCDate()} ${String(d.getUTCHours()).padStart(2,"0")}:00`;
+}
+function formatDateTime(t){
+  const d=toDate(t);
+  if(!d)return"-";
+  return`${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+}
+function calcPower(memberCount){
+  const base=Math.max(memberCount-1,1);
+  return Math.floor((920000/base)/1000)*1000;
+}
+function myParty(){
+  if(state.currentEventId!=="viking")return null;
+  return state.parties.find(p=>p.members.includes(state.currentUser))||null;
+}
 function myRearrangeEntry(){return state.rearrangeEntries.find(v=>v.user===state.currentUser)||null;}
 function getRearrangeColumn(rank){if(rank<=10)return 1;if(rank<=24)return 2;if(rank<=42)return 3;if(rank<=59)return 4;return 5;}
 function getLayoutLabel(rank){return `${getRearrangeColumn(rank)}열`;}
@@ -572,7 +601,7 @@ function getRearrangeRankMap(){
   const map={};
   let n=1;
   displayedEntries.forEach(entry=>{
-    if(!entry) return;
+    if(!entry)return;
     map[entry.user]=n;
     n++;
   });
@@ -584,19 +613,19 @@ function getHolySwordSortedMembers(members){
   return [...members].sort((a,b)=>{
     const ra=rankMap[a]||999999;
     const rb=rankMap[b]||999999;
-    if(ra!==rb) return ra-rb;
+    if(ra!==rb)return ra-rb;
     return String(a).localeCompare(String(b),"ko");
   });
 }
 
 function getHolySwordDisplayIndex(idx){
-  if(idx<30) return `${idx+1}.`;
-  return `예비${idx-29}.`;
+  if(idx<30)return`${idx+1}.`;
+  return`예비${idx-29}.`;
 }
 
 function getHolySwordSideLabel(side){
-  if(side==="KOR") return "본연맹(KOR)";
-  if(side==="kor") return "아카데미(kor)";
+  if(side==="KOR")return"본연맹(KOR)";
+  if(side==="kor")return"아카데미(kor)";
   return side||"-";
 }
 
@@ -605,7 +634,7 @@ function parseNoteRule(note){
   const explicitMatch=text.match(/([1-5])\s*열/);
   const explicitColumn=explicitMatch?Number(explicitMatch[1]):0;
   const hasR45=/R4|R5/i.test(text);
-  return {explicitColumn,hasR45};
+  return{explicitColumn,hasR45};
 }
 
 function getDisplayedRearrangeEntries(entries){
@@ -625,12 +654,10 @@ function getDisplayedRearrangeEntries(entries){
       explicitByColumn[rule.explicitColumn].push(enriched);
       return;
     }
-
     if(rule.hasR45&&baseColumn>=3){
       reservedTo2.push(enriched);
       return;
     }
-
     normal.push(enriched);
   });
 
@@ -656,36 +683,31 @@ function getDisplayedRearrangeEntries(entries){
 
   const slots=[];
 
-  for(let col=1; col<=4; col++){
+  for(let col=1;col<=4;col++){
     const limit=capacities[col];
-    for(let i=0; i<limit; i++){
+    for(let i=0;i<limit;i++){
       const forced=takeFrom(columnPools[col]);
-      if(forced){
-        slots.push(forced);
-      }else{
-        slots.push("__EMPTY__");
-      }
+      if(forced)slots.push(forced);
+      else slots.push("__EMPTY__");
     }
   }
 
   for(const entry of normal){
     let placed=false;
-
-    for(let i=0; i<slots.length; i++){
-      if(slots[i]!=="__EMPTY__") continue;
+    for(let i=0;i<slots.length;i++){
+      if(slots[i]!=="__EMPTY__")continue;
 
       const targetColumn=getRearrangeColumn(i+1);
       const rule=parseNoteRule(entry.note);
 
-      if(rule.explicitColumn&&rule.explicitColumn!==targetColumn) continue;
-      if(rule.hasR45&&(entry.__baseColumn>=3)&&targetColumn<2) continue;
+      if(rule.explicitColumn&&rule.explicitColumn!==targetColumn)continue;
+      if(rule.hasR45&&(entry.__baseColumn>=3)&&targetColumn<2)continue;
 
       slots[i]=entry;
       usedUsers.add(entry.user);
       placed=true;
       break;
     }
-
     if(!placed){
       slots.push(entry);
       usedUsers.add(entry.user);
@@ -700,7 +722,7 @@ function getDisplayedRearrangeEntries(entries){
   slots.push(...remain5);
 
   return slots.map(v=>{
-    if(v==="__EMPTY__") return null;
+    if(v==="__EMPTY__")return null;
     if(v&&typeof v==="object"&&"__baseColumn" in v){
       const {__baseColumn,...rest}=v;
       return rest;
@@ -710,24 +732,24 @@ function getDisplayedRearrangeEntries(entries){
 }
 
 function getMoveDisplay(existingColumn,currentColumn){
-  if(!existingColumn||!currentColumn)return {text:"-",className:"move-neutral"};
-  if(existingColumn===currentColumn)return {text:"완료",className:"move-done"};
-  if(existingColumn<currentColumn)return {text:`${existingColumn}→${currentColumn}`,className:"move-up"};
-  return {text:`${existingColumn}→${currentColumn}`,className:"move-down"};
+  if(!existingColumn||!currentColumn)return{text:"-",className:"move-neutral"};
+  if(existingColumn===currentColumn)return{text:"완료",className:"move-done"};
+  if(existingColumn<currentColumn)return{text:`${existingColumn}→${currentColumn}`,className:"move-up"};
+  return{text:`${existingColumn}→${currentColumn}`,className:"move-down"};
 }
 
 function getHolySwordAreaAssignmentsByUser(assignments){
   const map={};
   normalizeAssignments(assignments).forEach(item=>{
-    if(!map[item.user]) map[item.user]=[];
+    if(!map[item.user])map[item.user]=[];
     map[item.user].push(item.area);
   });
   return map;
 }
 
 function renderHolySwordBadge(area){
-  if(area==="마구간") return `<span class="area-badge horse">🐴</span>`;
-  if(area==="시계탑") return `<span class="area-badge clock">⏳</span>`;
+  if(area==="마구간")return `<span class="area-badge horse">🐴</span>`;
+  if(area==="시계탑")return `<span class="area-badge clock">⏳</span>`;
   if(area.startsWith("성소")){
     const num=area.split(" ")[1]||"";
     return `<span class="area-badge sanctuary">${escapeHtml(num)}</span>`;
@@ -740,7 +762,7 @@ function renderHolySwordBadge(area){
 }
 
 function renderHolySwordBadges(areas){
-  if(!areas||!areas.length) return "";
+  if(!areas||!areas.length)return "";
   return `<span class="area-badges">${areas.map(renderHolySwordBadge).join("")}</span>`;
 }
 
@@ -748,15 +770,12 @@ function renderHolySwordAreaBoard(assignments){
   const byArea={};
   HOLY_SWORD_AREAS.forEach(area=>byArea[area]=[]);
   normalizeAssignments(assignments).forEach(item=>{
-    if(!byArea[item.area]) byArea[item.area]=[];
+    if(!byArea[item.area])byArea[item.area]=[];
     byArea[item.area].push(item.user);
   });
 
   return `<div class="holy-area-board">${
-    HOLY_SWORD_CLOCK_ORDER.map(item=>`<div class="holy-area-slot">
-      <div class="holy-area-slot-title">${escapeHtml(item.label)} · ${escapeHtml(item.area)}</div>
-      <div class="holy-area-slot-users">${byArea[item.area].length?byArea[item.area].map(escapeHtml).join("<br>"):"-"}</div>
-    </div>`).join("")
+    HOLY_SWORD_CLOCK_ORDER.map(item=>`<div class="holy-area-slot"><div class="holy-area-slot-title">${escapeHtml(item.label)} · ${escapeHtml(item.area)}</div><div class="holy-area-slot-users">${byArea[item.area].length?byArea[item.area].map(escapeHtml).join("<br>"):"-"}</div></div>`).join("")
   }</div>`;
 }
 
@@ -766,8 +785,8 @@ function renderPartyList(){
     return;
   }
   el.partyList.innerHTML=state.parties.map(p=>{
-    if(state.currentEventId==="ruins") return renderRuinsCard(p);
-    if(state.currentEventId==="holy_sword") return renderHolySwordCard(p);
+    if(state.currentEventId==="ruins")return renderRuinsCard(p);
+    if(state.currentEventId==="holy_sword")return renderHolySwordCard(p);
     return renderVikingCard(p);
   }).join("");
 }
@@ -779,7 +798,7 @@ function renderVikingCard(p){
   const maxMembers=Number(p.maxMembers||0);
   const isFull=maxMembers>0&&p.members.length>=maxMembers;
   const membersHtml=p.members.map(name=>`<div class="member-line"><span class="${name===state.currentUser?"my-name":""}">${name===p.createdBy?"👑 ":""}${escapeHtml(name)}</span>${canKick&&name!==p.createdBy?`<button class="inline-btn" onclick="kickMember('${escapeJs(p.id)}','${escapeJs(name)}')">✖</button>`:""}</div>`).join("");
-  return`<div class="party-card"><div class="party-title">${escapeHtml(p.name)}</div><div class="party-sub">파티장: ${escapeHtml(p.createdBy||"-")}</div><div class="party-sub">인원: ${p.members.length}${maxMembers>0?`/${maxMembers}`:""}명</div><div class="member-list">${membersHtml||'<div class="member-line"><span>참가자가 없습니다.</span></div>'}</div><div class="card-actions">${!meJoined&&!isFull?`<button onclick="joinParty('${escapeJs(p.id)}')">참가</button>`:""}${meJoined?`<button onclick="leaveParty('${escapeJs(p.id)}')">취소</button>`:""}${canDelete?`<button onclick="deleteParty('${escapeJs(p.id)}')">삭제</button>`:""}</div></div>`;
+  return `<div class="party-card"><div class="party-title">${escapeHtml(p.name)}</div><div class="party-sub">파티장: ${escapeHtml(p.createdBy||"-")}</div><div class="party-sub">인원: ${p.members.length}${maxMembers>0?`/${maxMembers}`:""}명</div><div class="member-list">${membersHtml||'<div class="member-line"><span>참가자가 없습니다.</span></div>'}</div><div class="card-actions">${!meJoined&&!isFull?`<button onclick="joinParty('${escapeJs(p.id)}')">참가</button>`:""}${meJoined?`<button onclick="leaveParty('${escapeJs(p.id)}')">취소</button>`:""}${canDelete?`<button onclick="deleteParty('${escapeJs(p.id)}')">삭제</button>`:""}</div></div>`;
 }
 
 function renderRuinsCard(p){
@@ -787,7 +806,7 @@ function renderRuinsCard(p){
   const meJoined=members.includes(state.currentUser);
   const power=calcPower(members.length).toLocaleString("ko-KR");
   const membersHtml=members.map(name=>`<div class="member-line"><span class="${name===state.currentUser?"my-name":""}">${name===p.rallyLeader?"👑 ":""}${escapeHtml(name)}</span>${state.isAdmin&&name!==p.rallyLeader?`<button class="inline-btn" onclick="setRallyLeader('${escapeJs(p.id)}','${escapeJs(name)}')">👍</button>`:""}${state.isAdmin?`<button class="inline-btn" onclick="kickMember('${escapeJs(p.id)}','${escapeJs(name)}')">✖</button>`:""}</div>`).join("");
-  return`<div class="party-card"><div class="party-title">유적명: ${escapeHtml(p.ruinName||p.name)}</div><div class="party-sub">시간: ${formatKST(p.timeUTC)}</div><div class="party-sub">UTC ${formatUTC(p.timeUTC)}</div><div class="party-sub">병력수: ${power}명</div><div class="party-sub">인원: ${members.length}/15</div><div class="member-list compact">${membersHtml||'<div class="member-line"><span>참가자가 없습니다.</span></div>'}</div><div class="card-actions">${!meJoined&&members.length<15?`<button onclick="joinParty('${escapeJs(p.id)}')">참가</button>`:""}${meJoined?`<button onclick="leaveParty('${escapeJs(p.id)}')">취소</button>`:""}${state.isAdmin?`<button onclick="openRuinsEditModal('${escapeJs(p.id)}')">수정</button><button onclick="deleteParty('${escapeJs(p.id)}')">삭제</button>`:""}<button onclick="copyRuinsNotice('${escapeJs(p.id)}')">복사</button></div></div>`;
+  return `<div class="party-card"><div class="party-title">유적명: ${escapeHtml(p.ruinName||p.name)}</div><div class="party-sub">시간: ${formatKST(p.timeUTC)}</div><div class="party-sub">UTC ${formatUTC(p.timeUTC)}</div><div class="party-sub">병력수: ${power}명</div><div class="party-sub">인원: ${members.length}/15</div><div class="member-list compact">${membersHtml||'<div class="member-line"><span>참가자가 없습니다.</span></div>'}</div><div class="card-actions">${!meJoined&&members.length<15?`<button onclick="joinParty('${escapeJs(p.id)}')">참가</button>`:""}${meJoined?`<button onclick="leaveParty('${escapeJs(p.id)}')">취소</button>`:""}${state.isAdmin?`<button onclick="openRuinsEditModal('${escapeJs(p.id)}')">수정</button><button onclick="deleteParty('${escapeJs(p.id)}')">삭제</button>`:""}<button onclick="copyRuinsNotice('${escapeJs(p.id)}')">복사</button></div></div>`;
 }
 
 function renderHolySwordCard(p){
@@ -798,11 +817,7 @@ function renderHolySwordCard(p){
 
   const membersHtml=members.map((name,idx)=>{
     const badges=renderHolySwordBadges(byUser[name]||[]);
-    return `<div class="member-line">
-      <span class="${name===state.currentUser?"my-name":""}">
-        <span class="holy-member-rank">${escapeHtml(getHolySwordDisplayIndex(idx))}</span> ${escapeHtml(name)}${badges}
-      </span>
-    </div>`;
+    return `<div class="member-line"><span class="${name===state.currentUser?"my-name":""}"><span class="holy-member-rank">${escapeHtml(getHolySwordDisplayIndex(idx))}</span> ${escapeHtml(name)}${badges}</span></div>`;
   }).join("");
 
   return `<div class="party-card">
@@ -825,13 +840,9 @@ function renderHolySwordCard(p){
 }
 
 function renderExcludedRearrangeList(entries){
-  if(!state.isAdmin||!entries.length) return "";
+  if(!state.isAdmin||!entries.length)return "";
   const items=entries.map(entry=>`<div class="member-line"><span>${escapeHtml(entry.user)}</span><button class="rank-edit-btn" onclick="openRearrangeRankEditModal('${escapeJs(entry.user)}')">관리</button></div>`).join("");
-  return `<div class="party-card">
-    <div class="party-title">제외 인원</div>
-    <div class="party-sub">복구하려면 관리 버튼에서 제외 해제를 하세요.</div>
-    <div class="member-list">${items}</div>
-  </div>`;
+  return `<div class="party-card"><div class="party-title">제외 인원</div><div class="party-sub">복구하려면 관리 버튼에서 제외 해제를 하세요.</div><div class="member-list">${items}</div></div>`;
 }
 
 function renderRearrangeTable(entries){
@@ -843,16 +854,7 @@ function renderRearrangeTable(entries){
     const rowClass=entry&&entry.user===state.currentUser?"rank-row-me":"";
 
     if(!entry){
-      return `<tr class="${rowClass}">
-        <td>${rank}</td>
-        <td>${getLayoutLabel(rank)}</td>
-        <td class="left muted">공란</td>
-        <td>-</td>
-        <td>-</td>
-        <td class="left">-</td>
-        <td>-</td>
-        <td>-</td>
-      </tr>`;
+      return `<tr class="${rowClass}"><td>${rank}</td><td>${getLayoutLabel(rank)}</td><td class="left muted">공란</td><td>-</td><td>-</td><td class="left">-</td><td>-</td><td>-</td></tr>`;
     }
 
     const powerText=entry.power>0?Number(entry.power).toLocaleString("ko-KR"):"-";
@@ -872,32 +874,11 @@ function renderRearrangeTable(entries){
     </tr>`;
   }).join("");
 
-  return `<div class="rank-table-wrap">
-    <table class="rank-table">
-      <colgroup>
-        <col><col><col><col><col><col><col><col>
-      </colgroup>
-      <thead>
-        <tr>
-          <th>순위</th>
-          <th>순열</th>
-          <th>닉네임</th>
-          <th>스테이지</th>
-          <th>전투력</th>
-          <th>비고</th>
-          <th>기존</th>
-          <th>이동</th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>
-  </div>`;
+  return `<div class="rank-table-wrap"><table class="rank-table"><colgroup><col><col><col><col><col><col><col><col></colgroup><thead><tr><th>순위</th><th>순열</th><th>닉네임</th><th>스테이지</th><th>전투력</th><th>비고</th><th>기존</th><th>이동</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 function renderRearrangeGuide(){
-  return `<div class="layout-guide-wrap">
-    <img src="자리 순열.png" alt="자리 순열 안내도" class="layout-guide-image" />
-  </div>`;
+  return `<div class="layout-guide-wrap"><img src="자리 순열.png" alt="자리 순열 안내도" class="layout-guide-image" /></div>`;
 }
 
 function renderRearrangeEvent(){
@@ -912,29 +893,13 @@ function renderRearrangeEvent(){
   let guideCard="";
 
   if(state.isAdmin||state.rearrangePublic){
-    rankingCard=`<div class="party-card rank-table-card">
-      <div class="party-title">진척도 순위표</div>
-      <div class="party-sub">${state.isAdmin?state.rearrangePublic?"현재 전체 공개 상태입니다.":"현재 운영진만 볼 수 있습니다.":"공개된 순위입니다."}</div>
-      <div class="card-actions">
-        <button onclick="copyRearrangeColumns()">복사</button>
-      </div>
-      ${renderRearrangeTable(displayedEntries)}
-    </div>`;
-
-    guideCard=`<div class="party-card layout-guide-card">
-      <div class="party-title">순열 안내 예시</div>
-      <div class="party-sub">빨(1), 주(2), 노(3), 초(4), 파(5)</div>
-      <div class="card-actions">
-        <button onclick="openExampleImageModal('guide')">예시 크게 보기</button>
-      </div>
-      ${renderRearrangeGuide()}
-    </div>`;
+    rankingCard=`<div class="party-card rank-table-card"><div class="party-title">진척도 순위표</div><div class="party-sub">${state.isAdmin?state.rearrangePublic?"현재 전체 공개 상태입니다.":"현재 운영진만 볼 수 있습니다.":"공개된 순위입니다."}</div><div class="card-actions"><button onclick="copyRearrangeColumns()">복사</button></div>${renderRearrangeTable(displayedEntries)}</div>`;
+    guideCard=`<div class="party-card layout-guide-card"><div class="party-title">순열 안내 예시</div><div class="party-sub">빨(1), 주(2), 노(3), 초(4), 파(5)</div><div class="card-actions"><button onclick="openExampleImageModal('guide')">예시 크게 보기</button></div>${renderRearrangeGuide()}</div>`;
   }else{
     rankingCard=`<div class="party-card"><div class="party-title">진척도 순위</div><div class="party-sub">아직 공개되지 않았습니다.</div><div class="party-sub">운영진 공개 후 전체 유저가 확인할 수 있습니다.</div></div>`;
   }
 
   const excludedCard=renderExcludedRearrangeList(excludedEntries);
-
   el.partyList.innerHTML=mineCard+rankingCard+excludedCard+guideCard;
 }
 
@@ -948,21 +913,43 @@ window.createParty=createParty;
 async function createVikingParty(){
   const name=(prompt("파티 이름을 입력하세요.")||"").trim();
   if(!name)return;
-  if(myParty()){alert("이미 다른 파티에 참여 중입니다.");return;}
+  if(myParty()){
+    alert("이미 다른 파티에 참여 중입니다.");
+    return;
+  }
   const maxInput=(prompt("최대 인원을 입력하세요.\n예: 6")||"").trim();
   const maxMembers=Number(maxInput);
-  if(!Number.isInteger(maxMembers)||maxMembers<1){alert("최대 인원은 1 이상의 숫자로 입력하세요.");return;}
+  if(!Number.isInteger(maxMembers)||maxMembers<1){
+    alert("최대 인원은 1 이상의 숫자로 입력하세요.");
+    return;
+  }
   const dup=await partiesRef("viking").where("name","==",name).get();
-  if(!dup.empty){alert("같은 이름의 파티가 이미 있습니다.");return;}
-  await partiesRef("viking").add({type:"viking",event:"viking",name,createdBy:state.currentUser,members:[state.currentUser],maxMembers,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+  if(!dup.empty){
+    alert("같은 이름의 파티가 이미 있습니다.");
+    return;
+  }
+  await partiesRef("viking").add({
+    type:"viking",
+    event:"viking",
+    name,
+    createdBy:state.currentUser,
+    members:[state.currentUser],
+    maxMembers,
+    createdAt:firebase.firestore.FieldValue.serverTimestamp()
+  });
 }
 
 function openRuinsCreateModal(){
-  if(!state.isAdmin){alert("유적 파티는 운영진만 생성할 수 있습니다.");return;}
+  if(!state.isAdmin){
+    alert("유적 파티는 운영진만 생성할 수 있습니다.");
+    return;
+  }
   state.editingRuinsPartyId="";
   el.ruinsModalTitle.textContent="유적 파티 생성";
   el.ruinsSubmitBtn.textContent="생성";
-  el.ruinNameInput.value="";
+  if(el.ruinNameInput)el.ruinNameInput.value="";
+  document.getElementById("ruinNameWrap")?.classList.remove("hidden");
+  document.getElementById("holySwordSideWrap")?.classList.add("hidden");
   el.utcMonth.value="1";
   el.utcDay.value="1";
   el.utcHour.value="0";
@@ -971,11 +958,18 @@ function openRuinsCreateModal(){
 }
 
 function openHolySwordCreateModal(){
-  if(!state.isAdmin){alert("성검 파티는 운영진만 생성할 수 있습니다.");return;}
+  if(!state.isAdmin){
+    alert("성검 파티는 운영진만 생성할 수 있습니다.");
+    return;
+  }
   state.editingRuinsPartyId="";
   el.ruinsModalTitle.textContent="성검 파티 생성";
   el.ruinsSubmitBtn.textContent="생성";
-  el.ruinNameInput.value="";
+  if(el.ruinNameInput)el.ruinNameInput.value="";
+  document.getElementById("ruinNameWrap")?.classList.add("hidden");
+  document.getElementById("holySwordSideWrap")?.classList.remove("hidden");
+  const sideSelect=document.getElementById("holySwordSideSelect");
+  if(sideSelect)sideSelect.value=state.holySwordSelectedSide||"KOR";
   el.utcMonth.value="1";
   el.utcDay.value="1";
   el.utcHour.value="0";
@@ -984,13 +978,31 @@ function openHolySwordCreateModal(){
 }
 
 async function openRuinsEditModal(partyId){
-  if(!state.isAdmin){alert("권한이 없습니다.");return;}
+  if(!state.isAdmin){
+    alert("권한이 없습니다.");
+    return;
+  }
   const p=state.parties.find(v=>v.id===partyId);
-  if(!p){alert("파티를 찾을 수 없습니다.");return;}
+  if(!p){
+    alert("파티를 찾을 수 없습니다.");
+    return;
+  }
   state.editingRuinsPartyId=partyId;
-  el.ruinsModalTitle.textContent=state.currentEventId==="holy_sword"?"성검 파티 수정":"유적 파티 수정";
   el.ruinsSubmitBtn.textContent="수정";
-  el.ruinNameInput.value=p.ruinName||p.name||"";
+
+  if(state.currentEventId==="holy_sword"){
+    el.ruinsModalTitle.textContent="성검 파티 수정";
+    document.getElementById("ruinNameWrap")?.classList.add("hidden");
+    document.getElementById("holySwordSideWrap")?.classList.remove("hidden");
+    const sideSelect=document.getElementById("holySwordSideSelect");
+    if(sideSelect)sideSelect.value=p.side||"KOR";
+  }else{
+    el.ruinsModalTitle.textContent="유적 파티 수정";
+    document.getElementById("ruinNameWrap")?.classList.remove("hidden");
+    document.getElementById("holySwordSideWrap")?.classList.add("hidden");
+    el.ruinNameInput.value=p.ruinName||p.name||"";
+  }
+
   const d=toDate(p.timeUTC);
   if(d){
     el.utcMonth.value=String(d.getUTCMonth()+1);
@@ -1002,7 +1014,13 @@ async function openRuinsEditModal(partyId){
 }
 window.openRuinsEditModal=openRuinsEditModal;
 
-function closeRuinsCreateModal(){state.editingRuinsPartyId="";el.ruinsCreateModal.classList.add("hidden");syncOverlay();}
+function closeRuinsCreateModal(){
+  state.editingRuinsPartyId="";
+  document.getElementById("ruinNameWrap")?.classList.remove("hidden");
+  document.getElementById("holySwordSideWrap")?.classList.add("hidden");
+  el.ruinsCreateModal.classList.add("hidden");
+  syncOverlay();
+}
 window.closeRuinsCreateModal=closeRuinsCreateModal;
 
 async function submitRuinsParty(){
@@ -1011,60 +1029,99 @@ async function submitRuinsParty(){
     return;
   }
 
-  const side = document.getElementById("holySwordSideSelect")?.value || "KOR";
+  const m=Number(el.utcMonth.value);
+  const d=Number(el.utcDay.value);
+  const h=Number(el.utcHour.value);
 
-  const m = Number(el.utcMonth.value);
-  const d = Number(el.utcDay.value);
-  const h = Number(el.utcHour.value);
-
-  if(!m || !d || h < 0 || h > 23){
+  if(!m||!d||h<0||h>23){
     alert("UTC 날짜/시간을 선택하세요.");
     return;
   }
 
-  const year = new Date().getUTCFullYear();
-  const utcDate = new Date(Date.UTC(year, m-1, d, h, 0, 0, 0));
+  const year=new Date().getUTCFullYear();
+  const utcDate=new Date(Date.UTC(year,m-1,d,h,0,0,0));
 
-  // ✅ KST 계산
-  const kstHour = (h + 9) % 24;
+  if(state.currentEventId==="holy_sword"){
+    const side=document.getElementById("holySwordSideSelect")?.value||"KOR";
+    state.holySwordSelectedSide=side;
+    localStorage.setItem("holySwordSelectedSide",side);
 
-  // ✅ 자동 이름 생성
-  const sideText = side === "KOR" ? "본연맹" : "아카데미";
+    const sideText=side==="KOR"?"본연맹":"아카데미";
+    const kstHour=(h+9)%24;
+    const autoName=`[${sideText}] ${kstHour}시(UTC ${String(h).padStart(2,"0")}:00)`;
 
-  const autoName = `[${sideText}] ${kstHour}시(UTC ${String(h).padStart(2,"0")}:00)`;
+    if(state.editingRuinsPartyId){
+      await partiesRef("holy_sword").doc(state.editingRuinsPartyId).update({
+        name:autoName,
+        side,
+        timeUTC:utcDate
+      });
+      await writeAdminLog("update_holy_sword_party",{partyId:state.editingRuinsPartyId,name:autoName,month:m,day:d,hour:h,side});
+    }else{
+      await partiesRef("holy_sword").add({
+        type:"holy_sword",
+        event:"holy_sword",
+        name:autoName,
+        side,
+        createdBy:state.currentUser,
+        members:[],
+        areaAssignments:[],
+        timeUTC:utcDate,
+        createdAt:firebase.firestore.FieldValue.serverTimestamp()
+      });
+      await writeAdminLog("create_holy_sword_party",{name:autoName,month:m,day:d,hour:h,side});
+    }
+    closeRuinsCreateModal();
+    return;
+  }
 
-  await partiesRef(state.currentEventId).add({
-    type: state.currentEventId,
-    event: state.currentEventId,
-    name: autoName,
-    side,
-    createdBy: state.currentUser,
-    members: [],
-    rallyLeader: "",
-    maxMembers: 30,
-    timeUTC: utcDate,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
-
-  closeRuinsCreateModal();
-}
+  const ruinName=(el.ruinNameInput.value||"").trim();
+  if(!ruinName){
+    alert("유적명을 입력하세요.");
+    return;
+  }
 
   if(state.editingRuinsPartyId){
-    const ref=partiesRef("ruins").doc(state.editingRuinsPartyId);
-    await ref.update({name,ruinName:name,timeUTC:utcDate});
-    await writeAdminLog("update_ruins_party",{partyId:state.editingRuinsPartyId,ruinName:name,month:m,day:d,hour:h});
+    await partiesRef("ruins").doc(state.editingRuinsPartyId).update({
+      name:ruinName,
+      ruinName,
+      timeUTC:utcDate
+    });
+    await writeAdminLog("update_ruins_party",{partyId:state.editingRuinsPartyId,ruinName,month:m,day:d,hour:h});
   }else{
-    await partiesRef("ruins").add({type:"ruins",event:"ruins",name,ruinName:name,createdBy:state.currentUser,members:[],rallyLeader:"",maxMembers:15,timeUTC:utcDate,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-    await writeAdminLog("create_ruins_party",{ruinName:name,month:m,day:d,hour:h});
+    await partiesRef("ruins").add({
+      type:"ruins",
+      event:"ruins",
+      name:ruinName,
+      ruinName,
+      createdBy:state.currentUser,
+      members:[],
+      rallyLeader:"",
+      maxMembers:15,
+      timeUTC:utcDate,
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    await writeAdminLog("create_ruins_party",{ruinName,month:m,day:d,hour:h});
   }
   closeRuinsCreateModal();
 }
 window.submitRuinsParty=submitRuinsParty;
 
-function lockRearrangeInputForManualTap(){el.rearrangeStageInput?.setAttribute("readonly","readonly");el.rearrangeStageInput?.blur();}
-function unlockRearrangeInput(){if(el.rearrangeStageInput?.hasAttribute("readonly"))el.rearrangeStageInput.removeAttribute("readonly");}
+function lockRearrangeInputForManualTap(){
+  el.rearrangeStageInput?.setAttribute("readonly","readonly");
+  el.rearrangeStageInput?.blur();
+}
+function unlockRearrangeInput(){
+  if(el.rearrangeStageInput?.hasAttribute("readonly"))el.rearrangeStageInput.removeAttribute("readonly");
+}
 if(el.rearrangeStageInput){
-  const unlockAndFocus=()=>{unlockRearrangeInput();setTimeout(()=>{try{el.rearrangeStageInput.focus({preventScroll:true});}catch(_){el.rearrangeStageInput.focus();}},0);};
+  const unlockAndFocus=()=>{
+    unlockRearrangeInput();
+    setTimeout(()=>{
+      try{el.rearrangeStageInput.focus({preventScroll:true});}
+      catch(_){el.rearrangeStageInput.focus();}
+    },0);
+  };
   el.rearrangeStageInput.addEventListener("pointerdown",unlockAndFocus);
   el.rearrangeStageInput.addEventListener("touchstart",unlockAndFocus,{passive:true});
   el.rearrangeStageInput.addEventListener("mousedown",unlockAndFocus);
@@ -1078,9 +1135,17 @@ function openMyRearrangeModal(){
   lockRearrangeInputForManualTap();
   el.rearrangeModal.classList.remove("hidden");
   syncOverlay();
-  setTimeout(()=>{if(document.activeElement&&typeof document.activeElement.blur==="function")document.activeElement.blur();el.rearrangeStageInput.blur();},80);
+  setTimeout(()=>{
+    if(document.activeElement&&typeof document.activeElement.blur==="function")document.activeElement.blur();
+    el.rearrangeStageInput.blur();
+  },80);
 }
-function closeRearrangeModal(){el.rearrangeStageInput?.blur();el.rearrangeStageInput?.removeAttribute("readonly");el.rearrangeModal?.classList.add("hidden");syncOverlay();}
+function closeRearrangeModal(){
+  el.rearrangeStageInput?.blur();
+  el.rearrangeStageInput?.removeAttribute("readonly");
+  el.rearrangeModal?.classList.add("hidden");
+  syncOverlay();
+}
 function openExampleImageModal(type="tower"){
   if(type==="guide"){
     el.exampleImageModalTitle.textContent="순열 안내 예시";
@@ -1094,34 +1159,25 @@ function openExampleImageModal(type="tower"){
   el.exampleImageModal.classList.remove("hidden");
   syncOverlay();
 }
-function closeExampleImageModal(){el.exampleImageModal?.classList.add("hidden");syncOverlay();}
+function closeExampleImageModal(){
+  el.exampleImageModal?.classList.add("hidden");
+  syncOverlay();
+}
 window.openMyRearrangeModal=openMyRearrangeModal;
 window.closeRearrangeModal=closeRearrangeModal;
 window.openExampleImageModal=openExampleImageModal;
 window.closeExampleImageModal=closeExampleImageModal;
 
-function openHolySwordSideModal(){
-  if(!el.holySwordSideModal) return;
-  el.holySwordSideModal.classList.remove("hidden");
-  syncOverlay();
-}
-function closeHolySwordSideModal(){
-  el.holySwordSideModal?.classList.add("hidden");
-  syncOverlay();
-}
-window.closeHolySwordSideModal=closeHolySwordSideModal;
-
-function selectHolySwordSide(side){
-  state.holySwordSelectedSide=side;
-  localStorage.setItem("holySwordSelectedSide",side);
-  closeHolySwordSideModal();
-}
-window.selectHolySwordSide=selectHolySwordSide;
-
 function openHolySwordAreaModal(partyId){
-  if(!state.isAdmin){alert("권한이 없습니다.");return;}
+  if(!state.isAdmin){
+    alert("권한이 없습니다.");
+    return;
+  }
   const party=state.parties.find(v=>v.id===partyId);
-  if(!party){alert("파티를 찾을 수 없습니다.");return;}
+  if(!party){
+    alert("파티를 찾을 수 없습니다.");
+    return;
+  }
   state.editingHolySwordPartyId=partyId;
   el.holySwordAreaModalTitle.textContent=`구역장 지정 - ${party.name}`;
   el.holySwordAreaUserSelect.innerHTML=party.members.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
@@ -1140,16 +1196,27 @@ window.closeHolySwordAreaModal=closeHolySwordAreaModal;
 
 function renderHolySwordAreaAssignmentList(party){
   const assignments=normalizeAssignments(party.areaAssignments);
-  el.holySwordAreaAssignmentList.innerHTML=assignments.length?assignments.map((item,idx)=>`<div class="holy-sword-assign-item"><span>${escapeHtml(item.user)} - ${escapeHtml(item.area)}</span><button type="button" class="rank-edit-btn" onclick="removeHolySwordAreaAssignment(${idx})">삭제</button></div>`).join(""):`<div class="muted">지정된 구역장이 없습니다.</div>`;
+  el.holySwordAreaAssignmentList.innerHTML=assignments.length
+    ? assignments.map((item,idx)=>`<div class="holy-sword-assign-item"><span>${escapeHtml(item.user)} - ${escapeHtml(item.area)}</span><button type="button" class="rank-edit-btn" onclick="removeHolySwordAreaAssignment(${idx})">삭제</button></div>`).join("")
+    : `<div class="muted">지정된 구역장이 없습니다.</div>`;
 }
 
 async function addHolySwordAreaAssignment(){
-  if(!state.isAdmin){alert("권한이 없습니다.");return;}
+  if(!state.isAdmin){
+    alert("권한이 없습니다.");
+    return;
+  }
   const party=state.parties.find(v=>v.id===state.editingHolySwordPartyId);
-  if(!party){alert("파티를 찾을 수 없습니다.");return;}
+  if(!party){
+    alert("파티를 찾을 수 없습니다.");
+    return;
+  }
   const user=el.holySwordAreaUserSelect.value;
   const area=el.holySwordAreaSelect.value;
-  if(!user||!area){alert("파티원과 구역을 선택하세요.");return;}
+  if(!user||!area){
+    alert("파티원과 구역을 선택하세요.");
+    return;
+  }
   const areaAssignments=[...normalizeAssignments(party.areaAssignments),{user,area}];
   await partiesRef("holy_sword").doc(party.id).update({areaAssignments});
   await writeAdminLog("add_holy_sword_area_assignment",{partyId:party.id,user,area});
@@ -1157,11 +1224,17 @@ async function addHolySwordAreaAssignment(){
 window.addHolySwordAreaAssignment=addHolySwordAreaAssignment;
 
 async function removeHolySwordAreaAssignment(index){
-  if(!state.isAdmin){alert("권한이 없습니다.");return;}
+  if(!state.isAdmin){
+    alert("권한이 없습니다.");
+    return;
+  }
   const party=state.parties.find(v=>v.id===state.editingHolySwordPartyId);
-  if(!party){alert("파티를 찾을 수 없습니다.");return;}
+  if(!party){
+    alert("파티를 찾을 수 없습니다.");
+    return;
+  }
   const areaAssignments=[...normalizeAssignments(party.areaAssignments)];
-  if(index<0||index>=areaAssignments.length) return;
+  if(index<0||index>=areaAssignments.length)return;
   const removed=areaAssignments[index];
   areaAssignments.splice(index,1);
   await partiesRef("holy_sword").doc(party.id).update({areaAssignments});
@@ -1182,7 +1255,10 @@ function parseStageText(raw){
 async function submitRearrangeProgress(){
   const raw=(el.rearrangeStageInput.value||"").trim();
   const parsed=parseStageText(raw);
-  if(!parsed){alert("최고 스테이지는 15-4 형식으로 입력하세요.");return;}
+  if(!parsed){
+    alert("최고 스테이지는 15-4 형식으로 입력하세요.");
+    return;
+  }
   await rearrangeProgressRef().doc(state.currentUser).set({
     user:state.currentUser,
     stageText:raw,
@@ -1198,11 +1274,17 @@ async function submitRearrangeProgress(){
 window.submitRearrangeProgress=submitRearrangeProgress;
 
 function openRearrangeRankEditModal(userName=""){
-  if(!state.isAdmin){alert("권한이 없습니다.");return;}
+  if(!state.isAdmin){
+    alert("권한이 없습니다.");
+    return;
+  }
   ensureRankingExtraFields();
 
   const entry=userName?state.rearrangeEntries.find(v=>v.user===userName):null;
-  if(!entry){alert("대상을 찾을 수 없습니다.");return;}
+  if(!entry){
+    alert("대상을 찾을 수 없습니다.");
+    return;
+  }
 
   state.editingRearrangeRankUser=entry.user;
   el.rearrangeRankEditTitle.textContent="순위표 관리";
@@ -1225,7 +1307,6 @@ function openRearrangeRankEditModal(userName=""){
 
   el.rankEditNicknameInput.readOnly=true;
   el.rankEditStageInput.readOnly=true;
-
   el.rankEditDeleteBtn.textContent="관리값 삭제";
   el.rearrangeRankEditModal.classList.remove("hidden");
   syncOverlay();
@@ -1241,13 +1322,20 @@ window.openRearrangeRankEditModal=openRearrangeRankEditModal;
 window.closeRearrangeRankEditModal=closeRearrangeRankEditModal;
 
 async function toggleRearrangeExcluded(){
-  if(!state.isAdmin){alert("권한이 없습니다.");return;}
-
+  if(!state.isAdmin){
+    alert("권한이 없습니다.");
+    return;
+  }
   const user=state.editingRearrangeRankUser||"";
-  if(!user){alert("대상을 찾을 수 없습니다.");return;}
-
+  if(!user){
+    alert("대상을 찾을 수 없습니다.");
+    return;
+  }
   const current=state.rearrangeEntries.find(v=>v.user===user);
-  if(!current){alert("대상을 찾을 수 없습니다.");return;}
+  if(!current){
+    alert("대상을 찾을 수 없습니다.");
+    return;
+  }
 
   const nextExcluded=!current.excluded;
   const message=nextExcluded?"이 사용자를 목록에서 제외하시겠습니까?":"이 사용자를 목록에 다시 포함하시겠습니까?";
@@ -1265,10 +1353,16 @@ async function toggleRearrangeExcluded(){
 window.toggleRearrangeExcluded=toggleRearrangeExcluded;
 
 async function submitRearrangeRankEdit(){
-  if(!state.isAdmin){alert("권한이 없습니다.");return;}
+  if(!state.isAdmin){
+    alert("권한이 없습니다.");
+    return;
+  }
 
   const user=state.editingRearrangeRankUser||"";
-  if(!user){alert("대상을 찾을 수 없습니다.");return;}
+  if(!user){
+    alert("대상을 찾을 수 없습니다.");
+    return;
+  }
 
   const current=state.rearrangeEntries.find(v=>v.user===user);
   const powerRaw=(el.rankEditPowerInput.value||"").trim();
@@ -1308,7 +1402,10 @@ async function submitRearrangeRankEdit(){
 window.submitRearrangeRankEdit=submitRearrangeRankEdit;
 
 async function deleteRearrangeRankRow(){
-  if(!state.isAdmin){alert("권한이 없습니다.");return;}
+  if(!state.isAdmin){
+    alert("권한이 없습니다.");
+    return;
+  }
   const user=state.editingRearrangeRankUser||"";
   if(!user)return;
   if(!confirm(`${user}의 관리값(비고/전투력/기존/제외)을 삭제하시겠습니까?\n원본 진척도 데이터는 삭제되지 않습니다.`))return;
@@ -1320,7 +1417,10 @@ async function deleteRearrangeRankRow(){
 window.deleteRearrangeRankRow=deleteRearrangeRankRow;
 
 async function toggleRearrangePublic(){
-  if(!state.isAdmin){alert("권한이 없습니다.");return;}
+  if(!state.isAdmin){
+    alert("권한이 없습니다.");
+    return;
+  }
   const next=!state.rearrangePublic;
   const message=next?"순위를 전체 공개하시겠습니까?":"순위를 다시 비공개하시겠습니까?";
   if(!confirm(message))return;
@@ -1332,19 +1432,30 @@ window.toggleRearrangePublic=toggleRearrangePublic;
 async function joinParty(id){
   const ref=partiesRef(state.currentEventId).doc(id);
   const snap=await ref.get();
-  if(!snap.exists){alert("파티를 찾을 수 없습니다.");return;}
+  if(!snap.exists){
+    alert("파티를 찾을 수 없습니다.");
+    return;
+  }
   const d=snap.data()||{};
   const members=normalizeMembers(d.members);
 
-  if(state.currentEventId==="viking"&&myParty()){alert("이미 다른 파티에 참여 중입니다.");return;}
-  if(members.includes(state.currentUser)){
-    if(state.currentEventId==="ruins"){alert("이미 이 유적 파티에 신청되어 있습니다.");}
-    if(state.currentEventId==="holy_sword"){alert("이미 이 성검 파티에 신청되어 있습니다.");}
+  if(state.currentEventId==="viking"&&myParty()){
+    alert("이미 다른 파티에 참여 중입니다.");
     return;
   }
-
-  if(state.currentEventId==="ruins"&&members.length>=15){alert("유적 파티는 최대 15명입니다.");return;}
-  if(state.currentEventId==="viking"&&Number(d.maxMembers||0)>0&&members.length>=Number(d.maxMembers)){alert("이 파티는 정원이 가득 찼습니다.");return;}
+  if(members.includes(state.currentUser)){
+    if(state.currentEventId==="ruins")alert("이미 이 유적 파티에 신청되어 있습니다.");
+    if(state.currentEventId==="holy_sword")alert("이미 이 성검 파티에 신청되어 있습니다.");
+    return;
+  }
+  if(state.currentEventId==="ruins"&&members.length>=15){
+    alert("유적 파티는 최대 15명입니다.");
+    return;
+  }
+  if(state.currentEventId==="viking"&&Number(d.maxMembers||0)>0&&members.length>=Number(d.maxMembers)){
+    alert("이 파티는 정원이 가득 찼습니다.");
+    return;
+  }
 
   members.push(state.currentUser);
   await ref.update({members});
@@ -1359,8 +1470,9 @@ async function leaveParty(id){
   const members=normalizeMembers(d.members).filter(v=>v!==state.currentUser);
   const updates={members};
 
-  if(state.currentEventId==="ruins"&&d.rallyLeader===state.currentUser)updates.rallyLeader=members[0]||"";
-
+  if(state.currentEventId==="ruins"&&d.rallyLeader===state.currentUser){
+    updates.rallyLeader=members[0]||"";
+  }
   if(state.currentEventId==="holy_sword"){
     updates.areaAssignments=normalizeAssignments(d.areaAssignments).filter(v=>v.user!==state.currentUser);
   }
@@ -1375,9 +1487,17 @@ async function deleteParty(id){
   if(!snap.exists)return;
   const d=snap.data()||{};
   const ok=state.isAdmin||d.createdBy===state.currentUser;
-  if(!ok){alert("삭제 권한이 없습니다.");return;}
+  if(!ok){
+    alert("삭제 권한이 없습니다.");
+    return;
+  }
 
-  const msg=state.currentEventId==="ruins"?"정말 이 유적 파티를 삭제하시겠습니까?":state.currentEventId==="holy_sword"?"정말 이 성검 파티를 삭제하시겠습니까?":"정말 이 파티를 삭제하시겠습니까?";
+  const msg=state.currentEventId==="ruins"
+    ?"정말 이 유적 파티를 삭제하시겠습니까?"
+    :state.currentEventId==="holy_sword"
+      ?"정말 이 성검 파티를 삭제하시겠습니까?"
+      :"정말 이 파티를 삭제하시겠습니까?";
+
   if(!confirm(msg))return;
 
   await ref.delete();
@@ -1389,8 +1509,12 @@ async function kickMember(id,name){
   const p=state.parties.find(v=>v.id===id);
   if(!p)return;
   const ok=state.isAdmin||p.createdBy===state.currentUser;
-  if(!ok){alert("추방 권한이 없습니다.");return;}
+  if(!ok){
+    alert("추방 권한이 없습니다.");
+    return;
+  }
   if(!confirm(`${name} 님을 추방하시겠습니까?`))return;
+
   const ref=partiesRef(state.currentEventId).doc(id);
   const members=normalizeMembers(p.members).filter(v=>v!==name);
   const updates={members};
@@ -1404,10 +1528,16 @@ async function kickMember(id,name){
 window.kickMember=kickMember;
 
 async function setRallyLeader(id,name){
-  if(!state.isAdmin){alert("권한이 없습니다.");return;}
+  if(!state.isAdmin){
+    alert("권한이 없습니다.");
+    return;
+  }
   if(!confirm(`${name} 님을 집결장으로 지정하시겠습니까?`))return;
   const p=state.parties.find(v=>v.id===id);
-  if(!p||!p.members.includes(name)){alert("해당 사용자는 현재 파티원이 아닙니다.");return;}
+  if(!p||!p.members.includes(name)){
+    alert("해당 사용자는 현재 파티원이 아닙니다.");
+    return;
+  }
   await partiesRef("ruins").doc(id).update({rallyLeader:name});
   await writeAdminLog("set_rally_leader",{partyId:id,memberName:name});
 }
@@ -1429,8 +1559,11 @@ function copyRuinsNotice(partyId){
 집결장: ${leader||"-"}
 집결원: ${others.join(", ")}
 병력수: ${power}명`;
-  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(()=>alert("복사되었습니다."),()=>fallbackCopy(text));}
-  else fallbackCopy(text);
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=>alert("복사되었습니다."),()=>fallbackCopy(text));
+  }else{
+    fallbackCopy(text);
+  }
 }
 
 function copyHolySwordNotice(partyId){
@@ -1441,7 +1574,7 @@ function copyHolySwordNotice(partyId){
   const byArea={};
   HOLY_SWORD_AREAS.forEach(area=>byArea[area]=[]);
   normalizeAssignments(p.areaAssignments).forEach(item=>{
-    if(!byArea[item.area]) byArea[item.area]=[];
+    if(!byArea[item.area])byArea[item.area]=[];
     byArea[item.area].push(item.user);
   });
 
@@ -1514,11 +1647,8 @@ function copyRearrangeColumns(){
   lines.push("");
   lines.push("[이동 필요 인원]");
 
-  if(moveNeeded.length){
-    lines.push(...moveNeeded);
-  }else{
-    lines.push("없음");
-  }
+  if(moveNeeded.length)lines.push(...moveNeeded);
+  else lines.push("없음");
 
   const text=lines.join("\n");
 
@@ -1536,7 +1666,9 @@ async function showAllUsers(){
   if(state.currentEventId==="rearrange")state.rearrangeEntries.forEach(v=>joined.add(v.user));
   else state.parties.forEach(p=>normalizeMembers(p.members).forEach(n=>joined.add(n)));
   const all=[];
-  usersSnap.forEach(doc=>{if(!isHiddenTestNickname(doc.id))all.push(doc.id);});
+  usersSnap.forEach(doc=>{
+    if(!isHiddenTestNickname(doc.id))all.push(doc.id);
+  });
   all.sort((a,b)=>a.localeCompare(b,"ko"));
   el.joinedUsers.innerHTML=renderNameColumns(all.filter(n=>joined.has(n)));
   el.notJoinedUsers.innerHTML=renderNameColumns(all.filter(n=>!joined.has(n)));
@@ -1545,22 +1677,37 @@ async function showAllUsers(){
 }
 window.showAllUsers=showAllUsers;
 
-function renderNameColumns(arr){if(!arr.length)return`<div class="name-item">(없음)</div>`;return arr.map(v=>`<div class="name-item">${escapeHtml(v)}</div>`).join("");}
-function closeUserModal(){el.userModal?.classList.add("hidden");syncOverlay();}
+function renderNameColumns(arr){
+  if(!arr.length)return `<div class="name-item">(없음)</div>`;
+  return arr.map(v=>`<div class="name-item">${escapeHtml(v)}</div>`).join("");
+}
+function closeUserModal(){
+  el.userModal?.classList.add("hidden");
+  syncOverlay();
+}
 window.closeUserModal=closeUserModal;
 
 async function showAdminLogs(){
-  if(!state.isAdmin){alert("권한이 없습니다.");return;}
+  if(!state.isAdmin){
+    alert("권한이 없습니다.");
+    return;
+  }
   const snap=await db.collection("adminLogs").orderBy("createdAt","desc").limit(50).get();
-  const items=[];snap.forEach(doc=>items.push({id:doc.id,...doc.data()}));
-  el.logList.innerHTML=items.length?items.map(log=>`<div class="log-item"><div class="log-top"><div class="log-action">${escapeHtml(log.action||"")}</div><div class="muted">${log.admin?escapeHtml(log.admin):""}</div></div><div class="muted">이벤트: ${escapeHtml(log.event||"-")}</div><div class="muted">${escapeHtml(JSON.stringify(log.payload||{}))}</div>${!log.undone?`<button class="undo-btn" onclick="undoAdminLog('${escapeJs(log.id)}')">실행취소</button>`:`<div class="muted">실행취소됨</div>`}</div>`).join(""):`<div class="empty-card">운영 로그가 없습니다.</div>`;
+  const items=[];
+  snap.forEach(doc=>items.push({id:doc.id,...doc.data()}));
+  el.logList.innerHTML=items.length
+    ? items.map(log=>`<div class="log-item"><div class="log-top"><div class="log-action">${escapeHtml(log.action||"")}</div><div class="muted">${log.admin?escapeHtml(log.admin):""}</div></div><div class="muted">이벤트: ${escapeHtml(log.event||"-")}</div><div class="muted">${escapeHtml(JSON.stringify(log.payload||{}))}</div>${!log.undone?`<button class="undo-btn" onclick="undoAdminLog('${escapeJs(log.id)}')">실행취소</button>`:`<div class="muted">실행취소됨</div>`}</div>`).join("")
+    : `<div class="empty-card">운영 로그가 없습니다.</div>`;
   el.logModal.classList.remove("hidden");
   syncOverlay();
   closeAdminMenu();
 }
 window.showAdminLogs=showAdminLogs;
 
-function closeLogModal(){el.logModal?.classList.add("hidden");syncOverlay();}
+function closeLogModal(){
+  el.logModal?.classList.add("hidden");
+  syncOverlay();
+}
 window.closeLogModal=closeLogModal;
 
 async function undoAdminLog(id){
@@ -1570,23 +1717,37 @@ async function undoAdminLog(id){
   const log=snap.data()||{};
   if(log.undone)return;
   const p=log.payload||{};
-  if(log.action==="set_rally_leader"&&log.event==="ruins"&&p.partyId) await partiesRef("ruins").doc(p.partyId).update({rallyLeader:""});
+
+  if(log.action==="set_rally_leader"&&log.event==="ruins"&&p.partyId){
+    await partiesRef("ruins").doc(p.partyId).update({rallyLeader:""});
+  }
+
   if(log.action==="kick_member"&&log.event&&p.partyId&&p.memberName){
     const pref=partiesRef(log.event).doc(p.partyId);
     const psnap=await pref.get();
     if(psnap.exists){
       const d=psnap.data()||{};
       const members=normalizeMembers(d.members);
-      if(!members.includes(p.memberName)){members.push(p.memberName);await pref.update({members});}
+      if(!members.includes(p.memberName)){
+        members.push(p.memberName);
+        await pref.update({members});
+      }
     }
   }
+
   if((log.action==="publish_rearrange_ranking"||log.action==="hide_rearrange_ranking")&&typeof p.rankingPublic==="boolean"){
     await eventRef("rearrange").set({rankingPublic:!p.rankingPublic},{merge:true});
   }
+
   if(log.action==="delete_rearrange_ranking_meta"&&p.user){
     await rearrangeRankingRef().doc(p.user).set({user:p.user},{merge:true});
   }
-  await ref.update({undone:true,undoneAt:firebase.firestore.FieldValue.serverTimestamp(),undoneBy:state.currentUser});
+
+  await ref.update({
+    undone:true,
+    undoneAt:firebase.firestore.FieldValue.serverTimestamp(),
+    undoneBy:state.currentUser
+  });
   showAdminLogs();
 }
 window.undoAdminLog=undoAdminLog;
