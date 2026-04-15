@@ -153,6 +153,14 @@ img{
   font-size:28px;
   font-weight:800;
 }
+
+.party-card .party-title{
+  font-size:22px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
 .event-card p,.party-sub{
   margin:6px 0;
   color:#9eb0cc;
@@ -729,6 +737,10 @@ img{
     width:22px;
     height:22px;
     flex:0 0 22px;
+  }
+
+  .party-card .party-title{
+  font-size:18px;
   }
 }
 
