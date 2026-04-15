@@ -26,6 +26,7 @@ const state={
   rearrangeEntries:[],
   rearrangePublic:false,
   holySwordSelectedSide:localStorage.getItem("holySwordSelectedSide")||"KOR",
+  tripleAllianceSelectedSide:localStorage.getItem("tripleAllianceSelectedSide")||"KOR",
   editingRuinsPartyId:"",
   editingRearrangeRankUser:"",
   editingHolySwordPartyId:"",
@@ -33,7 +34,7 @@ const state={
     {id:"viking",name:"바이킹의 역습",desc:"'전하 퇴청하시옵소서'를 영어로? 바이킹~ 엌ㅋㅋ"},
     {id:"ruins",name:"유적 쟁탈",desc:"가장 강력한 유적은? 무적 엌ㅋㅋㅋ"},
     {id:"holy_sword",name:"성검 쟁탈",desc:"검이 정색하면? 검정색 엌ㅋㅋㅋ"},
-    {id:"triple_alliance",name:"삼대 연맹전",desc:"참가 여부만 관리"},
+    {id:"triple_alliance",name:"삼대 연맹전",desc:"소속별 참가 여부만 관리"},
     {id:"rearrange",name:"자리 재배치",desc:"자동차에서 가장 시원한 자리는? 차가운데 엌ㅋㅋ"}
   ]
 };
@@ -530,13 +531,13 @@ function subscribeRearrange(){
 }
 
 function sortParties(a,b){
-  if(state.currentEventId==="holy_sword"){
+  if(state.currentEventId==="holy_sword"||state.currentEventId==="triple_alliance"){
     if(a.side!==b.side){
       return a.side==="KOR"?-1:1;
     }
     return getTimeValue(a.timeUTC)-getTimeValue(b.timeUTC);
   }
-  if(state.currentEventId==="ruins"||state.currentEventId==="triple_alliance"){
+  if(state.currentEventId==="ruins"){
     return getTimeValue(a.timeUTC)-getTimeValue(b.timeUTC);
   }
   return String(a.name).localeCompare(String(b.name),"ko");
@@ -627,6 +628,12 @@ function getHolySwordDisplayIndex(idx){
 }
 
 function getHolySwordSideLabel(side){
+  if(side==="KOR")return"본연맹(KOR)";
+  if(side==="kor")return"아카데미(kor)";
+  return side||"-";
+}
+
+function getTripleAllianceSideLabel(side){
   if(side==="KOR")return"본연맹(KOR)";
   if(side==="kor")return"아카데미(kor)";
   return side||"-";
@@ -890,6 +897,7 @@ function renderTripleAllianceCard(p){
 
   return `<div class="party-card">
     <div class="party-title">${escapeHtml(p.name)}</div>
+    <div class="party-sub">소속: <span class="holy-side-badge">${escapeHtml(getTripleAllianceSideLabel(p.side))}</span></div>
     <div class="party-sub">시간: ${formatKST(p.timeUTC)}</div>
     <div class="party-sub">UTC ${formatUTC(p.timeUTC)}</div>
     <div class="party-sub">인원: ${members.length}명</div>
@@ -1052,7 +1060,9 @@ function openTripleAllianceCreateModal(){
   el.ruinsSubmitBtn.textContent="생성";
   if(el.ruinNameInput)el.ruinNameInput.value="";
   document.getElementById("ruinNameWrap")?.classList.add("hidden");
-  document.getElementById("holySwordSideWrap")?.classList.add("hidden");
+  document.getElementById("holySwordSideWrap")?.classList.remove("hidden");
+  const sideSelect=document.getElementById("holySwordSideSelect");
+  if(sideSelect)sideSelect.value=state.tripleAllianceSelectedSide||"KOR";
   el.utcMonth.value="1";
   el.utcDay.value="1";
   el.utcHour.value="0";
@@ -1082,7 +1092,9 @@ async function openRuinsEditModal(partyId){
   }else if(state.currentEventId==="triple_alliance"){
     el.ruinsModalTitle.textContent="삼대 연맹전 수정";
     document.getElementById("ruinNameWrap")?.classList.add("hidden");
-    document.getElementById("holySwordSideWrap")?.classList.add("hidden");
+    document.getElementById("holySwordSideWrap")?.classList.remove("hidden");
+    const sideSelect=document.getElementById("holySwordSideSelect");
+    if(sideSelect)sideSelect.value=p.side||"KOR";
   }else{
     el.ruinsModalTitle.textContent="유적 파티 수정";
     document.getElementById("ruinNameWrap")?.classList.remove("hidden");
@@ -1163,26 +1175,33 @@ async function submitRuinsParty(){
   }
 
   if(state.currentEventId==="triple_alliance"){
+    const side=document.getElementById("holySwordSideSelect")?.value||"KOR";
+    state.tripleAllianceSelectedSide=side;
+    localStorage.setItem("tripleAllianceSelectedSide",side);
+
+    const sideText=side==="KOR"?"본연맹":"아카데미";
     const kstHour=(h+9)%24;
-    const autoName=`[삼대 연맹전] ${kstHour}시(UTC ${String(h).padStart(2,"0")}:00)`;
+    const autoName=`[삼대 연맹전][${sideText}] ${kstHour}시(UTC ${String(h).padStart(2,"0")}:00)`;
 
     if(state.editingRuinsPartyId){
       await partiesRef("triple_alliance").doc(state.editingRuinsPartyId).update({
         name:autoName,
+        side,
         timeUTC:utcDate
       });
-      await writeAdminLog("update_triple_alliance_party",{partyId:state.editingRuinsPartyId,name:autoName,month:m,day:d,hour:h});
+      await writeAdminLog("update_triple_alliance_party",{partyId:state.editingRuinsPartyId,name:autoName,month:m,day:d,hour:h,side});
     }else{
       await partiesRef("triple_alliance").add({
         type:"triple_alliance",
         event:"triple_alliance",
         name:autoName,
+        side,
         createdBy:state.currentUser,
         members:[],
         timeUTC:utcDate,
         createdAt:firebase.firestore.FieldValue.serverTimestamp()
       });
-      await writeAdminLog("create_triple_alliance_party",{name:autoName,month:m,day:d,hour:h});
+      await writeAdminLog("create_triple_alliance_party",{name:autoName,month:m,day:d,hour:h,side});
     }
     closeRuinsCreateModal();
     return;
