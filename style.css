@@ -704,8 +704,9 @@ img{
   }
 
   .rank-table col:nth-child(3){width:20%}
-  .rank-table col:nth-child(6){width:20%}
-
+  .rank-table col:nth-child(6){width:14%}
+  .rank-table col:nth-child(8){width:18%}
+  
   .rank-table th{font-size:11px}
   .rank-table td{font-size:11px}
   .rank-edit-btn{
