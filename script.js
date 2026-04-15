@@ -650,9 +650,9 @@ function getDisplayedRearrangeEntries(entries){
       explicitByColumn[rule.explicitColumn].push(enriched);
       return;
     }
-    if(rule.hasR45&&baseColumn>=3){
-      reservedTo2.push(enriched);
-      return;
+    if(rule.hasR45&&baseColumn>=4){
+    reservedTo2.push(enriched);
+    return;
     }
     normal.push(enriched);
   });
