@@ -14,14 +14,14 @@ const HOLY_SWORD_AREAS=[
 ];
 
 const HOLY_SWORD_CLOCK_ORDER=[
-  {label:"11시",area:"시계탑"},
-  {label:"1시",area:"수도원 1"},
-  {label:"2시",area:"수도원 2"},
-  {label:"4시",area:"성소 1"},
-  {label:"5시",area:"마구간"},
-  {label:"7시",area:"수도원 3"},
-  {label:"8시",area:"수도원 4"},
-  {label:"10시",area:"성소 2"}
+  {row:1,col:2,area:"시계탑"},
+  {row:1,col:3,area:"수도원 1"},
+  {row:2,col:1,area:"성소 2"},
+  {row:2,col:4,area:"수도원 2"},
+  {row:3,col:1,area:"수도원 4"},
+  {row:3,col:4,area:"성소 1"},
+  {row:4,col:2,area:"수도원 3"},
+  {row:4,col:3,area:"마구간"}
 ];
 
 const state={
@@ -774,9 +774,33 @@ function renderHolySwordAreaBoard(assignments){
     byArea[item.area].push(item.user);
   });
 
-  return `<div class="holy-area-board">${
-    HOLY_SWORD_CLOCK_ORDER.map(item=>`<div class="holy-area-slot"><div class="holy-area-slot-title">${escapeHtml(item.label)} · ${escapeHtml(item.area)}</div><div class="holy-area-slot-users">${byArea[item.area].length?byArea[item.area].map(escapeHtml).join("<br>"):"-"}</div></div>`).join("")
-  }</div>`;
+  const slotMap={};
+  HOLY_SWORD_CLOCK_ORDER.forEach(item=>{
+    slotMap[`${item.row}-${item.col}`]=item.area;
+  });
+
+  let html=`<div class="holy-area-board">`;
+
+  for(let row=1; row<=4; row++){
+    for(let col=1; col<=4; col++){
+      const key=`${row}-${col}`;
+      const area=slotMap[key];
+
+      if(area){
+        html+=`
+          <div class="holy-area-slot">
+            <div class="holy-area-slot-title">${escapeHtml(area)}</div>
+            <div class="holy-area-slot-users">${byArea[area].length?byArea[area].map(escapeHtml).join("<br>"):"-"}</div>
+          </div>
+        `;
+      }else{
+        html+=`<div></div>`;
+      }
+    }
+  }
+
+  html+=`</div>`;
+  return html;
 }
 
 function renderPartyList(){
