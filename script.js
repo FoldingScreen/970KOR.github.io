@@ -7,21 +7,10 @@ const HOLY_SWORD_AREAS=[
   "시계탑",
   "수도원 1",
   "수도원 2",
-  "성소 1",
   "수도원 3",
   "수도원 4",
+  "성소 1",
   "성소 2"
-];
-
-const HOLY_SWORD_CLOCK_ORDER=[
-  {row:1,col:2,area:"시계탑"},
-  {row:1,col:3,area:"수도원 1"},
-  {row:2,col:1,area:"성소 2"},
-  {row:2,col:4,area:"수도원 2"},
-  {row:3,col:1,area:"수도원 4"},
-  {row:3,col:4,area:"성소 1"},
-  {row:4,col:2,area:"수도원 3"},
-  {row:4,col:3,area:"마구간"}
 ];
 
 const state={
@@ -738,6 +727,30 @@ function getMoveDisplay(existingColumn,currentColumn){
   return{text:`${existingColumn}→${currentColumn}`,className:"move-down"};
 }
 
+function getHolySwordBadgeSrc(area){
+  if(area==="마구간") return "말.png";
+  if(area==="시계탑") return "모래시계.png";
+  if(area==="수도원 1") return "마름모 1.png";
+  if(area==="수도원 2") return "마름모 2.png";
+  if(area==="수도원 3") return "마름모 3.png";
+  if(area==="수도원 4") return "마름모 4.png";
+  if(area==="성소 1") return "원 1.png";
+  if(area==="성소 2") return "원 2.png";
+  return "";
+}
+
+function renderHolySwordBadge(area,size="small"){
+  const src=getHolySwordBadgeSrc(area);
+  if(!src) return "";
+  const cls=size==="large" ? "holy-area-badge-img large" : "holy-area-badge-img";
+  return `<img src="${src}" alt="${escapeHtml(area)}" class="${cls}">`;
+}
+
+function renderHolySwordBadges(areas){
+  if(!areas||!areas.length) return "";
+  return `<span class="area-badges">${areas.map(area=>renderHolySwordBadge(area,"small")).join("")}</span>`;
+}
+
 function getHolySwordAreaAssignmentsByUser(assignments){
   const map={};
   normalizeAssignments(assignments).forEach(item=>{
@@ -745,25 +758,6 @@ function getHolySwordAreaAssignmentsByUser(assignments){
     map[item.user].push(item.area);
   });
   return map;
-}
-
-function renderHolySwordBadge(area){
-  if(area==="마구간")return `<span class="area-badge horse">馬</span>`;
-  if(area==="시계탑")return `<span class="area-badge clock">時</span>`;
-  if(area.startsWith("성소")){
-    const num=area.split(" ")[1]||"";
-    return `<span class="area-badge sanctuary">${escapeHtml(num)}</span>`;
-  }
-  if(area.startsWith("수도원")){
-    const num=area.split(" ")[1]||"";
-    return `<span class="area-badge monastery"><span>${escapeHtml(num)}</span></span>`;
-  }
-  return "";
-}
-
-function renderHolySwordBadges(areas){
-  if(!areas||!areas.length)return "";
-  return `<span class="area-badges">${areas.map(renderHolySwordBadge).join("")}</span>`;
 }
 
 function renderHolySwordAreaBoard(assignments){
@@ -774,10 +768,16 @@ function renderHolySwordAreaBoard(assignments){
     byArea[item.area].push(item.user);
   });
 
-  const slotMap={};
-  HOLY_SWORD_CLOCK_ORDER.forEach(item=>{
-    slotMap[`${item.row}-${item.col}`]=item.area;
-  });
+  const slotMap={
+    "1-2":"시계탑",
+    "1-3":"수도원 1",
+    "2-1":"성소 2",
+    "2-4":"수도원 2",
+    "3-1":"수도원 4",
+    "3-4":"성소 1",
+    "4-2":"수도원 3",
+    "4-3":"마구간"
+  };
 
   let html=`<div class="holy-area-board">`;
 
@@ -786,16 +786,18 @@ function renderHolySwordAreaBoard(assignments){
       const key=`${row}-${col}`;
       const area=slotMap[key];
 
-      if(area){
-        html+=`
-          <div class="holy-area-slot">
-            <div class="holy-area-slot-title">${escapeHtml(area)}</div>
-            <div class="holy-area-slot-users">${byArea[area].length?byArea[area].map(escapeHtml).join("<br>"):"-"}</div>
-          </div>
-        `;
-      }else{
-        html+=`<div></div>`;
+      if(!area){
+        html+=`<div class="holy-area-empty"></div>`;
+        continue;
       }
+
+      const users=byArea[area]||[];
+      html+=`
+        <div class="holy-area-slot">
+          <div class="holy-area-slot-badge">${renderHolySwordBadge(area,"large")}</div>
+          <div class="holy-area-slot-users">${users.length?users.map(escapeHtml).join("<br>"):"-"}</div>
+        </div>
+      `;
     }
   }
 
