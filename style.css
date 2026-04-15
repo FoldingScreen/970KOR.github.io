@@ -448,34 +448,24 @@ img{max-width:100%;height:auto}
 }
 
 .area-badge{
-  display:inline-flex;
+  display:flex;
   align-items:center;
   justify-content:center;
-  width:22px;
-  height:22px;
-  font-size:11px;
-  font-weight:700;
+  width:28px;
+  height:28px;
+  font-size:14px;
+  font-weight:800;
   color:#fff;
-  border:1px solid rgba(255,255,255,.18);
+  border:1px solid rgba(255,255,255,.25);
 }
 
-.area-badge.horse{
-  border-radius:999px;
-  background:#7a5b2f;
-  font-size:12px;
-}
-
-.area-badge.clock{
-  border-radius:999px;
-  background:#4d6a86;
-  font-size:12px;
-}
-
+/* 성소 (동그라미) */
 .area-badge.sanctuary{
-  border-radius:999px;
+  border-radius:50%;
   background:#2563eb;
 }
 
+/* 수도원 (마름모) */
 .area-badge.monastery{
   background:#2563eb;
   transform:rotate(45deg);
@@ -483,7 +473,25 @@ img{max-width:100%;height:auto}
 
 .area-badge.monastery span{
   transform:rotate(-45deg);
-  display:inline-block;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  height:100%;
+}
+
+/* 마구간 */
+.area-badge.horse{
+  border-radius:50%;
+  background:#7a5b2f;
+  font-size:16px;
+}
+
+/* 시계탑 */
+.area-badge.clock{
+  border-radius:50%;
+  background:#4d6a86;
+  font-size:16px;
 }
 
 .holy-sword-assign-item{
