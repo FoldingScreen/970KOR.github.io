@@ -748,8 +748,8 @@ function getHolySwordAreaAssignmentsByUser(assignments){
 }
 
 function renderHolySwordBadge(area){
-  if(area==="마구간")return `<span class="area-badge horse">🐴</span>`;
-  if(area==="시계탑")return `<span class="area-badge clock">⏳</span>`;
+  if(area==="마구간")return `<span class="area-badge horse">馬</span>`;
+  if(area==="시계탑")return `<span class="area-badge clock">時</span>`;
   if(area.startsWith("성소")){
     const num=area.split(" ")[1]||"";
     return `<span class="area-badge sanctuary">${escapeHtml(num)}</span>`;
