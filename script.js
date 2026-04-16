@@ -896,7 +896,7 @@ function renderTripleAllianceCard(p){
   const membersHtml=members.map(name=>`<div class="member-line"><span class="${name===state.currentUser?"my-name":""}">${escapeHtml(name)}</span>${state.isAdmin?`<button class="inline-btn" onclick="kickMember('${escapeJs(p.id)}','${escapeJs(name)}')">✖</button>`:""}</div>`).join("");
 
   return `<div class="party-card">
-    <div class="party-title">${escapeHtml(p.name)}</div>
+    <div class="party-title triple-alliance-title">${escapeHtml(p.name)}</div>
     <div class="party-sub">소속: <span class="holy-side-badge">${escapeHtml(getTripleAllianceSideLabel(p.side))}</span></div>
     <div class="party-sub">시간: ${formatKST(p.timeUTC)}</div>
     <div class="party-sub">UTC ${formatUTC(p.timeUTC)}</div>
