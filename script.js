@@ -426,6 +426,49 @@ window.openEvent=openEvent;
 
 function subscribeParties(){
   clearSubscriptions();
+
+  if(state.currentEventId==="holy_sword"||state.currentEventId==="triple_alliance"){
+    state.unsubscribeRanking=rearrangeRankingRef().onSnapshot(rankingSnap=>{
+      const rankingMap={};
+      rankingSnap.docs.forEach(doc=>{
+        const d=doc.data()||{};
+        rankingMap[doc.id]={
+          user:d.user||doc.id,
+          power:Number(d.power||0),
+          note:String(d.note||""),
+          existingColumn:Number(d.existingColumn||0),
+          excluded:!!d.excluded
+        };
+      });
+      state.rearrangeRankingMap=rankingMap;
+      rebuildMergedRearrangeEntries();
+      renderPartyList();
+    },err=>{
+      console.error(err);
+      alert("기본 데이터를 불러오는 중 오류가 발생했습니다.");
+    });
+
+    state.unsubscribeMeta=rearrangeProgressRef().onSnapshot(progressSnap=>{
+      state.rearrangeProgressEntries=progressSnap.docs.map(doc=>{
+        const d=doc.data()||{};
+        return{
+          id:doc.id,
+          user:d.user||doc.id,
+          stageText:String(d.stageText||d.stage||""),
+          stageMajor:Number(d.stageMajor||0),
+          stageMinor:Number(d.stageMinor||0),
+          updatedAt:d.updatedAt||null,
+          createdAt:d.createdAt||null
+        };
+      });
+      rebuildMergedRearrangeEntries();
+      renderPartyList();
+    },err=>{
+      console.error(err);
+      alert("기본 데이터를 불러오는 중 오류가 발생했습니다.");
+    });
+  }
+
   state.unsubscribeParties=partiesRef(state.currentEventId).onSnapshot(snap=>{
     state.parties=snap.docs.map(doc=>{
       const d=doc.data()||{};
@@ -451,15 +494,6 @@ function subscribeParties(){
     console.error(err);
     alert("기본 데이터를 불러오는 중 오류가 발생했습니다.");
   });
-
-  if(state.currentEventId==="holy_sword"){
-    state.unsubscribeRanking=rearrangeRankingRef().onSnapshot(()=>{
-      renderPartyList();
-    },err=>{
-      console.error(err);
-      alert("기본 데이터를 불러오는 중 오류가 발생했습니다.");
-    });
-  }
 }
 
 function rebuildMergedRearrangeEntries(){
@@ -831,9 +865,13 @@ function renderHolySwordAreaBoard(assignments){
 
 function renderPartyList(){
   if(!state.parties.length){
+  if(state.currentEventId==="holy_sword"||state.currentEventId==="triple_alliance"){
     el.partyList.innerHTML=`<div class="empty-card">아직 생성된 파티가 없습니다.</div>`;
-    return;
+  }else{
+    el.partyList.innerHTML=`<div class="empty-card">아직 생성된 파티가 없습니다.</div>`;
   }
+  return;
+}
   el.partyList.innerHTML=state.parties.map(p=>{
     if(state.currentEventId==="ruins")return renderRuinsCard(p);
     if(state.currentEventId==="holy_sword")return renderHolySwordCard(p);
