@@ -1181,7 +1181,7 @@ async function submitRuinsParty(){
 
     const sideText=side==="KOR"?"본연맹":"아카데미";
     const kstHour=(h+9)%24;
-    const autoName=`[삼대 연맹전][${sideText}] ${kstHour}시(UTC ${String(h).padStart(2,"0")}:00)`;
+    const autoName=`[${sideText}] ${kstHour}시(UTC ${String(h).padStart(2,"0")}:00)`;
 
     if(state.editingRuinsPartyId){
       await partiesRef("triple_alliance").doc(state.editingRuinsPartyId).update({
