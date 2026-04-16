@@ -446,6 +446,10 @@ img{
   letter-spacing:-0.2px;
 }
 
+.triple-alliance-title{
+  font-size:18px !important;
+}
+
 .holy-side-badge{
   display:inline-flex;
   align-items:center;
