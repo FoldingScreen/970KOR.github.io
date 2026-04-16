@@ -224,7 +224,7 @@ function initRuinsSelects(){
 function ensureHolySwordFields(){
   const wrap=document.getElementById("holySwordSideWrap");
   if(wrap&&!document.getElementById("holySwordSideSelect")){
-    wrap.innerHTML=`<label>소속</label><select id="holySwordSideSelect"><option value="KOR">본연맹(KOR)</option><option value="kor">아카데미(kor)</option></select>`;
+    wrap.innerHTML=`<label>소속</label><select id="holySwordSideSelect"><option value="KOR">본연맹(KOR)</option><option value="KR1">아카데미(KR1)</option></select>`;
   }
 }
 
@@ -629,13 +629,13 @@ function getHolySwordDisplayIndex(idx){
 
 function getHolySwordSideLabel(side){
   if(side==="KOR")return"본연맹(KOR)";
-  if(side==="kor")return"아카데미(kor)";
+  if(side==="KR1")return"아카데미(KR1)";
   return side||"-";
 }
 
 function getTripleAllianceSideLabel(side){
   if(side==="KOR")return"본연맹(KOR)";
-  if(side==="kor")return"아카데미(kor)";
+  if(side==="KR1")return"아카데미(KR1)";
   return side||"-";
 }
 
@@ -896,7 +896,7 @@ function renderTripleAllianceCard(p){
   const membersHtml=members.map(name=>`<div class="member-line"><span class="${name===state.currentUser?"my-name":""}">${escapeHtml(name)}</span>${state.isAdmin?`<button class="inline-btn" onclick="kickMember('${escapeJs(p.id)}','${escapeJs(name)}')">✖</button>`:""}</div>`).join("");
 
   return `<div class="party-card">
-    <div class="party-title triple-alliance-title">${escapeHtml(p.name)}</div>
+    <div class="party-title">${escapeHtml(p.name)}</div>
     <div class="party-sub">소속: <span class="holy-side-badge">${escapeHtml(getTripleAllianceSideLabel(p.side))}</span></div>
     <div class="party-sub">시간: ${formatKST(p.timeUTC)}</div>
     <div class="party-sub">UTC ${formatUTC(p.timeUTC)}</div>
@@ -1146,8 +1146,9 @@ async function submitRuinsParty(){
     localStorage.setItem("holySwordSelectedSide",side);
 
     const sideText=side==="KOR"?"본연맹":"아카데미";
+    const sideCode=side==="KOR"?"KOR":"KR1";
     const kstHour=(h+9)%24;
-    const autoName=`[${sideText}] ${kstHour}시(UTC ${String(h).padStart(2,"0")}:00)`;
+    const autoName=`[${sideText}(${sideCode})] ${kstHour}시(UTC ${String(h).padStart(2,"0")}:00)`;
 
     if(state.editingRuinsPartyId){
       await partiesRef("holy_sword").doc(state.editingRuinsPartyId).update({
@@ -1180,8 +1181,9 @@ async function submitRuinsParty(){
     localStorage.setItem("tripleAllianceSelectedSide",side);
 
     const sideText=side==="KOR"?"본연맹":"아카데미";
+    const sideCode=side==="KOR"?"KOR":"KR1";
     const kstHour=(h+9)%24;
-    const autoName=`[${sideText}] ${kstHour}시(UTC ${String(h).padStart(2,"0")}:00)`;
+    const autoName=`[${sideText}(${sideCode})] ${kstHour}시(UTC ${String(h).padStart(2,"0")}:00)`;
 
     if(state.editingRuinsPartyId){
       await partiesRef("triple_alliance").doc(state.editingRuinsPartyId).update({
