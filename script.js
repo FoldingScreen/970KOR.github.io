@@ -891,7 +891,7 @@ function renderHolySwordCard(p){
 }
 
 function renderTripleAllianceCard(p){
-  const members=[...p.members].sort((a,b)=>a.localeCompare(b,"ko"));
+  const members=getHolySwordSortedMembers(p.members);
   const meJoined=members.includes(state.currentUser);
   const membersHtml=members.map(name=>`<div class="member-line"><span class="${name===state.currentUser?"my-name":""}">${escapeHtml(name)}</span>${state.isAdmin?`<button class="inline-btn" onclick="kickMember('${escapeJs(p.id)}','${escapeJs(name)}')">✖</button>`:""}</div>`).join("");
 
