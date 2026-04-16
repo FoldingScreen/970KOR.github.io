@@ -34,7 +34,7 @@ const state={
     {id:"viking",name:"바이킹의 역습",desc:"'전하 퇴청하시옵소서'를 영어로? 바이킹~ 엌ㅋㅋ"},
     {id:"ruins",name:"유적 쟁탈",desc:"가장 강력한 유적은? 무적 엌ㅋㅋㅋ"},
     {id:"holy_sword",name:"성검 쟁탈",desc:"검이 정색하면? 검정색 엌ㅋㅋㅋ"},
-    {id:"triple_alliance",name:"삼대 연맹전",desc:"아빠는 5대, 아들은 2대 맞는 이유는? 세대차이 엌ㅋㅋ"},
+    {id:"triple_alliance",name:"삼대 연맹전",desc:"소속별 참가 여부만 관리"},
     {id:"rearrange",name:"자리 재배치",desc:"자동차에서 가장 시원한 자리는? 차가운데 엌ㅋㅋ"}
   ]
 };
@@ -90,7 +90,8 @@ const el={
   holySwordAreaModalTitle:document.getElementById("holySwordAreaModalTitle"),
   holySwordAreaUserSelect:document.getElementById("holySwordAreaUserSelect"),
   holySwordAreaSelect:document.getElementById("holySwordAreaSelect"),
-  holySwordAreaAssignmentList:document.getElementById("holySwordAreaAssignmentList")
+  holySwordAreaAssignmentList:document.getElementById("holySwordAreaAssignmentList"),
+  firstGroupCheckbox:document.getElementById("firstGroupCheckbox")
 };
 
 function escapeHtml(s){return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -485,6 +486,7 @@ function subscribeParties(){
         timeUTC:d.timeUTC||null,
         maxMembers:Number(d.maxMembers||0),
         type:d.type||"",
+        isFirstGroup:!!d.isFirstGroup,
         createdAt:d.createdAt||null
       };
     });
@@ -566,6 +568,9 @@ function subscribeRearrange(){
 
 function sortParties(a,b){
   if(state.currentEventId==="holy_sword"||state.currentEventId==="triple_alliance"){
+    if(!!a.isFirstGroup!==!!b.isFirstGroup){
+      return a.isFirstGroup?-1:1;
+    }
     if(a.side!==b.side){
       return a.side==="KOR"?-1:1;
     }
@@ -865,13 +870,9 @@ function renderHolySwordAreaBoard(assignments){
 
 function renderPartyList(){
   if(!state.parties.length){
-  if(state.currentEventId==="holy_sword"||state.currentEventId==="triple_alliance"){
     el.partyList.innerHTML=`<div class="empty-card">아직 생성된 파티가 없습니다.</div>`;
-  }else{
-    el.partyList.innerHTML=`<div class="empty-card">아직 생성된 파티가 없습니다.</div>`;
+    return;
   }
-  return;
-}
   el.partyList.innerHTML=state.parties.map(p=>{
     if(state.currentEventId==="ruins")return renderRuinsCard(p);
     if(state.currentEventId==="holy_sword")return renderHolySwordCard(p);
@@ -903,6 +904,7 @@ function renderHolySwordCard(p){
   const meJoined=members.includes(state.currentUser);
   const canManage=state.isAdmin;
   const byUser=getHolySwordAreaAssignmentsByUser(p.areaAssignments);
+  const firstGroupMark=p.isFirstGroup?`<div class="party-sub">분류: 1군</div>`:"";
 
   const membersHtml=members.map((name,idx)=>{
     const badges=renderHolySwordBadges(byUser[name]||[]);
@@ -911,6 +913,7 @@ function renderHolySwordCard(p){
 
   return `<div class="party-card">
     <div class="party-title holy-party-title">${escapeHtml(p.name)}</div>
+    ${firstGroupMark}
     <div class="party-sub">소속: <span class="holy-side-badge">${escapeHtml(getHolySwordSideLabel(p.side))}</span></div>
     <div class="party-sub">시간: ${formatKST(p.timeUTC)}</div>
     <div class="party-sub">UTC ${formatUTC(p.timeUTC)}</div>
@@ -931,10 +934,12 @@ function renderHolySwordCard(p){
 function renderTripleAllianceCard(p){
   const members=getHolySwordSortedMembers(p.members);
   const meJoined=members.includes(state.currentUser);
+  const firstGroupMark=p.isFirstGroup?`<div class="party-sub">분류: 1군</div>`:"";
   const membersHtml=members.map(name=>`<div class="member-line"><span class="${name===state.currentUser?"my-name":""}">${escapeHtml(name)}</span>${state.isAdmin?`<button class="inline-btn" onclick="kickMember('${escapeJs(p.id)}','${escapeJs(name)}')">✖</button>`:""}</div>`).join("");
 
   return `<div class="party-card">
     <div class="party-title triple-alliance-title">${escapeHtml(p.name)}</div>
+    ${firstGroupMark}
     <div class="party-sub">소속: <span class="holy-side-badge">${escapeHtml(getTripleAllianceSideLabel(p.side))}</span></div>
     <div class="party-sub">시간: ${formatKST(p.timeUTC)}</div>
     <div class="party-sub">UTC ${formatUTC(p.timeUTC)}</div>
@@ -1050,6 +1055,11 @@ async function createVikingParty(){
   });
 }
 
+function resetPartyFormCommon(){
+  if(el.firstGroupCheckbox)el.firstGroupCheckbox.checked=false;
+  document.getElementById("firstGroupWrap")?.classList.add("hidden");
+}
+
 function openRuinsCreateModal(){
   if(!state.isAdmin){
     alert("유적 파티는 운영진만 생성할 수 있습니다.");
@@ -1061,6 +1071,7 @@ function openRuinsCreateModal(){
   if(el.ruinNameInput)el.ruinNameInput.value="";
   document.getElementById("ruinNameWrap")?.classList.remove("hidden");
   document.getElementById("holySwordSideWrap")?.classList.add("hidden");
+  resetPartyFormCommon();
   el.utcMonth.value="1";
   el.utcDay.value="1";
   el.utcHour.value="0";
@@ -1079,6 +1090,8 @@ function openHolySwordCreateModal(){
   if(el.ruinNameInput)el.ruinNameInput.value="";
   document.getElementById("ruinNameWrap")?.classList.add("hidden");
   document.getElementById("holySwordSideWrap")?.classList.remove("hidden");
+  document.getElementById("firstGroupWrap")?.classList.remove("hidden");
+  if(el.firstGroupCheckbox)el.firstGroupCheckbox.checked=false;
   const sideSelect=document.getElementById("holySwordSideSelect");
   if(sideSelect)sideSelect.value=state.holySwordSelectedSide||"KOR";
   el.utcMonth.value="1";
@@ -1099,6 +1112,8 @@ function openTripleAllianceCreateModal(){
   if(el.ruinNameInput)el.ruinNameInput.value="";
   document.getElementById("ruinNameWrap")?.classList.add("hidden");
   document.getElementById("holySwordSideWrap")?.classList.remove("hidden");
+  document.getElementById("firstGroupWrap")?.classList.remove("hidden");
+  if(el.firstGroupCheckbox)el.firstGroupCheckbox.checked=false;
   const sideSelect=document.getElementById("holySwordSideSelect");
   if(sideSelect)sideSelect.value=state.tripleAllianceSelectedSide||"KOR";
   el.utcMonth.value="1";
@@ -1125,18 +1140,23 @@ async function openRuinsEditModal(partyId){
     el.ruinsModalTitle.textContent="성검 파티 수정";
     document.getElementById("ruinNameWrap")?.classList.add("hidden");
     document.getElementById("holySwordSideWrap")?.classList.remove("hidden");
+    document.getElementById("firstGroupWrap")?.classList.remove("hidden");
+    if(el.firstGroupCheckbox)el.firstGroupCheckbox.checked=!!p.isFirstGroup;
     const sideSelect=document.getElementById("holySwordSideSelect");
     if(sideSelect)sideSelect.value=p.side||"KOR";
   }else if(state.currentEventId==="triple_alliance"){
     el.ruinsModalTitle.textContent="삼대 연맹전 수정";
     document.getElementById("ruinNameWrap")?.classList.add("hidden");
     document.getElementById("holySwordSideWrap")?.classList.remove("hidden");
+    document.getElementById("firstGroupWrap")?.classList.remove("hidden");
+    if(el.firstGroupCheckbox)el.firstGroupCheckbox.checked=!!p.isFirstGroup;
     const sideSelect=document.getElementById("holySwordSideSelect");
     if(sideSelect)sideSelect.value=p.side||"KOR";
   }else{
     el.ruinsModalTitle.textContent="유적 파티 수정";
     document.getElementById("ruinNameWrap")?.classList.remove("hidden");
     document.getElementById("holySwordSideWrap")?.classList.add("hidden");
+    resetPartyFormCommon();
     el.ruinNameInput.value=p.ruinName||p.name||"";
   }
 
@@ -1155,6 +1175,7 @@ function closeRuinsCreateModal(){
   state.editingRuinsPartyId="";
   document.getElementById("ruinNameWrap")?.classList.remove("hidden");
   document.getElementById("holySwordSideWrap")?.classList.add("hidden");
+  resetPartyFormCommon();
   el.ruinsCreateModal.classList.add("hidden");
   syncOverlay();
 }
@@ -1169,6 +1190,7 @@ async function submitRuinsParty(){
   const m=Number(el.utcMonth.value);
   const d=Number(el.utcDay.value);
   const h=Number(el.utcHour.value);
+  const isFirstGroup=!!el.firstGroupCheckbox?.checked;
 
   if(!m||!d||h<0||h>23){
     alert("UTC 날짜/시간을 선택하세요.");
@@ -1192,9 +1214,10 @@ async function submitRuinsParty(){
       await partiesRef("holy_sword").doc(state.editingRuinsPartyId).update({
         name:autoName,
         side,
-        timeUTC:utcDate
+        timeUTC:utcDate,
+        isFirstGroup
       });
-      await writeAdminLog("update_holy_sword_party",{partyId:state.editingRuinsPartyId,name:autoName,month:m,day:d,hour:h,side});
+      await writeAdminLog("update_holy_sword_party",{partyId:state.editingRuinsPartyId,name:autoName,month:m,day:d,hour:h,side,isFirstGroup});
     }else{
       await partiesRef("holy_sword").add({
         type:"holy_sword",
@@ -1205,9 +1228,10 @@ async function submitRuinsParty(){
         members:[],
         areaAssignments:[],
         timeUTC:utcDate,
+        isFirstGroup,
         createdAt:firebase.firestore.FieldValue.serverTimestamp()
       });
-      await writeAdminLog("create_holy_sword_party",{name:autoName,month:m,day:d,hour:h,side});
+      await writeAdminLog("create_holy_sword_party",{name:autoName,month:m,day:d,hour:h,side,isFirstGroup});
     }
     closeRuinsCreateModal();
     return;
@@ -1227,9 +1251,10 @@ async function submitRuinsParty(){
       await partiesRef("triple_alliance").doc(state.editingRuinsPartyId).update({
         name:autoName,
         side,
-        timeUTC:utcDate
+        timeUTC:utcDate,
+        isFirstGroup
       });
-      await writeAdminLog("update_triple_alliance_party",{partyId:state.editingRuinsPartyId,name:autoName,month:m,day:d,hour:h,side});
+      await writeAdminLog("update_triple_alliance_party",{partyId:state.editingRuinsPartyId,name:autoName,month:m,day:d,hour:h,side,isFirstGroup});
     }else{
       await partiesRef("triple_alliance").add({
         type:"triple_alliance",
@@ -1239,9 +1264,10 @@ async function submitRuinsParty(){
         createdBy:state.currentUser,
         members:[],
         timeUTC:utcDate,
+        isFirstGroup,
         createdAt:firebase.firestore.FieldValue.serverTimestamp()
       });
-      await writeAdminLog("create_triple_alliance_party",{name:autoName,month:m,day:d,hour:h,side});
+      await writeAdminLog("create_triple_alliance_party",{name:autoName,month:m,day:d,hour:h,side,isFirstGroup});
     }
     closeRuinsCreateModal();
     return;
@@ -1676,7 +1702,7 @@ async function deleteParty(id){
   if(!confirm(msg))return;
 
   await ref.delete();
-  if(state.isAdmin)await writeAdminLog("delete_party",{partyId:id,name:d.name||"",ruinName:d.ruinName||"",side:d.side||""});
+  if(state.isAdmin)await writeAdminLog("delete_party",{partyId:id,name:d.name||"",ruinName:d.ruinName||"",side:d.side||"",isFirstGroup:!!d.isFirstGroup});
 }
 window.deleteParty=deleteParty;
 
