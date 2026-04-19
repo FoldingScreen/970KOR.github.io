@@ -25,6 +25,7 @@ const state={
   rearrangeRankingMap:{},
   rearrangeEntries:[],
   rearrangePublic:false,
+  rearrangeInputEnabled:false,
   holySwordSelectedSide:localStorage.getItem("holySwordSelectedSide")||"KOR",
   tripleAllianceSelectedSide:localStorage.getItem("tripleAllianceSelectedSide")||"KOR",
   editingRuinsPartyId:"",
@@ -178,7 +179,10 @@ async function ensureEventDocs(){
     const ref=eventRef(e.id);
     const snap=await ref.get();
     const payload={name:e.name,desc:e.desc};
-    if(!snap.exists&&e.id==="rearrange")payload.rankingPublic=false;
+    if(!snap.exists&&e.id==="rearrange"){
+      payload.rankingPublic=false;
+      payload.rearrangeInputEnabled=false;
+    }
     await ref.set(payload,{merge:true});
   }
 }
@@ -401,11 +405,24 @@ function updateEventActionButtons(){
   }
 
   if(state.currentEventId==="rearrange"){
-    el.rearrangeEditBtn.classList.remove("hidden");
-    if(state.isAdmin&&canToggleRearrangePublic){
-      el.rearrangePublicBtn.classList.remove("hidden");
-      el.rearrangePublicBtn.textContent=state.rearrangePublic?"순위 비공개":"순위 공개";
-      el.rearrangePublicBtn.onclick=toggleRearrangePublic;
+  el.rearrangeEditBtn.classList.remove("hidden");
+
+  if(state.rearrangeInputEnabled){
+    el.rearrangeEditBtn.textContent="내 진척도 입력";
+    el.rearrangeEditBtn.onclick=openMyRearrangeModal;
+  }else{
+    el.rearrangeEditBtn.textContent="입력 일시중지";
+    el.rearrangeEditBtn.onclick=()=>alert("현재 혼란 방지를 위해 개인 진척도 입력이 일시적으로 중지되어 있습니다.");
+  }
+
+  if(state.isAdmin&&canToggleRearrangePublic){
+    el.rearrangePublicBtn.classList.remove("hidden");
+    el.rearrangePublicBtn.textContent=state.rearrangePublic?"순위 비공개":"순위 공개";
+    el.rearrangePublicBtn.onclick=toggleRearrangePublic;
+
+    el.rearrangeManageBtn.classList.remove("hidden");
+    el.rearrangeManageBtn.textContent=state.rearrangeInputEnabled?"입력 비활성화":"입력 활성화";
+    el.rearrangeManageBtn.onclick=toggleRearrangeInputEnabled;
     }
   }
 }
@@ -518,6 +535,7 @@ function subscribeRearrange(){
   state.unsubscribeMeta=eventRef("rearrange").onSnapshot(doc=>{
     const d=doc.data()||{};
     state.rearrangePublic=!!d.rankingPublic;
+    state.rearrangeInputEnabled=!!d.rearrangeInputEnabled;
     updateEventActionButtons();
     renderRearrangeEvent();
   },err=>{
@@ -1002,7 +1020,9 @@ function renderRearrangeEvent(){
   const excludedEntries=state.rearrangeEntries.filter(v=>!isHiddenTestNickname(v.user)&&v.excluded);
   const displayedEntries=getDisplayedRearrangeEntries(activeEntries);
 
-  const mineCard=`<div class="party-card"><div class="party-title">내 진척도</div><div class="party-sub">빛나는 첨탑 최고 스테이지</div><div class="party-sub">현재 입력값: ${mine?escapeHtml(mine.stageText):"미입력"}</div><div class="party-sub">최종 수정: ${mine?formatDateTime(mine.updatedAt):"-"}</div><div class="card-actions"><button onclick="openMyRearrangeModal()">${mine?"수정":"입력"}</button></div></div>`;
+  const mineCard=state.rearrangeInputEnabled
+  ? `<div class="party-card"><div class="party-title">내 진척도</div><div class="party-sub">빛나는 첨탑 최고 스테이지</div><div class="party-sub">현재 입력값: ${mine?escapeHtml(mine.stageText):"미입력"}</div><div class="party-sub">최종 수정: ${mine?formatDateTime(mine.updatedAt):"-"}</div><div class="card-actions"><button onclick="openMyRearrangeModal()">${mine?"수정":"입력"}</button></div></div>`
+  : `<div class="party-card"><div class="party-title">내 진척도</div><div class="party-sub">빛나는 첨탑 최고 스테이지</div><div class="party-sub">현재 입력값: ${mine?escapeHtml(mine.stageText):"미입력"}</div><div class="party-sub">최종 수정: ${mine?formatDateTime(mine.updatedAt):"-"}</div><div class="party-sub">현재 개인 입력은 일시 중지되어 있습니다.</div><div class="card-actions"><button disabled>입력 일시중지</button></div></div>`;
 
   let rankingCard="";
   let guideCard="";
@@ -1626,6 +1646,20 @@ async function toggleRearrangePublic(){
   await writeAdminLog(next?"publish_rearrange_ranking":"hide_rearrange_ranking",{rankingPublic:next});
 }
 window.toggleRearrangePublic=toggleRearrangePublic;
+
+async function toggleRearrangeInputEnabled(){
+  if(!state.isAdmin||state.currentUser!=="병풍"){
+    alert("권한이 없습니다.");
+    return;
+  }
+  const next=!state.rearrangeInputEnabled;
+  const message=next?"개인 진척도 입력을 다시 활성화하시겠습니까?":"개인 진척도 입력을 비활성화하시겠습니까?";
+  if(!confirm(message))return;
+
+  await eventRef("rearrange").set({rearrangeInputEnabled:next},{merge:true});
+  await writeAdminLog(next?"enable_rearrange_input":"disable_rearrange_input",{rearrangeInputEnabled:next});
+}
+window.toggleRearrangeInputEnabled=toggleRearrangeInputEnabled;
 
 async function joinParty(id){
   const ref=partiesRef(state.currentEventId).doc(id);
