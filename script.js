@@ -1420,6 +1420,47 @@ function openLabyrinthDetail(id){
 }
 window.openLabyrinthDetail=openLabyrinthDetail;
 
+function renderFinalStageClearersCard(){
+  const activeStages=state.currentLabyrinthStages.filter(v=>v.isActive);
+  if(!activeStages.length)return "";
+
+  const finalStage=
+    activeStages.find(v=>v.type==="final") ||
+    [...activeStages].sort((a,b)=>b.order-a.order)[0];
+
+  if(!finalStage)return "";
+
+  const clearers=(state.currentLabyrinthPlayers||[])
+    .filter(player=>player?.stageClearedAtMap?.[String(finalStage.order)])
+    .sort((a,b)=>{
+      const aTime=a.stageClearedAtMap?.[String(finalStage.order)]||null;
+      const bTime=b.stageClearedAtMap?.[String(finalStage.order)]||null;
+      return getTimeValue(aTime)-getTimeValue(bTime);
+    });
+
+  if(!clearers.length){
+    return `
+      <div class="party-card">
+        <div class="party-title">최종장 클리어</div>
+        <div class="party-sub">아직 최종장을 클리어한 사람이 없습니다.</div>
+      </div>
+    `;
+  }
+
+  const lines=clearers.map((player,idx)=>{
+    const clearedAt=player.stageClearedAtMap?.[String(finalStage.order)]||null;
+    return `<div class="labyrinth-player-line">${idx+1}. ${escapeHtml(player.nickname)}(${escapeHtml(formatDateTime(clearedAt))})</div>`;
+  }).join("");
+
+  return `
+    <div class="party-card">
+      <div class="party-title">최종장 클리어</div>
+      <div class="party-sub">클리어 순서대로 표시됩니다.</div>
+      <div class="member-list">${lines}</div>
+    </div>
+  `;
+}
+
 function renderLabyrinthDetail(){
   const item=state.currentLabyrinthData;
   if(!item)return;
@@ -1433,7 +1474,7 @@ function renderLabyrinthDetail(){
   const stageEnteredAtMap=state.currentLabyrinthPlayer?.stageEnteredAtMap||{};
   const stageClearedAtMap=state.currentLabyrinthPlayer?.stageClearedAtMap||{};
 
-  let summaryHtml=`<div class="summary-card"><div class="muted">현재 단계</div><div class="big-number">${currentOrder}</div></div>`;
+    let summaryHtml=`<div class="summary-card"><div class="muted">현재 단계</div><div class="big-number">${currentOrder}</div></div>`;
   summaryHtml+=`<div class="summary-card"><div class="muted">완료 단계 수</div><div class="big-number">${clearedOrders.length}</div></div>`;
   summaryHtml+=`<div class="summary-card"><div class="muted">최근 진행</div><div class="big-number" style="font-size:20px;">${formatDateTime(state.currentLabyrinthPlayer?.updatedAt)}</div></div>`;
 
@@ -1442,7 +1483,7 @@ function renderLabyrinthDetail(){
   }
 
   el.labyrinthProgressSummary.classList.remove("hidden");
-  el.labyrinthProgressSummary.innerHTML=summaryHtml;
+  el.labyrinthProgressSummary.innerHTML=summaryHtml + renderFinalStageClearersCard();
 
   if(!state.currentLabyrinthStages.length){
     el.labyrinthStageList.innerHTML=isLabyrinthOwner(item)
