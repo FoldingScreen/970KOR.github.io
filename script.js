@@ -251,6 +251,7 @@ function clearSubscriptions(){
   if(state.unsubscribeLabyrinths){state.unsubscribeLabyrinths();state.unsubscribeLabyrinths=null;}
   if(state.unsubscribeLabyrinthStages){state.unsubscribeLabyrinthStages();state.unsubscribeLabyrinthStages=null;}
   if(state.unsubscribeLabyrinthPlayer){state.unsubscribeLabyrinthPlayer();state.unsubscribeLabyrinthPlayer=null;}
+  if(state.unsubscribeLabyrinthPlayers){state.unsubscribeLabyrinthPlayers();state.unsubscribeLabyrinthPlayers=null;}
 }
 
 async function ensureEventDocs(){
@@ -1379,9 +1380,11 @@ function openLabyrinthDetail(id){
   state.currentLabyrinthData=item;
   state.currentLabyrinthStages=[];
   state.currentLabyrinthPlayer=null;
+  state.currentLabyrinthPlayers=[];
 
   if(state.unsubscribeLabyrinthStages){state.unsubscribeLabyrinthStages();state.unsubscribeLabyrinthStages=null;}
   if(state.unsubscribeLabyrinthPlayer){state.unsubscribeLabyrinthPlayer();state.unsubscribeLabyrinthPlayer=null;}
+  if(state.unsubscribeLabyrinthPlayers){state.unsubscribeLabyrinthPlayers();state.unsubscribeLabyrinthPlayers=null;}
 
   showEscapeLabyrinthRoot();
   el.labyrinthHomeView?.classList.add("hidden");
@@ -1418,6 +1421,25 @@ function openLabyrinthDetail(id){
   },err=>{
     console.error(err);
     alert("진행 정보를 불러오는 중 오류가 발생했습니다.");
+  });
+
+  state.unsubscribeLabyrinthPlayers=labyrinthPlayersRef(id).onSnapshot(snap=>{
+    state.currentLabyrinthPlayers=snap.docs.map(doc=>{
+      const d=doc.data()||{};
+      return{
+        nickname:d.nickname||doc.id,
+        currentStageOrder:Number(d.currentStageOrder||0),
+        clearedStageOrders:Array.isArray(d.clearedStageOrders)?d.clearedStageOrders.map(Number):[],
+        stageEnteredAtMap:d.stageEnteredAtMap||{},
+        stageClearedAtMap:d.stageClearedAtMap||{},
+        createdAt:d.createdAt||null,
+        updatedAt:d.updatedAt||null
+      };
+    });
+    renderLabyrinthDetail();
+  },err=>{
+    console.error(err);
+    alert("참여자 정보를 불러오는 중 오류가 발생했습니다.");
   });
 }
 window.openLabyrinthDetail=openLabyrinthDetail;
