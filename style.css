@@ -119,6 +119,9 @@ img{
   padding:12px 14px;
   min-height:44px;
 }
+textarea.text-input{
+  resize:vertical;
+}
 
 .actions{
   display:flex;
@@ -264,6 +267,12 @@ img{
 .form-help{
   margin:8px 0 0;
   font-size:14px;
+}
+.checkbox-label{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  cursor:pointer;
 }
 
 /* ===== 자리재배치 입력 모달 ===== */
@@ -568,6 +577,298 @@ img{
   color:#9aa7bd;
 }
 
+/* ===== 미궁 시스템 ===== */
+.labyrinth-hero{
+  background:
+    radial-gradient(circle at top left, rgba(46,79,146,.22), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(104,167,255,.14), transparent 32%),
+    #07111e;
+}
+
+.labyrinth-home-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+  align-items:start;
+}
+
+.labyrinth-section{
+  min-width:0;
+}
+
+.section-header-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:8px;
+}
+
+.labyrinth-card-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:16px;
+}
+
+.labyrinth-card{
+  background:#07111e;
+  border:1px solid #1a2943;
+  border-radius:22px;
+  padding:18px;
+  box-shadow:0 0 0 1px rgba(255,255,255,.02) inset;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  min-height:220px;
+}
+
+.labyrinth-card-top{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+}
+
+.labyrinth-card-title{
+  margin:0;
+  font-size:22px;
+  font-weight:800;
+  line-height:1.2;
+  word-break:break-word;
+}
+
+.labyrinth-status-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:5px 10px;
+  border-radius:999px;
+  border:1px solid #29466f;
+  background:#0b1220;
+  color:#dbe7ff;
+  font-size:12px;
+  font-weight:700;
+  white-space:nowrap;
+}
+
+.labyrinth-status-badge.public{
+  border-color:#28558f;
+  background:#10203a;
+}
+.labyrinth-status-badge.private{
+  border-color:#5a3d2a;
+  background:#22160f;
+}
+.labyrinth-status-badge.closed{
+  border-color:#5a2a2a;
+  background:#261313;
+}
+
+.labyrinth-card-description{
+  color:#c8d5ea;
+  line-height:1.5;
+  font-size:15px;
+  min-height:48px;
+  word-break:break-word;
+}
+
+.labyrinth-card-meta{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  font-size:13px;
+  color:#92a3bf;
+}
+
+.labyrinth-card-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:auto;
+}
+
+.labyrinth-empty{
+  background:#07111e;
+  border:1px dashed #28405f;
+  border-radius:20px;
+  padding:24px;
+  text-align:center;
+  color:#8ea3c2;
+}
+
+.labyrinth-detail-top{
+  margin-bottom:16px;
+  background:
+    radial-gradient(circle at top right, rgba(81,123,214,.18), transparent 36%),
+    #07111e;
+}
+
+.labyrinth-detail-top h2{
+  margin:0 0 8px;
+  font-size:30px;
+  line-height:1.2;
+}
+
+.labyrinth-detail-description{
+  margin:10px 0 0;
+  line-height:1.6;
+  color:#c8d5ea;
+  white-space:pre-wrap;
+  word-break:break-word;
+}
+
+.labyrinth-progress-summary{
+  margin-bottom:16px;
+}
+
+.labyrinth-stage-card{
+  background:#07111e;
+  border:1px solid #1a2943;
+  border-radius:22px;
+  padding:20px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  box-shadow:0 0 0 1px rgba(255,255,255,.02) inset;
+}
+
+.labyrinth-stage-card.current{
+  border-color:#315a93;
+  box-shadow:0 0 0 1px rgba(104,167,255,.10) inset;
+}
+
+.labyrinth-stage-card.cleared{
+  border-color:#234a36;
+}
+
+.labyrinth-stage-header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.labyrinth-stage-title{
+  margin:0;
+  font-size:24px;
+  font-weight:800;
+  line-height:1.2;
+}
+
+.labyrinth-stage-order{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:56px;
+  padding:6px 10px;
+  border-radius:999px;
+  background:#0d1728;
+  border:1px solid #22304a;
+  color:#dce7ff;
+  font-size:12px;
+  font-weight:700;
+}
+
+.labyrinth-stage-story{
+  color:#c8d5ea;
+  line-height:1.6;
+  white-space:pre-wrap;
+  word-break:break-word;
+}
+
+.labyrinth-stage-question{
+  background:#0b1220;
+  border:1px solid #1f2d44;
+  border-radius:16px;
+  padding:14px;
+  color:#edf3ff;
+  line-height:1.65;
+  white-space:pre-wrap;
+  word-break:break-word;
+}
+
+.labyrinth-stage-input-wrap{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.labyrinth-stage-footer{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  align-items:center;
+  justify-content:space-between;
+}
+
+.labyrinth-stage-meta{
+  color:#8ea3c2;
+  font-size:13px;
+  line-height:1.4;
+}
+
+.labyrinth-clear-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:6px 12px;
+  border-radius:999px;
+  background:#10281b;
+  border:1px solid #28543f;
+  color:#d8ffea;
+  font-size:12px;
+  font-weight:700;
+}
+
+.labyrinth-lock-card{
+  background:#06101c;
+  border:1px dashed #28405f;
+  border-radius:22px;
+  padding:20px;
+  color:#8ea3c2;
+  text-align:center;
+}
+
+.labyrinth-maker-tools{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:8px;
+}
+
+.labyrinth-textarea{
+  min-height:120px;
+  line-height:1.55;
+}
+
+.labyrinth-player-line{
+  padding:6px 0;
+  border-bottom:1px solid rgba(255,255,255,.04);
+  color:#dfe9fb;
+  font-size:14px;
+  word-break:break-word;
+}
+.labyrinth-player-line:last-child{
+  border-bottom:none;
+}
+
+.labyrinth-small-note{
+  font-size:12px;
+  color:#8ea3c2;
+  line-height:1.45;
+}
+
+.labyrinth-inline-status{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  flex-wrap:wrap;
+}
+
+.labyrinth-dim{
+  opacity:.75;
+}
+
 /* ===== 반응형 ===== */
 @media (max-width:1100px){
   .party-grid{
@@ -577,6 +878,12 @@ img{
     grid-template-columns:1fr;
   }
   .home-event-grid{
+    grid-template-columns:1fr 1fr;
+  }
+  .labyrinth-home-grid{
+    grid-template-columns:1fr;
+  }
+  .labyrinth-card-grid{
     grid-template-columns:1fr 1fr;
   }
 }
@@ -612,6 +919,16 @@ img{
   .rank-edit-btn{
     padding:3px 4px;
     font-size:9px;
+  }
+
+  .labyrinth-card-grid{
+    grid-template-columns:1fr;
+  }
+  .labyrinth-detail-top h2{
+    font-size:26px;
+  }
+  .labyrinth-stage-title{
+    font-size:22px;
   }
 }
 
@@ -753,6 +1070,20 @@ img{
     height:22px;
     flex:0 0 22px;
   }
+
+  .labyrinth-detail-top h2{
+    font-size:24px;
+  }
+  .labyrinth-stage-title{
+    font-size:20px;
+  }
+  .labyrinth-stage-header{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+  .labyrinth-stage-order{
+    min-width:auto;
+  }
 }
 
 @media (max-width:480px){
@@ -780,5 +1111,15 @@ img{
   }
   .rank-table td{
     font-size:10px;
+  }
+
+  .labyrinth-card{
+    min-height:auto;
+  }
+  .labyrinth-card-title{
+    font-size:20px;
+  }
+  .labyrinth-card-description{
+    font-size:14px;
   }
 }
