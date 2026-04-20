@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>970KOR</title>
-  <link rel="stylesheet" href="style.css?v=tower-1" />
+  <link rel="stylesheet" href="style.css?v=maze-ui-1" />
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -68,16 +68,62 @@
             <h1 id="eventTitle">이벤트</h1>
             <div id="eventDesc" class="muted"></div>
           </div>
+
           <div class="actions right-wrap">
             <button id="createPartyBtn" onclick="createParty()">파티 생성</button>
             <button id="rearrangeEditBtn" class="hidden" onclick="openMyRearrangeModal()">내 진척도 입력</button>
             <button id="rearrangeManageBtn" class="hidden" onclick="openRearrangeRankEditModal()">순위표 행 추가</button>
             <button id="rearrangePublicBtn" class="hidden" onclick="toggleRearrangePublic()">순위 공개</button>
+
+            <!-- 방탈출 / 미궁 제작 전용 버튼 -->
+            <button id="createLabyrinthBtn" class="hidden" onclick="openCreateLabyrinthModal()">미궁 제작하기</button>
+            <button id="backToLabyrinthListBtn" class="hidden" onclick="openEscapeLabyrinthHome()">목록으로</button>
+
             <button onclick="showAllUsers()">전체 사용자</button>
           </div>
         </div>
 
         <div id="partyList" class="party-grid"></div>
+
+        <!-- 방탈출 전용 화면 -->
+        <section id="escapeLabyrinthScreen" class="hidden">
+          <div id="labyrinthHomeView" class="hidden">
+            <div class="hero card labyrinth-hero">
+              <h2>사바나의 첨탑</h2>
+              <p class="muted">
+                심심할 땐 미궁 탈출
+              </p>
+            </div>
+
+            <div class="labyrinth-home-grid">
+              <div class="labyrinth-section">
+                <div class="section-header-row">
+                  <h3 class="section-title">공개 미궁</h3>
+                </div>
+                <div id="publicLabyrinthList" class="labyrinth-card-grid"></div>
+              </div>
+
+              <div class="labyrinth-section">
+                <div class="section-header-row">
+                  <h3 class="section-title">내 미궁</h3>
+                </div>
+                <div id="myLabyrinthList" class="labyrinth-card-grid"></div>
+              </div>
+            </div>
+          </div>
+
+          <div id="labyrinthDetailView" class="hidden">
+            <div class="labyrinth-detail-top card">
+              <h2 id="labyrinthDetailTitle">미궁 제목</h2>
+              <div id="labyrinthDetailMeta" class="muted"></div>
+              <p id="labyrinthDetailDescription" class="labyrinth-detail-description"></p>
+            </div>
+
+            <div id="labyrinthProgressSummary" class="summary-grid labyrinth-progress-summary hidden"></div>
+
+            <div id="labyrinthStageList" class="party-grid"></div>
+          </div>
+        </section>
       </section>
     </main>
   </div>
@@ -263,6 +309,152 @@
     </div>
   </div>
 
-  <script src="script.js?v=tower-1"></script>
+  <!-- 미궁 생성 모달 -->
+  <div id="createLabyrinthModal" class="modal hidden">
+    <div class="modal-header">
+      <h3>미궁 제작하기</h3>
+      <button class="close-btn" type="button" onclick="closeCreateLabyrinthModal()">닫기</button>
+    </div>
+
+    <div class="form-group">
+      <label for="labyrinthTitleInput">미궁 제목</label>
+      <input id="labyrinthTitleInput" class="text-input" type="text" placeholder="예: 사바나의 첨탑" />
+    </div>
+
+    <div class="form-group">
+      <label for="labyrinthDescriptionInput">미궁 설명</label>
+      <textarea id="labyrinthDescriptionInput" class="text-input labyrinth-textarea" placeholder="미궁 소개를 입력하세요."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="labyrinthThumbnailTextInput">카드 한줄 문구</label>
+      <input id="labyrinthThumbnailTextInput" class="text-input" type="text" placeholder="예: 사바나가 지켜보는 탑" />
+    </div>
+
+    <div class="form-group">
+      <label class="checkbox-label">
+        <input type="checkbox" id="labyrinthPublicCheckbox" />
+        공개 미궁으로 설정
+      </label>
+    </div>
+
+    <div class="form-group">
+      <label class="checkbox-label">
+        <input type="checkbox" id="labyrinthOpenCheckbox" checked />
+        플레이 가능 상태로 설정
+      </label>
+    </div>
+
+    <div class="actions right-wrap">
+      <button type="button" onclick="submitCreateLabyrinth()">생성</button>
+    </div>
+  </div>
+
+  <!-- 미궁 수정 모달 -->
+  <div id="editLabyrinthModal" class="modal hidden">
+    <div class="modal-header">
+      <h3>미궁 정보 수정</h3>
+      <button class="close-btn" type="button" onclick="closeEditLabyrinthModal()">닫기</button>
+    </div>
+
+    <div class="form-group">
+      <label for="editLabyrinthTitleInput">미궁 제목</label>
+      <input id="editLabyrinthTitleInput" class="text-input" type="text" />
+    </div>
+
+    <div class="form-group">
+      <label for="editLabyrinthDescriptionInput">미궁 설명</label>
+      <textarea id="editLabyrinthDescriptionInput" class="text-input labyrinth-textarea"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="editLabyrinthThumbnailTextInput">카드 한줄 문구</label>
+      <input id="editLabyrinthThumbnailTextInput" class="text-input" type="text" />
+    </div>
+
+    <div class="form-group">
+      <label class="checkbox-label">
+        <input type="checkbox" id="editLabyrinthPublicCheckbox" />
+        공개 미궁으로 설정
+      </label>
+    </div>
+
+    <div class="form-group">
+      <label class="checkbox-label">
+        <input type="checkbox" id="editLabyrinthOpenCheckbox" />
+        플레이 가능 상태로 설정
+      </label>
+    </div>
+
+    <div class="actions right-wrap">
+      <button type="button" onclick="submitEditLabyrinth()">저장</button>
+    </div>
+  </div>
+
+  <!-- 단계 생성/수정 모달 -->
+  <div id="editStageModal" class="modal hidden">
+    <div class="modal-header">
+      <h3 id="editStageModalTitle">단계 편집</h3>
+      <button class="close-btn" type="button" onclick="closeEditStageModal()">닫기</button>
+    </div>
+
+    <div class="form-group">
+      <label for="stageOrderInput">순서</label>
+      <input id="stageOrderInput" class="text-input" type="number" min="0" step="1" placeholder="예: 0" />
+    </div>
+
+    <div class="form-group">
+      <label for="stageTitleInput">단계 제목</label>
+      <input id="stageTitleInput" class="text-input" type="text" placeholder="예: 첨탑 입구 / 1층" />
+    </div>
+
+    <div class="form-group">
+      <label for="stageTypeSelect">단계 유형</label>
+      <select id="stageTypeSelect">
+        <option value="entry">입장형</option>
+        <option value="question">문제형</option>
+        <option value="final">최종형</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="stageStoryInput">스토리</label>
+      <textarea id="stageStoryInput" class="text-input labyrinth-textarea" placeholder="단계 소개/스토리를 입력하세요."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="stageQuestionInput">문제</label>
+      <textarea id="stageQuestionInput" class="text-input labyrinth-textarea" placeholder="문제 내용을 입력하세요."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="stageAnswerInput">정답</label>
+      <input id="stageAnswerInput" class="text-input" type="text" placeholder="정답 입력" />
+    </div>
+
+    <div class="form-group">
+      <label for="stagePlaceholderInput">입력창 안내문</label>
+      <input id="stagePlaceholderInput" class="text-input" type="text" placeholder="예: 비밀번호를 입력하세요." />
+    </div>
+
+    <div class="form-group">
+      <label for="stageSuccessMessageInput">성공 메시지</label>
+      <textarea id="stageSuccessMessageInput" class="text-input labyrinth-textarea" placeholder="통과 시 보여줄 문구"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="checkbox-label">
+        <input type="checkbox" id="stageActiveCheckbox" checked />
+        활성 단계
+      </label>
+    </div>
+
+    <div class="actions right-wrap">
+      <button id="deleteStageBtn" type="button" class="hidden" onclick="deleteStage()">삭제</button>
+      <button type="button" onclick="submitStage()">저장</button>
+    </div>
+  </div>
+
+  <script src="script.js?v=maze-ui-1"></script>
 </body>
 </html>
