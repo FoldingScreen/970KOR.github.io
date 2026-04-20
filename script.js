@@ -1464,19 +1464,6 @@ function renderFinalStageClearersCard(){
   `;
 }
 
-  const lines=clearers.map((player,idx)=>{
-    const clearedAt=player.stageClearedAtMap?.[String(finalStage.order)]||null;
-    return `<div class="labyrinth-player-line">${idx+1}. ${escapeHtml(player.nickname)}(${escapeHtml(formatDateTime(clearedAt))})</div>`;
-  }).join("");
-
-  return `
-    <div class="party-card">
-      <div class="party-title">최종장 클리어</div>
-      <div class="party-sub">클리어 순서대로 표시됩니다.</div>
-      <div class="member-list">${lines}</div>
-    </div>
-  `;
-}
 
 function renderLabyrinthDetail(){
   const item=state.currentLabyrinthData;
