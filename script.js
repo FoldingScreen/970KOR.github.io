@@ -651,7 +651,7 @@ function getRearrangeColumn(rank){
   if(rank<=18)return 3;
   if(rank<=28)return 1;
   if(rank<=42)return 2;
-  if(rank<=59)return 4;
+  if(rank<=60)return 4;
   return 5;
 }
 function getLayoutLabel(rank){return `${getRearrangeColumn(rank)}열`;}
@@ -705,7 +705,7 @@ function parseNoteRule(note){
 }
 
 function getDisplayedRearrangeEntries(entries){
-  const capacities={1:10,2:14,3:18,4:17,5:Number.MAX_SAFE_INTEGER};
+  const capacities={1:10,2:14,3:18,4:18,5:Number.MAX_SAFE_INTEGER};
   const primaryColumnOrder=[3,1,2,4];
 
   const sorted=[...entries];
