@@ -28,6 +28,7 @@ const state={
   unsubscribeLabyrinthPlayers:null,
 
   labyrinths:[],
+  labyrinthPlayerSummaryMap:{},
   currentLabyrinthId:"",
   currentLabyrinthData:null,
   currentLabyrinthStages:[],
@@ -1167,10 +1168,12 @@ function subscribeEscapeLabyrinthHome(){
   state.currentLabyrinthData=null;
   state.currentLabyrinthStages=[];
   state.currentLabyrinthPlayer=null;
+  state.currentLabyrinthPlayers=[];
+  state.labyrinthPlayerSummaryMap={};
   showEscapeLabyrinthRoot();
   openEscapeLabyrinthHome(true);
 
-  state.unsubscribeLabyrinths=labyrinthsRef().onSnapshot(snap=>{
+  state.unsubscribeLabyrinths=labyrinthsRef().onSnapshot(async snap=>{
     state.labyrinths=snap.docs.map(doc=>{
       const d=doc.data()||{};
       return{
@@ -1185,6 +1188,62 @@ function subscribeEscapeLabyrinthHome(){
         updatedAt:d.updatedAt||null
       };
     }).sort((a,b)=>getTimeValue(b.updatedAt||b.createdAt)-getTimeValue(a.updatedAt||a.createdAt));
+
+    const summaryMap={};
+
+    await Promise.all(
+      state.labyrinths.map(async lab=>{
+        try{
+          const [playersSnap, stagesSnap]=await Promise.all([
+            labyrinthPlayersRef(lab.id).get(),
+            labyrinthStagesRef(lab.id).get()
+          ]);
+
+          const activeStages=stagesSnap.docs
+            .map(doc=>({id:doc.id,...(doc.data()||{})}))
+            .filter(stage=>stage.isActive!==false)
+            .map(stage=>({
+              order:Number(stage.order||0),
+              type:stage.type||"question"
+            }))
+            .sort((a,b)=>a.order-b.order);
+
+          const finalStage=
+            activeStages.find(v=>v.type==="final") ||
+            [...activeStages].sort((a,b)=>b.order-a.order)[0] ||
+            null;
+
+          let isCleared=false;
+          let isPlaying=false;
+
+          playersSnap.forEach(doc=>{
+            const d=doc.data()||{};
+            const nickname=d.nickname||doc.id;
+
+            if(nickname===state.currentUser){
+              if(finalStage && d.stageClearedAtMap?.[String(finalStage.order)]){
+                isCleared=true;
+              }else if(Number(d.currentStageOrder||0)>=0){
+                isPlaying=true;
+              }
+            }
+          });
+
+          summaryMap[lab.id]={
+            isCleared,
+            isPlaying:!isCleared && isPlaying
+          };
+        }catch(err){
+          console.error(err);
+          summaryMap[lab.id]={
+            isCleared:false,
+            isPlaying:false
+          };
+        }
+      })
+    );
+
+    state.labyrinthPlayerSummaryMap=summaryMap;
 
     if(state.currentLabyrinthId){
       const found=state.labyrinths.find(v=>v.id===state.currentLabyrinthId)||null;
@@ -1239,10 +1298,21 @@ function renderLabyrinthCard(item){
   const statusClass=item.isPublic?(item.isOpen?"public":"closed"):"private";
   const statusText=item.isPublic?(item.isOpen?"공개":"공개중지"):"비공개";
   const desc=item.thumbnailText||item.description||"미궁 설명이 없습니다.";
+
+  const progress=state.labyrinthPlayerSummaryMap?.[item.id]||{isCleared:false,isPlaying:false};
+  const progressBadge=progress.isCleared
+    ? `<span class="labyrinth-status-badge public">완료</span>`
+    : progress.isPlaying
+      ? `<span class="labyrinth-status-badge private">플레이중</span>`
+      : "";
+
   return `<div class="labyrinth-card">
     <div class="labyrinth-card-top">
       <h3 class="labyrinth-card-title">${escapeHtml(item.title||"제목 없음")}</h3>
-      <span class="labyrinth-status-badge ${statusClass}">${escapeHtml(statusText)}</span>
+      <div class="labyrinth-inline-status">
+        <span class="labyrinth-status-badge ${statusClass}">${escapeHtml(statusText)}</span>
+        ${progressBadge}
+      </div>
     </div>
     <div class="labyrinth-card-description">${escapeHtml(desc)}</div>
     <div class="labyrinth-card-meta">
@@ -1499,22 +1569,21 @@ function renderLabyrinthDetail(){
   el.labyrinthDetailMeta.innerHTML=`제작자: ${escapeHtml(item.creator||"-")} · ${item.isPublic?"공개":"비공개"} · ${item.isOpen?"플레이 가능":"플레이 중지"}`;
   el.labyrinthDetailDescription.textContent=item.description||"설명이 없습니다.";
 
-  const currentOrder=Number(state.currentLabyrinthPlayer?.currentStageOrder||0);
+    const currentOrder=Number(state.currentLabyrinthPlayer?.currentStageOrder||0);
   const clearedOrders=Array.isArray(state.currentLabyrinthPlayer?.clearedStageOrders)?state.currentLabyrinthPlayer.clearedStageOrders.map(Number):[];
   const stageEnteredAtMap=state.currentLabyrinthPlayer?.stageEnteredAtMap||{};
   const stageClearedAtMap=state.currentLabyrinthPlayer?.stageClearedAtMap||{};
 
-    let summaryHtml=`<div class="summary-card"><div class="muted">현재 단계</div><div class="big-number">${currentOrder}</div></div>`;
-  summaryHtml+=`<div class="summary-card"><div class="muted">완료 단계 수</div><div class="big-number">${clearedOrders.length}</div></div>`;
-  summaryHtml+=`<div class="summary-card"><div class="muted">최근 진행</div><div class="big-number" style="font-size:20px;">${formatDateTime(state.currentLabyrinthPlayer?.updatedAt)}</div></div>`;
-
   if(isLabyrinthOwner(item)){
-    summaryHtml+=`<div class="summary-card"><div class="muted">제작자 도구</div><div class="labyrinth-maker-tools"><button onclick="openEditLabyrinthModal('${escapeJs(item.id)}')">미궁 정보 수정</button><button onclick="openEditStageModal()">단계 추가</button></div></div>`;
+    el.labyrinthProgressSummary.classList.remove("hidden");
+    el.labyrinthProgressSummary.innerHTML=
+      `<div class="summary-card"><div class="muted">제작자 도구</div><div class="labyrinth-maker-tools"><button onclick="openEditLabyrinthModal('${escapeJs(item.id)}')">미궁 정보 수정</button><button onclick="openEditStageModal()">단계 추가</button></div></div>` +
+      renderFinalStageClearersCard();
+  }else{
+    el.labyrinthProgressSummary.classList.remove("hidden");
+    el.labyrinthProgressSummary.innerHTML=renderFinalStageClearersCard();
   }
-
-  el.labyrinthProgressSummary.classList.remove("hidden");
-  el.labyrinthProgressSummary.innerHTML=summaryHtml + renderFinalStageClearersCard();
-
+  
   if(!state.currentLabyrinthStages.length){
     el.labyrinthStageList.innerHTML=isLabyrinthOwner(item)
       ? `<div class="labyrinth-empty">아직 단계가 없습니다.<br><br><button onclick="openEditStageModal()">첫 단계 만들기</button></div>`
