@@ -25,6 +25,16 @@ const state={
   unsubscribeLabyrinths:null,
   unsubscribeLabyrinthStages:null,
   unsubscribeLabyrinthPlayer:null,
+  unsubscribeLabyrinthPlayers:null,
+
+  labyrinths:[],
+  currentLabyrinthId:"",
+  currentLabyrinthData:null,
+  currentLabyrinthStages:[],
+  currentLabyrinthPlayer:null,
+  currentLabyrinthPlayers:[],
+  editingLabyrinthId:"",
+  editingStageId:"",
 
   parties:[],
   rearrangeProgressEntries:[],
@@ -39,14 +49,6 @@ const state={
   editingRuinsPartyId:"",
   editingRearrangeRankUser:"",
   editingHolySwordPartyId:"",
-
-  labyrinths:[],
-  currentLabyrinthId:"",
-  currentLabyrinthData:null,
-  currentLabyrinthStages:[],
-  currentLabyrinthPlayer:null,
-  editingLabyrinthId:"",
-  editingStageId:"",
 
   events:[
     {id:"viking",name:"바이킹의 역습",desc:"'전하 퇴청하시옵소서'를 영어로? 바이킹~ 엌ㅋㅋ"},
