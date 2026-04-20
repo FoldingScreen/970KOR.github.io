@@ -36,7 +36,8 @@ const state={
     {id:"ruins",name:"유적 쟁탈",desc:"가장 강력한 유적은? 무적 엌ㅋㅋㅋ"},
     {id:"holy_sword",name:"성검 쟁탈",desc:"검이 정색하면? 검정색 엌ㅋㅋㅋ"},
     {id:"triple_alliance",name:"삼대 연맹전",desc:"소속별 참가 여부만 관리"},
-    {id:"rearrange",name:"자리 재배치",desc:"자동차에서 가장 시원한 자리는? 차가운데 엌ㅋㅋ"}
+    {id:"rearrange",name:"자리 재배치",desc:"자동차에서 가장 시원한 자리는? 차가운데 엌ㅋㅋ"},
+    {id:"escape_labyrinth",name:"사바나의 첨탑",desc:"곧 공개 예정"}
   ]
 };
 
@@ -123,6 +124,7 @@ function setTopTabs(active){
   if(active==="holy_sword")document.querySelectorAll(".tab-btn")[3]?.classList.add("active");
   if(active==="triple_alliance")document.querySelectorAll(".tab-btn")[4]?.classList.add("active");
   if(active==="rearrange")document.querySelectorAll(".tab-btn")[5]?.classList.add("active");
+  if(active==="escape_labyrinth")document.querySelectorAll(".tab-btn")[6]?.classList.add("active");
 }
 
 function updateUserBadge(){
@@ -428,6 +430,11 @@ function updateEventActionButtons(){
 }
 
 async function openEvent(id){
+  if(id==="escape_labyrinth"&&state.currentUser!=="병풍"){
+    alert("곧 공개 예정");
+    return;
+  }
+
   state.currentEventId=id;
   localStorage.setItem("partyAppEvent",id);
   setTopTabs(id);
