@@ -20,10 +20,6 @@ const state={
   unsubscribeParties:null,
   unsubscribeMeta:null,
   unsubscribeRanking:null,
-  unsubscribeLabyrinths:null,
-  unsubscribeCurrentLabyrinth:null,
-  unsubscribeStages:null,
-  unsubscribePlayer:null,
   parties:[],
   rearrangeProgressEntries:[],
   rearrangeRankingMap:{},
@@ -35,20 +31,13 @@ const state={
   editingRuinsPartyId:"",
   editingRearrangeRankUser:"",
   editingHolySwordPartyId:"",
-  labyrinths:[],
-  currentLabyrinthId:"",
-  currentLabyrinth:null,
-  currentLabyrinthStages:[],
-  currentLabyrinthPlayer:null,
-  editingLabyrinthId:"",
-  editingStageId:"",
   events:[
     {id:"viking",name:"바이킹의 역습",desc:"'전하 퇴청하시옵소서'를 영어로? 바이킹~ 엌ㅋㅋ"},
     {id:"ruins",name:"유적 쟁탈",desc:"가장 강력한 유적은? 무적 엌ㅋㅋㅋ"},
     {id:"holy_sword",name:"성검 쟁탈",desc:"검이 정색하면? 검정색 엌ㅋㅋㅋ"},
     {id:"triple_alliance",name:"삼대 연맹전",desc:"소속별 참가 여부만 관리"},
     {id:"rearrange",name:"자리 재배치",desc:"자동차에서 가장 시원한 자리는? 차가운데 엌ㅋㅋ"},
-    {id:"escape_labyrinth",name:"사바나의 첨탑",desc:"누구나 미궁을 만들고 플레이할 수 있습니다."}
+    {id:"escape_labyrinth",name:"사바나의 첨탑",desc:"곧 공개 예정"}
   ]
 };
 
@@ -71,8 +60,6 @@ const el={
   rearrangeEditBtn:document.getElementById("rearrangeEditBtn"),
   rearrangeManageBtn:document.getElementById("rearrangeManageBtn"),
   rearrangePublicBtn:document.getElementById("rearrangePublicBtn"),
-  createLabyrinthBtn:document.getElementById("createLabyrinthBtn"),
-  backToLabyrinthListBtn:document.getElementById("backToLabyrinthListBtn"),
   modalOverlay:document.getElementById("modalOverlay"),
   userModal:document.getElementById("userModal"),
   joinedUsers:document.getElementById("joinedUsers"),
@@ -106,66 +93,15 @@ const el={
   holySwordAreaUserSelect:document.getElementById("holySwordAreaUserSelect"),
   holySwordAreaSelect:document.getElementById("holySwordAreaSelect"),
   holySwordAreaAssignmentList:document.getElementById("holySwordAreaAssignmentList"),
-  firstGroupCheckbox:document.getElementById("firstGroupCheckbox"),
-
-  escapeLabyrinthScreen:document.getElementById("escapeLabyrinthScreen"),
-  labyrinthHomeView:document.getElementById("labyrinthHomeView"),
-  labyrinthDetailView:document.getElementById("labyrinthDetailView"),
-  publicLabyrinthList:document.getElementById("publicLabyrinthList"),
-  myLabyrinthList:document.getElementById("myLabyrinthList"),
-  labyrinthDetailTitle:document.getElementById("labyrinthDetailTitle"),
-  labyrinthDetailMeta:document.getElementById("labyrinthDetailMeta"),
-  labyrinthDetailDescription:document.getElementById("labyrinthDetailDescription"),
-  labyrinthProgressSummary:document.getElementById("labyrinthProgressSummary"),
-  labyrinthStageList:document.getElementById("labyrinthStageList"),
-
-  createLabyrinthModal:document.getElementById("createLabyrinthModal"),
-  labyrinthTitleInput:document.getElementById("labyrinthTitleInput"),
-  labyrinthDescriptionInput:document.getElementById("labyrinthDescriptionInput"),
-  labyrinthThumbnailTextInput:document.getElementById("labyrinthThumbnailTextInput"),
-  labyrinthPublicCheckbox:document.getElementById("labyrinthPublicCheckbox"),
-  labyrinthOpenCheckbox:document.getElementById("labyrinthOpenCheckbox"),
-
-  editLabyrinthModal:document.getElementById("editLabyrinthModal"),
-  editLabyrinthTitleInput:document.getElementById("editLabyrinthTitleInput"),
-  editLabyrinthDescriptionInput:document.getElementById("editLabyrinthDescriptionInput"),
-  editLabyrinthThumbnailTextInput:document.getElementById("editLabyrinthThumbnailTextInput"),
-  editLabyrinthPublicCheckbox:document.getElementById("editLabyrinthPublicCheckbox"),
-  editLabyrinthOpenCheckbox:document.getElementById("editLabyrinthOpenCheckbox"),
-
-  editStageModal:document.getElementById("editStageModal"),
-  editStageModalTitle:document.getElementById("editStageModalTitle"),
-  stageOrderInput:document.getElementById("stageOrderInput"),
-  stageTitleInput:document.getElementById("stageTitleInput"),
-  stageTypeSelect:document.getElementById("stageTypeSelect"),
-  stageStoryInput:document.getElementById("stageStoryInput"),
-  stageQuestionInput:document.getElementById("stageQuestionInput"),
-  stageAnswerInput:document.getElementById("stageAnswerInput"),
-  stagePlaceholderInput:document.getElementById("stagePlaceholderInput"),
-  stageSuccessMessageInput:document.getElementById("stageSuccessMessageInput"),
-  stageActiveCheckbox:document.getElementById("stageActiveCheckbox"),
-  deleteStageBtn:document.getElementById("deleteStageBtn")
+  firstGroupCheckbox:document.getElementById("firstGroupCheckbox")
 };
 
 function escapeHtml(s){return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
 function escapeJs(s){return String(s??"").replace(/\\/g,"\\\\").replace(/'/g,"\\'");}
-function escapeAttr(s){return escapeHtml(s);}
 function normalizeMembers(m){return Array.isArray(m)?m.filter(v=>typeof v==="string"&&v.trim()!==""):[];}
 function normalizeAssignments(v){return Array.isArray(v)?v.filter(x=>x&&typeof x.user==="string"&&typeof x.area==="string"):[];}
-function normalizeNumberArray(v){return Array.isArray(v)?v.map(x=>Number(x)).filter(x=>Number.isInteger(x)&&x>=0):[];}
-function normalizeObject(v){return v&&typeof v==="object"&&!Array.isArray(v)?v:{};}
 function isHiddenTestNickname(name){const lowered=String(name||"").trim().toLowerCase();return TEST_HIDDEN_PREFIXES.some(prefix=>lowered.startsWith(String(prefix).toLowerCase()));}
-function slugifyId(text){
-  const base=String(text||"").trim().toLowerCase()
-    .replace(/\s+/g,"-")
-    .replace(/[^a-z0-9가-힣_-]/g,"")
-    .replace(/-+/g,"-")
-    .replace(/^-|-$/g,"");
-  return base||`labyrinth-${Date.now()}`;
-}
-function normalizeAnswer(value){
-  return String(value||"").trim().toLowerCase().replace(/\s+/g," ");
-}
+
 function showOnly(name){
   if(el.loginScreen)el.loginScreen.classList.add("hidden");
   if(el.homeScreen)el.homeScreen.classList.add("hidden");
@@ -174,23 +110,11 @@ function showOnly(name){
   if(name==="home"&&el.homeScreen)el.homeScreen.classList.remove("hidden");
   if(name==="event"&&el.eventScreen)el.eventScreen.classList.remove("hidden");
 }
-function showEventContentMode(mode){
-  if(el.partyList)el.partyList.classList.add("hidden");
-  if(el.escapeLabyrinthScreen)el.escapeLabyrinthScreen.classList.add("hidden");
-  if(mode==="party"&&el.partyList)el.partyList.classList.remove("hidden");
-  if(mode==="labyrinth"&&el.escapeLabyrinthScreen)el.escapeLabyrinthScreen.classList.remove("hidden");
-}
 
 function eventRef(id){return db.collection("events").doc(id);}
 function partiesRef(id){return eventRef(id).collection("parties");}
 function rearrangeProgressRef(){return eventRef("rearrange").collection("progress");}
 function rearrangeRankingRef(){return eventRef("rearrange").collection("ranking");}
-
-function labyrinthsRef(){return eventRef("escape_labyrinth").collection("labyrinths");}
-function labyrinthRef(id){return labyrinthsRef().doc(id);}
-function labyrinthStagesRef(id){return labyrinthRef(id).collection("stages");}
-function labyrinthPlayersRef(id){return labyrinthRef(id).collection("players");}
-function labyrinthPlayerRef(id,nickname){return labyrinthPlayersRef(id).doc(nickname);}
 
 function setTopTabs(active){
   document.querySelectorAll(".tab-btn").forEach(btn=>btn.classList.remove("active"));
@@ -226,10 +150,7 @@ function syncOverlay(){
     (el.rearrangeModal&&!el.rearrangeModal.classList.contains("hidden"))||
     (el.exampleImageModal&&!el.exampleImageModal.classList.contains("hidden"))||
     (el.rearrangeRankEditModal&&!el.rearrangeRankEditModal.classList.contains("hidden"))||
-    (el.holySwordAreaModal&&!el.holySwordAreaModal.classList.contains("hidden"))||
-    (el.createLabyrinthModal&&!el.createLabyrinthModal.classList.contains("hidden"))||
-    (el.editLabyrinthModal&&!el.editLabyrinthModal.classList.contains("hidden"))||
-    (el.editStageModal&&!el.editStageModal.classList.contains("hidden"));
+    (el.holySwordAreaModal&&!el.holySwordAreaModal.classList.contains("hidden"));
 
   if(!el.modalOverlay)return;
   if(hasOpenModal)el.modalOverlay.classList.remove("hidden");
@@ -245,25 +166,14 @@ if(el.modalOverlay){
     closeRearrangeModal();
     closeRearrangeRankEditModal();
     closeHolySwordAreaModal();
-    closeCreateLabyrinthModal();
-    closeEditLabyrinthModal();
-    closeEditStageModal();
     syncOverlay();
   });
-}
-
-function clearEscapeSubscriptions(){
-  if(state.unsubscribeLabyrinths){state.unsubscribeLabyrinths();state.unsubscribeLabyrinths=null;}
-  if(state.unsubscribeCurrentLabyrinth){state.unsubscribeCurrentLabyrinth();state.unsubscribeCurrentLabyrinth=null;}
-  if(state.unsubscribeStages){state.unsubscribeStages();state.unsubscribeStages=null;}
-  if(state.unsubscribePlayer){state.unsubscribePlayer();state.unsubscribePlayer=null;}
 }
 
 function clearSubscriptions(){
   if(state.unsubscribeParties){state.unsubscribeParties();state.unsubscribeParties=null;}
   if(state.unsubscribeMeta){state.unsubscribeMeta();state.unsubscribeMeta=null;}
   if(state.unsubscribeRanking){state.unsubscribeRanking();state.unsubscribeRanking=null;}
-  clearEscapeSubscriptions();
 }
 
 async function ensureEventDocs(){
@@ -400,16 +310,8 @@ async function logout(){
   state.editingRuinsPartyId="";
   state.editingRearrangeRankUser="";
   state.editingHolySwordPartyId="";
-  state.labyrinths=[];
-  state.currentLabyrinthId="";
-  state.currentLabyrinth=null;
-  state.currentLabyrinthStages=[];
-  state.currentLabyrinthPlayer=null;
-  state.editingLabyrinthId="";
-  state.editingStageId="";
   localStorage.removeItem("partyAppUser");
   localStorage.removeItem("partyAppEvent");
-  localStorage.removeItem("escapeLabyrinthId");
   updateUserBadge();
   updateEventActionButtons();
   showOnly("login");
@@ -435,11 +337,7 @@ async function tryAutoLogin(){
     await ensureEventDocs();
 
     const savedEvent=localStorage.getItem("partyAppEvent");
-    if(savedEvent==="escape_labyrinth"){
-      await openEvent(savedEvent);
-      const savedLabyrinthId=localStorage.getItem("escapeLabyrinthId");
-      if(savedLabyrinthId)openLabyrinth(savedLabyrinthId);
-    }else if(savedEvent)openEvent(savedEvent);
+    if(savedEvent)openEvent(savedEvent);
     else goHome();
   }catch(e){
     console.error(e);
@@ -465,12 +363,7 @@ function renderHomeEventCards(){
 async function goHome(){
   clearSubscriptions();
   state.currentEventId="";
-  state.currentLabyrinthId="";
-  state.currentLabyrinth=null;
-  state.currentLabyrinthStages=[];
-  state.currentLabyrinthPlayer=null;
   localStorage.removeItem("partyAppEvent");
-  localStorage.removeItem("escapeLabyrinthId");
   setTopTabs("home");
   updateEventActionButtons();
   renderHomeEventCards();
@@ -480,14 +373,12 @@ async function goHome(){
 window.goHome=goHome;
 
 function updateEventActionButtons(){
-  if(!el.createPartyBtn||!el.rearrangeEditBtn||!el.rearrangePublicBtn||!el.rearrangeManageBtn||!el.createLabyrinthBtn||!el.backToLabyrinthListBtn)return;
+  if(!el.createPartyBtn||!el.rearrangeEditBtn||!el.rearrangePublicBtn||!el.rearrangeManageBtn)return;
 
   el.createPartyBtn.classList.add("hidden");
   el.rearrangeEditBtn.classList.add("hidden");
   el.rearrangePublicBtn.classList.add("hidden");
   el.rearrangeManageBtn.classList.add("hidden");
-  el.createLabyrinthBtn.classList.add("hidden");
-  el.backToLabyrinthListBtn.classList.add("hidden");
 
   const canToggleRearrangePublic=state.currentUser==="병풍";
 
@@ -516,40 +407,34 @@ function updateEventActionButtons(){
   }
 
   if(state.currentEventId==="rearrange"){
-    el.rearrangeEditBtn.classList.remove("hidden");
+  el.rearrangeEditBtn.classList.remove("hidden");
 
-    if(state.rearrangeInputEnabled){
-      el.rearrangeEditBtn.textContent="내 진척도 입력";
-      el.rearrangeEditBtn.onclick=openMyRearrangeModal;
-    }else{
-      el.rearrangeEditBtn.textContent="입력 일시중지";
-      el.rearrangeEditBtn.onclick=()=>alert("현재 혼란 방지를 위해 개인 진척도 입력이 일시적으로 중지되어 있습니다.");
-    }
-
-    if(state.isAdmin&&canToggleRearrangePublic){
-      el.rearrangePublicBtn.classList.remove("hidden");
-      el.rearrangePublicBtn.textContent=state.rearrangePublic?"순위 비공개":"순위 공개";
-      el.rearrangePublicBtn.onclick=toggleRearrangePublic;
-
-      el.rearrangeManageBtn.classList.remove("hidden");
-      el.rearrangeManageBtn.textContent=state.rearrangeInputEnabled?"입력 비활성화":"입력 활성화";
-      el.rearrangeManageBtn.onclick=toggleRearrangeInputEnabled;
-    }
+  if(state.rearrangeInputEnabled){
+    el.rearrangeEditBtn.textContent="내 진척도 입력";
+    el.rearrangeEditBtn.onclick=openMyRearrangeModal;
+  }else{
+    el.rearrangeEditBtn.textContent="입력 일시중지";
+    el.rearrangeEditBtn.onclick=()=>alert("현재 혼란 방지를 위해 개인 진척도 입력이 일시적으로 중지되어 있습니다.");
   }
 
-  if(state.currentEventId==="escape_labyrinth"){
-    el.createLabyrinthBtn.classList.remove("hidden");
-    el.createLabyrinthBtn.textContent="미궁 제작하기";
-    el.createLabyrinthBtn.onclick=openCreateLabyrinthModal;
-    if(state.currentLabyrinthId){
-      el.backToLabyrinthListBtn.classList.remove("hidden");
-      el.backToLabyrinthListBtn.textContent="목록으로";
-      el.backToLabyrinthListBtn.onclick=openEscapeLabyrinthHome;
+  if(state.isAdmin&&canToggleRearrangePublic){
+    el.rearrangePublicBtn.classList.remove("hidden");
+    el.rearrangePublicBtn.textContent=state.rearrangePublic?"순위 비공개":"순위 공개";
+    el.rearrangePublicBtn.onclick=toggleRearrangePublic;
+
+    el.rearrangeManageBtn.classList.remove("hidden");
+    el.rearrangeManageBtn.textContent=state.rearrangeInputEnabled?"입력 비활성화":"입력 활성화";
+    el.rearrangeManageBtn.onclick=toggleRearrangeInputEnabled;
     }
   }
 }
 
 async function openEvent(id){
+  if(id==="escape_labyrinth"&&state.currentUser!=="병풍"){
+    alert("곧 공개 예정");
+    return;
+  }
+
   state.currentEventId=id;
   localStorage.setItem("partyAppEvent",id);
   setTopTabs(id);
@@ -559,670 +444,10 @@ async function openEvent(id){
   updateEventActionButtons();
   showOnly("event");
 
-  if(id==="escape_labyrinth"){
-    showEventContentMode("labyrinth");
-    openEscapeLabyrinthHome();
-    return;
-  }
-
-  showEventContentMode("party");
-
   if(id==="rearrange")subscribeRearrange();
   else subscribeParties();
 }
 window.openEvent=openEvent;
-
-/* =========================
-   Escape Labyrinth
-========================= */
-
-function sortLabyrinths(a,b){
-  return getTimeValue(b.updatedAt)-getTimeValue(a.updatedAt)||String(a.title||"").localeCompare(String(b.title||""),"ko");
-}
-function sortStages(a,b){
-  return Number(a.order||0)-Number(b.order||0)||String(a.title||"").localeCompare(String(b.title||""),"ko");
-}
-function getVisiblePublicLabyrinths(){
-  return state.labyrinths.filter(v=>v.isPublic||v.creator===state.currentUser);
-}
-function getMyLabyrinths(){
-  return state.labyrinths.filter(v=>v.creator===state.currentUser);
-}
-function isLabyrinthOwner(labyrinth){
-  return !!labyrinth&&labyrinth.creator===state.currentUser;
-}
-function getActiveStages(){
-  return [...state.currentLabyrinthStages].filter(v=>v.isActive!==false).sort(sortStages);
-}
-function getClearedStageOrders(player){
-  return normalizeNumberArray(player?.clearedStageOrders);
-}
-function getCurrentPlayableStage(stages,player){
-  const clearedSet=new Set(getClearedStageOrders(player));
-  for(const stage of stages){
-    if(!clearedSet.has(Number(stage.order)))return stage;
-  }
-  return null;
-}
-function getStageClearedAt(player,order){
-  const map=normalizeObject(player?.stageClearedAtMap);
-  return map[String(order)]||null;
-}
-function getStageEnteredAt(player,order){
-  const map=normalizeObject(player?.stageEnteredAtMap);
-  return map[String(order)]||null;
-}
-function renderLabyrinthOwnerTools(labyrinth){
-  if(!isLabyrinthOwner(labyrinth))return "";
-  return `<div class="labyrinth-maker-tools">
-    <button onclick="openEditLabyrinthModal('${escapeJs(labyrinth.id)}')">정보 수정</button>
-    <button onclick="openCreateStageModal('${escapeJs(labyrinth.id)}')">단계 추가</button>
-  </div>`;
-}
-function renderLabyrinthCard(labyrinth,opts={}){
-  const isOwner=isLabyrinthOwner(labyrinth);
-  const statusClass=!labyrinth.isOpen?"closed":labyrinth.isPublic?"public":"private";
-  const statusText=!labyrinth.isOpen?"준비중":labyrinth.isPublic?"공개중":"비공개";
-  const stageCount=Number(labyrinth.stageCount||0);
-  return `<div class="labyrinth-card">
-    <div class="labyrinth-card-top">
-      <h3 class="labyrinth-card-title">${escapeHtml(labyrinth.title||"제목 없음")}</h3>
-      <span class="labyrinth-status-badge ${statusClass}">${escapeHtml(statusText)}</span>
-    </div>
-    <div class="labyrinth-card-description">${escapeHtml(labyrinth.thumbnailText||labyrinth.description||"설명이 없습니다.")}</div>
-    <div class="labyrinth-card-meta">
-      <div>제작자: ${escapeHtml(labyrinth.creator||"-")}</div>
-      <div>단계 수: ${stageCount}개</div>
-      <div>수정일: ${formatDateTime(labyrinth.updatedAt)}</div>
-    </div>
-    <div class="labyrinth-card-actions">
-      <button onclick="openLabyrinth('${escapeJs(labyrinth.id)}')">입장하기</button>
-      ${isOwner?`<button onclick="openEditLabyrinthModal('${escapeJs(labyrinth.id)}')">수정</button>`:""}
-      ${opts.showPlayDisabled&&!labyrinth.isOpen?`<button disabled>준비중</button>`:""}
-    </div>
-  </div>`;
-}
-function renderLabyrinthHomeLists(){
-  const publicItems=getVisiblePublicLabyrinths();
-  const myItems=getMyLabyrinths();
-
-  el.publicLabyrinthList.innerHTML=publicItems.length
-    ? publicItems.map(item=>renderLabyrinthCard(item,{showPlayDisabled:true})).join("")
-    : `<div class="labyrinth-empty">아직 공개된 미궁이 없습니다.</div>`;
-
-  el.myLabyrinthList.innerHTML=myItems.length
-    ? myItems.map(item=>renderLabyrinthCard(item,{showPlayDisabled:true})).join("")
-    : `<div class="labyrinth-empty">아직 만든 미궁이 없습니다.<br>상단의 ‘미궁 제작하기’를 눌러 시작하세요.</div>`;
-}
-function showLabyrinthHomeView(){
-  if(el.labyrinthHomeView)el.labyrinthHomeView.classList.remove("hidden");
-  if(el.labyrinthDetailView)el.labyrinthDetailView.classList.add("hidden");
-}
-function showLabyrinthDetailView(){
-  if(el.labyrinthHomeView)el.labyrinthHomeView.classList.add("hidden");
-  if(el.labyrinthDetailView)el.labyrinthDetailView.classList.remove("hidden");
-}
-function subscribeEscapeLabyrinthHome(){
-  clearSubscriptions();
-  showEventContentMode("labyrinth");
-  showLabyrinthHomeView();
-  state.currentLabyrinthId="";
-  state.currentLabyrinth=null;
-  state.currentLabyrinthStages=[];
-  state.currentLabyrinthPlayer=null;
-  localStorage.removeItem("escapeLabyrinthId");
-  updateEventActionButtons();
-
-  state.unsubscribeLabyrinths=labyrinthsRef().onSnapshot(async snap=>{
-    const items=await Promise.all(snap.docs.map(async doc=>{
-      const d=doc.data()||{};
-      let stageCount=Number(d.stageCount||0);
-      return{
-        id:doc.id,
-        title:d.title||"",
-        description:d.description||"",
-        thumbnailText:d.thumbnailText||"",
-        creator:d.creator||"",
-        isPublic:!!d.isPublic,
-        isOpen:d.isOpen!==false,
-        stageCount,
-        createdAt:d.createdAt||null,
-        updatedAt:d.updatedAt||null
-      };
-    }));
-    state.labyrinths=items.sort(sortLabyrinths);
-    renderLabyrinthHomeLists();
-  },err=>{
-    console.error(err);
-    alert("미궁 목록을 불러오는 중 오류가 발생했습니다.");
-  });
-}
-function openEscapeLabyrinthHome(){
-  if(state.currentEventId!=="escape_labyrinth")return;
-  subscribeEscapeLabyrinthHome();
-}
-window.openEscapeLabyrinthHome=openEscapeLabyrinthHome;
-
-function openLabyrinth(id){
-  if(!id)return;
-  const labyrinth=state.labyrinths.find(v=>v.id===id);
-  if(labyrinth&&!labyrinth.isPublic&&labyrinth.creator!==state.currentUser){
-    alert("비공개 미궁입니다.");
-    return;
-  }
-
-  clearEscapeSubscriptions();
-  showEventContentMode("labyrinth");
-  showLabyrinthDetailView();
-  state.currentLabyrinthId=id;
-  localStorage.setItem("escapeLabyrinthId",id);
-  updateEventActionButtons();
-
-  state.unsubscribeCurrentLabyrinth=labyrinthRef(id).onSnapshot(doc=>{
-    if(!doc.exists){
-      alert("미궁을 찾을 수 없습니다.");
-      openEscapeLabyrinthHome();
-      return;
-    }
-    const d=doc.data()||{};
-    state.currentLabyrinth={
-      id:doc.id,
-      title:d.title||"",
-      description:d.description||"",
-      thumbnailText:d.thumbnailText||"",
-      creator:d.creator||"",
-      isPublic:!!d.isPublic,
-      isOpen:d.isOpen!==false,
-      stageCount:Number(d.stageCount||0),
-      createdAt:d.createdAt||null,
-      updatedAt:d.updatedAt||null
-    };
-    renderCurrentLabyrinthDetail();
-    updateEventActionButtons();
-  },err=>{
-    console.error(err);
-    alert("미궁 정보를 불러오는 중 오류가 발생했습니다.");
-  });
-
-  state.unsubscribeStages=labyrinthStagesRef(id).onSnapshot(snap=>{
-    state.currentLabyrinthStages=snap.docs.map(doc=>{
-      const d=doc.data()||{};
-      return{
-        id:doc.id,
-        order:Number(d.order||0),
-        title:d.title||"",
-        story:d.story||"",
-        question:d.question||"",
-        answer:d.answer||"",
-        type:d.type||"question",
-        placeholder:d.placeholder||"",
-        successMessage:d.successMessage||"",
-        isActive:d.isActive!==false,
-        createdAt:d.createdAt||null,
-        updatedAt:d.updatedAt||null
-      };
-    }).sort(sortStages);
-
-    const count=state.currentLabyrinthStages.length;
-    if(state.currentLabyrinth&&state.currentLabyrinth.stageCount!==count){
-      labyrinthRef(id).set({
-        stageCount:count,
-        updatedAt:firebase.firestore.FieldValue.serverTimestamp()
-      },{merge:true}).catch(console.error);
-    }
-    renderCurrentLabyrinthDetail();
-  },err=>{
-    console.error(err);
-    alert("단계 목록을 불러오는 중 오류가 발생했습니다.");
-  });
-
-  state.unsubscribePlayer=labyrinthPlayerRef(id,state.currentUser).onSnapshot(doc=>{
-    if(doc.exists){
-      const d=doc.data()||{};
-      state.currentLabyrinthPlayer={
-        nickname:d.nickname||state.currentUser,
-        currentStageOrder:Number(d.currentStageOrder||0),
-        clearedStageOrders:normalizeNumberArray(d.clearedStageOrders),
-        stageEnteredAtMap:normalizeObject(d.stageEnteredAtMap),
-        stageClearedAtMap:normalizeObject(d.stageClearedAtMap),
-        createdAt:d.createdAt||null,
-        updatedAt:d.updatedAt||null
-      };
-    }else{
-      state.currentLabyrinthPlayer=null;
-    }
-    renderCurrentLabyrinthDetail();
-  },err=>{
-    console.error(err);
-    alert("플레이 정보를 불러오는 중 오류가 발생했습니다.");
-  });
-}
-window.openLabyrinth=openLabyrinth;
-
-function renderLabyrinthProgressSummary(){
-  if(!el.labyrinthProgressSummary)return;
-  const stages=getActiveStages();
-  const cleared=getClearedStageOrders(state.currentLabyrinthPlayer).length;
-  const total=stages.length;
-  const current=getCurrentPlayableStage(stages,state.currentLabyrinthPlayer);
-  const currentText=current?current.title:"모든 단계 완료";
-  el.labyrinthProgressSummary.classList.remove("hidden");
-  el.labyrinthProgressSummary.innerHTML=
-    `<div class="summary-card"><div class="muted">현재 단계</div><div class="big-number" style="font-size:22px;">${escapeHtml(currentText)}</div></div>`+
-    `<div class="summary-card"><div class="muted">완료 단계</div><div class="big-number">${cleared}</div></div>`+
-    `<div class="summary-card"><div class="muted">전체 단계</div><div class="big-number">${total}</div></div>`;
-}
-
-function renderCurrentLabyrinthDetail(){
-  if(!state.currentLabyrinth||!el.labyrinthStageList||!el.labyrinthDetailTitle)return;
-  const labyrinth=state.currentLabyrinth;
-  const stages=getActiveStages();
-  const player=state.currentLabyrinthPlayer;
-  const clearedSet=new Set(getClearedStageOrders(player));
-  const currentStage=getCurrentPlayableStage(stages,player);
-
-  el.labyrinthDetailTitle.textContent=labyrinth.title||"미궁";
-  el.labyrinthDetailMeta.innerHTML=`제작자: ${escapeHtml(labyrinth.creator||"-")} · ${labyrinth.isPublic?"공개":"비공개"} · ${labyrinth.isOpen?"플레이 가능":"준비중"}`;
-  el.labyrinthDetailDescription.textContent=labyrinth.description||"";
-  renderLabyrinthProgressSummary();
-
-  const ownerTools=renderLabyrinthOwnerTools(labyrinth);
-  const topTools=ownerTools?`<div class="card" style="margin-bottom:16px;">${ownerTools}</div>`:"";
-
-  let html="";
-  if(!labyrinth.isPublic&&labyrinth.creator!==state.currentUser){
-    html=`<div class="labyrinth-empty">비공개 미궁입니다.</div>`;
-    el.labyrinthStageList.innerHTML=topTools+html;
-    return;
-  }
-
-  if(!stages.length){
-    html=`<div class="labyrinth-empty">아직 등록된 단계가 없습니다.${isLabyrinthOwner(labyrinth)?"<br>‘단계 추가’로 첫 단계를 만들어보세요.":""}</div>`;
-    el.labyrinthStageList.innerHTML=topTools+html;
-    return;
-  }
-
-  if(!labyrinth.isOpen&&labyrinth.creator!==state.currentUser){
-    html=`<div class="labyrinth-empty">이 미궁은 아직 플레이 준비 중입니다.</div>`;
-    el.labyrinthStageList.innerHTML=topTools+html;
-    return;
-  }
-
-  const cards=[];
-
-  for(const stage of stages){
-    const cleared=clearedSet.has(Number(stage.order));
-    const isCurrent=currentStage&&Number(currentStage.order)===Number(stage.order);
-    if(!cleared&&!isCurrent)break;
-    cards.push(renderLabyrinthStageCard(stage,{cleared,isCurrent,labyrinth,player}));
-  }
-
-  if(!currentStage&&stages.length){
-    cards.push(`<div class="labyrinth-stage-card cleared">
-      <div class="labyrinth-stage-header">
-        <h3 class="labyrinth-stage-title">탈출 완료</h3>
-        <span class="labyrinth-clear-badge">완료</span>
-      </div>
-      <div class="labyrinth-stage-story">축하합니다. 모든 단계를 통과했습니다.</div>
-    </div>`);
-  }
-
-  el.labyrinthStageList.innerHTML=topTools+cards.join("");
-}
-
-function renderLabyrinthStageCard(stage,{cleared,isCurrent,labyrinth,player}){
-  const owner=isLabyrinthOwner(labyrinth);
-  const clearedAt=getStageClearedAt(player,stage.order);
-  const enteredAt=getStageEnteredAt(player,stage.order);
-  const orderText=stage.order===0?"입구":`${stage.order}단계`;
-  const ownerButtons=owner?`<div class="labyrinth-maker-tools"><button onclick="openEditStageModal('${escapeJs(labyrinth.id)}','${escapeJs(stage.id)}')">단계 수정</button></div>`:"";
-
-  if(cleared){
-    return `<div class="labyrinth-stage-card cleared">
-      <div class="labyrinth-stage-header">
-        <h3 class="labyrinth-stage-title">${escapeHtml(stage.title||"단계")}</h3>
-        <span class="labyrinth-stage-order">${escapeHtml(orderText)}</span>
-      </div>
-      <div class="labyrinth-stage-story">${escapeHtml(stage.story||"")}</div>
-      <div class="labyrinth-clear-badge">통과 완료</div>
-      <div class="labyrinth-stage-meta">통과 시각: ${formatDateTime(clearedAt)}</div>
-      ${ownerButtons}
-    </div>`;
-  }
-
-  if(isCurrent){
-    const inputId=`labyrinthAnswerInput_${escapeAttr(stage.id)}`;
-    const actionHtml=stage.type==="entry"
-      ? `<div class="labyrinth-stage-footer">
-          <div class="labyrinth-stage-meta">이 단계를 시작하면 미궁 진행이 기록됩니다.</div>
-          <button onclick="submitLabyrinthEntryStage('${escapeJs(stage.id)}')">${escapeHtml(stage.title||"입장하기")}</button>
-        </div>`
-      : `<div class="labyrinth-stage-input-wrap">
-          <input id="${inputId}" class="text-input" type="text" placeholder="${escapeAttr(stage.placeholder||"정답을 입력하세요.")}" />
-          <div class="labyrinth-stage-footer">
-            <div class="labyrinth-stage-meta">현재 단계입니다. 정답을 맞히면 다음 단계가 열립니다.</div>
-            <button onclick="submitLabyrinthAnswer('${escapeJs(stage.id)}','${escapeJs(inputId)}')">확인</button>
-          </div>
-        </div>`;
-
-    return `<div class="labyrinth-stage-card current">
-      <div class="labyrinth-stage-header">
-        <h3 class="labyrinth-stage-title">${escapeHtml(stage.title||"단계")}</h3>
-        <span class="labyrinth-stage-order">${escapeHtml(orderText)}</span>
-      </div>
-      <div class="labyrinth-stage-story">${escapeHtml(stage.story||"")}</div>
-      ${stage.question?`<div class="labyrinth-stage-question">${escapeHtml(stage.question)}</div>`:""}
-      ${actionHtml}
-      <div class="labyrinth-stage-meta">입장 시각: ${enteredAt?formatDateTime(enteredAt):"-"}</div>
-      ${ownerButtons}
-    </div>`;
-  }
-
-  return `<div class="labyrinth-lock-card">잠긴 단계</div>`;
-}
-
-async function submitLabyrinthEntryStage(stageId){
-  const stage=state.currentLabyrinthStages.find(v=>v.id===stageId);
-  if(!stage||!state.currentLabyrinthId)return;
-
-  const player=state.currentLabyrinthPlayer;
-  const enteredMap={...normalizeObject(player?.stageEnteredAtMap)};
-  const clearedMap={...normalizeObject(player?.stageClearedAtMap)};
-  const clearedOrders=new Set(getClearedStageOrders(player));
-
-  if(!enteredMap[String(stage.order)])enteredMap[String(stage.order)]=firebase.firestore.FieldValue.serverTimestamp();
-  clearedMap[String(stage.order)]=firebase.firestore.FieldValue.serverTimestamp();
-  clearedOrders.add(Number(stage.order));
-
-  const nextStage=getActiveStages().find(v=>Number(v.order)>Number(stage.order));
-
-  await labyrinthPlayerRef(state.currentLabyrinthId,state.currentUser).set({
-    nickname:state.currentUser,
-    currentStageOrder:nextStage?Number(nextStage.order):Number(stage.order),
-    clearedStageOrders:[...clearedOrders].sort((a,b)=>a-b),
-    stageEnteredAtMap:enteredMap,
-    stageClearedAtMap:clearedMap,
-    updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
-    createdAt:player?.createdAt||firebase.firestore.FieldValue.serverTimestamp()
-  },{merge:true});
-
-  if(stage.successMessage)alert(stage.successMessage);
-}
-window.submitLabyrinthEntryStage=submitLabyrinthEntryStage;
-
-async function submitLabyrinthAnswer(stageId,inputId){
-  const stage=state.currentLabyrinthStages.find(v=>v.id===stageId);
-  if(!stage||!state.currentLabyrinthId)return;
-  const input=document.getElementById(inputId);
-  const raw=input?.value||"";
-  if(!String(raw).trim()){
-    alert("정답을 입력하세요.");
-    input?.focus();
-    return;
-  }
-
-  if(normalizeAnswer(raw)!==normalizeAnswer(stage.answer)){
-    alert("정답이 아닙니다.");
-    return;
-  }
-
-  const player=state.currentLabyrinthPlayer;
-  const enteredMap={...normalizeObject(player?.stageEnteredAtMap)};
-  const clearedMap={...normalizeObject(player?.stageClearedAtMap)};
-  const clearedOrders=new Set(getClearedStageOrders(player));
-
-  if(!enteredMap[String(stage.order)])enteredMap[String(stage.order)]=firebase.firestore.FieldValue.serverTimestamp();
-  clearedMap[String(stage.order)]=firebase.firestore.FieldValue.serverTimestamp();
-  clearedOrders.add(Number(stage.order));
-
-  const nextStage=getActiveStages().find(v=>Number(v.order)>Number(stage.order));
-
-  await labyrinthPlayerRef(state.currentLabyrinthId,state.currentUser).set({
-    nickname:state.currentUser,
-    currentStageOrder:nextStage?Number(nextStage.order):Number(stage.order),
-    clearedStageOrders:[...clearedOrders].sort((a,b)=>a-b),
-    stageEnteredAtMap:enteredMap,
-    stageClearedAtMap:clearedMap,
-    updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
-    createdAt:player?.createdAt||firebase.firestore.FieldValue.serverTimestamp()
-  },{merge:true});
-
-  if(input)input.value="";
-  alert(stage.successMessage||"통과했습니다.");
-}
-window.submitLabyrinthAnswer=submitLabyrinthAnswer;
-
-/* ===== 미궁 생성/수정 ===== */
-function openCreateLabyrinthModal(){
-  if(!state.currentUser){
-    alert("로그인 후 이용하세요.");
-    return;
-  }
-  state.editingLabyrinthId="";
-  if(el.labyrinthTitleInput)el.labyrinthTitleInput.value="";
-  if(el.labyrinthDescriptionInput)el.labyrinthDescriptionInput.value="";
-  if(el.labyrinthThumbnailTextInput)el.labyrinthThumbnailTextInput.value="";
-  if(el.labyrinthPublicCheckbox)el.labyrinthPublicCheckbox.checked=false;
-  if(el.labyrinthOpenCheckbox)el.labyrinthOpenCheckbox.checked=true;
-  el.createLabyrinthModal?.classList.remove("hidden");
-  syncOverlay();
-}
-function closeCreateLabyrinthModal(){
-  el.createLabyrinthModal?.classList.add("hidden");
-  syncOverlay();
-}
-window.openCreateLabyrinthModal=openCreateLabyrinthModal;
-window.closeCreateLabyrinthModal=closeCreateLabyrinthModal;
-
-async function submitCreateLabyrinth(){
-  const title=(el.labyrinthTitleInput?.value||"").trim();
-  const description=(el.labyrinthDescriptionInput?.value||"").trim();
-  const thumbnailText=(el.labyrinthThumbnailTextInput?.value||"").trim();
-  const isPublic=!!el.labyrinthPublicCheckbox?.checked;
-  const isOpen=!!el.labyrinthOpenCheckbox?.checked;
-
-  if(!title){
-    alert("미궁 제목을 입력하세요.");
-    el.labyrinthTitleInput?.focus();
-    return;
-  }
-
-  const docId=slugifyId(title)+"-"+Date.now();
-  await labyrinthRef(docId).set({
-    title,
-    description,
-    thumbnailText,
-    creator:state.currentUser,
-    isPublic,
-    isOpen,
-    stageCount:0,
-    createdAt:firebase.firestore.FieldValue.serverTimestamp(),
-    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
-  },{merge:true});
-
-  closeCreateLabyrinthModal();
-  openLabyrinth(docId);
-}
-window.submitCreateLabyrinth=submitCreateLabyrinth;
-
-function openEditLabyrinthModal(labyrinthId){
-  const labyrinth=state.labyrinths.find(v=>v.id===labyrinthId)||state.currentLabyrinth;
-  if(!labyrinth||!isLabyrinthOwner(labyrinth)){
-    alert("수정 권한이 없습니다.");
-    return;
-  }
-  state.editingLabyrinthId=labyrinth.id;
-  el.editLabyrinthTitleInput.value=labyrinth.title||"";
-  el.editLabyrinthDescriptionInput.value=labyrinth.description||"";
-  el.editLabyrinthThumbnailTextInput.value=labyrinth.thumbnailText||"";
-  el.editLabyrinthPublicCheckbox.checked=!!labyrinth.isPublic;
-  el.editLabyrinthOpenCheckbox.checked=labyrinth.isOpen!==false;
-  el.editLabyrinthModal?.classList.remove("hidden");
-  syncOverlay();
-}
-function closeEditLabyrinthModal(){
-  state.editingLabyrinthId="";
-  el.editLabyrinthModal?.classList.add("hidden");
-  syncOverlay();
-}
-window.openEditLabyrinthModal=openEditLabyrinthModal;
-window.closeEditLabyrinthModal=closeEditLabyrinthModal;
-
-async function submitEditLabyrinth(){
-  const id=state.editingLabyrinthId;
-  const labyrinth=state.labyrinths.find(v=>v.id===id)||state.currentLabyrinth;
-  if(!id||!labyrinth||!isLabyrinthOwner(labyrinth)){
-    alert("수정 권한이 없습니다.");
-    return;
-  }
-
-  const title=(el.editLabyrinthTitleInput?.value||"").trim();
-  const description=(el.editLabyrinthDescriptionInput?.value||"").trim();
-  const thumbnailText=(el.editLabyrinthThumbnailTextInput?.value||"").trim();
-  const isPublic=!!el.editLabyrinthPublicCheckbox?.checked;
-  const isOpen=!!el.editLabyrinthOpenCheckbox?.checked;
-
-  if(!title){
-    alert("미궁 제목을 입력하세요.");
-    return;
-  }
-
-  await labyrinthRef(id).set({
-    title,
-    description,
-    thumbnailText,
-    isPublic,
-    isOpen,
-    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
-  },{merge:true});
-
-  closeEditLabyrinthModal();
-}
-window.submitEditLabyrinth=submitEditLabyrinth;
-
-/* ===== 단계 생성/수정 ===== */
-function openCreateStageModal(labyrinthId){
-  const labyrinth=state.labyrinths.find(v=>v.id===labyrinthId)||state.currentLabyrinth;
-  if(!labyrinth||!isLabyrinthOwner(labyrinth)){
-    alert("단계 추가 권한이 없습니다.");
-    return;
-  }
-  state.editingLabyrinthId=labyrinth.id;
-  state.editingStageId="";
-  if(el.editStageModalTitle)el.editStageModalTitle.textContent="단계 추가";
-  if(el.stageOrderInput)el.stageOrderInput.value=String(getActiveStages().length?Math.max(...getActiveStages().map(v=>Number(v.order||0)))+1:0);
-  if(el.stageTitleInput)el.stageTitleInput.value="";
-  if(el.stageTypeSelect)el.stageTypeSelect.value="question";
-  if(el.stageStoryInput)el.stageStoryInput.value="";
-  if(el.stageQuestionInput)el.stageQuestionInput.value="";
-  if(el.stageAnswerInput)el.stageAnswerInput.value="";
-  if(el.stagePlaceholderInput)el.stagePlaceholderInput.value="정답을 입력하세요.";
-  if(el.stageSuccessMessageInput)el.stageSuccessMessageInput.value="";
-  if(el.stageActiveCheckbox)el.stageActiveCheckbox.checked=true;
-  if(el.deleteStageBtn)el.deleteStageBtn.classList.add("hidden");
-  el.editStageModal?.classList.remove("hidden");
-  syncOverlay();
-}
-function openEditStageModal(labyrinthId,stageId){
-  const labyrinth=state.labyrinths.find(v=>v.id===labyrinthId)||state.currentLabyrinth;
-  if(!labyrinth||!isLabyrinthOwner(labyrinth)){
-    alert("단계 수정 권한이 없습니다.");
-    return;
-  }
-  const stage=state.currentLabyrinthStages.find(v=>v.id===stageId);
-  if(!stage){
-    alert("단계를 찾을 수 없습니다.");
-    return;
-  }
-  state.editingLabyrinthId=labyrinth.id;
-  state.editingStageId=stage.id;
-  if(el.editStageModalTitle)el.editStageModalTitle.textContent="단계 수정";
-  if(el.stageOrderInput)el.stageOrderInput.value=String(stage.order||0);
-  if(el.stageTitleInput)el.stageTitleInput.value=stage.title||"";
-  if(el.stageTypeSelect)el.stageTypeSelect.value=stage.type||"question";
-  if(el.stageStoryInput)el.stageStoryInput.value=stage.story||"";
-  if(el.stageQuestionInput)el.stageQuestionInput.value=stage.question||"";
-  if(el.stageAnswerInput)el.stageAnswerInput.value=stage.answer||"";
-  if(el.stagePlaceholderInput)el.stagePlaceholderInput.value=stage.placeholder||"";
-  if(el.stageSuccessMessageInput)el.stageSuccessMessageInput.value=stage.successMessage||"";
-  if(el.stageActiveCheckbox)el.stageActiveCheckbox.checked=stage.isActive!==false;
-  if(el.deleteStageBtn)el.deleteStageBtn.classList.remove("hidden");
-  el.editStageModal?.classList.remove("hidden");
-  syncOverlay();
-}
-function closeEditStageModal(){
-  state.editingStageId="";
-  el.editStageModal?.classList.add("hidden");
-  syncOverlay();
-}
-window.openCreateStageModal=openCreateStageModal;
-window.openEditStageModal=openEditStageModal;
-window.closeEditStageModal=closeEditStageModal;
-
-async function submitStage(){
-  const labyrinth=state.currentLabyrinth;
-  if(!labyrinth||!isLabyrinthOwner(labyrinth)){
-    alert("저장 권한이 없습니다.");
-    return;
-  }
-
-  const order=Number(el.stageOrderInput?.value||"");
-  const title=(el.stageTitleInput?.value||"").trim();
-  const type=el.stageTypeSelect?.value||"question";
-  const story=(el.stageStoryInput?.value||"").trim();
-  const question=(el.stageQuestionInput?.value||"").trim();
-  const answer=(el.stageAnswerInput?.value||"").trim();
-  const placeholder=(el.stagePlaceholderInput?.value||"").trim();
-  const successMessage=(el.stageSuccessMessageInput?.value||"").trim();
-  const isActive=!!el.stageActiveCheckbox?.checked;
-
-  if(!Number.isInteger(order)||order<0){
-    alert("순서는 0 이상의 숫자로 입력하세요.");
-    return;
-  }
-  if(!title){
-    alert("단계 제목을 입력하세요.");
-    return;
-  }
-  if(type!=="entry"&&!answer){
-    alert("정답을 입력하세요.");
-    return;
-  }
-
-  const stageId=state.editingStageId||`stage-${Date.now()}`;
-  await labyrinthStagesRef(labyrinth.id).doc(stageId).set({
-    order,
-    title,
-    type,
-    story,
-    question,
-    answer,
-    placeholder,
-    successMessage,
-    isActive,
-    updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
-    createdAt:state.editingStageId?(state.currentLabyrinthStages.find(v=>v.id===stageId)?.createdAt||firebase.firestore.FieldValue.serverTimestamp()):firebase.firestore.FieldValue.serverTimestamp()
-  },{merge:true});
-
-  closeEditStageModal();
-}
-window.submitStage=submitStage;
-
-async function deleteStage(){
-  const labyrinth=state.currentLabyrinth;
-  if(!labyrinth||!isLabyrinthOwner(labyrinth)||!state.editingStageId){
-    alert("삭제 권한이 없습니다.");
-    return;
-  }
-  if(!confirm("이 단계를 삭제하시겠습니까?"))return;
-  await labyrinthStagesRef(labyrinth.id).doc(state.editingStageId).delete();
-  closeEditStageModal();
-}
-window.deleteStage=deleteStage;
-
-/* =========================
-   Existing Party / Rearrange
-========================= */
 
 function subscribeParties(){
   clearSubscriptions();
@@ -2264,4 +1489,509 @@ async function submitRearrangeProgress(){
     stageText:raw,
     stageMajor:parsed.stageMajor,
     stageMinor:parsed.stageMinor,
-    updatedAt:
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
+    createdAt:state.rearrangeProgressEntries.find(v=>v.user===state.currentUser)?.createdAt||firebase.firestore.FieldValue.serverTimestamp()
+  },{merge:true});
+  closeExampleImageModal();
+  closeRearrangeModal();
+  syncOverlay();
+}
+window.submitRearrangeProgress=submitRearrangeProgress;
+
+function openRearrangeRankEditModal(userName=""){
+  if(!state.isAdmin){
+    alert("권한이 없습니다.");
+    return;
+  }
+  ensureRankingExtraFields();
+
+  const entry=userName?state.rearrangeEntries.find(v=>v.user===userName):null;
+  if(!entry){
+    alert("대상을 찾을 수 없습니다.");
+    return;
+  }
+
+  state.editingRearrangeRankUser=entry.user;
+  el.rearrangeRankEditTitle.textContent="순위표 관리";
+  el.rankEditSubmitBtn.textContent="저장";
+  el.rankEditDeleteBtn.classList.remove("hidden");
+
+  el.rankEditNicknameInput.value=entry.user||"";
+  el.rankEditStageInput.value=entry.stageText||"";
+  el.rankEditPowerInput.value=entry.power>0?String(entry.power):"";
+  el.rankEditNoteInput.value=entry.note||"";
+
+  const existingInput=document.getElementById("rankEditExistingInput");
+  if(existingInput)existingInput.value=entry.existingColumn>0?String(entry.existingColumn):"";
+
+  const excludeBtn=document.getElementById("rankEditExcludeBtn");
+  if(excludeBtn){
+    excludeBtn.textContent=entry.excluded?"제외 해제":"목록에서 제외";
+    excludeBtn.onclick=toggleRearrangeExcluded;
+  }
+
+  el.rankEditNicknameInput.readOnly=true;
+  el.rankEditStageInput.readOnly=true;
+  el.rankEditDeleteBtn.textContent="관리값 삭제";
+  el.rearrangeRankEditModal.classList.remove("hidden");
+  syncOverlay();
+}
+function closeRearrangeRankEditModal(){
+  state.editingRearrangeRankUser="";
+  el.rankEditNicknameInput.readOnly=false;
+  el.rankEditStageInput.readOnly=false;
+  el.rearrangeRankEditModal?.classList.add("hidden");
+  syncOverlay();
+}
+window.openRearrangeRankEditModal=openRearrangeRankEditModal;
+window.closeRearrangeRankEditModal=closeRearrangeRankEditModal;
+
+async function toggleRearrangeExcluded(){
+  if(!state.isAdmin){
+    alert("권한이 없습니다.");
+    return;
+  }
+  const user=state.editingRearrangeRankUser||"";
+  if(!user){
+    alert("대상을 찾을 수 없습니다.");
+    return;
+  }
+  const current=state.rearrangeEntries.find(v=>v.user===user);
+  if(!current){
+    alert("대상을 찾을 수 없습니다.");
+    return;
+  }
+
+  const nextExcluded=!current.excluded;
+  const message=nextExcluded?"이 사용자를 목록에서 제외하시겠습니까?":"이 사용자를 목록에 다시 포함하시겠습니까?";
+  if(!confirm(message))return;
+
+  await rearrangeRankingRef().doc(user).set({
+    user,
+    excluded:nextExcluded,
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+  },{merge:true});
+
+  await writeAdminLog("toggle_rearrange_excluded",{user,excluded:nextExcluded});
+  closeRearrangeRankEditModal();
+}
+window.toggleRearrangeExcluded=toggleRearrangeExcluded;
+
+async function submitRearrangeRankEdit(){
+  if(!state.isAdmin){
+    alert("권한이 없습니다.");
+    return;
+  }
+
+  const user=state.editingRearrangeRankUser||"";
+  if(!user){
+    alert("대상을 찾을 수 없습니다.");
+    return;
+  }
+
+  const current=state.rearrangeEntries.find(v=>v.user===user);
+  const powerRaw=(el.rankEditPowerInput.value||"").trim();
+  const note=(el.rankEditNoteInput.value||"").trim();
+  const existingRaw=(document.getElementById("rankEditExistingInput")?.value||"").trim();
+
+  let power=0;
+  if(powerRaw!==""){
+    power=Number(powerRaw);
+    if(!Number.isInteger(power)||power<0){
+      alert("전투력은 0 이상의 정수로 입력하세요.");
+      return;
+    }
+  }
+
+  let existingColumn=0;
+  if(existingRaw!==""){
+    existingColumn=Number(existingRaw);
+    if(!Number.isInteger(existingColumn)||existingColumn<1){
+      alert("기존은 1 이상의 정수로 입력하세요.");
+      return;
+    }
+  }
+
+  await rearrangeRankingRef().doc(user).set({
+    user,
+    power,
+    note,
+    existingColumn,
+    excluded:!!current?.excluded,
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+  },{merge:true});
+
+  await writeAdminLog("update_rearrange_ranking_meta",{user,power,note,existingColumn,excluded:!!current?.excluded});
+  closeRearrangeRankEditModal();
+}
+window.submitRearrangeRankEdit=submitRearrangeRankEdit;
+
+async function deleteRearrangeRankRow(){
+  if(!state.isAdmin){
+    alert("권한이 없습니다.");
+    return;
+  }
+  const user=state.editingRearrangeRankUser||"";
+  if(!user)return;
+  if(!confirm(`${user}의 관리값(비고/전투력/기존/제외)을 삭제하시겠습니까?\n원본 진척도 데이터는 삭제되지 않습니다.`))return;
+
+  await rearrangeRankingRef().doc(user).delete();
+  await writeAdminLog("delete_rearrange_ranking_meta",{user});
+  closeRearrangeRankEditModal();
+}
+window.deleteRearrangeRankRow=deleteRearrangeRankRow;
+
+async function toggleRearrangePublic(){
+  if(!state.isAdmin){
+    alert("권한이 없습니다.");
+    return;
+  }
+  const next=!state.rearrangePublic;
+  const message=next?"순위를 전체 공개하시겠습니까?":"순위를 다시 비공개하시겠습니까?";
+  if(!confirm(message))return;
+  await eventRef("rearrange").set({rankingPublic:next},{merge:true});
+  await writeAdminLog(next?"publish_rearrange_ranking":"hide_rearrange_ranking",{rankingPublic:next});
+}
+window.toggleRearrangePublic=toggleRearrangePublic;
+
+async function toggleRearrangeInputEnabled(){
+  if(!state.isAdmin||state.currentUser!=="병풍"){
+    alert("권한이 없습니다.");
+    return;
+  }
+  const next=!state.rearrangeInputEnabled;
+  const message=next?"개인 진척도 입력을 다시 활성화하시겠습니까?":"개인 진척도 입력을 비활성화하시겠습니까?";
+  if(!confirm(message))return;
+
+  await eventRef("rearrange").set({rearrangeInputEnabled:next},{merge:true});
+  await writeAdminLog(next?"enable_rearrange_input":"disable_rearrange_input",{rearrangeInputEnabled:next});
+}
+window.toggleRearrangeInputEnabled=toggleRearrangeInputEnabled;
+
+async function joinParty(id){
+  const ref=partiesRef(state.currentEventId).doc(id);
+  const snap=await ref.get();
+  if(!snap.exists){
+    alert("파티를 찾을 수 없습니다.");
+    return;
+  }
+  const d=snap.data()||{};
+  const members=normalizeMembers(d.members);
+
+  if(state.currentEventId==="viking"&&myParty()){
+    alert("이미 다른 파티에 참여 중입니다.");
+    return;
+  }
+  if(members.includes(state.currentUser)){
+    if(state.currentEventId==="ruins")alert("이미 이 유적 파티에 신청되어 있습니다.");
+    if(state.currentEventId==="holy_sword")alert("이미 이 성검 파티에 신청되어 있습니다.");
+    if(state.currentEventId==="triple_alliance")alert("이미 이 삼대 연맹전 파티에 신청되어 있습니다.");
+    return;
+  }
+  if(state.currentEventId==="ruins"&&members.length>=15){
+    alert("유적 파티는 최대 15명입니다.");
+    return;
+  }
+  if(state.currentEventId==="viking"&&Number(d.maxMembers||0)>0&&members.length>=Number(d.maxMembers)){
+    alert("이 파티는 정원이 가득 찼습니다.");
+    return;
+  }
+
+  members.push(state.currentUser);
+  await ref.update({members});
+}
+window.joinParty=joinParty;
+
+async function leaveParty(id){
+  const ref=partiesRef(state.currentEventId).doc(id);
+  const snap=await ref.get();
+  if(!snap.exists)return;
+  const d=snap.data()||{};
+  const members=normalizeMembers(d.members).filter(v=>v!==state.currentUser);
+  const updates={members};
+
+  if(state.currentEventId==="ruins"&&d.rallyLeader===state.currentUser){
+    updates.rallyLeader=members[0]||"";
+  }
+  if(state.currentEventId==="holy_sword"){
+    updates.areaAssignments=normalizeAssignments(d.areaAssignments).filter(v=>v.user!==state.currentUser);
+  }
+
+  await ref.update(updates);
+}
+window.leaveParty=leaveParty;
+
+async function deleteParty(id){
+  const ref=partiesRef(state.currentEventId).doc(id);
+  const snap=await ref.get();
+  if(!snap.exists)return;
+  const d=snap.data()||{};
+  const ok=state.isAdmin||d.createdBy===state.currentUser;
+  if(!ok){
+    alert("삭제 권한이 없습니다.");
+    return;
+  }
+
+  const msg=state.currentEventId==="ruins"
+    ?"정말 이 유적 파티를 삭제하시겠습니까?"
+    :state.currentEventId==="holy_sword"
+      ?"정말 이 성검 파티를 삭제하시겠습니까?"
+      :state.currentEventId==="triple_alliance"
+        ?"정말 이 삼대 연맹전 파티를 삭제하시겠습니까?"
+        :"정말 이 파티를 삭제하시겠습니까?";
+
+  if(!confirm(msg))return;
+
+  await ref.delete();
+  if(state.isAdmin)await writeAdminLog("delete_party",{partyId:id,name:d.name||"",ruinName:d.ruinName||"",side:d.side||"",isFirstGroup:!!d.isFirstGroup});
+}
+window.deleteParty=deleteParty;
+
+async function kickMember(id,name){
+  const p=state.parties.find(v=>v.id===id);
+  if(!p)return;
+  const ok=state.isAdmin||p.createdBy===state.currentUser;
+  if(!ok){
+    alert("추방 권한이 없습니다.");
+    return;
+  }
+  if(!confirm(`${name} 님을 추방하시겠습니까?`))return;
+
+  const ref=partiesRef(state.currentEventId).doc(id);
+  const members=normalizeMembers(p.members).filter(v=>v!==name);
+  const updates={members};
+
+  if(state.currentEventId==="ruins"&&p.rallyLeader===name)updates.rallyLeader=members[0]||"";
+  if(state.currentEventId==="holy_sword")updates.areaAssignments=normalizeAssignments(p.areaAssignments).filter(v=>v.user!==name);
+
+  await ref.update(updates);
+  if(state.isAdmin)await writeAdminLog("kick_member",{partyId:id,memberName:name});
+}
+window.kickMember=kickMember;
+
+async function setRallyLeader(id,name){
+  if(!state.isAdmin){
+    alert("권한이 없습니다.");
+    return;
+  }
+  if(!confirm(`${name} 님을 집결장으로 지정하시겠습니까?`))return;
+  const p=state.parties.find(v=>v.id===id);
+  if(!p||!p.members.includes(name)){
+    alert("해당 사용자는 현재 파티원이 아닙니다.");
+    return;
+  }
+  await partiesRef("ruins").doc(id).update({rallyLeader:name});
+  await writeAdminLog("set_rally_leader",{partyId:id,memberName:name});
+}
+window.setRallyLeader=setRallyLeader;
+
+function copyRuinsNotice(partyId){
+  const p=state.parties.find(v=>v.id===partyId);
+  if(!p)return;
+  const members=[...p.members];
+  const leader=p.rallyLeader||"";
+  const others=members.filter(n=>n!==leader);
+  const power=calcPower(members.length).toLocaleString("ko-KR");
+  const d=toDate(p.timeUTC);
+  const kstTime=d?`${String(d.getHours()).padStart(2,"0")}:00`:"-";
+  const utcTime=d?`${String(d.getUTCHours()).padStart(2,"0")}:00`:"-";
+  const title=(p.ruinName||p.name||"")+" 명단";
+  const text=`${title}
+시간: ${kstTime}(UTC ${utcTime})
+집결장: ${leader||"-"}
+집결원: ${others.join(", ")}
+병력수: ${power}명`;
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=>alert("복사되었습니다."),()=>fallbackCopy(text));
+  }else{
+    fallbackCopy(text);
+  }
+}
+
+function copyHolySwordNotice(partyId){
+  const p=state.parties.find(v=>v.id===partyId);
+  if(!p)return;
+
+  const members=getHolySwordSortedMembers(p.members);
+  const byArea={};
+  HOLY_SWORD_AREAS.forEach(area=>byArea[area]=[]);
+  normalizeAssignments(p.areaAssignments).forEach(item=>{
+    if(!byArea[item.area])byArea[item.area]=[];
+    byArea[item.area].push(item.user);
+  });
+
+  const memberLines=members.map((name,idx)=>`${getHolySwordDisplayIndex(idx)} ${name}`);
+  const text=[
+    "[성검 쟁탈]",
+    `소속: ${getHolySwordSideLabel(p.side)}`,
+    `시간: ${formatKST(p.timeUTC)} (UTC ${formatUTC(p.timeUTC)})`,
+    "",
+    "[구역장]",
+    `수도원 1: ${byArea["수도원 1"].join(", ")||"-"}`,
+    `수도원 2: ${byArea["수도원 2"].join(", ")||"-"}`,
+    `성소 1: ${byArea["성소 1"].join(", ")||"-"}`,
+    `마구간: ${byArea["마구간"].join(", ")||"-"}`,
+    `수도원 3: ${byArea["수도원 3"].join(", ")||"-"}`,
+    `수도원 4: ${byArea["수도원 4"].join(", ")||"-"}`,
+    `성소 2: ${byArea["성소 2"].join(", ")||"-"}`,
+    `시계탑: ${byArea["시계탑"].join(", ")||"-"}`,
+    "",
+    "[참가인원]",
+    ...memberLines
+  ].join("\n");
+
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=>alert("복사되었습니다."),()=>fallbackCopy(text));
+  }else{
+    fallbackCopy(text);
+  }
+}
+window.copyHolySwordNotice=copyHolySwordNotice;
+
+function fallbackCopy(text){
+  const ta=document.createElement("textarea");
+  ta.value=text;
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand("copy");
+  document.body.removeChild(ta);
+  alert("복사되었습니다.");
+}
+
+function copyRearrangeColumns(){
+  const activeEntries=state.rearrangeEntries.filter(v=>!isHiddenTestNickname(v.user)&&!v.excluded);
+  const displayedEntries=getDisplayedRearrangeEntries(activeEntries);
+  const columns={1:[],2:[],3:[],4:[],5:[]};
+  const moveNeeded=[];
+
+  displayedEntries.forEach((entry,idx)=>{
+    const rank=idx+1;
+    const col=getRearrangeColumn(rank);
+    if(!entry)return;
+
+    columns[col].push(entry.user);
+
+    const existingColumn=Number(entry.existingColumn||0);
+    if(existingColumn>0&&existingColumn!==col){
+      moveNeeded.push(`${entry.user}(${existingColumn}→${col})`);
+    }
+  });
+
+  const lines=[
+    "[자리 재배치 결과]",
+    `1열: ${columns[1].join(", ")}`,
+    `2열: ${columns[2].join(", ")}`,
+    `3열: ${columns[3].join(", ")}`,
+    `4열: ${columns[4].join(", ")}`,
+    `5열: ${columns[5].join(", ")}`
+  ];
+
+  lines.push("");
+  lines.push("[이동 필요 인원]");
+
+  if(moveNeeded.length)lines.push(...moveNeeded);
+  else lines.push("없음");
+
+  const text=lines.join("\n");
+
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=>alert("순열이 복사되었습니다."),()=>fallbackCopy(text));
+  }else{
+    fallbackCopy(text);
+  }
+}
+window.copyRearrangeColumns=copyRearrangeColumns;
+
+async function showAllUsers(){
+  const usersSnap=await db.collection("users").get();
+  const joined=new Set();
+  if(state.currentEventId==="rearrange")state.rearrangeEntries.forEach(v=>joined.add(v.user));
+  else state.parties.forEach(p=>normalizeMembers(p.members).forEach(n=>joined.add(n)));
+  const all=[];
+  usersSnap.forEach(doc=>{
+    if(!isHiddenTestNickname(doc.id))all.push(doc.id);
+  });
+  all.sort((a,b)=>a.localeCompare(b,"ko"));
+  el.joinedUsers.innerHTML=renderNameColumns(all.filter(n=>joined.has(n)));
+  el.notJoinedUsers.innerHTML=renderNameColumns(all.filter(n=>!joined.has(n)));
+  el.userModal.classList.remove("hidden");
+  syncOverlay();
+}
+window.showAllUsers=showAllUsers;
+
+function renderNameColumns(arr){
+  if(!arr.length)return `<div class="name-item">(없음)</div>`;
+  return arr.map(v=>`<div class="name-item">${escapeHtml(v)}</div>`).join("");
+}
+function closeUserModal(){
+  el.userModal?.classList.add("hidden");
+  syncOverlay();
+}
+window.closeUserModal=closeUserModal;
+
+async function showAdminLogs(){
+  if(!state.isAdmin){
+    alert("권한이 없습니다.");
+    return;
+  }
+  const snap=await db.collection("adminLogs").orderBy("createdAt","desc").limit(50).get();
+  const items=[];
+  snap.forEach(doc=>items.push({id:doc.id,...doc.data()}));
+  el.logList.innerHTML=items.length
+    ? items.map(log=>`<div class="log-item"><div class="log-top"><div class="log-action">${escapeHtml(log.action||"")}</div><div class="muted">${log.admin?escapeHtml(log.admin):""}</div></div><div class="muted">이벤트: ${escapeHtml(log.event||"-")}</div><div class="muted">${escapeHtml(JSON.stringify(log.payload||{}))}</div>${!log.undone?`<button class="undo-btn" onclick="undoAdminLog('${escapeJs(log.id)}')">실행취소</button>`:`<div class="muted">실행취소됨</div>`}</div>`).join("")
+    : `<div class="empty-card">운영 로그가 없습니다.</div>`;
+  el.logModal.classList.remove("hidden");
+  syncOverlay();
+  closeAdminMenu();
+}
+window.showAdminLogs=showAdminLogs;
+
+function closeLogModal(){
+  el.logModal?.classList.add("hidden");
+  syncOverlay();
+}
+window.closeLogModal=closeLogModal;
+
+async function undoAdminLog(id){
+  const ref=db.collection("adminLogs").doc(id);
+  const snap=await ref.get();
+  if(!snap.exists)return;
+  const log=snap.data()||{};
+  if(log.undone)return;
+  const p=log.payload||{};
+
+  if(log.action==="set_rally_leader"&&log.event==="ruins"&&p.partyId){
+    await partiesRef("ruins").doc(p.partyId).update({rallyLeader:""});
+  }
+
+  if(log.action==="kick_member"&&log.event&&p.partyId&&p.memberName){
+    const pref=partiesRef(log.event).doc(p.partyId);
+    const psnap=await pref.get();
+    if(psnap.exists){
+      const d=psnap.data()||{};
+      const members=normalizeMembers(d.members);
+      if(!members.includes(p.memberName)){
+        members.push(p.memberName);
+        await pref.update({members});
+      }
+    }
+  }
+
+  if((log.action==="publish_rearrange_ranking"||log.action==="hide_rearrange_ranking")&&typeof p.rankingPublic==="boolean"){
+    await eventRef("rearrange").set({rankingPublic:!p.rankingPublic},{merge:true});
+  }
+
+  if(log.action==="delete_rearrange_ranking_meta"&&p.user){
+    await rearrangeRankingRef().doc(p.user).set({user:p.user},{merge:true});
+  }
+
+  await ref.update({
+    undone:true,
+    undoneAt:firebase.firestore.FieldValue.serverTimestamp(),
+    undoneBy:state.currentUser
+  });
+  showAdminLogs();
+}
+window.undoAdminLog=undoAdminLog;
+
+document.addEventListener("DOMContentLoaded",tryAutoLogin);
