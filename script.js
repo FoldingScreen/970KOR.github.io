@@ -1455,7 +1455,11 @@ function renderFinalStageClearersCard(){
   if(!finalStage)return "";
 
   const clearers=(state.currentLabyrinthPlayers||[])
-    .filter(player=>player?.stageClearedAtMap?.[String(finalStage.order)])
+    .filter(player=>{
+      const clearedAt=player?.stageClearedAtMap?.[String(finalStage.order)];
+      if(!clearedAt)return false;
+      return player.nickname!==state.currentLabyrinthData?.creator;
+    })
     .sort((a,b)=>{
       const aTime=a.stageClearedAtMap?.[String(finalStage.order)]||null;
       const bTime=b.stageClearedAtMap?.[String(finalStage.order)]||null;
@@ -1480,7 +1484,7 @@ function renderFinalStageClearersCard(){
   return `
     <div class="party-card">
       <div class="party-title">명예의 전당</div>
-      <div class="party-sub">최종장 클리어 순서입니다.</div>
+      <div class="party-sub">제작자를 제외한 최종장 클리어 순서입니다.</div>
       <div class="member-list">${lines}</div>
     </div>
   `;
