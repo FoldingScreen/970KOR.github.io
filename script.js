@@ -1441,11 +1441,26 @@ function renderFinalStageClearersCard(){
   if(!clearers.length){
     return `
       <div class="party-card">
-        <div class="party-title">최종장 클리어</div>
-        <div class="party-sub">아직 최종장을 클리어한 사람이 없습니다.</div>
+        <div class="party-title">명예의 전당</div>
+        <div class="party-sub">아직 명예의 전당에 오른 사람이 없습니다.</div>
       </div>
     `;
   }
+
+  const lines=clearers.map((player,idx)=>{
+    const clearedAt=player.stageClearedAtMap?.[String(finalStage.order)]||null;
+    const rankText=idx===0?"1위":idx===1?"2위":idx===2?"3위":`${idx+1}위`;
+    return `<div class="labyrinth-player-line"><b>${rankText}</b> ${escapeHtml(player.nickname)}(${escapeHtml(formatDateTime(clearedAt))})</div>`;
+  }).join("");
+
+  return `
+    <div class="party-card">
+      <div class="party-title">명예의 전당</div>
+      <div class="party-sub">최종장 클리어 순서입니다.</div>
+      <div class="member-list">${lines}</div>
+    </div>
+  `;
+}
 
   const lines=clearers.map((player,idx)=>{
     const clearedAt=player.stageClearedAtMap?.[String(finalStage.order)]||null;
