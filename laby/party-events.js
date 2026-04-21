@@ -487,6 +487,572 @@ async function createVikingParty() {
   });
 }
 
+function resetPartyFormCommon() {
+  if (el.firstGroupCheckbox) el.firstGroupCheckbox.checked = false;
+  document.getElementById("firstGroupWrap")?.classList.add("hidden");
+}
+
+function openRuinsCreateModal() {
+  if (!state.isAdmin) {
+    alert("유적 파티는 운영진만 생성할 수 있습니다.");
+    return;
+  }
+
+  state.editingRuinsPartyId = "";
+  el.ruinsModalTitle.textContent = "유적 파티 생성";
+  el.ruinsSubmitBtn.textContent = "생성";
+  if (el.ruinNameInput) el.ruinNameInput.value = "";
+
+  document.getElementById("ruinNameWrap")?.classList.remove("hidden");
+  document.getElementById("holySwordSideWrap")?.classList.add("hidden");
+  resetPartyFormCommon();
+
+  el.utcMonth.value = "1";
+  el.utcDay.value = "1";
+  el.utcHour.value = "0";
+
+  el.ruinsCreateModal.classList.remove("hidden");
+  syncOverlay();
+}
+
+function openHolySwordCreateModal() {
+  if (!state.isAdmin) {
+    alert("성검 파티는 운영진만 생성할 수 있습니다.");
+    return;
+  }
+
+  state.editingRuinsPartyId = "";
+  el.ruinsModalTitle.textContent = "성검 파티 생성";
+  el.ruinsSubmitBtn.textContent = "생성";
+  if (el.ruinNameInput) el.ruinNameInput.value = "";
+
+  document.getElementById("ruinNameWrap")?.classList.add("hidden");
+  document.getElementById("holySwordSideWrap")?.classList.remove("hidden");
+  document.getElementById("firstGroupWrap")?.classList.remove("hidden");
+
+  if (el.firstGroupCheckbox) el.firstGroupCheckbox.checked = false;
+
+  const sideSelect = document.getElementById("holySwordSideSelect");
+  if (sideSelect) sideSelect.value = state.holySwordSelectedSide || "KOR";
+
+  el.utcMonth.value = "1";
+  el.utcDay.value = "1";
+  el.utcHour.value = "0";
+
+  el.ruinsCreateModal.classList.remove("hidden");
+  syncOverlay();
+}
+
+function openTripleAllianceCreateModal() {
+  if (!state.isAdmin) {
+    alert("삼대 연맹전 파티는 운영진만 생성할 수 있습니다.");
+    return;
+  }
+
+  state.editingRuinsPartyId = "";
+  el.ruinsModalTitle.textContent = "삼대 연맹전 생성";
+  el.ruinsSubmitBtn.textContent = "생성";
+  if (el.ruinNameInput) el.ruinNameInput.value = "";
+
+  document.getElementById("ruinNameWrap")?.classList.add("hidden");
+  document.getElementById("holySwordSideWrap")?.classList.remove("hidden");
+  document.getElementById("firstGroupWrap")?.classList.remove("hidden");
+
+  if (el.firstGroupCheckbox) el.firstGroupCheckbox.checked = false;
+
+  const sideSelect = document.getElementById("holySwordSideSelect");
+  if (sideSelect) sideSelect.value = state.tripleAllianceSelectedSide || "KOR";
+
+  el.utcMonth.value = "1";
+  el.utcDay.value = "1";
+  el.utcHour.value = "0";
+
+  el.ruinsCreateModal.classList.remove("hidden");
+  syncOverlay();
+}
+
+window.openRuinsEditModal = async function(partyId) {
+  if (!state.isAdmin) {
+    alert("권한이 없습니다.");
+    return;
+  }
+
+  const p = state.parties.find(v => v.id === partyId);
+  if (!p) {
+    alert("파티를 찾을 수 없습니다.");
+    return;
+  }
+
+  state.editingRuinsPartyId = partyId;
+  el.ruinsSubmitBtn.textContent = "수정";
+
+  if (state.currentEventId === "holy_sword") {
+    el.ruinsModalTitle.textContent = "성검 파티 수정";
+    document.getElementById("ruinNameWrap")?.classList.add("hidden");
+    document.getElementById("holySwordSideWrap")?.classList.remove("hidden");
+    document.getElementById("firstGroupWrap")?.classList.remove("hidden");
+
+    if (el.firstGroupCheckbox) el.firstGroupCheckbox.checked = !!p.isFirstGroup;
+
+    const sideSelect = document.getElementById("holySwordSideSelect");
+    if (sideSelect) sideSelect.value = p.side || "KOR";
+  } else if (state.currentEventId === "triple_alliance") {
+    el.ruinsModalTitle.textContent = "삼대 연맹전 수정";
+    document.getElementById("ruinNameWrap")?.classList.add("hidden");
+    document.getElementById("holySwordSideWrap")?.classList.remove("hidden");
+    document.getElementById("firstGroupWrap")?.classList.remove("hidden");
+
+    if (el.firstGroupCheckbox) el.firstGroupCheckbox.checked = !!p.isFirstGroup;
+
+    const sideSelect = document.getElementById("holySwordSideSelect");
+    if (sideSelect) sideSelect.value = p.side || "KOR";
+  } else {
+    el.ruinsModalTitle.textContent = "유적 파티 수정";
+    document.getElementById("ruinNameWrap")?.classList.remove("hidden");
+    document.getElementById("holySwordSideWrap")?.classList.add("hidden");
+    resetPartyFormCommon();
+    el.ruinNameInput.value = p.ruinName || p.name || "";
+  }
+
+  const d = toDate(p.timeUTC);
+  if (d) {
+    el.utcMonth.value = String(d.getUTCMonth() + 1);
+    el.utcDay.value = String(d.getUTCDate());
+    el.utcHour.value = String(d.getUTCHours());
+  }
+
+  el.ruinsCreateModal.classList.remove("hidden");
+  syncOverlay();
+};
+
+function closeRuinsCreateModal() {
+  state.editingRuinsPartyId = "";
+  document.getElementById("ruinNameWrap")?.classList.remove("hidden");
+  document.getElementById("holySwordSideWrap")?.classList.add("hidden");
+  resetPartyFormCommon();
+  el.ruinsCreateModal.classList.add("hidden");
+  syncOverlay();
+}
+
+window.closeRuinsCreateModal = closeRuinsCreateModal;
+
+window.submitRuinsParty = async function() {
+  if (!state.isAdmin) {
+    alert("권한이 없습니다.");
+    return;
+  }
+
+  const m = Number(el.utcMonth.value);
+  const d = Number(el.utcDay.value);
+  const h = Number(el.utcHour.value);
+  const isFirstGroup = !!el.firstGroupCheckbox?.checked;
+
+  if (!m || !d || h < 0 || h > 23) {
+    alert("UTC 날짜/시간을 선택하세요.");
+    return;
+  }
+
+  const year = new Date().getUTCFullYear();
+  const utcDate = new Date(Date.UTC(year, m - 1, d, h, 0, 0, 0));
+
+  if (state.currentEventId === "holy_sword" || state.currentEventId === "triple_alliance") {
+    const side = document.getElementById("holySwordSideSelect")?.value || "KOR";
+    const sideText = side === "KOR" ? "본연맹" : "아카데미";
+    const sideCode = side === "KOR" ? "KOR" : "KR1";
+    const kstHour = (h + 9) % 24;
+    const autoName = `[${sideText}(${sideCode})] ${kstHour}시(UTC ${String(h).padStart(2, "0")}:00)`;
+    const eventId = state.currentEventId;
+
+    if (state.editingRuinsPartyId) {
+      await partiesRef(eventId).doc(state.editingRuinsPartyId).update({
+        name: autoName,
+        side,
+        timeUTC: utcDate,
+        isFirstGroup
+      });
+    } else {
+      await partiesRef(eventId).add({
+        type: eventId,
+        event: eventId,
+        name: autoName,
+        side,
+        createdBy: state.currentUser,
+        members: [],
+        areaAssignments: eventId === "holy_sword" ? [] : undefined,
+        timeUTC: utcDate,
+        isFirstGroup,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+
+    closeRuinsCreateModal();
+    return;
+  }
+
+  const ruinName = (el.ruinNameInput.value || "").trim();
+  if (!ruinName) {
+    alert("유적명을 입력하세요.");
+    return;
+  }
+
+  if (state.editingRuinsPartyId) {
+    await partiesRef("ruins").doc(state.editingRuinsPartyId).update({
+      name: ruinName,
+      ruinName,
+      timeUTC: utcDate
+    });
+  } else {
+    await partiesRef("ruins").add({
+      type: "ruins",
+      event: "ruins",
+      name: ruinName,
+      ruinName,
+      createdBy: state.currentUser,
+      members: [],
+      rallyLeader: "",
+      maxMembers: 15,
+      timeUTC: utcDate,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }
+
+  closeRuinsCreateModal();
+};
+
+function lockRearrangeInputForManualTap() {
+  el.rearrangeStageInput?.setAttribute("readonly", "readonly");
+  el.rearrangeStageInput?.blur();
+}
+
+function unlockRearrangeInput() {
+  if (el.rearrangeStageInput?.hasAttribute("readonly")) {
+    el.rearrangeStageInput.removeAttribute("readonly");
+  }
+}
+
+if (el.rearrangeStageInput) {
+  const unlockAndFocus = () => {
+    unlockRearrangeInput();
+    setTimeout(() => {
+      try {
+        el.rearrangeStageInput.focus({ preventScroll: true });
+      } catch (_) {
+        el.rearrangeStageInput.focus();
+      }
+    }, 0);
+  };
+
+  el.rearrangeStageInput.addEventListener("pointerdown", unlockAndFocus);
+  el.rearrangeStageInput.addEventListener("touchstart", unlockAndFocus, { passive: true });
+  el.rearrangeStageInput.addEventListener("mousedown", unlockAndFocus);
+}
+
+window.openMyRearrangeModal = function() {
+  el.rearrangeModalTitle.textContent = "내 진척도 입력";
+  el.rearrangeSubmitBtn.textContent = "저장";
+
+  const mine = myRearrangeEntry();
+  el.rearrangeStageInput.value = mine ? mine.stageText : "";
+
+  lockRearrangeInputForManualTap();
+  el.rearrangeModal.classList.remove("hidden");
+  syncOverlay();
+
+  setTimeout(() => {
+    if (document.activeElement && typeof document.activeElement.blur === "function") {
+      document.activeElement.blur();
+    }
+    el.rearrangeStageInput.blur();
+  }, 80);
+};
+
+function closeRearrangeModal() {
+  el.rearrangeStageInput?.blur();
+  el.rearrangeStageInput?.removeAttribute("readonly");
+  el.rearrangeModal?.classList.add("hidden");
+  syncOverlay();
+}
+
+function openExampleImageModal(type = "tower") {
+  if (type === "guide") {
+    el.exampleImageModalTitle.textContent = "순열 안내 예시";
+    el.exampleImageModalImg.src = "../자리 순열.png";
+    el.exampleImageModalImg.alt = "자리 순열 안내 예시";
+  } else {
+    el.exampleImageModalTitle.textContent = "입력 예시 크게 보기";
+    el.exampleImageModalImg.src = "../빛나는첨탑순위.png";
+    el.exampleImageModalImg.alt = "빛나는 첨탑 순위 예시 크게 보기";
+  }
+
+  el.exampleImageModal.classList.remove("hidden");
+  syncOverlay();
+}
+
+function closeExampleImageModal() {
+  el.exampleImageModal?.classList.add("hidden");
+  syncOverlay();
+}
+
+window.closeRearrangeModal = closeRearrangeModal;
+window.openExampleImageModal = openExampleImageModal;
+window.closeExampleImageModal = closeExampleImageModal;
+
+window.openHolySwordAreaModal = function(partyId) {
+  if (!state.isAdmin) {
+    alert("권한이 없습니다.");
+    return;
+  }
+
+  const party = state.parties.find(v => v.id === partyId);
+  if (!party) {
+    alert("파티를 찾을 수 없습니다.");
+    return;
+  }
+
+  state.editingHolySwordPartyId = partyId;
+  el.holySwordAreaModalTitle.textContent = `구역장 지정 - ${party.name}`;
+  el.holySwordAreaUserSelect.innerHTML = party.members
+    .map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`)
+    .join("");
+  el.holySwordAreaSelect.value = "마구간";
+  renderHolySwordAreaAssignmentList(party);
+
+  el.holySwordAreaModal.classList.remove("hidden");
+  syncOverlay();
+};
+
+function closeHolySwordAreaModal() {
+  state.editingHolySwordPartyId = "";
+  el.holySwordAreaModal?.classList.add("hidden");
+  syncOverlay();
+}
+
+window.closeHolySwordAreaModal = closeHolySwordAreaModal;
+
+function renderHolySwordAreaAssignmentList(party) {
+  const assignments = normalizeAssignments(party.areaAssignments);
+  el.holySwordAreaAssignmentList.innerHTML = assignments.length
+    ? assignments.map((item, idx) => `
+        <div class="holy-sword-assign-item">
+          <span>${escapeHtml(item.user)} - ${escapeHtml(item.area)}</span>
+          <button type="button" class="rank-edit-btn" onclick="removeHolySwordAreaAssignment(${idx})">삭제</button>
+        </div>
+      `).join("")
+    : `<div class="muted">지정된 구역장이 없습니다.</div>`;
+}
+
+window.addHolySwordAreaAssignment = async function() {
+  if (!state.isAdmin) {
+    alert("권한이 없습니다.");
+    return;
+  }
+
+  const party = state.parties.find(v => v.id === state.editingHolySwordPartyId);
+  if (!party) {
+    alert("파티를 찾을 수 없습니다.");
+    return;
+  }
+
+  const user = el.holySwordAreaUserSelect.value;
+  const area = el.holySwordAreaSelect.value;
+  if (!user || !area) {
+    alert("파티원과 구역을 선택하세요.");
+    return;
+  }
+
+  const areaAssignments = [...normalizeAssignments(party.areaAssignments), { user, area }];
+  await partiesRef("holy_sword").doc(party.id).update({ areaAssignments });
+};
+
+window.removeHolySwordAreaAssignment = async function(index) {
+  if (!state.isAdmin) {
+    alert("권한이 없습니다.");
+    return;
+  }
+
+  const party = state.parties.find(v => v.id === state.editingHolySwordPartyId);
+  if (!party) {
+    alert("파티를 찾을 수 없습니다.");
+    return;
+  }
+
+  const areaAssignments = [...normalizeAssignments(party.areaAssignments)];
+  if (index < 0 || index >= areaAssignments.length) return;
+
+  areaAssignments.splice(index, 1);
+  await partiesRef("holy_sword").doc(party.id).update({ areaAssignments });
+};
+
+function parseStageText(raw) {
+  const value = String(raw || "").trim();
+  const parts = value.split("-");
+
+  if (parts.length !== 2 || parts[0] === "" || parts[1] === "") return null;
+
+  const stageMajor = Number(parts[0]);
+  const stageMinor = Number(parts[1]);
+
+  if (!Number.isInteger(stageMajor) || !Number.isInteger(stageMinor) || stageMajor < 0 || stageMinor < 0) {
+    return null;
+  }
+
+  return { stageMajor, stageMinor };
+}
+
+window.submitRearrangeProgress = async function() {
+  const raw = (el.rearrangeStageInput.value || "").trim();
+  const parsed = parseStageText(raw);
+
+  if (!parsed) {
+    alert("최고 스테이지는 15-4 형식으로 입력하세요.");
+    return;
+  }
+
+  await rearrangeProgressRef().doc(state.currentUser).set({
+    user: state.currentUser,
+    stageText: raw,
+    stageMajor: parsed.stageMajor,
+    stageMinor: parsed.stageMinor,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    createdAt: state.rearrangeProgressEntries.find(v => v.user === state.currentUser)?.createdAt || firebase.firestore.FieldValue.serverTimestamp()
+  }, { merge: true });
+
+  closeExampleImageModal();
+  closeRearrangeModal();
+  syncOverlay();
+};
+
+window.openRearrangeRankEditModal = function(userName = "") {
+  if (!state.isAdmin) {
+    alert("권한이 없습니다.");
+    return;
+  }
+
+  ensureRankingExtraFields();
+
+  const entry = userName ? state.rearrangeEntries.find(v => v.user === userName) : null;
+  if (!entry) {
+    alert("대상을 찾을 수 없습니다.");
+    return;
+  }
+
+  state.editingRearrangeRankUser = entry.user;
+  el.rearrangeRankEditTitle.textContent = "순위표 관리";
+  el.rankEditSubmitBtn.textContent = "저장";
+  el.rankEditDeleteBtn.classList.remove("hidden");
+  el.rankEditNicknameInput.value = entry.user || "";
+  el.rankEditStageInput.value = entry.stageText || "";
+  el.rankEditPowerInput.value = entry.power > 0 ? String(entry.power) : "";
+  el.rankEditNoteInput.value = entry.note || "";
+
+  const existingInput = document.getElementById("rankEditExistingInput");
+  if (existingInput) {
+    existingInput.value = entry.existingColumn > 0 ? String(entry.existingColumn) : "";
+  }
+
+  const excludeBtn = document.getElementById("rankEditExcludeBtn");
+  if (excludeBtn) {
+    excludeBtn.textContent = entry.excluded ? "제외 해제" : "목록에서 제외";
+    excludeBtn.onclick = toggleRearrangeExcluded;
+  }
+
+  el.rankEditNicknameInput.readOnly = true;
+  el.rankEditStageInput.readOnly = true;
+  el.rankEditDeleteBtn.textContent = "관리값 삭제";
+
+  el.rearrangeRankEditModal.classList.remove("hidden");
+  syncOverlay();
+};
+
+function closeRearrangeRankEditModal() {
+  state.editingRearrangeRankUser = "";
+  el.rankEditNicknameInput.readOnly = false;
+  el.rankEditStageInput.readOnly = false;
+  el.rearrangeRankEditModal?.classList.add("hidden");
+  syncOverlay();
+}
+
+window.closeRearrangeRankEditModal = closeRearrangeRankEditModal;
+
+window.toggleRearrangeExcluded = async function() {
+  if (!state.isAdmin) return;
+
+  const user = state.editingRearrangeRankUser || "";
+  if (!user) return;
+
+  const current = state.rearrangeEntries.find(v => v.user === user);
+  if (!current) return;
+
+  await rearrangeRankingRef().doc(user).set({
+    user,
+    excluded: !current.excluded,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }, { merge: true });
+
+  closeRearrangeRankEditModal();
+};
+
+window.submitRearrangeRankEdit = async function() {
+  if (!state.isAdmin) return;
+
+  const user = state.editingRearrangeRankUser || "";
+  if (!user) return;
+
+  const current = state.rearrangeEntries.find(v => v.user === user);
+  const powerRaw = (el.rankEditPowerInput.value || "").trim();
+  const note = (el.rankEditNoteInput.value || "").trim();
+  const existingRaw = (document.getElementById("rankEditExistingInput")?.value || "").trim();
+
+  let power = 0;
+  if (powerRaw !== "") {
+    power = Number(powerRaw);
+    if (!Number.isInteger(power) || power < 0) {
+      alert("전투력은 0 이상의 정수로 입력하세요.");
+      return;
+    }
+  }
+
+  let existingColumn = 0;
+  if (existingRaw !== "") {
+    existingColumn = Number(existingRaw);
+    if (!Number.isInteger(existingColumn) || existingColumn < 1) {
+      alert("기존은 1 이상의 정수로 입력하세요.");
+      return;
+    }
+  }
+
+  await rearrangeRankingRef().doc(user).set({
+    user,
+    power,
+    note,
+    existingColumn,
+    excluded: !!current?.excluded,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }, { merge: true });
+
+  closeRearrangeRankEditModal();
+};
+
+window.deleteRearrangeRankRow = async function() {
+  if (!state.isAdmin) return;
+
+  const user = state.editingRearrangeRankUser || "";
+  if (!user) return;
+
+  await rearrangeRankingRef().doc(user).delete();
+  closeRearrangeRankEditModal();
+};
+
+window.toggleRearrangePublic = async function() {
+  if (!state.isAdmin) return;
+  await eventRef("rearrange").set({ rankingPublic: !state.rearrangePublic }, { merge: true });
+};
+
+window.toggleRearrangeInputEnabled = async function() {
+  if (!state.isAdmin || state.currentUser !== "병풍") return;
+  await eventRef("rearrange").set({ rearrangeInputEnabled: !state.rearrangeInputEnabled }, { merge: true });
+};
+
 function fallbackCopy(text) {
   const ta = document.createElement("textarea");
   ta.value = text;
