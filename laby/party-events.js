@@ -5,27 +5,77 @@
 function subscribeParties() {
   clearSubscriptions();
 
+  if (state.currentEventId === "holy_sword" || state.currentEventId === "triple_alliance") {
+    state.unsubscribeRanking = rearrangeRankingRef().onSnapshot(rankingSnap => {
+      const rankingMap = {};
+
+      rankingSnap.docs.forEach(doc => {
+        const d = doc.data() || {};
+        rankingMap[doc.id] = {
+          user: d.user || doc.id,
+          power: Number(d.power || 0),
+          note: String(d.note || ""),
+          existingColumn: Number(d.existingColumn || 0),
+          excluded: !!d.excluded
+        };
+      });
+
+      state.rearrangeRankingMap = rankingMap;
+      rebuildMergedRearrangeEntries();
+      renderPartyList();
+    }, err => {
+      console.error(err);
+      alert("기본 데이터를 불러오는 중 오류가 발생했습니다.");
+    });
+
+    state.unsubscribeMeta = rearrangeProgressRef().onSnapshot(progressSnap => {
+      state.rearrangeProgressEntries = progressSnap.docs.map(doc => {
+        const d = doc.data() || {};
+        return {
+          id: doc.id,
+          user: d.user || doc.id,
+          stageText: String(d.stageText || d.stage || ""),
+          stageMajor: Number(d.stageMajor || 0),
+          stageMinor: Number(d.stageMinor || 0),
+          updatedAt: d.updatedAt || null,
+          createdAt: d.createdAt || null
+        };
+      });
+
+      rebuildMergedRearrangeEntries();
+      renderPartyList();
+    }, err => {
+      console.error(err);
+      alert("기본 데이터를 불러오는 중 오류가 발생했습니다.");
+    });
+  }
+
   state.unsubscribeParties = partiesRef(state.currentEventId).onSnapshot(snap => {
     state.parties = snap.docs.map(doc => {
       const d = doc.data() || {};
       return {
         id: doc.id,
         name: d.name || "",
-        members: normalizeMembers(d.members),
-        createdBy: d.createdBy || "",
-        maxMembers: Number(d.maxMembers || 0),
-        timeUTC: d.timeUTC || null,
         ruinName: d.ruinName || "",
         side: d.side || "",
-        rallyLeader: d.rallyLeader || "",
+        event: d.event || state.currentEventId,
+        createdBy: d.createdBy || "",
+        members: normalizeMembers(d.members),
         areaAssignments: normalizeAssignments(d.areaAssignments),
+        rallyLeader: d.rallyLeader || "",
+        timeUTC: d.timeUTC || null,
+        maxMembers: Number(d.maxMembers || 0),
+        type: d.type || "",
         isFirstGroup: !!d.isFirstGroup,
-        type: d.type || ""
+        createdAt: d.createdAt || null
       };
     });
 
     state.parties.sort(sortParties);
     renderPartyList();
+  }, err => {
+    console.error(err);
+    alert("기본 데이터를 불러오는 중 오류가 발생했습니다.");
   });
 }
 
@@ -38,6 +88,9 @@ function subscribeRearrange() {
     state.rearrangeInputEnabled = !!d.rearrangeInputEnabled;
     updateEventActionButtons();
     renderRearrangeEvent();
+  }, err => {
+    console.error(err);
+    alert("기본 데이터를 불러오는 중 오류가 발생했습니다.");
   });
 
   state.unsubscribeParties = rearrangeProgressRef().onSnapshot(snap => {
@@ -56,6 +109,9 @@ function subscribeRearrange() {
 
     rebuildMergedRearrangeEntries();
     renderRearrangeEvent();
+  }, err => {
+    console.error(err);
+    alert("기본 데이터를 불러오는 중 오류가 발생했습니다.");
   });
 
   state.unsubscribeRanking = rearrangeRankingRef().onSnapshot(snap => {
@@ -75,6 +131,9 @@ function subscribeRearrange() {
     state.rearrangeRankingMap = map;
     rebuildMergedRearrangeEntries();
     renderRearrangeEvent();
+  }, err => {
+    console.error(err);
+    alert("기본 데이터를 불러오는 중 오류가 발생했습니다.");
   });
 }
 
@@ -168,51 +227,221 @@ function renderVikingCard(p) {
 }
 
 function renderRuinsCard(p) {
+  const members = [...p.members].sort((a, b) =>
+    a === p.rallyLeader ? -1 : b === p.rallyLeader ? 1 : a.localeCompare(b, "ko")
+  );
+  const meJoined = members.includes(state.currentUser);
+  const power = calcPower(members.length).toLocaleString("ko-KR");
+
+  const membersHtml = members.map(name => `
+    <div class="member-line">
+      <span class="${name === state.currentUser ? "my-name" : ""}">
+        ${name === p.rallyLeader ? "👑 " : ""}${escapeHtml(name)}
+      </span>
+      ${state.isAdmin && name !== p.rallyLeader ? `<button class="inline-btn" onclick="setRallyLeader('${escapeJs(p.id)}','${escapeJs(name)}')">👍</button>` : ""}
+      ${state.isAdmin ? `<button class="inline-btn" onclick="kickMember('${escapeJs(p.id)}','${escapeJs(name)}')">✖</button>` : ""}
+    </div>
+  `).join("");
+
   return `
     <div class="party-card">
       <div class="party-title">유적명: ${escapeHtml(p.ruinName || p.name)}</div>
       <div class="party-sub">시간: ${formatKST(p.timeUTC)}</div>
       <div class="party-sub">UTC ${formatUTC(p.timeUTC)}</div>
-      <div class="party-sub">인원: ${p.members.length}/15</div>
+      <div class="party-sub">병력수: ${power}명</div>
+      <div class="party-sub">인원: ${members.length}/15</div>
+      <div class="member-list compact">${membersHtml || '<div class="member-line"><span>참가자가 없습니다.</span></div>'}</div>
+      <div class="card-actions">
+        ${!meJoined && members.length < 15 ? `<button onclick="joinParty('${escapeJs(p.id)}')">참가</button>` : ""}
+        ${meJoined ? `<button onclick="leaveParty('${escapeJs(p.id)}')">취소</button>` : ""}
+        ${state.isAdmin ? `<button onclick="openRuinsEditModal('${escapeJs(p.id)}')">수정</button><button onclick="deleteParty('${escapeJs(p.id)}')">삭제</button>` : ""}
+        <button onclick="copyRuinsNotice('${escapeJs(p.id)}')">복사</button>
+      </div>
     </div>
   `;
 }
 
 function renderHolySwordCard(p) {
+  const members = getHolySwordSortedMembers(p.members);
+  const meJoined = members.includes(state.currentUser);
+  const canManage = state.isAdmin;
+  const byUser = getHolySwordAreaAssignmentsByUser(p.areaAssignments);
+  const firstGroupMark = p.isFirstGroup ? `<div class="party-sub">분류: 1군</div>` : "";
+
+  const membersHtml = members.map((name, idx) => {
+    const badges = renderHolySwordBadges(byUser[name] || []);
+    return `
+      <div class="member-line">
+        <span class="${name === state.currentUser ? "my-name" : ""}">
+          <span class="holy-member-rank">${escapeHtml(getHolySwordDisplayIndex(idx))}</span>
+          ${escapeHtml(name)}${badges}
+        </span>
+      </div>
+    `;
+  }).join("");
+
   return `
     <div class="party-card">
       <div class="party-title holy-party-title">${escapeHtml(p.name)}</div>
+      ${firstGroupMark}
       <div class="party-sub">소속: <span class="holy-side-badge">${escapeHtml(getHolySwordSideLabel(p.side))}</span></div>
       <div class="party-sub">시간: ${formatKST(p.timeUTC)}</div>
       <div class="party-sub">UTC ${formatUTC(p.timeUTC)}</div>
-      <div class="party-sub">인원: ${p.members.length}명</div>
+      <div class="party-sub">인원: ${members.length}명</div>
       ${renderHolySwordAreaBoard(p.areaAssignments)}
+      <div class="member-list">${membersHtml || '<div class="member-line"><span>참가자가 없습니다.</span></div>'}</div>
+      <div class="card-actions">
+        ${!meJoined ? `<button onclick="joinParty('${escapeJs(p.id)}')">참가</button>` : ""}
+        ${meJoined ? `<button onclick="leaveParty('${escapeJs(p.id)}')">취소</button>` : ""}
+        ${canManage ? `<button onclick="openRuinsEditModal('${escapeJs(p.id)}')">수정</button>` : ""}
+        ${canManage ? `<button onclick="deleteParty('${escapeJs(p.id)}')">삭제</button>` : ""}
+        ${canManage ? `<button onclick="openHolySwordAreaModal('${escapeJs(p.id)}')">구역장 지정</button>` : ""}
+        <button onclick="copyHolySwordNotice('${escapeJs(p.id)}')">복사</button>
+      </div>
     </div>
   `;
 }
 
 function renderTripleAllianceCard(p) {
+  const members = getHolySwordSortedMembers(p.members);
+  const meJoined = members.includes(state.currentUser);
+  const firstGroupMark = p.isFirstGroup ? `<div class="party-sub">분류: 1군</div>` : "";
+
+  const membersHtml = members.map(name => `
+    <div class="member-line">
+      <span class="${name === state.currentUser ? "my-name" : ""}">${escapeHtml(name)}</span>
+      ${state.isAdmin ? `<button class="inline-btn" onclick="kickMember('${escapeJs(p.id)}','${escapeJs(name)}')">✖</button>` : ""}
+    </div>
+  `).join("");
+
   return `
     <div class="party-card">
       <div class="party-title triple-alliance-title">${escapeHtml(p.name)}</div>
+      ${firstGroupMark}
       <div class="party-sub">소속: <span class="holy-side-badge">${escapeHtml(getTripleAllianceSideLabel(p.side))}</span></div>
       <div class="party-sub">시간: ${formatKST(p.timeUTC)}</div>
       <div class="party-sub">UTC ${formatUTC(p.timeUTC)}</div>
-      <div class="party-sub">인원: ${p.members.length}명</div>
+      <div class="party-sub">인원: ${members.length}명</div>
+      <div class="member-list">${membersHtml || '<div class="member-line"><span>참가자가 없습니다.</span></div>'}</div>
+      <div class="card-actions">
+        ${!meJoined ? `<button onclick="joinParty('${escapeJs(p.id)}')">참가</button>` : ""}
+        ${meJoined ? `<button onclick="leaveParty('${escapeJs(p.id)}')">취소</button>` : ""}
+        ${state.isAdmin ? `<button onclick="openRuinsEditModal('${escapeJs(p.id)}')">수정</button>` : ""}
+        ${state.isAdmin ? `<button onclick="deleteParty('${escapeJs(p.id)}')">삭제</button>` : ""}
+      </div>
     </div>
   `;
 }
 
-function renderRearrangeEvent() {
-  const mine = myRearrangeEntry();
+function renderExcludedRearrangeList(entries) {
+  if (!state.isAdmin || !entries.length) return "";
 
-  el.partyList.innerHTML = `
+  const items = entries.map(entry => `
+    <div class="member-line">
+      <span>${escapeHtml(entry.user)}</span>
+      <button class="rank-edit-btn" onclick="openRearrangeRankEditModal('${escapeJs(entry.user)}')">관리</button>
+    </div>
+  `).join("");
+
+  return `
     <div class="party-card">
-      <div class="party-title">내 진척도</div>
-      <div class="party-sub">현재 입력값: ${mine ? escapeHtml(mine.stageText) : "미입력"}</div>
-      <div class="party-sub">최종 수정: ${mine ? formatDateTime(mine.updatedAt) : "-"}</div>
+      <div class="party-title">제외 인원</div>
+      <div class="party-sub">복구하려면 관리 버튼에서 제외 해제를 하세요.</div>
+      <div class="member-list">${items}</div>
     </div>
   `;
+}
+
+function renderRearrangeTable(entries) {
+  if (!entries.length) return `<div class="rank-empty">입력된 데이터가 없습니다.</div>`;
+
+  const rows = entries.map((entry, idx) => {
+    const rank = idx + 1;
+    const currentColumn = getRearrangeColumn(rank);
+    const rowClass = entry && entry.user === state.currentUser ? "rank-row-me" : "";
+
+    if (!entry) {
+      return `
+        <tr class="${rowClass}">
+          <td>${rank}</td>
+          <td>${getLayoutLabel(rank)}</td>
+          <td class="left muted">공란</td>
+          <td>-</td>
+          <td>-</td>
+          <td class="left">-</td>
+          <td>-</td>
+          <td>-</td>
+        </tr>
+      `;
+    }
+
+    const powerText = entry.power > 0 ? Number(entry.power).toLocaleString("ko-KR") : "-";
+    const noteText = entry.note ? escapeHtml(entry.note) : "-";
+    const existingText = entry.existingColumn > 0 ? String(entry.existingColumn) : "-";
+    const move = getMoveDisplay(entry.existingColumn, currentColumn);
+
+    return `
+      <tr class="${rowClass}">
+        <td>${rank}</td>
+        <td>${getLayoutLabel(rank)}</td>
+        <td class="left ${entry.user === state.currentUser ? "my-name" : ""}">${escapeHtml(entry.user)}</td>
+        <td>${escapeHtml(entry.stageText || "-")}</td>
+        <td>${powerText}</td>
+        <td class="left">${noteText}</td>
+        <td>${existingText}</td>
+        <td><span class="${move.className}">${escapeHtml(move.text)}</span>${state.isAdmin ? ` <button class="rank-edit-btn" onclick="openRearrangeRankEditModal('${escapeJs(entry.user)}')">관리</button>` : ""}</td>
+      </tr>
+    `;
+  }).join("");
+
+  return `
+    <div class="rank-table-wrap">
+      <table class="rank-table">
+        <colgroup><col><col><col><col><col><col><col><col></colgroup>
+        <thead>
+          <tr>
+            <th>순위</th>
+            <th>순열</th>
+            <th>닉네임</th>
+            <th>스테이지</th>
+            <th>전투력</th>
+            <th>비고</th>
+            <th>기존</th>
+            <th>이동</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderRearrangeGuide() {
+  return `<div class="layout-guide-wrap"><img src="../자리 순열.png" alt="자리 순열 안내도" class="layout-guide-image" /></div>`;
+}
+
+function renderRearrangeEvent() {
+  const mine = myRearrangeEntry();
+  const activeEntries = state.rearrangeEntries.filter(v => !isHiddenTestNickname(v.user) && !v.excluded);
+  const excludedEntries = state.rearrangeEntries.filter(v => !isHiddenTestNickname(v.user) && v.excluded);
+  const displayedEntries = getDisplayedRearrangeEntries(activeEntries);
+
+  const mineCard = state.rearrangeInputEnabled
+    ? `<div class="party-card"><div class="party-title">내 진척도</div><div class="party-sub">빛나는 첨탑 최고 스테이지</div><div class="party-sub">현재 입력값: ${mine ? escapeHtml(mine.stageText) : "미입력"}</div><div class="party-sub">최종 수정: ${mine ? formatDateTime(mine.updatedAt) : "-"}</div><div class="card-actions"><button onclick="openMyRearrangeModal()">${mine ? "수정" : "입력"}</button></div></div>`
+    : `<div class="party-card"><div class="party-title">내 진척도</div><div class="party-sub">빛나는 첨탑 최고 스테이지</div><div class="party-sub">현재 입력값: ${mine ? escapeHtml(mine.stageText) : "미입력"}</div><div class="party-sub">최종 수정: ${mine ? formatDateTime(mine.updatedAt) : "-"}</div><div class="party-sub">현재 개인 입력은 일시 중지되어 있습니다.</div><div class="card-actions"><button disabled>입력 일시중지</button></div></div>`;
+
+  let rankingCard = "";
+  let guideCard = "";
+
+  if (state.isAdmin || state.rearrangePublic) {
+    rankingCard = `<div class="party-card rank-table-card"><div class="party-title">진척도 순위표</div><div class="party-sub">${state.isAdmin ? (state.rearrangePublic ? "현재 전체 공개 상태입니다." : "현재 운영진만 볼 수 있습니다.") : "공개된 순위입니다."}</div><div class="card-actions"><button onclick="copyRearrangeColumns()">복사</button></div>${renderRearrangeTable(displayedEntries)}</div>`;
+    guideCard = `<div class="party-card layout-guide-card"><div class="party-title">순열 안내 예시</div><div class="party-sub">빨(1), 주(2), 노(3), 초(4), 파(5)</div><div class="card-actions"><button onclick="openExampleImageModal('guide')">예시 크게 보기</button></div>${renderRearrangeGuide()}</div>`;
+  } else {
+    rankingCard = `<div class="party-card"><div class="party-title">진척도 순위</div><div class="party-sub">아직 공개되지 않았습니다.</div><div class="party-sub">운영진 공개 후 전체 유저가 확인할 수 있습니다.</div></div>`;
+  }
+
+  const excludedCard = renderExcludedRearrangeList(excludedEntries);
+  el.partyList.innerHTML = mineCard + rankingCard + excludedCard + guideCard;
 }
 
 async function createParty() {
@@ -258,6 +487,7 @@ async function createVikingParty() {
   });
 }
 
+/* ===== 기존 전역 액션 유지 ===== */
 window.joinParty = async function(id) {
   const ref = partiesRef(state.currentEventId).doc(id);
   const snap = await ref.get();
@@ -270,14 +500,11 @@ window.joinParty = async function(id) {
     alert("이미 다른 파티에 참여 중입니다.");
     return;
   }
-
   if (members.includes(state.currentUser)) return;
-
   if (state.currentEventId === "ruins" && members.length >= 15) {
     alert("유적 파티는 최대 15명입니다.");
     return;
   }
-
   if (state.currentEventId === "viking" && Number(d.maxMembers || 0) > 0 && members.length >= Number(d.maxMembers)) {
     alert("이 파티는 정원이 가득 찼습니다.");
     return;
@@ -299,7 +526,6 @@ window.leaveParty = async function(id) {
   if (state.currentEventId === "ruins" && d.rallyLeader === state.currentUser) {
     updates.rallyLeader = members[0] || "";
   }
-
   if (state.currentEventId === "holy_sword") {
     updates.areaAssignments = normalizeAssignments(d.areaAssignments).filter(v => v.user !== state.currentUser);
   }
@@ -339,10 +565,16 @@ window.kickMember = async function(id, name) {
   if (state.currentEventId === "ruins" && p.rallyLeader === name) {
     updates.rallyLeader = members[0] || "";
   }
-
   if (state.currentEventId === "holy_sword") {
     updates.areaAssignments = normalizeAssignments(p.areaAssignments).filter(v => v.user !== name);
   }
 
   await ref.update(updates);
+};
+
+window.setRallyLeader = async function(id, name) {
+  if (!state.isAdmin) return;
+  const p = state.parties.find(v => v.id === id);
+  if (!p || !p.members.includes(name)) return;
+  await partiesRef("ruins").doc(id).update({ rallyLeader: name });
 };
