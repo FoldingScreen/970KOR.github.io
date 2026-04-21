@@ -170,7 +170,7 @@ function escapeHtml(s) {
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    .replace(/\"/g, "&quot;")
+    .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 }
 
@@ -313,25 +313,22 @@ function syncOverlay() {
 
   if (!el.modalOverlay) return;
 
-  if (hasOpenModal) {
-    el.modalOverlay.classList.remove("hidden");
-  } else {
-    el.modalOverlay.classList.add("hidden");
-  }
+  if (hasOpenModal) el.modalOverlay.classList.remove("hidden");
+  else el.modalOverlay.classList.add("hidden");
 }
 
 if (el.modalOverlay) {
   el.modalOverlay.addEventListener("click", () => {
-    closeExampleImageModal();
-    closeUserModal();
-    closeLogModal();
-    closeRuinsCreateModal();
-    closeRearrangeModal();
-    closeRearrangeRankEditModal();
-    closeHolySwordAreaModal();
-    closeCreateLabyrinthModal();
-    closeEditLabyrinthModal();
-    closeEditStageModal();
+    if (typeof closeExampleImageModal === "function") closeExampleImageModal();
+    if (typeof closeUserModal === "function") closeUserModal();
+    if (typeof closeLogModal === "function") closeLogModal();
+    if (typeof closeRuinsCreateModal === "function") closeRuinsCreateModal();
+    if (typeof closeRearrangeModal === "function") closeRearrangeModal();
+    if (typeof closeRearrangeRankEditModal === "function") closeRearrangeRankEditModal();
+    if (typeof closeHolySwordAreaModal === "function") closeHolySwordAreaModal();
+    if (typeof closeCreateLabyrinthModal === "function") closeCreateLabyrinthModal();
+    if (typeof closeEditLabyrinthModal === "function") closeEditLabyrinthModal();
+    if (typeof closeEditStageModal === "function") closeEditStageModal();
     syncOverlay();
   });
 }
@@ -388,21 +385,18 @@ function toDate(t) {
 function formatKST(t) {
   const d = toDate(t);
   if (!d) return "-";
-
   return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:00`;
 }
 
 function formatUTC(t) {
   const d = toDate(t);
   if (!d) return "-";
-
   return `${d.getUTCMonth() + 1}/${d.getUTCDate()} ${String(d.getUTCHours()).padStart(2, "0")}:00`;
 }
 
 function formatDateTime(t) {
   const d = toDate(t);
   if (!d) return "-";
-
   return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
