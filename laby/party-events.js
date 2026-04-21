@@ -1255,3 +1255,73 @@ window.setRallyLeader = async function(id, name) {
   if (!p || !p.members.includes(name)) return;
   await partiesRef("ruins").doc(id).update({ rallyLeader: name });
 };
+
+window.showAllUsers = async function() {
+  const usersSnap = await db.collection("users").get();
+  const joined = new Set();
+
+  if (state.currentEventId === "rearrange") {
+    state.rearrangeEntries.forEach(v => joined.add(v.user));
+  } else {
+    state.parties.forEach(p => normalizeMembers(p.members).forEach(n => joined.add(n)));
+  }
+
+  const all = [];
+  usersSnap.forEach(doc => {
+    if (!isHiddenTestNickname(doc.id)) all.push(doc.id);
+  });
+
+  all.sort((a, b) => a.localeCompare(b, "ko"));
+
+  el.joinedUsers.innerHTML = renderNameColumns(all.filter(n => joined.has(n)));
+  el.notJoinedUsers.innerHTML = renderNameColumns(all.filter(n => !joined.has(n)));
+  el.userModal.classList.remove("hidden");
+  syncOverlay();
+};
+
+function renderNameColumns(arr) {
+  if (!arr.length) return `<div class="name-item">(없음)</div>`;
+  return arr.map(v => `<div class="name-item">${escapeHtml(v)}</div>`).join("");
+}
+
+function closeUserModal() {
+  el.userModal?.classList.add("hidden");
+  syncOverlay();
+}
+
+window.closeUserModal = closeUserModal;
+
+window.showAdminLogs = async function() {
+  if (!state.isAdmin) {
+    alert("권한이 없습니다.");
+    return;
+  }
+
+  const snap = await db.collection("adminLogs").orderBy("createdAt", "desc").limit(50).get();
+  const items = [];
+  snap.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
+
+  el.logList.innerHTML = items.length
+    ? items.map(log => `
+        <div class="log-item">
+          <div class="log-top">
+            <div class="log-action">${escapeHtml(log.action || "")}</div>
+            <div class="muted">${log.admin ? escapeHtml(log.admin) : ""}</div>
+          </div>
+          <div class="muted">이벤트: ${escapeHtml(log.event || "-")}</div>
+          <div class="muted">${escapeHtml(JSON.stringify(log.payload || {}))}</div>
+        </div>
+      `).join("")
+    : `<div class="empty-card">운영 로그가 없습니다.</div>`;
+
+  el.logModal.classList.remove("hidden");
+  syncOverlay();
+  closeAdminMenu();
+};
+
+function closeLogModal() {
+  el.logModal?.classList.add("hidden");
+  syncOverlay();
+}
+
+window.closeLogModal = closeLogModal;
