@@ -487,7 +487,118 @@ async function createVikingParty() {
   });
 }
 
-/* ===== 기존 전역 액션 유지 ===== */
+function fallbackCopy(text) {
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand("copy");
+  document.body.removeChild(ta);
+  alert("복사되었습니다.");
+}
+
+window.copyRuinsNotice = function(partyId) {
+  const p = state.parties.find(v => v.id === partyId);
+  if (!p) return;
+
+  const members = [...p.members];
+  const leader = p.rallyLeader || "";
+  const others = members.filter(n => n !== leader);
+  const power = calcPower(members.length).toLocaleString("ko-KR");
+  const d = toDate(p.timeUTC);
+  const kstTime = d ? `${String(d.getHours()).padStart(2, "0")}:00` : "-";
+  const utcTime = d ? `${String(d.getUTCHours()).padStart(2, "0")}:00` : "-";
+  const title = (p.ruinName || p.name || "") + " 명단";
+
+  const text = `${title}\n시간: ${kstTime}(UTC ${utcTime})\n집결장: ${leader || "-"}\n집결원: ${others.join(", ")}\n병력수: ${power}명`;
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => alert("복사되었습니다."), () => fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+};
+
+window.copyHolySwordNotice = function(partyId) {
+  const p = state.parties.find(v => v.id === partyId);
+  if (!p) return;
+
+  const members = getHolySwordSortedMembers(p.members);
+  const byArea = {};
+  HOLY_SWORD_AREAS.forEach(area => byArea[area] = []);
+  normalizeAssignments(p.areaAssignments).forEach(item => {
+    if (!byArea[item.area]) byArea[item.area] = [];
+    byArea[item.area].push(item.user);
+  });
+
+  const memberLines = members.map((name, idx) => `${getHolySwordDisplayIndex(idx)} ${name}`);
+
+  const text = [
+    "[성검 쟁탈]",
+    `소속: ${getHolySwordSideLabel(p.side)}`,
+    `시간: ${formatKST(p.timeUTC)} (UTC ${formatUTC(p.timeUTC)})`,
+    "",
+    "[구역장]",
+    `수도원 1: ${byArea["수도원 1"].join(", ") || "-"}`,
+    `수도원 2: ${byArea["수도원 2"].join(", ") || "-"}`,
+    `성소 1: ${byArea["성소 1"].join(", ") || "-"}`,
+    `마구간: ${byArea["마구간"].join(", ") || "-"}`,
+    `수도원 3: ${byArea["수도원 3"].join(", ") || "-"}`,
+    `수도원 4: ${byArea["수도원 4"].join(", ") || "-"}`,
+    `성소 2: ${byArea["성소 2"].join(", ") || "-"}`,
+    `시계탑: ${byArea["시계탑"].join(", ") || "-"}`,
+    "",
+    "[참가인원]",
+    ...memberLines
+  ].join("\n");
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => alert("복사되었습니다."), () => fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+};
+
+window.copyRearrangeColumns = function() {
+  const activeEntries = state.rearrangeEntries.filter(v => !isHiddenTestNickname(v.user) && !v.excluded);
+  const displayedEntries = getDisplayedRearrangeEntries(activeEntries);
+  const columns = { 1: [], 2: [], 3: [], 4: [], 5: [] };
+  const moveNeeded = [];
+
+  displayedEntries.forEach((entry, idx) => {
+    const rank = idx + 1;
+    const col = getRearrangeColumn(rank);
+    if (!entry) return;
+
+    columns[col].push(entry.user);
+
+    const existingColumn = Number(entry.existingColumn || 0);
+    if (existingColumn > 0 && existingColumn !== col) {
+      moveNeeded.push(`${entry.user}(${existingColumn}→${col})`);
+    }
+  });
+
+  const lines = [
+    "[자리 재배치 결과]",
+    `1열: ${columns[1].join(", ")}`,
+    `2열: ${columns[2].join(", ")}`,
+    `3열: ${columns[3].join(", ")}`,
+    `4열: ${columns[4].join(", ")}`,
+    `5열: ${columns[5].join(", ")}`,
+    "",
+    "[이동 필요 인원]",
+    ...(moveNeeded.length ? moveNeeded : ["없음"])
+  ];
+
+  const text = lines.join("\n");
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => alert("순열이 복사되었습니다."), () => fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+};
+
 window.joinParty = async function(id) {
   const ref = partiesRef(state.currentEventId).doc(id);
   const snap = await ref.get();
