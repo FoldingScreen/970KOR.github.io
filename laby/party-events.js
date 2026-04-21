@@ -671,18 +671,23 @@ window.submitRuinsParty = async function() {
         isFirstGroup
       });
     } else {
-      await partiesRef(eventId).add({
+      const payload = {
         type: eventId,
         event: eventId,
         name: autoName,
         side,
         createdBy: state.currentUser,
         members: [],
-        areaAssignments: eventId === "holy_sword" ? [] : undefined,
         timeUTC: utcDate,
         isFirstGroup,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
+      };
+
+      if (eventId === "holy_sword") {
+        payload.areaAssignments = [];
+      }
+
+      await partiesRef(eventId).add(payload);
     }
 
     closeRuinsCreateModal();
