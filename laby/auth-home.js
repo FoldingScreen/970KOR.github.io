@@ -143,7 +143,7 @@ async function login() {
     await ensureUserDoc(name);
     await refreshAdmin();
     await ensureEventDocs();
-    goHome();
+    await goHome();
   } catch (e) {
     console.error(e);
     alert("로그인 중 오류가 발생했습니다.");
@@ -168,14 +168,18 @@ async function logout() {
   state.currentUser = "";
   state.currentEventId = "";
   state.isAdmin = false;
+
   state.parties = [];
   state.rearrangeEntries = [];
   state.rearrangeProgressEntries = [];
   state.rearrangeRankingMap = {};
   state.rearrangePublic = false;
+  state.rearrangeInputEnabled = false;
+
   state.editingRuinsPartyId = "";
   state.editingRearrangeRankUser = "";
   state.editingHolySwordPartyId = "";
+
   state.labyrinths = [];
   state.labyrinthPlayerSummaryMap = {};
   state.currentLabyrinthId = "";
@@ -210,13 +214,18 @@ async function tryAutoLogin() {
     if (!savedUser) return;
 
     state.currentUser = savedUser;
+    if (el.nicknameInput) el.nicknameInput.value = savedUser;
+
     await ensureUserDoc(savedUser);
     await refreshAdmin();
     await ensureEventDocs();
 
     const savedEvent = localStorage.getItem("partyAppEvent");
-    if (savedEvent) openEvent(savedEvent);
-    else goHome();
+    if (savedEvent) {
+      await openEvent(savedEvent);
+    } else {
+      await goHome();
+    }
   } catch (e) {
     console.error(e);
     updateUserBadge();
