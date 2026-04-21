@@ -1922,7 +1922,23 @@ window.submitRuinsParty=async function(){
     if(state.editingRuinsPartyId){
       await partiesRef(eventId).doc(state.editingRuinsPartyId).update({name:autoName,side,timeUTC:utcDate,isFirstGroup});
     }else{
-      await partiesRef(eventId).add({type:eventId,event:eventId,name:autoName,side,createdBy:state.currentUser,members:[],areaAssignments:eventId==="holy_sword"?[]:undefined,timeUTC:utcDate,isFirstGroup,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+const payload = {
+  type: eventId,
+  event: eventId,
+  name: autoName,
+  side,
+  createdBy: state.currentUser,
+  members: [],
+  timeUTC: utcDate,
+  isFirstGroup,
+  createdAt: firebase.firestore.FieldValue.serverTimestamp()
+};
+
+if (eventId === "holy_sword") {
+  payload.areaAssignments = [];
+}
+
+await partiesRef(eventId).add(payload);
     }
     closeRuinsCreateModal();
     return;
