@@ -559,12 +559,9 @@ async function renderHomeSummary(){
 
 function renderHomeEventCards(){
   el.homeEventCards.innerHTML=state.events.map(e=>`
-    <div class="event-card">
+    <div class="event-card clickable-event-card" onclick="openEvent('${escapeJs(e.id)}')">
       <h3>${escapeHtml(e.name)}</h3>
       <p>${escapeHtml(e.desc)}</p>
-      <div class="actions">
-        <button onclick="openEvent('${escapeJs(e.id)}')">들어가기</button>
-      </div>
     </div>
   `).join("");
 }
