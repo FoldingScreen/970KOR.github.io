@@ -56,7 +56,8 @@ const state={
     {id:"ruins",name:"유적 쟁탈",desc:"가장 강력한 유적은? 무적 엌ㅋㅋㅋ"},
     {id:"holy_sword",name:"성검 쟁탈",desc:"검이 정색하면? 검정색 엌ㅋㅋㅋ"},
     {id:"triple_alliance",name:"삼대 연맹전",desc:"아빠는 5대, 아들은 2대 맞는 이유는? 세대차이 엌ㅋㅋ"},
-    {id:"rearrange",name:"자리 재배치",desc:"자동차에서 가장 시원한 자리는? 차가운데 엌ㅋㅋ"},
+    {id:"castle_battle",name:"캐슬 전투",desc:"TG 병종 신청 및 배치 관리"},
+    {id:"rearrange",name:"자리 재배치",desc:"아이디어 제보 받습니다."},
     {id:"escape_labyrinth",name:"사바나의 첨탑",desc:"바나나가 사악하면? 사바나. ㅇㅇ."}
   ]
 };
@@ -192,8 +193,9 @@ function setTopTabs(active){
   if(active==="ruins")document.querySelectorAll(".tab-btn")[2]?.classList.add("active");
   if(active==="holy_sword")document.querySelectorAll(".tab-btn")[3]?.classList.add("active");
   if(active==="triple_alliance")document.querySelectorAll(".tab-btn")[4]?.classList.add("active");
-  if(active==="rearrange")document.querySelectorAll(".tab-btn")[5]?.classList.add("active");
-  if(active==="escape_labyrinth")document.querySelectorAll(".tab-btn")[6]?.classList.add("active");
+  if(active==="castle_battle")document.querySelectorAll(".tab-btn")[5]?.classList.add("active");
+  if(active==="rearrange")document.querySelectorAll(".tab-btn")[6]?.classList.add("active");
+  if(active==="escape_labyrinth")document.querySelectorAll(".tab-btn")[7]?.classList.add("active");
 }
 
 function updateUserBadge(){
@@ -498,6 +500,12 @@ function updateEventActionButtons(){
     el.createPartyBtn.onclick=createParty;
   }
 
+  if(state.currentEventId==="castle_battle"){
+    el.createPartyBtn.classList.remove("hidden");
+    el.createPartyBtn.textContent="캐슬 전투 신청";
+    el.createPartyBtn.onclick=createParty;
+  }
+  
   if(state.currentEventId==="rearrange"){
     el.rearrangeEditBtn.classList.remove("hidden");
 
@@ -1862,6 +1870,7 @@ async function createParty(){
   if(state.currentEventId==="ruins")return openRuinsCreateModal();
   if(state.currentEventId==="holy_sword")return openHolySwordCreateModal();
   if(state.currentEventId==="triple_alliance")return openTripleAllianceCreateModal();
+  if(state.currentEventId==="castle_battle")return openCastleBattleModal();
 }
 window.createParty=createParty;
 
