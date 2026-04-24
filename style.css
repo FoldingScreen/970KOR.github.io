@@ -1196,3 +1196,53 @@ textarea.text-input{
     grid-template-columns:1fr;
   }
 }
+
+.clickable-event-card{
+  cursor:pointer;
+  transition:transform .15s ease, border-color .15s ease, background .15s ease;
+}
+
+.clickable-event-card:hover{
+  transform:translateY(-2px);
+  border-color:rgba(96,165,250,.55);
+  background:rgba(15,23,42,.92);
+}
+
+/* PC 이벤트 로비 카드 축소 */
+.home-event-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:14px;
+}
+
+.home-event-grid .event-card{
+  padding:16px;
+  min-height:auto;
+}
+
+.home-event-grid .event-card h3{
+  font-size:20px;
+  margin:0 0 8px;
+}
+
+.home-event-grid .event-card p{
+  font-size:14px;
+  line-height:1.35;
+  margin:0;
+}
+
+@media(min-width:1000px){
+  .home-event-grid{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+}
+
+@media(max-width:700px){
+  .home-event-grid{
+    grid-template-columns:1fr;
+  }
+
+  .home-event-grid .event-card{
+    padding:14px;
+  }
+}
