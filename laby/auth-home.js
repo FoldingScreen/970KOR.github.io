@@ -83,10 +83,28 @@ function ensureHolySwordFields() {
 }
 
 function ensureRankingExtraFields() {
-  if (!document.getElementById("rankEditExistingWrap")) {
+  if (!document.getElementById("rankEditHopeWrap")) {
     const noteInput = el.rankEditNoteInput;
 
     if (noteInput && noteInput.parentElement) {
+      const wrap = document.createElement("div");
+      wrap.className = "form-group";
+      wrap.id = "rankEditHopeWrap";
+      wrap.innerHTML = `
+        <label for="rankEditHopeSelect">희망</label>
+        <select id="rankEditHopeSelect" class="text-input">
+          <option value="곰1">곰1</option>
+          <option value="곰2">곰2</option>
+        </select>
+      `;
+      noteInput.parentElement.insertAdjacentElement("afterend", wrap);
+    }
+  }
+
+  if (!document.getElementById("rankEditExistingWrap")) {
+    const hopeWrap = document.getElementById("rankEditHopeWrap") || el.rankEditNoteInput?.parentElement;
+
+    if (hopeWrap) {
       const wrap = document.createElement("div");
       wrap.className = "form-group";
       wrap.id = "rankEditExistingWrap";
@@ -94,7 +112,7 @@ function ensureRankingExtraFields() {
         <label for="rankEditExistingInput">기존</label>
         <input id="rankEditExistingInput" class="text-input" type="number" min="1" step="1" placeholder="예: 3">
       `;
-      noteInput.parentElement.insertAdjacentElement("afterend", wrap);
+      hopeWrap.insertAdjacentElement("afterend", wrap);
     }
   }
 
