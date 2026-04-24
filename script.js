@@ -636,10 +636,16 @@ function updateEventActionButtons(){
   }
 
   if(state.currentEventId==="castle_battle"){
-    el.createPartyBtn.classList.remove("hidden");
-    el.createPartyBtn.textContent="캐슬 전투 신청";
-    el.createPartyBtn.onclick=createParty;
+  el.createPartyBtn.classList.remove("hidden");
+  el.createPartyBtn.textContent="캐슬 전투 신청";
+  el.createPartyBtn.onclick=createParty;
+
+  if(state.isAdmin){
+    el.rearrangeManageBtn.classList.remove("hidden");
+    el.rearrangeManageBtn.textContent=state.castleManageMode?"관리 종료":"관리";
+    el.rearrangeManageBtn.onclick=toggleCastleManageMode;
   }
+}
 
   if(state.currentEventId==="rearrange"){
     el.rearrangeEditBtn.classList.remove("hidden");
@@ -1606,9 +1612,9 @@ function renderCastleBattleEvent(){
     return;
   }
 
-  const manageBar=state.isAdmin&&state.castleManageMode
+  const managePanel=state.isAdmin&&state.castleManageMode
     ? `
-      <div class="party-card">
+      <div class="party-card castle-manage-panel">
         <div class="party-title">캐슬 전투 배치 관리</div>
         <div class="form-group">
           <label>선택 인원 배치</label>
@@ -1623,51 +1629,44 @@ function renderCastleBattleEvent(){
         </div>
         <div class="card-actions">
           <button onclick="applyCastlePlacement()">선택 인원 일괄 배치</button>
-          <button onclick="toggleCastleManageMode()">관리 종료</button>
         </div>
       </div>
     `
-    : state.isAdmin
-      ? `<div class="party-card"><div class="card-actions"><button onclick="toggleCastleManageMode()">관리</button></div></div>`
-      : "";
+    : "";
 
   const sections=placements.map(place=>{
     const sectionEntries=entries.filter(v=>(v.placement||"미배치")===place);
     if(!sectionEntries.length)return"";
 
     const rows=sectionEntries.map((entry,idx)=>{
-      const rankMap=getRearrangeRankMap();
-      const rank=rankMap[entry.user]||"-";
       const status=place==="미배치"?"-":idx<10?"정규":"예비";
 
       return`
         <tr>
           ${state.isAdmin&&state.castleManageMode?`<td><input type="checkbox" class="castle-check" value="${escapeHtml(entry.id)}"></td>`:""}
-          <td>${rank}</td>
+          <td>${idx+1}</td>
           <td class="left ${entry.user===state.currentUser?"my-name":""}">${escapeHtml(entry.user)}</td>
           <td>${escapeHtml(getCastleTgValue(entry.tg,"infantry"))}</td>
           <td>${escapeHtml(getCastleTgValue(entry.tg,"cavalry"))}</td>
           <td>${escapeHtml(getCastleTgValue(entry.tg,"archer"))}</td>
-          <td>${escapeHtml(place)}</td>
           <td>${escapeHtml(status)}</td>
         </tr>
       `;
     }).join("");
 
     return`
-      <div class="party-card rank-table-card">
+      <div class="party-card rank-table-card castle-placement-card">
         <div class="party-title">${escapeHtml(place)} ${place==="미배치"?"":`(${sectionEntries.length}명)`}</div>
         <div class="rank-table-wrap">
           <table class="rank-table">
             <thead>
               <tr>
                 ${state.isAdmin&&state.castleManageMode?"<th>선택</th>":""}
-                <th>순위</th>
+                <th>연번</th>
                 <th>닉네임</th>
                 <th>보병</th>
                 <th>기병</th>
                 <th>궁병</th>
-                <th>배치</th>
                 <th>구분</th>
               </tr>
             </thead>
@@ -1678,7 +1677,7 @@ function renderCastleBattleEvent(){
     `;
   }).join("");
 
-  el.partyList.innerHTML=manageBar+sections;
+  el.partyList.innerHTML=managePanel+`<div class="castle-placement-grid">${sections}</div>`;
 }
 
 window.toggleCastleManageMode=function(){
