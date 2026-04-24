@@ -1123,3 +1123,18 @@ textarea.text-input{
     font-size:14px;
   }
 }
+
+.castle-placement-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(340px,1fr));
+  gap:16px;
+  align-items:start;
+}
+
+.castle-placement-card{
+  min-width:0;
+}
+
+.castle-manage-panel{
+  margin-bottom:16px;
+}
