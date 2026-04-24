@@ -12,12 +12,13 @@ function subscribeParties() {
       rankingSnap.docs.forEach(doc => {
         const d = doc.data() || {};
         rankingMap[doc.id] = {
-          user: d.user || doc.id,
-          power: Number(d.power || 0),
-          note: String(d.note || ""),
-          existingColumn: Number(d.existingColumn || 0),
-          excluded: !!d.excluded
-        };
+  user: d.user || doc.id,
+  power: Number(d.power || 0),
+  note: String(d.note || ""),
+  desiredGroup: String(d.desiredGroup || "곰1"),
+  existingColumn: Number(d.existingColumn || 0),
+  excluded: !!d.excluded
+};
       });
 
       state.rearrangeRankingMap = rankingMap;
@@ -119,13 +120,14 @@ function subscribeRearrange() {
 
     snap.docs.forEach(doc => {
       const d = doc.data() || {};
-      map[doc.id] = {
-        user: d.user || doc.id,
-        power: Number(d.power || 0),
-        note: String(d.note || ""),
-        existingColumn: Number(d.existingColumn || 0),
-        excluded: !!d.excluded
-      };
+      rankingMap[doc.id] = {
+  user: d.user || doc.id,
+  power: Number(d.power || 0),
+  note: String(d.note || ""),
+  desiredGroup: String(d.desiredGroup || "곰1"),
+  existingColumn: Number(d.existingColumn || 0),
+  excluded: !!d.excluded
+};
     });
 
     state.rearrangeRankingMap = map;
@@ -144,6 +146,7 @@ function rebuildMergedRearrangeEntries() {
       ...progress,
       power: Number(ranking.power || 0),
       note: String(ranking.note || ""),
+      desiredGroup: String(ranking.desiredGroup || "곰1"),
       existingColumn: Number(ranking.existingColumn || 0),
       excluded: !!ranking.excluded
     };
@@ -368,6 +371,7 @@ function renderRearrangeTable(entries) {
           <td class="left muted">공란</td>
           <td>-</td>
           <td>-</td>
+          <td>-</td>
           <td class="left">-</td>
           <td>-</td>
           <td>-</td>
@@ -377,6 +381,7 @@ function renderRearrangeTable(entries) {
 
     const powerText = entry.power > 0 ? Number(entry.power).toLocaleString("ko-KR") : "-";
     const noteText = entry.note ? escapeHtml(entry.note) : "-";
+    const desiredGroupText = entry.desiredGroup || "곰1";
     const existingText = entry.existingColumn > 0 ? String(entry.existingColumn) : "-";
     const move = getMoveDisplay(entry.existingColumn, currentColumn);
 
@@ -387,6 +392,7 @@ function renderRearrangeTable(entries) {
         <td class="left ${entry.user === state.currentUser ? "my-name" : ""}">${escapeHtml(entry.user)}</td>
         <td>${escapeHtml(entry.stageText || "-")}</td>
         <td>${powerText}</td>
+        <td>${escapeHtml(desiredGroupText)}</td>
         <td class="left">${noteText}</td>
         <td>${existingText}</td>
         <td><span class="${move.className}">${escapeHtml(move.text)}</span>${state.isAdmin ? ` <button class="rank-edit-btn" onclick="openRearrangeRankEditModal('${escapeJs(entry.user)}')">관리</button>` : ""}</td>
@@ -397,7 +403,7 @@ function renderRearrangeTable(entries) {
   return `
     <div class="rank-table-wrap">
       <table class="rank-table">
-        <colgroup><col><col><col><col><col><col><col><col></colgroup>
+        <colgroup><col><col><col><col><col><col><col><col><col></colgroup>
         <thead>
           <tr>
             <th>순위</th>
@@ -405,6 +411,7 @@ function renderRearrangeTable(entries) {
             <th>닉네임</th>
             <th>스테이지</th>
             <th>전투력</th>
+            <th>희망</th>
             <th>비고</th>
             <th>기존</th>
             <th>이동</th>
@@ -424,7 +431,9 @@ function renderRearrangeEvent() {
   const mine = myRearrangeEntry();
   const activeEntries = state.rearrangeEntries.filter(v => !isHiddenTestNickname(v.user) && !v.excluded);
   const excludedEntries = state.rearrangeEntries.filter(v => !isHiddenTestNickname(v.user) && v.excluded);
-  const displayedEntries = getDisplayedRearrangeEntries(activeEntries);
+
+  const bear1Entries = getDisplayedRearrangeEntries(activeEntries.filter(v => (v.desiredGroup || "곰1") === "곰1"));
+  const bear2Entries = getDisplayedRearrangeEntries(activeEntries.filter(v => v.desiredGroup === "곰2"));
 
   const mineCard = state.rearrangeInputEnabled
     ? `<div class="party-card"><div class="party-title">내 진척도</div><div class="party-sub">빛나는 첨탑 최고 스테이지</div><div class="party-sub">현재 입력값: ${mine ? escapeHtml(mine.stageText) : "미입력"}</div><div class="party-sub">최종 수정: ${mine ? formatDateTime(mine.updatedAt) : "-"}</div><div class="card-actions"><button onclick="openMyRearrangeModal()">${mine ? "수정" : "입력"}</button></div></div>`
@@ -434,7 +443,20 @@ function renderRearrangeEvent() {
   let guideCard = "";
 
   if (state.isAdmin || state.rearrangePublic) {
-    rankingCard = `<div class="party-card rank-table-card"><div class="party-title">진척도 순위표</div><div class="party-sub">${state.isAdmin ? (state.rearrangePublic ? "현재 전체 공개 상태입니다." : "현재 운영진만 볼 수 있습니다.") : "공개된 순위입니다."}</div><div class="card-actions"><button onclick="copyRearrangeColumns()">복사</button></div>${renderRearrangeTable(displayedEntries)}</div>`;
+    rankingCard = `
+      <div class="party-card rank-table-card">
+        <div class="party-title">진척도 순위표 - 곰1</div>
+        <div class="party-sub">${state.isAdmin ? (state.rearrangePublic ? "현재 전체 공개 상태입니다." : "현재 운영진만 볼 수 있습니다.") : "공개된 순위입니다."}</div>
+        <div class="card-actions"><button onclick="copyRearrangeColumns()">복사</button></div>
+        ${renderRearrangeTable(bear1Entries)}
+      </div>
+
+      <div class="party-card rank-table-card">
+        <div class="party-title">진척도 순위표 - 곰2</div>
+        ${renderRearrangeTable(bear2Entries)}
+      </div>
+    `;
+
     guideCard = `<div class="party-card layout-guide-card"><div class="party-title">순열 안내 예시</div><div class="party-sub">빨(1), 주(2), 노(3), 초(4), 파(5)</div><div class="card-actions"><button onclick="openExampleImageModal('guide')">예시 크게 보기</button></div>${renderRearrangeGuide()}</div>`;
   } else {
     rankingCard = `<div class="party-card"><div class="party-title">진척도 순위</div><div class="party-sub">아직 공개되지 않았습니다.</div><div class="party-sub">운영진 공개 후 전체 유저가 확인할 수 있습니다.</div></div>`;
@@ -949,6 +971,8 @@ window.openRearrangeRankEditModal = function(userName = "") {
   el.rankEditStageInput.value = entry.stageText || "";
   el.rankEditPowerInput.value = entry.power > 0 ? String(entry.power) : "";
   el.rankEditNoteInput.value = entry.note || "";
+  const hopeSelect = document.getElementById("rankEditHopeSelect");
+  if (hopeSelect) hopeSelect.value = entry.desiredGroup || "곰1";
 
   const existingInput = document.getElementById("rankEditExistingInput");
   if (existingInput) {
@@ -1006,6 +1030,7 @@ window.submitRearrangeRankEdit = async function() {
   const current = state.rearrangeEntries.find(v => v.user === user);
   const powerRaw = (el.rankEditPowerInput.value || "").trim();
   const note = (el.rankEditNoteInput.value || "").trim();
+  const desiredGroup = document.getElementById("rankEditHopeSelect")?.value || "곰1";
   const existingRaw = (document.getElementById("rankEditExistingInput")?.value || "").trim();
 
   let power = 0;
@@ -1027,13 +1052,14 @@ window.submitRearrangeRankEdit = async function() {
   }
 
   await rearrangeRankingRef().doc(user).set({
-    user,
-    power,
-    note,
-    existingColumn,
-    excluded: !!current?.excluded,
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-  }, { merge: true });
+  user,
+  power,
+  note,
+  desiredGroup,
+  existingColumn,
+  excluded: !!current?.excluded,
+  updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+}, { merge: true });
 
   closeRearrangeRankEditModal();
 };
