@@ -1124,29 +1124,75 @@ textarea.text-input{
   }
 }
 
-.castle-placement-grid{
+.castle-mini-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(520px,1fr));
-  gap:16px;
-  align-items:start;
+  grid-template-columns:repeat(6,minmax(150px,1fr));
+  gap:12px;
+  align-items:stretch;
+  margin-bottom:16px;
 }
 
-.castle-placement-card{
+.castle-mini-card{
   min-width:0;
-  width:100%;
+  padding:14px;
 }
 
-.castle-placement-card .rank-table{
-  width:100%;
-  table-layout:auto;
+.castle-mini-card .party-title{
+  font-size:18px;
+  margin-bottom:10px;
+}
+
+.castle-name-list{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+.castle-name-chip{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:14px;
+  line-height:1.2;
+  word-break:keep-all;
+}
+
+.castle-name-chip small{
+  opacity:.7;
+  font-size:11px;
+}
+
+.castle-empty-small{
+  opacity:.55;
+  font-size:14px;
 }
 
 .castle-manage-panel{
   margin-bottom:16px;
 }
 
+.castle-applicant-card{
+  width:100%;
+}
+
+#partyList:has(.castle-mini-grid){
+  display:block;
+}
+
+@media(max-width:1200px){
+  .castle-mini-grid{
+    grid-template-columns:repeat(3,minmax(150px,1fr));
+  }
+}
+
 @media(max-width:700px){
-  .castle-placement-grid{
+  .castle-mini-grid{
+    grid-template-columns:1fr 1fr;
+  }
+}
+
+@media(max-width:460px){
+  .castle-mini-grid{
     grid-template-columns:1fr;
   }
 }
