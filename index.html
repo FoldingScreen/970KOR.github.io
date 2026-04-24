@@ -305,6 +305,53 @@
     </div>
   </div>
 
+  <div id="castleBattleModal" class="modal hidden">
+  <div class="modal-header">
+    <h3>캐슬 전투 신청</h3>
+    <button class="close-btn" type="button" onclick="closeCastleBattleModal()">닫기</button>
+  </div>
+
+  <div class="form-group">
+    <label>보병 TG</label>
+    <select id="castleInfantrySelect" class="text-input">
+      <option value="5">5</option>
+      <option value="4">4</option>
+      <option value="3">3</option>
+      <option value="2">2</option>
+      <option value="1">1</option>
+      <option value="순금X">순금X</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label>기병 TG</label>
+    <select id="castleCavalrySelect" class="text-input">
+      <option value="5">5</option>
+      <option value="4">4</option>
+      <option value="3">3</option>
+      <option value="2">2</option>
+      <option value="1">1</option>
+      <option value="순금X">순금X</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label>궁병 TG</label>
+    <select id="castleArcherSelect" class="text-input">
+      <option value="5">5</option>
+      <option value="4">4</option>
+      <option value="3">3</option>
+      <option value="2">2</option>
+      <option value="1">1</option>
+      <option value="순금X">순금X</option>
+    </select>
+  </div>
+
+  <div class="actions right-wrap">
+    <button type="button" onclick="submitCastleBattle()">신청</button>
+  </div>
+</div>
+  
   <!-- 미궁 생성 모달 -->
   <div id="createLabyrinthModal" class="modal hidden">
     <div class="modal-header">
