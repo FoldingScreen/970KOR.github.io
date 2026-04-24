@@ -1126,15 +1126,27 @@ textarea.text-input{
 
 .castle-placement-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(340px,1fr));
+  grid-template-columns:repeat(auto-fit,minmax(520px,1fr));
   gap:16px;
   align-items:start;
 }
 
 .castle-placement-card{
   min-width:0;
+  width:100%;
+}
+
+.castle-placement-card .rank-table{
+  width:100%;
+  table-layout:auto;
 }
 
 .castle-manage-panel{
   margin-bottom:16px;
+}
+
+@media(max-width:700px){
+  .castle-placement-grid{
+    grid-template-columns:1fr;
+  }
 }
