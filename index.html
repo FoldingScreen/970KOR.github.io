@@ -34,10 +34,23 @@
     </header>
 
     <div id="adminMenu" class="admin-menu hidden">
-      <button onclick="showAllUsers()">전체 사용자</button>
-      <button onclick="showAdminLogs()">운영 로그</button>
-      <button onclick="closeAdminMenu()">닫기</button>
-    </div>
+  <button onclick="showAllUsers()">전체 사용자</button>
+  <button onclick="showAdminLogs()">운영 로그</button>
+  
+  <hr style="border: 0.5px solid #444; margin: 10px 0;">
+  
+  <div style="padding: 10px; text-align: left;">
+    <label style="font-size: 12px; color: #aaa;">FID 입력</label>
+    <input id="couponFidInput" class="text-input" style="margin-bottom: 8px;" placeholder="숫자 FID 입력" />
+    
+    <label style="font-size: 12px; color: #aaa;">쿠폰 코드 (여러 개는 콤마(,)로 구분)</label>
+    <textarea id="couponListInput" class="text-input" style="height: 60px; margin-bottom: 8px;" placeholder="GIFT970, WELCOME2026"></textarea>
+    
+    <button onclick="uiRunCouponRegistration()" style="width: 100%; background: #e67e22;">쿠폰 일괄 등록 시작</button>
+  </div>
+
+  <button onclick="closeAdminMenu()">닫기</button>
+</div>
 
     <main class="container">
       <section id="loginScreen" class="screen hidden">
