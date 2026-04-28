@@ -3574,29 +3574,89 @@ window.saveMyFid = async function() {
 
 // 모든 FID를 불러와서 새 쿠폰을 일괄 등록
 window.runBroadcastCoupon = async function() {
-    const couponCode = document.getElementById("newCouponInput").value.trim().toUpperCase();
-    const statusDiv = document.getElementById("broadcastStatus");
-    const btn = document.getElementById("broadcastBtn");
+  const couponCode = document.getElementById("newCouponInput").value.trim().toUpperCase();
+  const statusDiv = document.getElementById("broadcastStatus");
+  const btn = document.getElementById("broadcastBtn");
 
-    if (!couponCode) return alert("쿠폰 코드를 입력하세요.");
+  if (!couponCode) return alert("쿠폰 코드를 입력하세요.");
 
-    statusDiv.innerHTML = "목록 불러오는 중...";
-    const fidSnap = await db.collection("registered_fids").get();
-    
-    if (fidSnap.empty) return alert("등록된 FID가 없습니다.");
-    const fids = fidSnap.docs.map(doc => doc.id);
+  statusDiv.innerHTML = "쿠폰 등록 작업을 시작합니다...";
+  const fidSnap = await db.collection("registered_fids").get();
 
-    if (confirm(`${fids.length}명에게 [${couponCode}]를 배포하시겠습니까?`)) {
-        btn.disabled = true;
-        for (let i = 0; i < fids.length; i++) {
-            const targetFid = fids[i];
-            statusDiv.innerHTML = `진행 중 (${i + 1}/${fids.length})\n대상: ${targetFid}`;
-            const result = await window.couponLogic.request(targetFid, couponCode);
-            console.log(`[${targetFid}] ${result.msg}`);
-            await new Promise(r => setTimeout(r, 2000)); // 2초 간격
-        }
-        statusDiv.innerHTML = "✅ 모든 인원 등록 완료!";
-        btn.disabled = false;
-        alert("작업이 끝났습니다.");
-    }
+  if (fidSnap.empty) {
+    statusDiv.innerHTML = "등록된 FID가 없습니다.";
+    return alert("등록된 FID가 없습니다.");
+  }
+
+  const fids = fidSnap.docs.map(doc => doc.id);
+
+  if (!confirm(`${fids.length}명에게 [${couponCode}]를 등록 시도하시겠습니까?`)) {
+    statusDiv.innerHTML = "";
+    return;
+  }
+
+  btn.disabled = true;
+
+  const results = [];
+  let successCount = 0;
+  let failCount = 0;
+
+  console.group(`[쿠폰 등록] ${couponCode}`);
+
+  for (let i = 0; i < fids.length; i++) {
+    const targetFid = fids[i];
+
+    statusDiv.innerHTML = `쿠폰 등록 진행 중... (${i + 1}/${fids.length})`;
+
+    const result = await window.couponLogic.request(targetFid, couponCode);
+    const msg = String(result?.msg || result?.message || JSON.stringify(result));
+
+    const isSuccess =
+      msg.includes("SUCCESS") ||
+      msg.includes("success") ||
+      msg.includes("성공") ||
+      msg.includes("OK") ||
+      result?.code === 0 ||
+      result?.err_code === 0;
+
+    if (isSuccess) successCount++;
+    else failCount++;
+
+    const row = {
+      index: i + 1,
+      fid: targetFid,
+      coupon: couponCode,
+      success: isSuccess,
+      msg,
+      raw: result
+    };
+
+    results.push(row);
+
+    if (isSuccess) console.log("✅ 성공", row);
+    else console.warn("❌ 실패/확인필요", row);
+
+    await new Promise(r => setTimeout(r, 2000));
+  }
+
+  console.table(results.map(r => ({
+    순번: r.index,
+    FID: r.fid,
+    쿠폰: r.coupon,
+    성공여부: r.success ? "성공 추정" : "실패/확인필요",
+    응답: r.msg
+  })));
+
+  console.log("원본 응답 전체:", results);
+  console.groupEnd();
+
+  statusDiv.innerHTML =
+    `작업 완료<br>` +
+    `성공 추정: ${successCount}명<br>` +
+    `실패/확인 필요: ${failCount}명<br>` +
+    `<span class="muted">상세 결과는 브라우저 콘솔에서 확인</span>`;
+
+  btn.disabled = false;
+
+  alert(`작업 완료\n성공 추정: ${successCount}명\n실패/확인 필요: ${failCount}명`);
 };
