@@ -3542,7 +3542,7 @@ let myAppliedCouponVisible=false;
 
 window.couponLogic={
   salt:"mN4!pQs6JrYwV9",
-  endpoint:"https://kingshot-giftcode.centurygame.com/api/gift_code",
+  endpoint:"https://ks-giftcode.centurygame.com/api/gift_code",
 
   generateSign:function(fid,cdk,time){
     return CryptoJS.MD5(String(cdk)+String(fid)+String(time)+this.salt).toString();
@@ -3752,7 +3752,7 @@ function isCouponSuccess(result,msg){
 }
 
 window.runBroadcastCoupon=async function(){
-  const couponCode=document.getElementById("newCouponInput").value.trim().toUpperCase();
+  const couponCode=document.getElementById("newCouponInput").value.trim();
   const statusDiv=document.getElementById("broadcastStatus");
   const btn=document.getElementById("broadcastBtn");
 
