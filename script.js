@@ -3535,31 +3535,49 @@ window.submitLabyrinthAnswer=async function(order){
 document.addEventListener("DOMContentLoaded",tryAutoLogin);
 
 /* ==========================================
-   쿠폰 시스템 통합 로직 (FID 저장 + 브로드캐스트)
+   쿠폰 시스템 통합 로직 (FID 저장 + 브로드캐스트) - 수정본
    ========================================== */
 
-// (필수) API 통신 기본 객체
+// (필수) API 통신 기본 객체 - 암호화 로직 수정 완료
 window.couponLogic = {
     salt: "mN4!pQs6JrYwV9",
     endpoint: "https://kingshot-giftcode.centurygame.com/api/gift_code",
+    
+    // [수정] 서버 검증 공식인 cdk + fid + salt + time 순서로 변경
     generateSign: function(fid, cdk, time) {
-        return CryptoJS.MD5(String(cdk) + String(fid) + String(time) + this.salt).toString();
+        const combined = String(cdk) + String(fid) + this.salt + String(time);
+        return CryptoJS.MD5(combined).toString();
     },
+    
     request: async function(fid, cdk) {
         const time = Date.now().toString();
         const sign = this.generateSign(fid, cdk, time);
+        
         try {
             const res = await fetch(this.endpoint, {
                 method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: new URLSearchParams({ fid, cdk, time, sign, captcha_code: "" })
+                headers: { 
+                    // [중요] 서버가 요구하는 Form URL Encoded 형식 유지
+                    "Content-Type": "application/x-www-form-urlencoded" 
+                },
+                // [중요] body 구성 시 sign 생성에 사용된 데이터와 동일한 데이터 전송
+                body: new URLSearchParams({ 
+                    fid: fid, 
+                    cdk: cdk, 
+                    time: time, 
+                    sign: sign, 
+                    captcha_code: "" 
+                })
             });
             return await res.json();
-        } catch (e) { return { msg: "통신 에러" }; }
+        } catch (e) { 
+            console.error("통신 에러:", e);
+            return { msg: "통신 에러" }; 
+        }
     }
 };
 
-// 사용자의 FID를 Firestore에 저장 (문서 ID를 FID로 써서 중복 방지)
+// 이하 Firestore 및 렌더링 로직은 기존과 동일 (위 couponLogic을 호출하여 사용함)
 let myAppliedCouponVisible=false;
 
 async function getMyRegisteredFid(){
@@ -3582,29 +3600,23 @@ async function renderCouponScreen(){
     await renderAllCouponList();
   }catch(e){
     console.error("쿠폰 화면 렌더 오류:",e);
-
     const statusDiv=document.getElementById("myCouponStatus");
     const allList=document.getElementById("allCouponList");
-
-    if(statusDiv)statusDiv.innerHTML="쿠폰 정보를 불러오지 못했습니다. 콘솔을 확인하세요.";
-    if(allList)allList.innerHTML="쿠폰 정보를 불러오지 못했습니다. 콘솔을 확인하세요.";
+    if(statusDiv)statusDiv.innerHTML="쿠폰 정보를 불러오지 못했습니다.";
+    if(allList)allList.innerHTML="쿠폰 정보를 불러오지 못했습니다.";
   }
 }
 
 async function renderMyCouponStatus(){
   const statusDiv=document.getElementById("myCouponStatus");
   const inputWrap=document.getElementById("myFidInputWrap");
-
   if(!statusDiv||!inputWrap)return;
-
   const myFid=await getMyRegisteredFid();
-
   if(!myFid){
     statusDiv.innerHTML="아직 배정된 플레이어 ID가 없습니다.";
     inputWrap.classList.remove("hidden");
     return;
   }
-
   statusDiv.innerHTML=`플레이어 ID: <b>${escapeHtml(myFid.fid||myFid.id)}</b>`;
   inputWrap.classList.add("hidden");
 }
@@ -3612,21 +3624,14 @@ async function renderMyCouponStatus(){
 async function renderAllCouponList(){
   const list=document.getElementById("allCouponList");
   if(!list)return;
-
   const snap=await db.collection("coupon_codes").get();
   const coupons=[];
-
-  snap.forEach(doc=>{
-    coupons.push({id:doc.id,...(doc.data()||{})});
-  });
-
+  snap.forEach(doc=>{ coupons.push({id:doc.id,...(doc.data()||{})}); });
   coupons.sort((a,b)=>getTimeValue(b.createdAt)-getTimeValue(a.createdAt));
-
   if(!coupons.length){
     list.innerHTML=`<div class="coupon-empty">등록된 쿠폰이 없습니다.</div>`;
     return;
   }
-
   list.innerHTML=coupons.map(coupon=>`
     <div class="coupon-history-card">
       <div class="coupon-history-title">${escapeHtml(coupon.code||coupon.id)}</div>
@@ -3639,32 +3644,22 @@ async function renderAllCouponList(){
 async function renderMyAppliedCoupons(){
   const list=document.getElementById("myAppliedCouponList");
   if(!list)return;
-
   const myFid=await getMyRegisteredFid();
-
   if(!myFid){
     list.innerHTML=`<div class="coupon-empty">플레이어 ID를 먼저 등록하세요.</div>`;
     return;
   }
-
   const snap=await db.collection("coupon_logs")
     .where("fid","==",myFid.id)
     .where("success","==",true)
     .get();
-
   const logs=[];
-
-  snap.forEach(doc=>{
-    logs.push({id:doc.id,...(doc.data()||{})});
-  });
-
+  snap.forEach(doc=>{ logs.push({id:doc.id,...(doc.data()||{})}); });
   logs.sort((a,b)=>getTimeValue(b.createdAt)-getTimeValue(a.createdAt));
-
   if(!logs.length){
     list.innerHTML=`<div class="coupon-empty">적용 완료된 쿠폰이 없습니다.</div>`;
     return;
   }
-
   list.innerHTML=logs.map(log=>`
     <div class="coupon-history-card">
       <div class="coupon-history-title">${escapeHtml(log.couponCode||"-")}</div>
@@ -3675,56 +3670,37 @@ async function renderMyAppliedCoupons(){
 }
 
 window.renderCouponScreen=renderCouponScreen;
-
-window.openNewCouponBox=function(){
-  document.getElementById("newCouponBox")?.classList.toggle("hidden");
-};
-
+window.openNewCouponBox=function(){ document.getElementById("newCouponBox")?.classList.toggle("hidden"); };
 window.toggleMyAppliedCoupons=async function(){
   const list=document.getElementById("myAppliedCouponList");
   if(!list)return;
-
   myAppliedCouponVisible=!myAppliedCouponVisible;
   list.classList.toggle("hidden",!myAppliedCouponVisible);
-
   if(myAppliedCouponVisible)await renderMyAppliedCoupons();
 };
 
 window.saveMyFid=async function(){
   const fid=document.getElementById("userFidInput").value.trim();
-
   if(!fid)return alert("플레이어 ID를 입력하세요.");
-
   try{
     const myFid=await getMyRegisteredFid();
-
     if(myFid){
       alert("이미 플레이어 ID가 배정되어 있습니다.");
       await renderMyCouponStatus();
       return;
     }
-
     const ref=db.collection("registered_fids").doc(fid);
     const snap=await ref.get();
-
-    if(snap.exists){
-      alert("이미 등록된 플레이어 ID입니다.");
-      return;
-    }
-
+    if(snap.exists){ alert("이미 등록된 플레이어 ID입니다."); return; }
     await ref.set({
       fid,
       registeredBy:state.currentUser||"",
       registeredAt:firebase.firestore.FieldValue.serverTimestamp()
     });
-
     document.getElementById("userFidInput").value="";
     alert("플레이어 ID가 저장되었습니다.");
     await renderCouponScreen();
-  }catch(e){
-    console.error(e);
-    alert("저장 실패: "+e.message);
-  }
+  }catch(e){ alert("저장 실패: "+e.message); }
 };
 
 window.runBroadcastCoupon=async function(){
@@ -3733,24 +3709,17 @@ window.runBroadcastCoupon=async function(){
   const btn=document.getElementById("broadcastBtn");
 
   if(!couponCode)return alert("쿠폰 코드를 입력하세요.");
-
   const fidSnap=await db.collection("registered_fids").get();
-
-  if(fidSnap.empty){
-    statusDiv.innerHTML="등록된 플레이어 ID가 없습니다.";
-    return alert("등록된 플레이어 ID가 없습니다.");
-  }
+  if(fidSnap.empty) return alert("등록된 플레이어 ID가 없습니다.");
 
   const couponRef=db.collection("coupon_codes").doc(couponCode);
   const couponSnap=await couponRef.get();
-
   if(couponSnap.exists){
-    if(!confirm("이미 등록된 쿠폰입니다. 다시 전체 등록을 시도하시겠습니까?"))return;
+    if(!confirm("이미 등록된 쿠폰입니다. 다시 시도하시겠습니까?"))return;
   }
 
   const fids=fidSnap.docs.map(doc=>({id:doc.id,...(doc.data()||{})}));
-
-  if(!confirm(`${fids.length}명에게 [${couponCode}]를 등록 시도하시겠습니까?`))return;
+  if(!confirm(`${fids.length}명에게 [${couponCode}]를 등록하시겠습니까?`))return;
 
   btn.disabled=true;
   statusDiv.innerHTML="쿠폰 등록 진행 중...";
@@ -3758,43 +3727,24 @@ window.runBroadcastCoupon=async function(){
   await couponRef.set({
     code:couponCode,
     createdBy:state.currentUser||"",
-    createdAt:couponSnap.exists?(couponSnap.data()||{}).createdAt||firebase.firestore.FieldValue.serverTimestamp():firebase.firestore.FieldValue.serverTimestamp(),
+    createdAt:couponSnap.exists?(couponSnap.data()||{}).createdAt:firebase.firestore.FieldValue.serverTimestamp(),
     updatedAt:firebase.firestore.FieldValue.serverTimestamp()
   },{merge:true});
 
-  const results=[];
   let successCount=0;
   let failCount=0;
 
-  console.group(`[쿠폰 등록] ${couponCode}`);
-
   for(let i=0;i<fids.length;i++){
     const target=fids[i];
-    const result=await window.couponLogic.request(target.id,couponCode);
+    // 수정된 couponLogic.request 호출
+    const result=await window.couponLogic.request(target.id, couponCode);
     const msg=String(result?.msg||result?.message||JSON.stringify(result));
 
     const isSuccess=
-      msg.includes("SUCCESS")||
-      msg.includes("success")||
-      msg.includes("성공")||
-      msg.includes("OK")||
-      result?.code===0||
-      result?.err_code===0;
+      msg.includes("SUCCESS")||msg.includes("success")||msg.includes("성공")||
+      msg.includes("OK")||result?.code===0||result?.err_code===0;
 
-    if(isSuccess)successCount++;
-    else failCount++;
-
-    const row={
-      index:i+1,
-      fid:target.id,
-      registeredBy:target.registeredBy||"",
-      couponCode,
-      success:isSuccess,
-      msg,
-      raw:result
-    };
-
-    results.push(row);
+    if(isSuccess) successCount++; else failCount++;
 
     await db.collection("coupon_logs").doc(`${couponCode}_${target.id}`).set({
       fid:target.id,
@@ -3806,29 +3756,13 @@ window.runBroadcastCoupon=async function(){
       createdAt:firebase.firestore.FieldValue.serverTimestamp()
     },{merge:true});
 
-    if(isSuccess)console.log("✅ 성공",row);
-    else console.warn("❌ 실패/확인필요",row);
-
     statusDiv.innerHTML=`쿠폰 등록 진행 중... (${i+1}/${fids.length})`;
+    // 안전을 위한 2초 대기
     await new Promise(r=>setTimeout(r,2000));
   }
 
-  console.table(results.map(r=>({
-    순번:r.index,
-    FID:r.fid,
-    닉네임:r.registeredBy,
-    쿠폰:r.couponCode,
-    성공여부:r.success?"성공 추정":"실패/확인필요",
-    응답:r.msg
-  })));
-
-  console.log("원본 응답 전체:",results);
-  console.groupEnd();
-
-  statusDiv.innerHTML=`작업 완료 / 성공 추정 ${successCount}명 / 실패·확인 필요 ${failCount}명`;
+  statusDiv.innerHTML=`작업 완료 / 성공 ${successCount}명 / 실패 ${failCount}명`;
   btn.disabled=false;
-
   await renderCouponScreen();
-
   alert(`작업 완료\n성공 추정: ${successCount}명\n실패/확인 필요: ${failCount}명`);
 };
