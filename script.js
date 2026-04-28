@@ -3522,66 +3522,85 @@ window.submitLabyrinthAnswer=async function(order){
 document.addEventListener("DOMContentLoaded",tryAutoLogin);
 
 /* ==========================================
-   Gift Code (쿠폰) 자동 등록 시스템 (분석 기반)
+   Gift Code (쿠폰) 자동 등록 로직 및 UI 연동
    ========================================== */
 
-// 1. 쿠폰 관련 상태 추가 (기존 state에 합쳐짐)
-state.giftCodeSalt = "mN4!pQs6JrYwV9";
+// 1. 핵심 로직 (Sign 생성 및 통신)
+window.couponLogic = {
+    salt: "mN4!pQs6JrYwV9",
+    endpoint: "https://kingshot-giftcode.centurygame.com/api/gift_code",
 
-/**
- * [핵심] 분석된 공식에 따른 sign 생성
- * 공식: MD5(cdk + fid + time + salt)
- */
-window.generateGiftSign = function(fid, cdk, time) {
-    const raw = String(cdk) + String(fid) + String(time) + state.giftCodeSalt;
-    return CryptoJS.MD5(raw).toString();
-};
+    generateSign: function(fid, cdk, time) {
+        const raw = String(cdk) + String(fid) + String(time) + this.salt;
+        return CryptoJS.MD5(raw).toString();
+    },
 
-/**
- * 단일 쿠폰 등록 요청 함수
- */
-window.requestGiftCode = async function(fid, cdk) {
-    const endpoint = "https://kingshot-giftcode.centurygame.com/api/gift_code";
-    const time = Date.now().toString(); // 13자리 타임스탬프
-    const sign = window.generateGiftSign(fid, cdk, time);
+    request: async function(fid, cdk) {
+        const time = Date.now().toString();
+        const sign = this.generateSign(fid, cdk, time);
 
-    try {
-        const response = await fetch(endpoint, {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({
-                fid: fid,
-                cdk: cdk,
-                time: time,
-                sign: sign,
-                captcha_code: ""
-            })
-        });
-        return await response.json();
-    } catch (e) {
-        console.error("쿠폰 등록 통신 오류:", e);
-        return { msg: "통신 실패", code: -1 };
+        try {
+            const response = await fetch(this.endpoint, {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: new URLSearchParams({
+                    fid: fid,
+                    cdk: cdk,
+                    time: time,
+                    sign: sign,
+                    captcha_code: ""
+                })
+            });
+            return await response.json();
+        } catch (e) {
+            return { msg: "연결 실패(CORS 확인 필요)", error: e };
+        }
+    },
+
+    run: async function(fid, codes) {
+        console.log(`[시작] FID: ${fid}, 쿠폰수: ${codes.length}`);
+        for (const cdk of codes) {
+            const result = await this.request(fid, cdk.trim());
+            console.log(`[${cdk.trim()}] 결과:`, result.msg || result);
+            await new Promise(r => setTimeout(r, 2000)); // 2초 간격 유지
+        }
+        console.log("[완료] 모든 작업을 마쳤습니다.");
     }
 };
 
-/**
- * 일괄 쿠폰 등록 실행 (사용자용 UI 연결용)
- * @param {string} fid - 게임 내 FID
- * @param {string[]} cdkList - 쿠폰 코드 배열
- */
-window.runAutoGiftRegistration = async function(fid, cdkList) {
-    if (!fid) return alert("FID를 입력해주세요.");
-    if (!cdkList || cdkList.length === 0) return alert("등록할 쿠폰이 없습니다.");
-
-    console.log(`${fid} 계정으로 ${cdkList.length}개의 쿠폰 등록을 시작합니다...`);
-
-    for (const cdk of cdkList) {
-        const result = await window.requestGiftCode(fid, cdk);
-        console.log(`[${cdk}] 결과: ${result.msg}`);
-        
-        // 서버 부하 및 차단 방지를 위한 2초 지연
-        await new Promise(resolve => setTimeout(resolve, 2000));
-    }
+// 2. UI 연동 함수 (버튼 클릭 시 실행)
+window.uiRunCouponRegistration = async function() {
+    const fidInput = document.getElementById("couponFidInput");
+    const codeInput = document.getElementById("couponListInput");
     
-    alert("모든 쿠폰 등록 절차가 완료되었습니다. 콘솔 로그를 확인하세요.");
+    if(!fidInput || !codeInput) return;
+
+    const fid = fidInput.value.trim();
+    const rawCodes = codeInput.value.trim();
+
+    if (!fid) {
+        alert("FID를 입력해 주세요.");
+        return;
+    }
+    if (!rawCodes) {
+        alert("쿠폰 코드를 입력해 주세요.");
+        return;
+    }
+
+    const codes = rawCodes.split(/[, \n]+/).filter(c => c.trim() !== "");
+
+    if (confirm(`${fid} 계정에 ${codes.length}개의 쿠폰을 등록하시겠습니까?`)) {
+        const btn = event.target;
+        const originalText = btn.textContent;
+        
+        btn.disabled = true;
+        btn.textContent = "등록 중...";
+
+        // 로직 실행
+        await window.couponLogic.run(fid, codes);
+
+        btn.disabled = false;
+        btn.textContent = originalText;
+        alert("모든 쿠폰 등록 절차가 끝났습니다.\n상세 결과는 브라우저 콘솔(F12)을 확인하세요.");
+    }
 };
