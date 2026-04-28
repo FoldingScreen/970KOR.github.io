@@ -166,6 +166,19 @@
           <button id="broadcastBtn" onclick="runBroadcastCoupon()">등록 시작</button>
           <div id="broadcastStatus" class="muted coupon-status-text"></div>
         </div>
+        
+        <div id="newCouponBox" class="coupon-admin-section">
+    <input type="text" id="newCouponInput" placeholder="새 쿠폰 코드 입력">
+    
+    <button id="broadcastBtn" onclick="runBroadcastCoupon()">전체 유저 등록 시작</button>
+
+    <button id="reapplyAllBtn" onclick="runReapplyAllCoupons()" style="background-color: #e67e22; color: white; margin-top: 10px;">
+        DB 내 모든 쿠폰 재적용 (전체 인원)
+    </button>
+    
+    <div id="broadcastStatus" style="margin-top: 10px; color: #d35400; font-weight: bold;"></div>
+</div>
+
 
         <div id="myAppliedCouponList" class="coupon-history-list hidden"></div>
       </div>
