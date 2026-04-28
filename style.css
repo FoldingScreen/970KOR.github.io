@@ -1328,3 +1328,30 @@ textarea.text-input{
     gap:6px;
   }
 }
+
+@media (max-width:720px){
+  .top-tabs{
+    order:2;
+    width:100%;
+  }
+
+  .top-right{
+    order:3;
+    width:100%;
+    justify-content:flex-end;
+  }
+}
+
+.topbar{
+  flex-wrap:wrap;
+}
+
+.top-tabs{
+  order:3;
+  width:100%;
+  flex:0 0 100%;
+}
+
+.top-right{
+  order:2;
+}
