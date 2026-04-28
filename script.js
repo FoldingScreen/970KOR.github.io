@@ -3545,8 +3545,8 @@ window.couponLogic={
   endpoint:"https://ks-giftcode.centurygame.com/api/gift_code",
 
   generateSign:function(fid,cdk,time){
-    return CryptoJS.MD5(String(cdk)+String(fid)+String(time)+this.salt).toString();
-  },
+  return CryptoJS.MD5(String(cdk)+String(fid)+this.salt+String(time)).toString();
+},
 
   request:async function(fid,cdk){
     const time=Date.now().toString();
