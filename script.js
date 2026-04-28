@@ -69,6 +69,7 @@ const state={
     {id:"castle_battle",name:"캐슬 전투",desc:"아이디어 제보 받습니다."},
     {id:"rearrange",name:"자리 재배치",desc:"자동차에서 가장 시원한 자리는? 차가운데 엌ㅋㅋ"},
     {id:"escape_labyrinth",name:"사바나의 첨탑",desc:"바나나가 사악하면? 사바나. ㅇㅇ."}
+    {id:"gift_code",name: "쿠폰등록",desc: "쿠폰 자동 등록 시스템"}
   ]
 };
 
@@ -3522,85 +3523,69 @@ window.submitLabyrinthAnswer=async function(order){
 document.addEventListener("DOMContentLoaded",tryAutoLogin);
 
 /* ==========================================
-   Gift Code (쿠폰) 자동 등록 로직 및 UI 연동
+   쿠폰 시스템 통합 로직 (FID 저장 + 브로드캐스트)
    ========================================== */
 
-// 1. 핵심 로직 (Sign 생성 및 통신)
+// (필수) API 통신 기본 객체
 window.couponLogic = {
     salt: "mN4!pQs6JrYwV9",
     endpoint: "https://kingshot-giftcode.centurygame.com/api/gift_code",
-
     generateSign: function(fid, cdk, time) {
-        const raw = String(cdk) + String(fid) + String(time) + this.salt;
-        return CryptoJS.MD5(raw).toString();
+        return CryptoJS.MD5(String(cdk) + String(fid) + String(time) + this.salt).toString();
     },
-
     request: async function(fid, cdk) {
         const time = Date.now().toString();
         const sign = this.generateSign(fid, cdk, time);
-
         try {
-            const response = await fetch(this.endpoint, {
+            const res = await fetch(this.endpoint, {
                 method: "POST",
                 headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: new URLSearchParams({
-                    fid: fid,
-                    cdk: cdk,
-                    time: time,
-                    sign: sign,
-                    captcha_code: ""
-                })
+                body: new URLSearchParams({ fid, cdk, time, sign, captcha_code: "" })
             });
-            return await response.json();
-        } catch (e) {
-            return { msg: "연결 실패(CORS 확인 필요)", error: e };
-        }
-    },
-
-    run: async function(fid, codes) {
-        console.log(`[시작] FID: ${fid}, 쿠폰수: ${codes.length}`);
-        for (const cdk of codes) {
-            const result = await this.request(fid, cdk.trim());
-            console.log(`[${cdk.trim()}] 결과:`, result.msg || result);
-            await new Promise(r => setTimeout(r, 2000)); // 2초 간격 유지
-        }
-        console.log("[완료] 모든 작업을 마쳤습니다.");
+            return await res.json();
+        } catch (e) { return { msg: "통신 에러" }; }
     }
 };
 
-// 2. UI 연동 함수 (버튼 클릭 시 실행)
-window.uiRunCouponRegistration = async function() {
-    const fidInput = document.getElementById("couponFidInput");
-    const codeInput = document.getElementById("couponListInput");
+// 사용자의 FID를 Firestore에 저장 (문서 ID를 FID로 써서 중복 방지)
+window.saveMyFid = async function() {
+    const fid = document.getElementById("userFidInput").value.trim();
+    if (!fid) return alert("FID를 입력하세요.");
+
+    try {
+        await db.collection("registered_fids").doc(fid).set({
+            fid: fid,
+            registeredAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        alert("성공! 이제 새 쿠폰이 나오면 자동으로 등록됩니다.");
+    } catch (e) { alert("저장 실패: " + e.message); }
+};
+
+// 모든 FID를 불러와서 새 쿠폰을 일괄 등록
+window.runBroadcastCoupon = async function() {
+    const couponCode = document.getElementById("newCouponInput").value.trim().toUpperCase();
+    const statusDiv = document.getElementById("broadcastStatus");
+    const btn = document.getElementById("broadcastBtn");
+
+    if (!couponCode) return alert("쿠폰 코드를 입력하세요.");
+
+    statusDiv.innerHTML = "목록 불러오는 중...";
+    const fidSnap = await db.collection("registered_fids").get();
     
-    if(!fidInput || !codeInput) return;
+    if (fidSnap.empty) return alert("등록된 FID가 없습니다.");
+    const fids = fidSnap.docs.map(doc => doc.id);
 
-    const fid = fidInput.value.trim();
-    const rawCodes = codeInput.value.trim();
-
-    if (!fid) {
-        alert("FID를 입력해 주세요.");
-        return;
-    }
-    if (!rawCodes) {
-        alert("쿠폰 코드를 입력해 주세요.");
-        return;
-    }
-
-    const codes = rawCodes.split(/[, \n]+/).filter(c => c.trim() !== "");
-
-    if (confirm(`${fid} 계정에 ${codes.length}개의 쿠폰을 등록하시겠습니까?`)) {
-        const btn = event.target;
-        const originalText = btn.textContent;
-        
+    if (confirm(`${fids.length}명에게 [${couponCode}]를 배포하시겠습니까?`)) {
         btn.disabled = true;
-        btn.textContent = "등록 중...";
-
-        // 로직 실행
-        await window.couponLogic.run(fid, codes);
-
+        for (let i = 0; i < fids.length; i++) {
+            const targetFid = fids[i];
+            statusDiv.innerHTML = `진행 중 (${i + 1}/${fids.length})\n대상: ${targetFid}`;
+            const result = await window.couponLogic.request(targetFid, couponCode);
+            console.log(`[${targetFid}] ${result.msg}`);
+            await new Promise(r => setTimeout(r, 2000)); // 2초 간격
+        }
+        statusDiv.innerHTML = "✅ 모든 인원 등록 완료!";
         btn.disabled = false;
-        btn.textContent = originalText;
-        alert("모든 쿠폰 등록 절차가 끝났습니다.\n상세 결과는 브라우저 콘솔(F12)을 확인하세요.");
+        alert("작업이 끝났습니다.");
     }
 };
