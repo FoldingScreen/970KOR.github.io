@@ -1040,7 +1040,7 @@ textarea.text-input{
   }
 
   .holy-area-empty{
-    min-height:58px;
+    min-height:58px;7
   }
 
   .holy-area-slot-badge{
@@ -1316,5 +1316,15 @@ textarea.text-input{
 @media(max-width:900px){
   .coupon-layout{
     grid-template-columns:1fr;
+  }
+}
+
+@media (max-width:720px){
+  .top-tabs{
+    order:3;
+    width:100%;
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:6px;
   }
 }
