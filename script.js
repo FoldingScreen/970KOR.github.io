@@ -86,6 +86,7 @@ const el={
   homeSummary:document.getElementById("homeSummary"),
   homeEventCards:document.getElementById("homeEventCards"),
   partyList:document.getElementById("partyList"),
+  giftCodeScreen:document.getElementById("giftCodeScreen"),
   eventTitle:document.getElementById("eventTitle"),
   eventDesc:document.getElementById("eventDesc"),
   createPartyBtn:document.getElementById("createPartyBtn"),
@@ -695,15 +696,25 @@ async function openEvent(id){
   showOnly("event");
 
   if(id==="escape_labyrinth"){
-    subscribeEscapeLabyrinthHome();
-    return;
-  }
+  if(el.giftCodeScreen)el.giftCodeScreen.classList.add("hidden");
+  subscribeEscapeLabyrinthHome();
+  return;
+}
 
-  if(el.partyList)el.partyList.classList.remove("hidden");
+if(id==="gift_code"){
+  clearSubscriptions();
+  if(el.partyList)el.partyList.classList.add("hidden");
   if(el.escapeLabyrinthScreen)el.escapeLabyrinthScreen.classList.add("hidden");
+  if(el.giftCodeScreen)el.giftCodeScreen.classList.remove("hidden");
+  return;
+}
 
-  if(id==="rearrange")subscribeRearrange();
-  else subscribeParties();
+if(el.partyList)el.partyList.classList.remove("hidden");
+if(el.escapeLabyrinthScreen)el.escapeLabyrinthScreen.classList.add("hidden");
+if(el.giftCodeScreen)el.giftCodeScreen.classList.add("hidden");
+
+if(id==="rearrange")subscribeRearrange();
+else subscribeParties();
 }
 
 window.openEvent=openEvent;
