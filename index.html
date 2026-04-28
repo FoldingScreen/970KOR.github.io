@@ -142,10 +142,19 @@
     <div style="border: 1px solid #333; padding: 15px; border-radius: 8px; margin-bottom: 20px; background: #1a1a1a;">
       <h3 style="margin-top:0; color: #3498db;">내 FID 등록</h3>
       <p class="muted" style="font-size: 12px;">한 번 등록해두면 새 쿠폰이 올라올 때마다 자동으로 등록 대상이 됩니다.</p>
-      <div class="form-group">
-        <input id="userFidInput" class="text-input" type="number" placeholder="게임 프로필의 숫자를 입력" />
-      </div>
-      <button onclick="saveMyFid()" style="width:100%; background: #3498db; color: white; border:none; padding: 10px; border-radius: 4px; cursor: pointer;">내 FID 저장하기</button>
+      <div id="myCouponStatus" class="coupon-status-card">
+  내 FID 정보를 불러오는 중...
+</div>
+
+<div class="form-group">
+  <input id="userFidInput" class="text-input" type="number" placeholder="게임 프로필의 숫자를 입력" />
+</div>
+
+<button onclick="saveMyFid()" style="width:100%; background: #3498db; color: white; border:none; padding: 10px; border-radius: 4px; cursor: pointer;">
+  내 FID 저장하기
+</button>
+
+<div id="myCouponHistory" class="coupon-history-list"></div>
     </div>
 
     <div style="border: 1px solid #333; padding: 15px; border-radius: 8px; background: #1a1a1a;">
