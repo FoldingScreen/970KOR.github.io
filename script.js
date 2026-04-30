@@ -3557,7 +3557,7 @@ window.couponLogic={
       const res = await fetch("https://ks-giftcode.centurygame.com/gift_code/exchange", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "text/plain" 
         },
         body: JSON.stringify({
           fid,
