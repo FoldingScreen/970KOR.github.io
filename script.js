@@ -3549,28 +3549,27 @@ window.couponLogic={
 },
 
   request:async function(fid,cdk){
-    const time=Date.now().toString();
-    const sign=this.generateSign(fid,cdk,time);
+  const time=Date.now().toString();
+  const sign=this.generateSign(fid,cdk,time);
 
-    try{
-      const res=await fetch(this.endpoint,{
-        method:"POST",
-        headers:{"Content-Type":"application/x-www-form-urlencoded"},
-        body:new URLSearchParams({
-          fid,
-          cdk,
-          time,
-          sign,
-          captcha_code:""
-        })
-      });
+  try{
+    const res=await fetch("https://us-central1-kor-app-fa47e.cloudfunctions.net/redeemCoupon",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        fid,
+        cdk,
+        time,
+        sign
+      })
+    });
 
-      return await res.json();
-    }catch(e){
-      console.error("쿠폰 요청 오류:",e);
-      return{msg:"통신 에러",error:String(e)};
-    }
+    return await res.json();
+  }catch(e){
+    console.error("Functions 통신 에러:",e);
+    return{msg:"Functions 통신 에러",error:String(e)};
   }
+}
 };
 
 async function getMyRegisteredFid(){
