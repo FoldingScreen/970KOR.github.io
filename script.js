@@ -3548,29 +3548,32 @@ window.couponLogic={
     return CryptoJS.MD5(String(cdk)+String(fid)+this.salt+String(time)).toString();
   },
 
-  request:async function(fid,cdk){
-    const time=Date.now().toString();
-    const sign=this.generateSign(fid,cdk,time);
+  request: async function(fid, cdk) {
+    const time = Date.now().toString();
+    const sign = this.generateSign(fid, cdk, time);
 
-    try{
-      const res=await fetch("https://redeemcoupon-yx37datcna-uc.a.run.app",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({
+    try {
+      // 기존 클라우드 함수(redeemcoupon...) 주소 대신 게임사 주소로 직접 전송
+      const res = await fetch("https://ks-giftcode.centurygame.com/gift_code/exchange", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
           fid,
           cdk,
           time,
           sign,
-          captcha_code:""
+          captcha_code: ""
         })
       });
 
-      const data=await res.json();
-      console.log(data);
+      const data = await res.json();
+      console.log("게임사 직접 응답:", data);
       return data;
-    }catch(e){
-      console.error(e);
-      return{msg:"Functions 통신 에러",error:String(e)};
+    } catch(e) {
+      console.error("통신 에러 발생:", e);
+      return {msg: "직접 통신 에러 (CORS 위반일 가능성 높음)", error: String(e)};
     }
   }
 };
