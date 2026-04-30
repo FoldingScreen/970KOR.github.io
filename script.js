@@ -3552,23 +3552,24 @@ window.couponLogic={
   const time=Date.now().toString();
   const sign=this.generateSign(fid,cdk,time);
 
-  try{
-    const res=await fetch("https://us-central1-kor-app-fa47e.cloudfunctions.net/redeemCoupon",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        fid,
-        cdk,
-        time,
-        sign
-      })
-    });
+ try{
+  const res = await fetch("https://redeemcoupon-yx37datcna-uc.a.run.app", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      fid,
+      cdk,
+      time,
+      sign,
+      captcha_code: ""   // ⭐ 이거 추가
+    })
+  });
 
-    return await res.json();
-  }catch(e){
-    console.error("Functions 통신 에러:",e);
-    return{msg:"Functions 통신 에러",error:String(e)};
-  }
+  const data = await res.json();
+  console.log(data);
+
+}catch(e){
+  console.error(e);
 }
 };
 
