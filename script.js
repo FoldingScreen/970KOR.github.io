@@ -3553,11 +3553,14 @@ window.couponLogic={
     const sign = this.generateSign(fid, cdk, time);
 
     try {
-      // 기존 클라우드 함수(redeemcoupon...) 주소 대신 게임사 주소로 직접 전송
-      const res = await fetch("https://ks-giftcode.centurygame.com/gift_code/exchange", {
+      const targetUrl = "https://ks-giftcode.centurygame.com/gift_code/exchange";
+      // 무료 프록시 서버(corsproxy.io)를 통해 우회 전송
+      const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(targetUrl);
+
+      const res = await fetch(proxyUrl, {
         method: "POST",
         headers: {
-          "Content-Type": "text/plain" 
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           fid,
@@ -3568,12 +3571,23 @@ window.couponLogic={
         })
       });
 
-      const data = await res.json();
-      console.log("게임사 직접 응답:", data);
-      return data;
+      // 서버가 403 HTML을 뱉을 때 스크립트가 뻗지 않도록 텍스트로 먼저 받습니다.
+      const text = await res.text();
+      
+      try {
+        // 정상적인 JSON 응답일 경우
+        const data = JSON.parse(text);
+        console.log("프록시 정상 응답:", data);
+        return data;
+      } catch (parseError) {
+        // 방화벽에 막혀서 HTML이 날아온 경우
+        console.error("방화벽 차단 됨 (HTML 응답):", text.substring(0, 100));
+        return { msg: "방화벽에 차단됨(403)", error: text.substring(0, 50) };
+      }
+      
     } catch(e) {
       console.error("통신 에러 발생:", e);
-      return {msg: "직접 통신 에러 (CORS 위반일 가능성 높음)", error: String(e)};
+      return {msg: "프록시 통신 에러", error: String(e)};
     }
   }
 };
