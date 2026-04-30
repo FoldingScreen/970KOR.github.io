@@ -3545,32 +3545,34 @@ window.couponLogic={
   endpoint:"https://ks-giftcode.centurygame.com/api/gift_code",
 
   generateSign:function(fid,cdk,time){
-  return CryptoJS.MD5(String(cdk)+String(fid)+this.salt+String(time)).toString();
-},
+    return CryptoJS.MD5(String(cdk)+String(fid)+this.salt+String(time)).toString();
+  },
 
   request:async function(fid,cdk){
-  const time=Date.now().toString();
-  const sign=this.generateSign(fid,cdk,time);
+    const time=Date.now().toString();
+    const sign=this.generateSign(fid,cdk,time);
 
- try{
-  const res = await fetch("https://redeemcoupon-yx37datcna-uc.a.run.app", {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      fid,
-      cdk,
-      time,
-      sign,
-      captcha_code: ""   // ⭐ 이거 추가
-    })
-  });
+    try{
+      const res=await fetch("https://redeemcoupon-yx37datcna-uc.a.run.app",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          fid,
+          cdk,
+          time,
+          sign,
+          captcha_code:""
+        })
+      });
 
-  const data = await res.json();
-  console.log(data);
-
-}catch(e){
-  console.error(e);
-}
+      const data=await res.json();
+      console.log(data);
+      return data;
+    }catch(e){
+      console.error(e);
+      return{msg:"Functions 통신 에러",error:String(e)};
+    }
+  }
 };
 
 async function getMyRegisteredFid(){
