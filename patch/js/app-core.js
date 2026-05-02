@@ -632,17 +632,21 @@ function updateEventActionButtons(){
     el.createPartyBtn.onclick=createParty;
   }
 
-  if(state.currentEventId==="castle_battle"){
-  el.createPartyBtn.classList.remove("hidden");
-  el.createPartyBtn.textContent="캐슬 전투 신청";
-  el.createPartyBtn.onclick=createParty;
+    if(state.currentEventId==="castle_battle"){
+    el.createPartyBtn.classList.remove("hidden");
+    el.createPartyBtn.textContent="캐슬 전투 신청";
+    el.createPartyBtn.onclick=createParty;
 
-  if(state.isAdmin){
-    el.rearrangeManageBtn.classList.remove("hidden");
-    el.rearrangeManageBtn.textContent=state.castleManageMode?"관리 종료":"관리";
-    el.rearrangeManageBtn.onclick=toggleCastleManageMode;
+    if(state.isAdmin){
+      el.rearrangeEditBtn.classList.remove("hidden");
+      el.rearrangeEditBtn.textContent=state.castleCreateMode?"생성 닫기":"집결 생성";
+      el.rearrangeEditBtn.onclick=toggleCastleCreatePanel;
+
+      el.rearrangeManageBtn.classList.remove("hidden");
+      el.rearrangeManageBtn.textContent="초기화";
+      el.rearrangeManageBtn.onclick=resetCastleBattleEvent;
+    }
   }
-}
 
   if(state.currentEventId==="rearrange"){
     el.rearrangeEditBtn.classList.remove("hidden");
