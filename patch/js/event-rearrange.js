@@ -89,7 +89,7 @@ function renderRearrangeTable(entries){
 }
 
 function renderRearrangeGuide(){
-  return`<div class="layout-guide-wrap"><img src="자리 순열.png" alt="자리 순열 안내도" class="layout-guide-image" /></div>`;
+  return`<div class="layout-guide-wrap"><img src="../자리 순열.png" alt="자리 순열 안내도" class="layout-guide-image" /></div>`;
 }
 
 function renderRearrangeEvent(){
@@ -195,11 +195,11 @@ window.closeRearrangeModal=closeRearrangeModal;
 function openExampleImageModal(type="tower"){
   if(type==="guide"){
     el.exampleImageModalTitle.textContent="순열 안내 예시";
-    el.exampleImageModalImg.src="자리 순열.png";
+    el.exampleImageModalImg.src="../자리 순열.png";
     el.exampleImageModalImg.alt="자리 순열 안내 예시";
   }else{
     el.exampleImageModalTitle.textContent="입력 예시 크게 보기";
-    el.exampleImageModalImg.src="빛나는첨탑순위.png";
+    el.exampleImageModalImg.src="../빛나는첨탑순위.png";
     el.exampleImageModalImg.alt="빛나는 첨탑 순위 예시 크게 보기";
   }
 
