@@ -1382,58 +1382,135 @@ textarea.text-input{
 
 .castle-rally-grid{
   display:grid;
-  grid-template-columns:repeat(2,minmax(280px,1fr));
+  grid-template-columns:1fr;
   gap:12px;
   align-items:start;
   margin-bottom:16px;
 }
 
 .castle-rally-card{
+  width:100%;
   min-width:0;
+  padding:18px;
+}
+
+.castle-rally-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:12px;
+  margin-bottom:10px;
+}
+
+.castle-rally-head .party-title{
+  margin-bottom:6px;
+  font-size:22px;
+}
+
+.castle-rally-count{
+  flex:0 0 auto;
+  border:1px solid #28476e;
+  background:#0b1a2d;
+  color:#dceaff;
+  border-radius:999px;
+  padding:6px 10px;
+  font-size:13px;
+  font-weight:900;
+  white-space:nowrap;
 }
 
 .castle-rally-member-list{
-  gap:6px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-top:12px;
 }
 
 .castle-rally-member-line{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:8px;
+  align-items:center;
+  padding:9px 10px;
+  border:1px solid #172a45;
+  background:#081522;
+  border-radius:14px;
+}
+
+.castle-rally-member-main{
+  min-width:0;
   display:flex;
   align-items:center;
-  gap:6px;
   flex-wrap:wrap;
+  gap:6px;
 }
 
 .castle-rally-member-name{
-  display:inline-flex;
-  align-items:center;
-  gap:5px;
-  min-width:92px;
-  font-weight:700;
+  min-width:0;
+  font-weight:900;
+  line-height:1.25;
+  word-break:keep-all;
+  overflow-wrap:anywhere;
 }
 
 .castle-member-hero-chip{
   display:inline-flex;
   align-items:center;
-  border:1px solid #2a4266;
-  background:#0b1a2d;
-  color:#d9e6ff;
-  border-radius:999px;
-  padding:2px 7px;
-  font-size:11px;
-  font-weight:900;
+  color:#60a5fa;
+  font-size:10px;
+  font-weight:800;
   line-height:1.2;
+  white-space:nowrap;
+}
+
+.castle-rally-member-controls{
+  display:grid;
+  grid-template-columns:36px 128px 36px;
+  gap:6px;
+  align-items:center;
 }
 
 .castle-member-hero-select{
-  width:112px;
-  min-height:30px;
-  border-radius:9px;
+  width:128px;
+  min-height:34px;
+  border-radius:10px;
   border:1px solid #223653;
   background:#07111e;
   color:#d9e6ff;
-  padding:4px 7px;
+  padding:5px 8px;
   font-size:12px;
   font-weight:800;
+}
+
+.castle-crown-btn,
+.castle-remove-btn,
+.castle-crown-fixed{
+  width:36px;
+  min-width:36px;
+  height:34px;
+  padding:0;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.castle-crown-fixed{
+  border:1px solid #28476e;
+  background:#0b1a2d;
+  border-radius:10px;
+}
+
+.castle-rally-empty{
+  padding:12px;
+  border:1px dashed #28405f;
+  border-radius:14px;
+  color:#c5d7f4;
+  font-weight:800;
+}
+
+.castle-rally-actions{
+  margin-top:12px;
+  justify-content:flex-end;
 }
 
 .castle-manage-grid{
@@ -1455,22 +1532,29 @@ textarea.text-input{
 }
 
 @media(max-width:900px){
-  .castle-rally-grid,
   .castle-manage-grid{
     grid-template-columns:1fr;
   }
 }
 
-@media(max-width:520px){
+@media(max-width:700px){
+  .castle-rally-card{
+    padding:16px;
+  }
+
   .castle-rally-member-line{
-    align-items:flex-start;
+    grid-template-columns:1fr;
+  }
+
+  .castle-rally-member-controls{
+    grid-template-columns:40px minmax(0,1fr) 40px;
+    width:100%;
   }
 
   .castle-member-hero-select{
     width:100%;
   }
 }
-
 .clickable-event-card{
   cursor:pointer;
   transition:transform .15s ease, border-color .15s ease, background .15s ease;
