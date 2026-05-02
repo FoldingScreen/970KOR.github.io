@@ -773,6 +773,8 @@ function subscribeParties(){
         members:normalizeMembers(d.members),
         areaAssignments:normalizeAssignments(d.areaAssignments),
         rallyLeader:d.rallyLeader||"",
+        rallyName:d.rallyName||"",
+        memberHeroes:d.memberHeroes||{},
         timeUTC:d.timeUTC||null,
         maxMembers:Number(d.maxMembers||0),
         type:d.type||"",
