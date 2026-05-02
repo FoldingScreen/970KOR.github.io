@@ -142,6 +142,20 @@ function renderCastleHeroOne(heroes,heroKey){
   return`<span class="castle-hero-one-level">${getCastleHeroValue(heroes,heroKey)}</span>`;
 }
 
+function renderCastleHeroHeaderControl(displayHero){
+  if(!state.isAdmin)return escapeHtml(displayHero.name);
+
+  return`
+    <select class="castle-hero-header-select" onchange="setCastleDisplayHero(this.value)">
+      ${getCastleHeroList().map(hero=>`
+        <option value="${escapeHtml(hero.key)}" ${hero.key===displayHero.key?"selected":""}>
+          ${escapeHtml(hero.name)}
+        </option>
+      `).join("")}
+    </select>
+  `;
+}
+
 function renderCastleBattleEvent(){
   const entries=getCastleSortedEntries();
   const placements=getCastlePlacementList();
@@ -236,7 +250,7 @@ function renderCastleBattleEvent(){
               <th>보병 TG</th>
               <th>기병 TG</th>
               <th>궁병 TG</th>
-              <th>${state.isAdmin?`<button type="button" class="castle-hero-header-btn" onclick="changeCastleDisplayHero()" title="클릭해서 표시 영웅 변경">${escapeHtml(displayHero.name)}</button>`:escapeHtml(displayHero.name)}</th>
+              <th>${renderCastleHeroHeaderControl(displayHero)}</th>
               <th>배치</th>
               <th>삭제</th>
             </tr>
@@ -250,15 +264,12 @@ function renderCastleBattleEvent(){
   el.partyList.innerHTML=managePanel+`<div class="castle-mini-grid">${placementCards}</div>`+applicantTable;
 }
 
-window.changeCastleDisplayHero=function(){
+window.setCastleDisplayHero=function(heroKey){
   if(!state.isAdmin)return;
 
-  const heroes=getCastleHeroList();
-  const currentKey=getCastleDisplayHero().key;
-  const currentIndex=heroes.findIndex(hero=>hero.key===currentKey);
-  const nextHero=heroes[(currentIndex+1)%heroes.length];
+  const exists=getCastleHeroList().some(hero=>hero.key===heroKey);
+  state.castleDisplayHeroKey=exists?heroKey:"amadeus";
 
-  state.castleDisplayHeroKey=nextHero.key;
   renderCastleBattleEvent();
 };
 
