@@ -43,8 +43,21 @@ function getCastleSortedEntries(){
   });
 }
 
-function getCastleHeroSelects(){
-  return[...document.querySelectorAll(".castle-hero-select")];
+function getCastleHeroInputs(){
+  return[...document.querySelectorAll(".castle-hero-level-input")];
+}
+
+function getCastleDisplayHero(){
+  const heroes=getCastleHeroList();
+  const key=state.castleDisplayHeroKey||"amadeus";
+
+  return heroes.find(hero=>hero.key===key)||heroes[0];
+}
+
+function syncCastleHeroLevelButton(heroKey,level){
+  document.querySelectorAll(`.castle-hero-level-btn[data-hero="${heroKey}"]`).forEach(btn=>{
+    btn.classList.toggle("active",Number(btn.dataset.level)===Number(level));
+  });
 }
 
 function openCastleBattleModal(){
@@ -60,8 +73,10 @@ function openCastleBattleModal(){
     el.castleArcherSelect.value="순금X";
   }
 
-  getCastleHeroSelects().forEach(select=>{
-    select.value=String(getCastleHeroValue(mine?.heroes,select.dataset.hero));
+  getCastleHeroInputs().forEach(input=>{
+    const level=getCastleHeroValue(mine?.heroes,input.dataset.hero);
+    input.value=String(level);
+    syncCastleHeroLevelButton(input.dataset.hero,level);
   });
 
   el.castleBattleModal.classList.remove("hidden");
@@ -76,6 +91,15 @@ function closeCastleBattleModal(){
 window.openCastleBattleModal=openCastleBattleModal;
 window.closeCastleBattleModal=closeCastleBattleModal;
 
+window.setCastleHeroLevel=function(heroKey,level){
+  const input=document.querySelector(`.castle-hero-level-input[data-hero="${heroKey}"]`);
+  if(!input)return;
+
+  const safeLevel=Math.max(0,Math.min(5,Number(level)||0));
+  input.value=String(safeLevel);
+  syncCastleHeroLevelButton(heroKey,safeLevel);
+};
+
 window.submitCastleBattle=async function(){
   const tg={
     infantry:el.castleInfantrySelect.value,
@@ -84,8 +108,8 @@ window.submitCastleBattle=async function(){
   };
 
   const heroes={};
-  getCastleHeroSelects().forEach(select=>{
-    heroes[select.dataset.hero]=Number(select.value||0);
+  getCastleHeroInputs().forEach(input=>{
+    heroes[input.dataset.hero]=Number(input.value||0);
   });
 
   const mine=state.parties.find(v=>v.user===state.currentUser);
@@ -114,19 +138,14 @@ function renderCastleTgSummary(tg){
   `;
 }
 
-function renderCastleHeroSummary(heroes){
-  return`
-    <div class="castle-hero-summary">
-      ${getCastleHeroList().map(hero=>`
-        <span>${escapeHtml(hero.name)} ${getCastleHeroValue(heroes,hero.key)}</span>
-      `).join("")}
-    </div>
-  `;
+function renderCastleHeroOne(heroes,heroKey){
+  return`<span class="castle-hero-one-level">${getCastleHeroValue(heroes,heroKey)}</span>`;
 }
 
 function renderCastleBattleEvent(){
   const entries=getCastleSortedEntries();
   const placements=getCastlePlacementList();
+  const displayHero=getCastleDisplayHero();
 
   if(!entries.length){
     el.partyList.innerHTML=state.isAdmin&&state.castleManageMode
@@ -195,8 +214,10 @@ function renderCastleBattleEvent(){
       <tr>
         <td>${idx+1}</td>
         <td class="left ${entry.user===state.currentUser?"my-name":""}">${escapeHtml(entry.user)}</td>
-        <td>${renderCastleTgSummary(entry.tg)}</td>
-        <td>${renderCastleHeroSummary(entry.heroes)}</td>
+        <td>${escapeHtml(getCastleTgValue(entry.tg,"infantry"))}</td>
+        <td>${escapeHtml(getCastleTgValue(entry.tg,"cavalry"))}</td>
+        <td>${escapeHtml(getCastleTgValue(entry.tg,"archer"))}</td>
+        <td>${renderCastleHeroOne(entry.heroes,displayHero.key)}</td>
         <td>${escapeHtml(entry.placement||"미배치")}</td>
         <td>${canDelete?`<button class="rank-edit-btn" onclick="deleteCastleBattleEntry('${escapeJs(entry.id)}')">삭제</button>`:"-"}</td>
       </tr>
@@ -212,8 +233,10 @@ function renderCastleBattleEvent(){
             <tr>
               <th>연번</th>
               <th>닉네임</th>
-              <th>TG</th>
-              <th>영웅 스킬</th>
+              <th>보병 TG</th>
+              <th>기병 TG</th>
+              <th>궁병 TG</th>
+              <th>${state.isAdmin?`<button type="button" class="castle-hero-header-btn" onclick="changeCastleDisplayHero()" title="클릭해서 표시 영웅 변경">${escapeHtml(displayHero.name)}</button>`:escapeHtml(displayHero.name)}</th>
               <th>배치</th>
               <th>삭제</th>
             </tr>
@@ -226,6 +249,18 @@ function renderCastleBattleEvent(){
 
   el.partyList.innerHTML=managePanel+`<div class="castle-mini-grid">${placementCards}</div>`+applicantTable;
 }
+
+window.changeCastleDisplayHero=function(){
+  if(!state.isAdmin)return;
+
+  const heroes=getCastleHeroList();
+  const currentKey=getCastleDisplayHero().key;
+  const currentIndex=heroes.findIndex(hero=>hero.key===currentKey);
+  const nextHero=heroes[(currentIndex+1)%heroes.length];
+
+  state.castleDisplayHeroKey=nextHero.key;
+  renderCastleBattleEvent();
+};
 
 window.toggleCastleManageMode=function(){
   state.castleManageMode=!state.castleManageMode;
