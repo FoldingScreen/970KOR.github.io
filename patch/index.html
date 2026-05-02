@@ -132,7 +132,7 @@
     <div class="form-group"><div id="holySwordAreaAssignmentList"></div></div>
   </div>
 
-  <div id="castleBattleModal" class="modal hidden">
+  <div id="castleBattleModal" class="modal hidden castle-battle-modal">
     <div class="modal-header"><h3>캐슬 전투 신청</h3><button class="close-btn" type="button" onclick="closeCastleBattleModal()">닫기</button></div>
 
     <div class="castle-form-section">
@@ -146,25 +146,81 @@
 
     <div class="castle-form-section">
       <div class="castle-form-title">영웅 스킬 레벨</div>
-      <div class="castle-form-grid castle-hero-grid">
-        <div class="form-group"><label>아마데우스</label><select class="text-input castle-hero-select" data-hero="amadeus"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
-        <div class="form-group"><label>첸코</label><select class="text-input castle-hero-select" data-hero="chenko"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
-        <div class="form-group"><label>연우</label><select class="text-input castle-hero-select" data-hero="yeonwoo"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
-        <div class="form-group"><label>마르고</label><select class="text-input castle-hero-select" data-hero="margo"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
-        <div class="form-group"><label>아마네</label><select class="text-input castle-hero-select" data-hero="amane"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
-        <div class="form-group"><label>에릭</label><select class="text-input castle-hero-select" data-hero="eric"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
-        <div class="form-group"><label>살로</label><select class="text-input castle-hero-select" data-hero="salo"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
-        <div class="form-group"><label>리틀페라</label><select class="text-input castle-hero-select" data-hero="littlefera"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
-        <div class="form-group"><label>마린</label><select class="text-input castle-hero-select" data-hero="marine"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
-        <div class="form-group"><label>로사</label><select class="text-input castle-hero-select" data-hero="rosa"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
-        <div class="form-group"><label>알카</label><select class="text-input castle-hero-select" data-hero="alka"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
-        <div class="form-group"><label>파드</label><select class="text-input castle-hero-select" data-hero="fad"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
-        <div class="form-group"><label>퀸</label><select class="text-input castle-hero-select" data-hero="queen"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
-        <div class="form-group"><label>하워드</label><select class="text-input castle-hero-select" data-hero="howard"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
+      <div class="castle-hero-grid">
+        <div class="castle-hero-card">
+          <input type="hidden" class="castle-hero-level-input" data-hero="amadeus" value="0" />
+          <div class="castle-hero-name">아마데우스</div>
+          <div class="castle-hero-levels"><button type="button" class="castle-hero-level-btn" data-hero="amadeus" data-level="0" onclick="setCastleHeroLevel('amadeus',0)">0</button><button type="button" class="castle-hero-level-btn" data-hero="amadeus" data-level="1" onclick="setCastleHeroLevel('amadeus',1)">1</button><button type="button" class="castle-hero-level-btn" data-hero="amadeus" data-level="2" onclick="setCastleHeroLevel('amadeus',2)">2</button><button type="button" class="castle-hero-level-btn" data-hero="amadeus" data-level="3" onclick="setCastleHeroLevel('amadeus',3)">3</button><button type="button" class="castle-hero-level-btn" data-hero="amadeus" data-level="4" onclick="setCastleHeroLevel('amadeus',4)">4</button><button type="button" class="castle-hero-level-btn" data-hero="amadeus" data-level="5" onclick="setCastleHeroLevel('amadeus',5)">5</button></div>
+        </div>
+        <div class="castle-hero-card">
+          <input type="hidden" class="castle-hero-level-input" data-hero="chenko" value="0" />
+          <div class="castle-hero-name">첸코</div>
+          <div class="castle-hero-levels"><button type="button" class="castle-hero-level-btn" data-hero="chenko" data-level="0" onclick="setCastleHeroLevel('chenko',0)">0</button><button type="button" class="castle-hero-level-btn" data-hero="chenko" data-level="1" onclick="setCastleHeroLevel('chenko',1)">1</button><button type="button" class="castle-hero-level-btn" data-hero="chenko" data-level="2" onclick="setCastleHeroLevel('chenko',2)">2</button><button type="button" class="castle-hero-level-btn" data-hero="chenko" data-level="3" onclick="setCastleHeroLevel('chenko',3)">3</button><button type="button" class="castle-hero-level-btn" data-hero="chenko" data-level="4" onclick="setCastleHeroLevel('chenko',4)">4</button><button type="button" class="castle-hero-level-btn" data-hero="chenko" data-level="5" onclick="setCastleHeroLevel('chenko',5)">5</button></div>
+        </div>
+        <div class="castle-hero-card">
+          <input type="hidden" class="castle-hero-level-input" data-hero="yeonwoo" value="0" />
+          <div class="castle-hero-name">연우</div>
+          <div class="castle-hero-levels"><button type="button" class="castle-hero-level-btn" data-hero="yeonwoo" data-level="0" onclick="setCastleHeroLevel('yeonwoo',0)">0</button><button type="button" class="castle-hero-level-btn" data-hero="yeonwoo" data-level="1" onclick="setCastleHeroLevel('yeonwoo',1)">1</button><button type="button" class="castle-hero-level-btn" data-hero="yeonwoo" data-level="2" onclick="setCastleHeroLevel('yeonwoo',2)">2</button><button type="button" class="castle-hero-level-btn" data-hero="yeonwoo" data-level="3" onclick="setCastleHeroLevel('yeonwoo',3)">3</button><button type="button" class="castle-hero-level-btn" data-hero="yeonwoo" data-level="4" onclick="setCastleHeroLevel('yeonwoo',4)">4</button><button type="button" class="castle-hero-level-btn" data-hero="yeonwoo" data-level="5" onclick="setCastleHeroLevel('yeonwoo',5)">5</button></div>
+        </div>
+        <div class="castle-hero-card">
+          <input type="hidden" class="castle-hero-level-input" data-hero="margo" value="0" />
+          <div class="castle-hero-name">마르고</div>
+          <div class="castle-hero-levels"><button type="button" class="castle-hero-level-btn" data-hero="margo" data-level="0" onclick="setCastleHeroLevel('margo',0)">0</button><button type="button" class="castle-hero-level-btn" data-hero="margo" data-level="1" onclick="setCastleHeroLevel('margo',1)">1</button><button type="button" class="castle-hero-level-btn" data-hero="margo" data-level="2" onclick="setCastleHeroLevel('margo',2)">2</button><button type="button" class="castle-hero-level-btn" data-hero="margo" data-level="3" onclick="setCastleHeroLevel('margo',3)">3</button><button type="button" class="castle-hero-level-btn" data-hero="margo" data-level="4" onclick="setCastleHeroLevel('margo',4)">4</button><button type="button" class="castle-hero-level-btn" data-hero="margo" data-level="5" onclick="setCastleHeroLevel('margo',5)">5</button></div>
+        </div>
+        <div class="castle-hero-card">
+          <input type="hidden" class="castle-hero-level-input" data-hero="amane" value="0" />
+          <div class="castle-hero-name">아마네</div>
+          <div class="castle-hero-levels"><button type="button" class="castle-hero-level-btn" data-hero="amane" data-level="0" onclick="setCastleHeroLevel('amane',0)">0</button><button type="button" class="castle-hero-level-btn" data-hero="amane" data-level="1" onclick="setCastleHeroLevel('amane',1)">1</button><button type="button" class="castle-hero-level-btn" data-hero="amane" data-level="2" onclick="setCastleHeroLevel('amane',2)">2</button><button type="button" class="castle-hero-level-btn" data-hero="amane" data-level="3" onclick="setCastleHeroLevel('amane',3)">3</button><button type="button" class="castle-hero-level-btn" data-hero="amane" data-level="4" onclick="setCastleHeroLevel('amane',4)">4</button><button type="button" class="castle-hero-level-btn" data-hero="amane" data-level="5" onclick="setCastleHeroLevel('amane',5)">5</button></div>
+        </div>
+        <div class="castle-hero-card">
+          <input type="hidden" class="castle-hero-level-input" data-hero="eric" value="0" />
+          <div class="castle-hero-name">에릭</div>
+          <div class="castle-hero-levels"><button type="button" class="castle-hero-level-btn" data-hero="eric" data-level="0" onclick="setCastleHeroLevel('eric',0)">0</button><button type="button" class="castle-hero-level-btn" data-hero="eric" data-level="1" onclick="setCastleHeroLevel('eric',1)">1</button><button type="button" class="castle-hero-level-btn" data-hero="eric" data-level="2" onclick="setCastleHeroLevel('eric',2)">2</button><button type="button" class="castle-hero-level-btn" data-hero="eric" data-level="3" onclick="setCastleHeroLevel('eric',3)">3</button><button type="button" class="castle-hero-level-btn" data-hero="eric" data-level="4" onclick="setCastleHeroLevel('eric',4)">4</button><button type="button" class="castle-hero-level-btn" data-hero="eric" data-level="5" onclick="setCastleHeroLevel('eric',5)">5</button></div>
+        </div>
+        <div class="castle-hero-card">
+          <input type="hidden" class="castle-hero-level-input" data-hero="salo" value="0" />
+          <div class="castle-hero-name">살로</div>
+          <div class="castle-hero-levels"><button type="button" class="castle-hero-level-btn" data-hero="salo" data-level="0" onclick="setCastleHeroLevel('salo',0)">0</button><button type="button" class="castle-hero-level-btn" data-hero="salo" data-level="1" onclick="setCastleHeroLevel('salo',1)">1</button><button type="button" class="castle-hero-level-btn" data-hero="salo" data-level="2" onclick="setCastleHeroLevel('salo',2)">2</button><button type="button" class="castle-hero-level-btn" data-hero="salo" data-level="3" onclick="setCastleHeroLevel('salo',3)">3</button><button type="button" class="castle-hero-level-btn" data-hero="salo" data-level="4" onclick="setCastleHeroLevel('salo',4)">4</button><button type="button" class="castle-hero-level-btn" data-hero="salo" data-level="5" onclick="setCastleHeroLevel('salo',5)">5</button></div>
+        </div>
+        <div class="castle-hero-card">
+          <input type="hidden" class="castle-hero-level-input" data-hero="littlefera" value="0" />
+          <div class="castle-hero-name">리틀페라</div>
+          <div class="castle-hero-levels"><button type="button" class="castle-hero-level-btn" data-hero="littlefera" data-level="0" onclick="setCastleHeroLevel('littlefera',0)">0</button><button type="button" class="castle-hero-level-btn" data-hero="littlefera" data-level="1" onclick="setCastleHeroLevel('littlefera',1)">1</button><button type="button" class="castle-hero-level-btn" data-hero="littlefera" data-level="2" onclick="setCastleHeroLevel('littlefera',2)">2</button><button type="button" class="castle-hero-level-btn" data-hero="littlefera" data-level="3" onclick="setCastleHeroLevel('littlefera',3)">3</button><button type="button" class="castle-hero-level-btn" data-hero="littlefera" data-level="4" onclick="setCastleHeroLevel('littlefera',4)">4</button><button type="button" class="castle-hero-level-btn" data-hero="littlefera" data-level="5" onclick="setCastleHeroLevel('littlefera',5)">5</button></div>
+        </div>
+        <div class="castle-hero-card">
+          <input type="hidden" class="castle-hero-level-input" data-hero="marine" value="0" />
+          <div class="castle-hero-name">마린</div>
+          <div class="castle-hero-levels"><button type="button" class="castle-hero-level-btn" data-hero="marine" data-level="0" onclick="setCastleHeroLevel('marine',0)">0</button><button type="button" class="castle-hero-level-btn" data-hero="marine" data-level="1" onclick="setCastleHeroLevel('marine',1)">1</button><button type="button" class="castle-hero-level-btn" data-hero="marine" data-level="2" onclick="setCastleHeroLevel('marine',2)">2</button><button type="button" class="castle-hero-level-btn" data-hero="marine" data-level="3" onclick="setCastleHeroLevel('marine',3)">3</button><button type="button" class="castle-hero-level-btn" data-hero="marine" data-level="4" onclick="setCastleHeroLevel('marine',4)">4</button><button type="button" class="castle-hero-level-btn" data-hero="marine" data-level="5" onclick="setCastleHeroLevel('marine',5)">5</button></div>
+        </div>
+        <div class="castle-hero-card">
+          <input type="hidden" class="castle-hero-level-input" data-hero="rosa" value="0" />
+          <div class="castle-hero-name">로사</div>
+          <div class="castle-hero-levels"><button type="button" class="castle-hero-level-btn" data-hero="rosa" data-level="0" onclick="setCastleHeroLevel('rosa',0)">0</button><button type="button" class="castle-hero-level-btn" data-hero="rosa" data-level="1" onclick="setCastleHeroLevel('rosa',1)">1</button><button type="button" class="castle-hero-level-btn" data-hero="rosa" data-level="2" onclick="setCastleHeroLevel('rosa',2)">2</button><button type="button" class="castle-hero-level-btn" data-hero="rosa" data-level="3" onclick="setCastleHeroLevel('rosa',3)">3</button><button type="button" class="castle-hero-level-btn" data-hero="rosa" data-level="4" onclick="setCastleHeroLevel('rosa',4)">4</button><button type="button" class="castle-hero-level-btn" data-hero="rosa" data-level="5" onclick="setCastleHeroLevel('rosa',5)">5</button></div>
+        </div>
+        <div class="castle-hero-card">
+          <input type="hidden" class="castle-hero-level-input" data-hero="alka" value="0" />
+          <div class="castle-hero-name">알카</div>
+          <div class="castle-hero-levels"><button type="button" class="castle-hero-level-btn" data-hero="alka" data-level="0" onclick="setCastleHeroLevel('alka',0)">0</button><button type="button" class="castle-hero-level-btn" data-hero="alka" data-level="1" onclick="setCastleHeroLevel('alka',1)">1</button><button type="button" class="castle-hero-level-btn" data-hero="alka" data-level="2" onclick="setCastleHeroLevel('alka',2)">2</button><button type="button" class="castle-hero-level-btn" data-hero="alka" data-level="3" onclick="setCastleHeroLevel('alka',3)">3</button><button type="button" class="castle-hero-level-btn" data-hero="alka" data-level="4" onclick="setCastleHeroLevel('alka',4)">4</button><button type="button" class="castle-hero-level-btn" data-hero="alka" data-level="5" onclick="setCastleHeroLevel('alka',5)">5</button></div>
+        </div>
+        <div class="castle-hero-card">
+          <input type="hidden" class="castle-hero-level-input" data-hero="fad" value="0" />
+          <div class="castle-hero-name">파드</div>
+          <div class="castle-hero-levels"><button type="button" class="castle-hero-level-btn" data-hero="fad" data-level="0" onclick="setCastleHeroLevel('fad',0)">0</button><button type="button" class="castle-hero-level-btn" data-hero="fad" data-level="1" onclick="setCastleHeroLevel('fad',1)">1</button><button type="button" class="castle-hero-level-btn" data-hero="fad" data-level="2" onclick="setCastleHeroLevel('fad',2)">2</button><button type="button" class="castle-hero-level-btn" data-hero="fad" data-level="3" onclick="setCastleHeroLevel('fad',3)">3</button><button type="button" class="castle-hero-level-btn" data-hero="fad" data-level="4" onclick="setCastleHeroLevel('fad',4)">4</button><button type="button" class="castle-hero-level-btn" data-hero="fad" data-level="5" onclick="setCastleHeroLevel('fad',5)">5</button></div>
+        </div>
+        <div class="castle-hero-card">
+          <input type="hidden" class="castle-hero-level-input" data-hero="queen" value="0" />
+          <div class="castle-hero-name">퀸</div>
+          <div class="castle-hero-levels"><button type="button" class="castle-hero-level-btn" data-hero="queen" data-level="0" onclick="setCastleHeroLevel('queen',0)">0</button><button type="button" class="castle-hero-level-btn" data-hero="queen" data-level="1" onclick="setCastleHeroLevel('queen',1)">1</button><button type="button" class="castle-hero-level-btn" data-hero="queen" data-level="2" onclick="setCastleHeroLevel('queen',2)">2</button><button type="button" class="castle-hero-level-btn" data-hero="queen" data-level="3" onclick="setCastleHeroLevel('queen',3)">3</button><button type="button" class="castle-hero-level-btn" data-hero="queen" data-level="4" onclick="setCastleHeroLevel('queen',4)">4</button><button type="button" class="castle-hero-level-btn" data-hero="queen" data-level="5" onclick="setCastleHeroLevel('queen',5)">5</button></div>
+        </div>
+        <div class="castle-hero-card">
+          <input type="hidden" class="castle-hero-level-input" data-hero="howard" value="0" />
+          <div class="castle-hero-name">하워드</div>
+          <div class="castle-hero-levels"><button type="button" class="castle-hero-level-btn" data-hero="howard" data-level="0" onclick="setCastleHeroLevel('howard',0)">0</button><button type="button" class="castle-hero-level-btn" data-hero="howard" data-level="1" onclick="setCastleHeroLevel('howard',1)">1</button><button type="button" class="castle-hero-level-btn" data-hero="howard" data-level="2" onclick="setCastleHeroLevel('howard',2)">2</button><button type="button" class="castle-hero-level-btn" data-hero="howard" data-level="3" onclick="setCastleHeroLevel('howard',3)">3</button><button type="button" class="castle-hero-level-btn" data-hero="howard" data-level="4" onclick="setCastleHeroLevel('howard',4)">4</button><button type="button" class="castle-hero-level-btn" data-hero="howard" data-level="5" onclick="setCastleHeroLevel('howard',5)">5</button></div>
+        </div>
       </div>
     </div>
 
-    <div class="actions right-wrap"><button type="button" onclick="submitCastleBattle()">신청</button></div>
+    <div class="actions right-wrap castle-submit-actions"><button type="button" onclick="submitCastleBattle()">신청</button></div>
   </div>
 
   <div id="createLabyrinthModal" class="modal hidden">
