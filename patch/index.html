@@ -134,9 +134,36 @@
 
   <div id="castleBattleModal" class="modal hidden">
     <div class="modal-header"><h3>캐슬 전투 신청</h3><button class="close-btn" type="button" onclick="closeCastleBattleModal()">닫기</button></div>
-    <div class="form-group"><label>보병 TG</label><select id="castleInfantrySelect" class="text-input"><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option><option value="순금X">순금X</option></select></div>
-    <div class="form-group"><label>기병 TG</label><select id="castleCavalrySelect" class="text-input"><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option><option value="순금X">순금X</option></select></div>
-    <div class="form-group"><label>궁병 TG</label><select id="castleArcherSelect" class="text-input"><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option><option value="순금X">순금X</option></select></div>
+
+    <div class="castle-form-section">
+      <div class="castle-form-title">TG</div>
+      <div class="castle-form-grid castle-tg-grid">
+        <div class="form-group"><label>보병 TG</label><select id="castleInfantrySelect" class="text-input"><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option><option value="순금X">순금X</option></select></div>
+        <div class="form-group"><label>기병 TG</label><select id="castleCavalrySelect" class="text-input"><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option><option value="순금X">순금X</option></select></div>
+        <div class="form-group"><label>궁병 TG</label><select id="castleArcherSelect" class="text-input"><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option><option value="순금X">순금X</option></select></div>
+      </div>
+    </div>
+
+    <div class="castle-form-section">
+      <div class="castle-form-title">영웅 스킬 레벨</div>
+      <div class="castle-form-grid castle-hero-grid">
+        <div class="form-group"><label>아마데우스</label><select class="text-input castle-hero-select" data-hero="amadeus"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
+        <div class="form-group"><label>첸코</label><select class="text-input castle-hero-select" data-hero="chenko"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
+        <div class="form-group"><label>연우</label><select class="text-input castle-hero-select" data-hero="yeonwoo"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
+        <div class="form-group"><label>마르고</label><select class="text-input castle-hero-select" data-hero="margo"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
+        <div class="form-group"><label>아마네</label><select class="text-input castle-hero-select" data-hero="amane"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
+        <div class="form-group"><label>에릭</label><select class="text-input castle-hero-select" data-hero="eric"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
+        <div class="form-group"><label>살로</label><select class="text-input castle-hero-select" data-hero="salo"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
+        <div class="form-group"><label>리틀페라</label><select class="text-input castle-hero-select" data-hero="littlefera"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
+        <div class="form-group"><label>마린</label><select class="text-input castle-hero-select" data-hero="marine"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
+        <div class="form-group"><label>로사</label><select class="text-input castle-hero-select" data-hero="rosa"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
+        <div class="form-group"><label>알카</label><select class="text-input castle-hero-select" data-hero="alka"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
+        <div class="form-group"><label>파드</label><select class="text-input castle-hero-select" data-hero="fad"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
+        <div class="form-group"><label>퀸</label><select class="text-input castle-hero-select" data-hero="queen"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
+        <div class="form-group"><label>하워드</label><select class="text-input castle-hero-select" data-hero="howard"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
+      </div>
+    </div>
+
     <div class="actions right-wrap"><button type="button" onclick="submitCastleBattle()">신청</button></div>
   </div>
 
