@@ -774,6 +774,7 @@ function subscribeParties(){
         areaAssignments:normalizeAssignments(d.areaAssignments),
         rallyLeader:d.rallyLeader||"",
         rallyName:d.rallyName||"",
+        rallyCategory:d.rallyCategory||"etc",
         memberHeroes:d.memberHeroes||{},
         timeUTC:d.timeUTC||null,
         maxMembers:Number(d.maxMembers||0),
