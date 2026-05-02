@@ -238,33 +238,46 @@ function renderCastleRallyCard(rally){
   const memberHeroes=rally.memberHeroes||{};
   const isManaging=state.isAdmin&&state.castleManagingRallyId===rally.id;
 
-  const membersHtml=members.length
-    ? members.map(name=>{
-        const heroKey=memberHeroes[name]||"";
-        const heroName=getCastleHeroName(heroKey);
-        const isLeader=name===rally.rallyLeader;
+  const leaderName=rally.rallyLeader||"";
+  const leaderExists=leaderName&&members.includes(leaderName);
+  const normalMembers=members.filter(name=>name!==leaderName);
 
-        return`
-          <div class="castle-rally-member-line">
-            <div class="castle-rally-member-main">
-              <span class="castle-rally-member-name ${name===state.currentUser?"my-name":""}">
-                ${escapeHtml(name)}
-              </span>
-              ${heroName?`<span class="castle-member-hero-chip">${escapeHtml(heroName)}</span>`:""}
-            </div>
+  function renderMemberLine(name,isLeader){
+    const heroKey=memberHeroes[name]||"";
+    const heroName=getCastleHeroName(heroKey);
 
-            ${state.isAdmin&&isManaging?`
-              <div class="castle-rally-member-controls">
-                ${!isLeader?`
-                  <button class="inline-btn castle-crown-btn" onclick="setCastleRallyLeader('${escapeJs(rally.id)}','${escapeJs(name)}')" title="집결장 지정">👑</button>
-                `:`<span class="castle-crown-fixed" title="집결장">👑</span>`}
-                ${renderCastleHeroAssignSelect(rally.id,name,heroKey)}
-                <button class="inline-btn castle-remove-btn" onclick="removeCastleRallyMember('${escapeJs(rally.id)}','${escapeJs(name)}')" title="집결원 제외">✖</button>
-              </div>
-            `:`${isLeader?`<span class="castle-crown-fixed" title="집결장">👑</span>`:""}`}
+    return`
+      <div class="castle-rally-member-line ${isLeader?"leader-line":""}">
+        <div class="castle-rally-member-main">
+          <span class="castle-rally-member-name ${name===state.currentUser?"my-name":""}">
+            ${escapeHtml(name)}
+          </span>
+          ${heroName?`<span class="castle-member-hero-chip">${escapeHtml(heroName)}</span>`:""}
+        </div>
+
+        ${state.isAdmin&&isManaging?`
+          <div class="castle-rally-member-controls">
+            ${!isLeader?`
+              <button class="inline-btn castle-crown-btn" onclick="setCastleRallyLeader('${escapeJs(rally.id)}','${escapeJs(name)}')" title="집결장 지정">👑</button>
+            `:`<span class="castle-crown-fixed" title="집결장">👑</span>`}
+            ${renderCastleHeroAssignSelect(rally.id,name,heroKey)}
+            <button class="inline-btn castle-remove-btn" onclick="removeCastleRallyMember('${escapeJs(rally.id)}','${escapeJs(name)}')" title="집결원 제외">✖</button>
           </div>
-        `;
-      }).join("")
+        `:`${isLeader?`<span class="castle-crown-fixed" title="집결장">👑</span>`:""}`}
+      </div>
+    `;
+  }
+
+  const leaderHtml=leaderExists
+    ? `<div class="castle-rally-leader-row">${renderMemberLine(leaderName,true)}</div>`
+    : "";
+
+  const normalHtml=normalMembers.length
+    ? `<div class="castle-rally-normal-grid">${normalMembers.map(name=>renderMemberLine(name,false)).join("")}</div>`
+    : "";
+
+  const membersHtml=members.length
+    ? `${leaderHtml}${normalHtml}`
     : `<div class="castle-rally-empty">집결원이 없습니다.</div>`;
 
   return`
@@ -272,7 +285,7 @@ function renderCastleRallyCard(rally){
       <div class="castle-rally-head">
         <div>
           <div class="party-title">${escapeHtml(rally.rallyName||rally.name||"집결")}</div>
-          <div class="party-sub">집결장: ${rally.rallyLeader?`👑 ${escapeHtml(rally.rallyLeader)}`:"미지정"}</div>
+          <div class="party-sub">집결장: ${rally.rallyLeader?escapeHtml(rally.rallyLeader):"미지정"}</div>
         </div>
         <div class="castle-rally-count">${members.length}명</div>
       </div>
@@ -350,20 +363,33 @@ function renderCastleBattleEvent(){
 
   const createPanel=renderCastleCreatePanel();
 
+  const myRally=rallies.find(rally=>normalizeMembers(rally.members).includes(state.currentUser));
+
+  const myRallyBlock=myRally
+    ? `
+      <section class="castle-my-rally-section">
+        <div class="castle-rally-category-title my-rally-title">나의 집결</div>
+        <div class="castle-my-rally-wrap">${renderCastleRallyCard(myRally)}</div>
+      </section>
+    `
+    : "";
+
   const rallyGroups=getCastleRallyCategoryList().map(category=>{
     const items=sortCastleRalliesByCreatedAt(rallies.filter(rally=>getCastleRallyCategoryKey(rally)===category.key));
     if(!items.length)return"";
 
     return`
-      <section class="castle-rally-category-column">
+      <section class="castle-rally-category-row">
         <div class="castle-rally-category-title">${escapeHtml(category.name)}</div>
-        <div class="castle-rally-category-list">${items.map(renderCastleRallyCard).join("")}</div>
+        <div class="castle-rally-category-list">
+          ${items.map(rally=>renderCastleRallyCard(rally)).join("")}
+        </div>
       </section>
     `;
   }).join("");
 
   const rallyCards=rallies.length
-    ? `<div class="castle-rally-category-grid">${rallyGroups}</div>`
+    ? `<div class="castle-rally-category-grid">${myRallyBlock}${rallyGroups}</div>`
     : `<div class="empty-card">아직 생성된 캐슬 집결이 없습니다.</div>`;
 
   const rows=applicants.map((entry,idx)=>{
