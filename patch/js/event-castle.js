@@ -1,7 +1,3 @@
-function getCastlePlacementList(){
-  return["캐슬","포탑(동)","포탑(서)","포탑(남)","포탑(북)","미배치"];
-}
-
 function getCastleHeroList(){
   return[
     {key:"amadeus",name:"아마데우스"},
@@ -21,6 +17,11 @@ function getCastleHeroList(){
   ];
 }
 
+function getCastleHeroName(heroKey){
+  const hero=getCastleHeroList().find(v=>v.key===heroKey);
+  return hero?hero.name:"";
+}
+
 function getCastleTgValue(tg,key){
   return tg&&tg[key]?String(tg[key]):"순금X";
 }
@@ -30,16 +31,39 @@ function getCastleHeroValue(heroes,key){
   return Number.isFinite(value)?Math.max(0,Math.min(5,value)):0;
 }
 
-function getCastleSortedEntries(){
+function getCastleApplicants(){
+  return state.parties.filter(v=>v.type!=="castle_rally"&&v.user);
+}
+
+function getCastleRallies(){
+  return state.parties.filter(v=>v.type==="castle_rally");
+}
+
+function getCastleSortedApplicants(){
   const rankMap=getRearrangeRankMap();
 
-  return[...state.parties].sort((a,b)=>{
+  return getCastleApplicants().sort((a,b)=>{
     const ra=rankMap[a.user]||999999;
     const rb=rankMap[b.user]||999999;
 
     if(ra!==rb)return ra-rb;
 
     return String(a.user).localeCompare(String(b.user),"ko");
+  });
+}
+
+function sortCastleMembers(members,rallyLeader){
+  const rankMap=getRearrangeRankMap();
+
+  return normalizeMembers(members).sort((a,b)=>{
+    if(a===rallyLeader)return -1;
+    if(b===rallyLeader)return 1;
+
+    const ra=rankMap[a]||999999;
+    const rb=rankMap[b]||999999;
+    if(ra!==rb)return ra-rb;
+
+    return String(a).localeCompare(String(b),"ko");
   });
 }
 
@@ -54,6 +78,11 @@ function getCastleDisplayHero(){
   return heroes.find(hero=>hero.key===key)||heroes[0];
 }
 
+function getCastleRallyNameByUser(user){
+  const rally=getCastleRallies().find(v=>normalizeMembers(v.members).includes(user));
+  return rally?(rally.rallyName||rally.name||"집결"):"미배치";
+}
+
 function syncCastleHeroLevelButton(heroKey,level){
   document.querySelectorAll(`.castle-hero-level-btn[data-hero="${heroKey}"]`).forEach(btn=>{
     btn.classList.toggle("active",Number(btn.dataset.level)===Number(level));
@@ -61,7 +90,7 @@ function syncCastleHeroLevelButton(heroKey,level){
 }
 
 function openCastleBattleModal(){
-  const mine=state.parties.find(v=>v.user===state.currentUser);
+  const mine=getCastleApplicants().find(v=>v.user===state.currentUser);
 
   if(mine){
     el.castleInfantrySelect.value=getCastleTgValue(mine.tg,"infantry");
@@ -112,7 +141,7 @@ window.submitCastleBattle=async function(){
     heroes[input.dataset.hero]=Number(input.value||0);
   });
 
-  const mine=state.parties.find(v=>v.user===state.currentUser);
+  const mine=getCastleApplicants().find(v=>v.user===state.currentUser);
 
   await partiesRef("castle_battle").doc(state.currentUser).set({
     type:"castle_battle",
@@ -148,48 +177,93 @@ function renderCastleHeroHeaderControl(displayHero){
   return`
     <select class="castle-hero-header-select" onchange="setCastleDisplayHero(this.value)">
       ${getCastleHeroList().map(hero=>`
-        <option value="${escapeHtml(hero.key)}" ${hero.key===displayHero.key?"selected":""}>
-          ${escapeHtml(hero.name)}
-        </option>
+        <option value="${escapeHtml(hero.key)}" ${hero.key===displayHero.key?"selected":""}>${escapeHtml(hero.name)}</option>
       `).join("")}
     </select>
   `;
 }
 
-function renderCastleBattleEvent(){
-  const entries=getCastleSortedEntries();
-  const placements=getCastlePlacementList();
-  const displayHero=getCastleDisplayHero();
+function renderCastleRallySelectOptions(selectedId=""){
+  const rallies=getCastleRallies();
+  const rallyOptions=rallies.map(rally=>`
+    <option value="${escapeHtml(rally.id)}" ${rally.id===selectedId?"selected":""}>${escapeHtml(rally.rallyName||rally.name||"집결")}</option>
+  `).join("");
 
-  if(!entries.length){
-    el.partyList.innerHTML=state.isAdmin&&state.castleManageMode
-      ? `
-        <div class="party-card castle-manage-panel">
-          <div class="party-title">캐슬 전투 배치 관리</div>
-          <div class="empty-card">초기화할 신청자가 없습니다.</div>
+  return`<option value="">미배치</option>${rallyOptions}`;
+}
+
+function renderCastleHeroAssignSelect(rallyId,user,currentHero){
+  return`
+    <select class="castle-member-hero-select" onchange="setCastleMemberHero('${escapeJs(rallyId)}','${escapeJs(user)}',this.value)">
+      <option value="">영웅 없음</option>
+      ${getCastleHeroList().map(hero=>`
+        <option value="${escapeHtml(hero.key)}" ${hero.key===currentHero?"selected":""}>${escapeHtml(hero.name)}</option>
+      `).join("")}
+    </select>
+  `;
+}
+
+function renderCastleRallyCard(rally){
+  const members=sortCastleMembers(rally.members,rally.rallyLeader);
+  const memberHeroes=rally.memberHeroes||{};
+
+  const membersHtml=members.length
+    ? members.map(name=>{
+        const heroKey=memberHeroes[name]||"";
+        const heroName=getCastleHeroName(heroKey);
+
+        return`
+          <div class="member-line castle-rally-member-line">
+            <span class="castle-rally-member-name ${name===state.currentUser?"my-name":""}">
+              ${name===rally.rallyLeader?"👑 ":""}${escapeHtml(name)}
+              ${heroName?`<small class="castle-member-hero-chip">${escapeHtml(heroName)}</small>`:""}
+            </span>
+            ${state.isAdmin&&name!==rally.rallyLeader?`<button class="inline-btn" onclick="setCastleRallyLeader('${escapeJs(rally.id)}','${escapeJs(name)}')">👑</button>`:""}
+            ${state.isAdmin?renderCastleHeroAssignSelect(rally.id,name,heroKey):""}
+            ${state.isAdmin?`<button class="inline-btn" onclick="removeCastleRallyMember('${escapeJs(rally.id)}','${escapeJs(name)}')">✖</button>`:""}
+          </div>
+        `;
+      }).join("")
+    : `<div class="member-line"><span>집결원이 없습니다.</span></div>`;
+
+  return`
+    <div class="party-card castle-rally-card">
+      <div class="party-title">${escapeHtml(rally.rallyName||rally.name||"집결")}</div>
+      <div class="party-sub">집결장: ${rally.rallyLeader?`👑 ${escapeHtml(rally.rallyLeader)}`:"미지정"}</div>
+      <div class="party-sub">인원: ${members.length}명</div>
+      <div class="member-list compact castle-rally-member-list">${membersHtml}</div>
+      ${state.isAdmin?`
+        <div class="card-actions">
+          <button onclick="openCastleRallyRenamePrompt('${escapeJs(rally.id)}')">수정</button>
+          <button onclick="deleteCastleRally('${escapeJs(rally.id)}')">삭제</button>
         </div>
-      `
-      : `<div class="empty-card">아직 신청자가 없습니다.</div>`;
-    return;
-  }
+      `:""}
+    </div>
+  `;
+}
+
+function renderCastleBattleEvent(){
+  const applicants=getCastleSortedApplicants();
+  const rallies=getCastleRallies();
+  const displayHero=getCastleDisplayHero();
 
   const managePanel=state.isAdmin&&state.castleManageMode
     ? `
       <div class="party-card castle-manage-panel">
-        <div class="party-title">캐슬 전투 배치 관리</div>
-        <div class="form-group">
-          <label>선택 인원 배치</label>
-          <select id="castlePlacementBulkSelect" class="text-input">
-            <option value="캐슬">캐슬</option>
-            <option value="포탑(동)">포탑(동)</option>
-            <option value="포탑(서)">포탑(서)</option>
-            <option value="포탑(남)">포탑(남)</option>
-            <option value="포탑(북)">포탑(북)</option>
-            <option value="미배치">미배치</option>
-          </select>
+        <div class="party-title">캐슬 전투 집결 관리</div>
+        <div class="castle-manage-grid">
+          <div class="form-group">
+            <label>집결명</label>
+            <input id="castleRallyNameInput" class="text-input" placeholder="예: 동포탑 1집결" />
+          </div>
+          <div class="form-group">
+            <label>선택 인원 배치</label>
+            <select id="castleRallyBulkSelect" class="text-input">${renderCastleRallySelectOptions()}</select>
+          </div>
         </div>
         <div class="card-actions">
-          <button onclick="applyCastlePlacement()">선택 인원 일괄 배치</button>
+          <button onclick="createCastleRally()">집결 생성</button>
+          <button onclick="applyCastleRallyMembers()">선택 인원 일괄 배치</button>
           <button onclick="deleteSelectedCastleBattleEntries()">선택 인원 삭제</button>
           <button class="danger-btn" onclick="resetCastleBattleEvent()">초기화</button>
         </div>
@@ -197,71 +271,56 @@ function renderCastleBattleEvent(){
     `
     : "";
 
-  const placementCards=placements.map(place=>{
-    const sectionEntries=entries.filter(v=>(v.placement||"미배치")===place);
+  const rallyCards=rallies.length
+    ? `<div class="castle-rally-grid">${rallies.map(renderCastleRallyCard).join("")}</div>`
+    : `<div class="empty-card">아직 생성된 캐슬 집결이 없습니다.</div>`;
 
-    const names=sectionEntries.length
-      ? sectionEntries.map((entry,idx)=>{
-          const status=place==="미배치"?"":idx<10?"정규":"예비";
-          return`
-            <div class="castle-name-chip ${entry.user===state.currentUser?"my-name":""}">
-              ${state.isAdmin&&state.castleManageMode?`<input type="checkbox" class="castle-check" value="${escapeHtml(entry.id)}">`:""}
-              <span>${escapeHtml(entry.user)}</span>
-              ${status?`<small>${status}</small>`:""}
-            </div>
-          `;
-        }).join("")
-      : `<div class="castle-empty-small">-</div>`;
-
-    return`
-      <div class="party-card castle-mini-card">
-        <div class="party-title">${escapeHtml(place)} ${place==="미배치"?"":`(${sectionEntries.length}명)`}</div>
-        <div class="castle-name-list">${names}</div>
-      </div>
-    `;
-  }).join("");
-
-  const rows=entries.map((entry,idx)=>{
+  const rows=applicants.map((entry,idx)=>{
     const canDelete=state.isAdmin||entry.user===state.currentUser;
 
     return`
       <tr>
         <td>${idx+1}</td>
-        <td class="left ${entry.user===state.currentUser?"my-name":""}">${escapeHtml(entry.user)}</td>
+        <td class="left ${entry.user===state.currentUser?"my-name":""}">
+          ${state.isAdmin&&state.castleManageMode?`<input type="checkbox" class="castle-check" value="${escapeHtml(entry.id)}">`:""}
+          ${escapeHtml(entry.user)}
+        </td>
         <td>${escapeHtml(getCastleTgValue(entry.tg,"infantry"))}</td>
         <td>${escapeHtml(getCastleTgValue(entry.tg,"cavalry"))}</td>
         <td>${escapeHtml(getCastleTgValue(entry.tg,"archer"))}</td>
         <td>${renderCastleHeroOne(entry.heroes,displayHero.key)}</td>
-        <td>${escapeHtml(entry.placement||"미배치")}</td>
+        <td>${escapeHtml(getCastleRallyNameByUser(entry.user))}</td>
         <td>${canDelete?`<button class="rank-edit-btn" onclick="deleteCastleBattleEntry('${escapeJs(entry.id)}')">삭제</button>`:"-"}</td>
       </tr>
     `;
   }).join("");
 
-  const applicantTable=`
-    <div class="party-card rank-table-card castle-applicant-card">
-      <div class="party-title">신청 인원 전체</div>
-      <div class="rank-table-wrap castle-table-wrap">
-        <table class="rank-table castle-table">
-          <thead>
-            <tr>
-              <th>연번</th>
-              <th>닉네임</th>
-              <th>보병 TG</th>
-              <th>기병 TG</th>
-              <th>궁병 TG</th>
-              <th>${renderCastleHeroHeaderControl(displayHero)}</th>
-              <th>배치</th>
-              <th>삭제</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
+  const applicantTable=applicants.length
+    ? `
+      <div class="party-card rank-table-card castle-applicant-card">
+        <div class="party-title">신청 인원 전체</div>
+        <div class="rank-table-wrap castle-table-wrap">
+          <table class="rank-table castle-table">
+            <thead>
+              <tr>
+                <th>연번</th>
+                <th>닉네임</th>
+                <th>보병 TG</th>
+                <th>기병 TG</th>
+                <th>궁병 TG</th>
+                <th>${renderCastleHeroHeaderControl(displayHero)}</th>
+                <th>집결</th>
+                <th>삭제</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
       </div>
-    </div>
-  `;
+    `
+    : `<div class="empty-card">아직 신청자가 없습니다.</div>`;
 
-  el.partyList.innerHTML=managePanel+`<div class="castle-mini-grid">${placementCards}</div>`+applicantTable;
+  el.partyList.innerHTML=managePanel+rallyCards+applicantTable;
 }
 
 window.setCastleDisplayHero=function(heroKey){
@@ -278,10 +337,55 @@ window.toggleCastleManageMode=function(){
   renderCastleBattleEvent();
 };
 
-window.applyCastlePlacement=async function(){
+window.createCastleRally=async function(){
   if(!state.isAdmin)return;
 
-  const placement=document.getElementById("castlePlacementBulkSelect")?.value||"미배치";
+  const name=(document.getElementById("castleRallyNameInput")?.value||"").trim();
+  if(!name){
+    alert("집결명을 입력하세요.");
+    return;
+  }
+
+  await partiesRef("castle_battle").add({
+    type:"castle_rally",
+    event:"castle_battle",
+    name,
+    rallyName:name,
+    createdBy:state.currentUser,
+    members:[],
+    rallyLeader:"",
+    memberHeroes:{},
+    createdAt:firebase.firestore.FieldValue.serverTimestamp(),
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+  });
+};
+
+window.openCastleRallyRenamePrompt=async function(rallyId){
+  if(!state.isAdmin)return;
+
+  const rally=getCastleRallies().find(v=>v.id===rallyId);
+  if(!rally)return;
+
+  const nextName=prompt("집결명을 입력하세요.",rally.rallyName||rally.name||"");
+  if(nextName===null)return;
+
+  const name=nextName.trim();
+  if(!name){
+    alert("집결명을 입력하세요.");
+    return;
+  }
+
+  await partiesRef("castle_battle").doc(rallyId).update({
+    name,
+    rallyName:name,
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+  });
+};
+
+window.applyCastleRallyMembers=async function(){
+  if(!state.isAdmin)return;
+
+  const rallyId=document.getElementById("castleRallyBulkSelect")?.value||"";
   const checked=[...document.querySelectorAll(".castle-check:checked")].map(v=>v.value);
 
   if(!checked.length){
@@ -289,14 +393,43 @@ window.applyCastlePlacement=async function(){
     return;
   }
 
+  const applicants=getCastleApplicants();
+  const names=checked.map(id=>applicants.find(v=>v.id===id)?.user).filter(Boolean);
+  if(!names.length)return;
+
   const batch=db.batch();
 
-  checked.forEach(id=>{
-    batch.update(partiesRef("castle_battle").doc(id),{
-      placement,
+  getCastleRallies().forEach(rally=>{
+    if(rallyId&&rally.id===rallyId)return;
+
+    const current=normalizeMembers(rally.members);
+    const nextMembers=current.filter(name=>!names.includes(name));
+    const nextHeroes={...(rally.memberHeroes||{})};
+    names.forEach(name=>delete nextHeroes[name]);
+
+    const updates={
+      members:nextMembers,
+      memberHeroes:nextHeroes,
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    if(rally.rallyLeader&&names.includes(rally.rallyLeader))updates.rallyLeader="";
+    batch.update(partiesRef("castle_battle").doc(rally.id),updates);
+  });
+
+  if(rallyId){
+    const target=getCastleRallies().find(v=>v.id===rallyId);
+    if(!target){
+      alert("집결을 찾을 수 없습니다.");
+      return;
+    }
+
+    const nextMembers=[...new Set([...normalizeMembers(target.members),...names])];
+    batch.update(partiesRef("castle_battle").doc(rallyId),{
+      members:nextMembers,
       updatedAt:firebase.firestore.FieldValue.serverTimestamp()
     });
-  });
+  }
 
   await batch.commit();
 
@@ -304,8 +437,67 @@ window.applyCastlePlacement=async function(){
   renderCastleBattleEvent();
 };
 
+window.setCastleRallyLeader=async function(rallyId,name){
+  if(!state.isAdmin)return;
+
+  const rally=getCastleRallies().find(v=>v.id===rallyId);
+  if(!rally||!normalizeMembers(rally.members).includes(name))return;
+
+  await partiesRef("castle_battle").doc(rallyId).update({
+    rallyLeader:name,
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+  });
+};
+
+window.setCastleMemberHero=async function(rallyId,name,heroKey){
+  if(!state.isAdmin)return;
+
+  const rally=getCastleRallies().find(v=>v.id===rallyId);
+  if(!rally||!normalizeMembers(rally.members).includes(name))return;
+
+  const memberHeroes={...(rally.memberHeroes||{})};
+  if(heroKey)memberHeroes[name]=heroKey;
+  else delete memberHeroes[name];
+
+  await partiesRef("castle_battle").doc(rallyId).update({
+    memberHeroes,
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+  });
+};
+
+window.removeCastleRallyMember=async function(rallyId,name){
+  if(!state.isAdmin)return;
+
+  const rally=getCastleRallies().find(v=>v.id===rallyId);
+  if(!rally)return;
+
+  if(!confirm(`${name} 님을 이 집결에서 제외하시겠습니까?`))return;
+
+  const members=normalizeMembers(rally.members).filter(v=>v!==name);
+  const memberHeroes={...(rally.memberHeroes||{})};
+  delete memberHeroes[name];
+
+  await partiesRef("castle_battle").doc(rallyId).update({
+    members,
+    memberHeroes,
+    rallyLeader:rally.rallyLeader===name?"":rally.rallyLeader,
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+  });
+};
+
+window.deleteCastleRally=async function(rallyId){
+  if(!state.isAdmin)return;
+
+  const rally=getCastleRallies().find(v=>v.id===rallyId);
+  if(!rally)return;
+
+  if(!confirm(`${rally.rallyName||rally.name||"집결"}을 삭제하시겠습니까?`))return;
+
+  await partiesRef("castle_battle").doc(rallyId).delete();
+};
+
 window.deleteCastleBattleEntry=async function(id){
-  const entry=state.parties.find(v=>v.id===id);
+  const entry=getCastleApplicants().find(v=>v.id===id);
   if(!entry)return;
 
   const canDelete=state.isAdmin||entry.user===state.currentUser;
@@ -316,7 +508,25 @@ window.deleteCastleBattleEntry=async function(id){
 
   if(!confirm(`${entry.user} 님의 캐슬 전투 신청을 삭제하시겠습니까?`))return;
 
-  await partiesRef("castle_battle").doc(id).delete();
+  if(state.isAdmin){
+    const batch=db.batch();
+    getCastleRallies().forEach(rally=>{
+      const members=normalizeMembers(rally.members).filter(v=>v!==entry.user);
+      const memberHeroes={...(rally.memberHeroes||{})};
+      delete memberHeroes[entry.user];
+
+      batch.update(partiesRef("castle_battle").doc(rally.id),{
+        members,
+        memberHeroes,
+        rallyLeader:rally.rallyLeader===entry.user?"":rally.rallyLeader,
+        updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+      });
+    });
+    batch.delete(partiesRef("castle_battle").doc(id));
+    await batch.commit();
+  }else{
+    await partiesRef("castle_battle").doc(id).delete();
+  }
 };
 
 window.deleteSelectedCastleBattleEntries=async function(){
@@ -331,7 +541,22 @@ window.deleteSelectedCastleBattleEntries=async function(){
 
   if(!confirm(`선택한 ${checked.length}명의 신청을 삭제하시겠습니까?`))return;
 
+  const applicants=getCastleApplicants();
+  const names=checked.map(id=>applicants.find(v=>v.id===id)?.user).filter(Boolean);
   const batch=db.batch();
+
+  getCastleRallies().forEach(rally=>{
+    const members=normalizeMembers(rally.members).filter(v=>!names.includes(v));
+    const memberHeroes={...(rally.memberHeroes||{})};
+    names.forEach(name=>delete memberHeroes[name]);
+
+    batch.update(partiesRef("castle_battle").doc(rally.id),{
+      members,
+      memberHeroes,
+      rallyLeader:names.includes(rally.rallyLeader)?"":rally.rallyLeader,
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+  });
 
   checked.forEach(id=>{
     batch.delete(partiesRef("castle_battle").doc(id));
@@ -348,12 +573,12 @@ window.resetCastleBattleEvent=async function(){
   if(!state.isAdmin)return;
 
   if(!state.parties.length){
-    alert("초기화할 신청자가 없습니다.");
+    alert("초기화할 데이터가 없습니다.");
     return;
   }
 
-  if(!confirm(`캐슬 전투 신청 ${state.parties.length}건을 전부 초기화하시겠습니까?`))return;
-  if(!confirm("정말 전체 신청 데이터를 삭제합니다. 복구할 수 없습니다."))return;
+  if(!confirm(`캐슬 전투 데이터 ${state.parties.length}건을 전부 초기화하시겠습니까?`))return;
+  if(!confirm("정말 전체 신청/집결 데이터를 삭제합니다. 복구할 수 없습니다."))return;
 
   const snap=await partiesRef("castle_battle").get();
   const docs=snap.docs;
