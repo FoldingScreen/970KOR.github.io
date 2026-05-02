@@ -1388,65 +1388,73 @@ textarea.text-input{
 }
 
 .castle-rally-category-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+  display:flex;
+  flex-direction:column;
   gap:14px;
-  align-items:start;
   margin-bottom:16px;
 }
 
-.castle-rally-category-column{
+.castle-my-rally-section,
+.castle-rally-category-row{
+  width:100%;
   min-width:0;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
 }
 
 .castle-rally-category-title{
-  position:sticky;
-  top:0;
-  z-index:1;
   border:1px solid #1f3657;
   background:#0b1a2d;
   color:#e7f1ff;
-  border-radius:14px;
-  padding:10px 12px;
-  font-size:16px;
+  border-radius:12px;
+  padding:8px 11px;
+  font-size:14px;
   font-weight:1000;
-  box-shadow:0 10px 18px rgba(0,0,0,.18);
+  margin-bottom:8px;
+}
+
+.my-rally-title{
+  border-color:#315a93;
+  background:#102545;
+  color:#dceaff;
+}
+
+.castle-my-rally-wrap{
+  display:grid;
+  grid-template-columns:minmax(260px,360px);
+  gap:10px;
 }
 
 .castle-rally-category-list{
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-}
-
-.castle-rally-grid{
   display:grid;
-  grid-template-columns:1fr;
-  gap:12px;
+  grid-template-columns:repeat(auto-fill,minmax(230px,1fr));
+  gap:10px;
   align-items:start;
-  margin-bottom:16px;
 }
 
 .castle-rally-card{
   width:100%;
   min-width:0;
-  padding:18px;
+  padding:12px;
+  border-radius:16px;
 }
 
 .castle-rally-head{
   display:flex;
   justify-content:space-between;
   align-items:flex-start;
-  gap:12px;
-  margin-bottom:10px;
+  gap:8px;
+  margin-bottom:6px;
 }
 
 .castle-rally-head .party-title{
-  margin-bottom:6px;
-  font-size:22px;
+  margin-bottom:3px;
+  font-size:17px;
+  line-height:1.15;
+}
+
+.castle-rally-card .party-sub{
+  font-size:12px;
+  line-height:1.25;
+  margin:3px 0;
 }
 
 .castle-rally-count{
@@ -1455,8 +1463,8 @@ textarea.text-input{
   background:#0b1a2d;
   color:#dceaff;
   border-radius:999px;
-  padding:6px 10px;
-  font-size:13px;
+  padding:4px 8px;
+  font-size:11px;
   font-weight:900;
   white-space:nowrap;
 }
@@ -1464,19 +1472,35 @@ textarea.text-input{
 .castle-rally-member-list{
   display:flex;
   flex-direction:column;
-  gap:8px;
-  margin-top:12px;
+  gap:6px;
+  margin-top:8px;
+  padding-top:8px;
+}
+
+.castle-rally-leader-row{
+  width:100%;
+}
+
+.castle-rally-normal-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:6px;
 }
 
 .castle-rally-member-line{
   display:grid;
   grid-template-columns:minmax(0,1fr) auto;
-  gap:8px;
+  gap:5px;
   align-items:center;
-  padding:9px 10px;
+  padding:6px 7px;
   border:1px solid #172a45;
   background:#081522;
-  border-radius:14px;
+  border-radius:11px;
+  min-width:0;
+}
+
+.castle-rally-member-line.leader-line{
+  grid-template-columns:minmax(0,1fr) auto;
 }
 
 .castle-rally-member-main{
@@ -1484,13 +1508,14 @@ textarea.text-input{
   display:flex;
   align-items:center;
   flex-wrap:wrap;
-  gap:6px;
+  gap:3px;
 }
 
 .castle-rally-member-name{
   min-width:0;
   font-weight:900;
-  line-height:1.25;
+  font-size:12px;
+  line-height:1.15;
   word-break:keep-all;
   overflow-wrap:anywhere;
 }
@@ -1499,24 +1524,24 @@ textarea.text-input{
   display:inline-flex;
   align-items:center;
   color:#60a5fa;
-  font-size:10px;
+  font-size:9px;
   font-weight:800;
-  line-height:1.2;
+  line-height:1.1;
   white-space:nowrap;
 }
 
 .castle-rally-member-controls{
   display:grid;
-  grid-template-columns:36px 36px 36px;
-  gap:6px;
+  grid-template-columns:28px 28px 28px;
+  gap:4px;
   align-items:center;
 }
 
 .castle-member-hero-select{
-  width:36px;
-  min-width:36px;
-  min-height:34px;
-  border-radius:10px;
+  width:28px;
+  min-width:28px;
+  min-height:28px;
+  border-radius:8px;
   border:1px solid #223653;
   background:#07111e;
   color:transparent;
@@ -1535,32 +1560,42 @@ textarea.text-input{
 .castle-crown-btn,
 .castle-remove-btn,
 .castle-crown-fixed{
-  width:36px;
-  min-width:36px;
-  height:34px;
+  width:28px;
+  min-width:28px;
+  height:28px;
   padding:0;
   display:inline-flex;
   align-items:center;
   justify-content:center;
+  font-size:12px;
 }
 
 .castle-crown-fixed{
   border:1px solid #28476e;
   background:#0b1a2d;
-  border-radius:10px;
+  border-radius:8px;
 }
 
 .castle-rally-empty{
-  padding:12px;
+  padding:9px;
   border:1px dashed #28405f;
-  border-radius:14px;
+  border-radius:12px;
   color:#c5d7f4;
   font-weight:800;
+  font-size:12px;
 }
 
 .castle-rally-actions{
-  margin-top:12px;
+  margin-top:8px;
   justify-content:flex-end;
+  gap:5px;
+}
+
+.castle-rally-actions button{
+  min-width:44px;
+  white-space:nowrap;
+  padding:5px 7px;
+  font-size:12px;
 }
 
 .castle-manage-grid{
@@ -1605,12 +1640,6 @@ textarea.text-input{
   font-weight:900;
 }
 
-@media(max-width:760px){
-  .castle-rally-category-grid{
-    grid-template-columns:1fr;
-  }
-}
-
 @media(max-width:900px){
   .castle-manage-split{
     grid-template-columns:1fr;
@@ -1623,16 +1652,17 @@ textarea.text-input{
 }
 
 @media(max-width:700px){
-  .castle-rally-category-grid{
+  .castle-my-rally-wrap,
+  .castle-rally-category-list{
     grid-template-columns:1fr;
   }
 
-  .castle-rally-category-title{
-    position:static;
+  .castle-rally-normal-grid{
+    grid-template-columns:1fr 1fr;
   }
 
   .castle-rally-card{
-    padding:16px;
+    padding:11px;
   }
 
   .castle-rally-member-line{
@@ -1640,14 +1670,20 @@ textarea.text-input{
   }
 
   .castle-rally-member-controls{
-    grid-template-columns:40px 40px 40px;
-    width:auto;
+    grid-template-columns:30px 30px 30px;
+    width:100%;
     justify-content:end;
   }
 
   .castle-member-hero-select{
-    width:40px;
-    min-width:40px;
+    width:30px;
+    min-width:30px;
+  }
+}
+
+@media(max-width:420px){
+  .castle-rally-normal-grid{
+    grid-template-columns:1fr;
   }
 }
 
