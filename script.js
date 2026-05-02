@@ -282,6 +282,7 @@ function syncOverlay(){
     (el.exampleImageModal&&!el.exampleImageModal.classList.contains("hidden"))||
     (el.rearrangeRankEditModal&&!el.rearrangeRankEditModal.classList.contains("hidden"))||
     (el.holySwordAreaModal&&!el.holySwordAreaModal.classList.contains("hidden"))||
+    (document.getElementById("holySwordForceAssignModal")&&!document.getElementById("holySwordForceAssignModal").classList.contains("hidden"))||
     (el.castleBattleModal&&!el.castleBattleModal.classList.contains("hidden"))||
     (el.createLabyrinthModal&&!el.createLabyrinthModal.classList.contains("hidden"))||
     (el.editLabyrinthModal&&!el.editLabyrinthModal.classList.contains("hidden"))||
@@ -302,6 +303,7 @@ if(el.modalOverlay){
     closeRearrangeModal();
     closeRearrangeRankEditModal();
     closeHolySwordAreaModal();
+    closeHolySwordForceAssignModal();
     closeCastleBattleModal();
     closeCreateLabyrinthModal();
     closeEditLabyrinthModal();
@@ -1362,6 +1364,7 @@ function renderHolySwordCard(p){
         ${canManage?`<button onclick="openRuinsEditModal('${escapeJs(p.id)}')">수정</button>`:""}
         ${canManage?`<button onclick="deleteParty('${escapeJs(p.id)}')">삭제</button>`:""}
         ${canManage?`<button onclick="openHolySwordAreaModal('${escapeJs(p.id)}')">구역장 지정</button>`:""}
+        ${canManage?`<button onclick="openHolySwordForceAssignModal('${escapeJs(p.id)}')">배치</button>`:""}
         <button onclick="copyHolySwordNotice('${escapeJs(p.id)}')">복사</button>
       </div>
     </div>
@@ -2905,6 +2908,136 @@ function closeHolySwordAreaModal(){
   syncOverlay();
 }
 window.closeHolySwordAreaModal=closeHolySwordAreaModal;
+
+function ensureHolySwordForceAssignModal(){
+  let modal=document.getElementById("holySwordForceAssignModal");
+
+  if(modal)return modal;
+
+  modal=document.createElement("div");
+  modal.id="holySwordForceAssignModal";
+  modal.className="modal hidden";
+  modal.innerHTML=`
+    <div class="modal-header">
+      <h3 id="holySwordForceAssignTitle">성검 인원 배치</h3>
+      <button class="close-btn" type="button" onclick="closeHolySwordForceAssignModal()">닫기</button>
+    </div>
+
+    <div class="form-group">
+      <label class="checkbox-label">
+        <input type="checkbox" id="holySwordForceAssignAll" onchange="toggleHolySwordForceAll(this.checked)" />
+        전체 선택
+      </label>
+    </div>
+
+    <div id="holySwordForceAssignList" class="name-columns"></div>
+
+    <div class="actions right-wrap" style="margin-top:16px;">
+      <button type="button" onclick="applyHolySwordForceAssign()">선택 인원 배치</button>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+  return modal;
+}
+
+window.openHolySwordForceAssignModal=async function(partyId){
+  if(!state.isAdmin){
+    alert("권한이 없습니다.");
+    return;
+  }
+
+  const party=state.parties.find(v=>v.id===partyId);
+  if(!party){
+    alert("파티를 찾을 수 없습니다.");
+    return;
+  }
+
+  state.editingHolySwordPartyId=partyId;
+
+  const modal=ensureHolySwordForceAssignModal();
+  const title=document.getElementById("holySwordForceAssignTitle");
+  const list=document.getElementById("holySwordForceAssignList");
+  const allCheck=document.getElementById("holySwordForceAssignAll");
+
+  if(title)title.textContent=`성검 인원 배치 - ${party.name}`;
+  if(allCheck)allCheck.checked=false;
+
+  list.innerHTML=`<div class="muted">사용자 목록을 불러오는 중...</div>`;
+
+  const usersSnap=await db.collection("users").get();
+  const users=[];
+
+  usersSnap.forEach(doc=>{
+    if(!isHiddenTestNickname(doc.id))users.push(doc.id);
+  });
+
+  users.sort((a,b)=>a.localeCompare(b,"ko"));
+
+  const memberSet=new Set(normalizeMembers(party.members));
+
+  list.innerHTML=users.length
+    ? users.map(name=>`
+      <label class="checkbox-label name-item">
+        <input
+          type="checkbox"
+          class="holy-force-check"
+          value="${escapeHtml(name)}"
+          ${memberSet.has(name)?"checked":""}
+        />
+        <span class="${memberSet.has(name)?"my-name":""}">${escapeHtml(name)}</span>
+      </label>
+    `).join("")
+    : `<div class="muted">등록된 사용자가 없습니다.</div>`;
+
+  modal.classList.remove("hidden");
+  syncOverlay();
+};
+
+window.toggleHolySwordForceAll=function(checked){
+  document.querySelectorAll(".holy-force-check").forEach(input=>{
+    input.checked=!!checked;
+  });
+};
+
+window.applyHolySwordForceAssign=async function(){
+  if(!state.isAdmin){
+    alert("권한이 없습니다.");
+    return;
+  }
+
+  const partyId=state.editingHolySwordPartyId;
+  const party=state.parties.find(v=>v.id===partyId);
+
+  if(!party){
+    alert("파티를 찾을 수 없습니다.");
+    return;
+  }
+
+  const selected=[...document.querySelectorAll(".holy-force-check:checked")]
+    .map(input=>input.value)
+    .filter(Boolean);
+
+  if(!selected.length){
+    alert("배치할 인원을 선택하세요.");
+    return;
+  }
+
+  const merged=[...new Set([...normalizeMembers(party.members),...selected])];
+
+  await partiesRef("holy_sword").doc(partyId).update({
+    members:merged
+  });
+
+  closeHolySwordForceAssignModal();
+};
+
+function closeHolySwordForceAssignModal(){
+  state.editingHolySwordPartyId="";
+  document.getElementById("holySwordForceAssignModal")?.classList.add("hidden");
+  syncOverlay();
+}
+window.closeHolySwordForceAssignModal=closeHolySwordForceAssignModal;
 
 function renderHolySwordAreaAssignmentList(party){
   const assignments=normalizeAssignments(party.areaAssignments);
