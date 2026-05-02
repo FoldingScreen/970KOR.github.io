@@ -22,6 +22,34 @@ function getCastleHeroName(heroKey){
   return hero?hero.name:"";
 }
 
+function getCastleRallyCategoryList(){
+  return[
+    {key:"main",name:"메인 집결"},
+    {key:"counter",name:"카운터 랠리"},
+    {key:"tower",name:"포탑"},
+    {key:"etc",name:"기타"}
+  ];
+}
+
+function getCastleRallyCategoryName(categoryKey){
+  const item=getCastleRallyCategoryList().find(v=>v.key===categoryKey);
+  return item?item.name:"기타";
+}
+
+function getCastleRallyCategoryKey(rally){
+  const key=rally&&rally.rallyCategory?rally.rallyCategory:"etc";
+  return getCastleRallyCategoryList().some(v=>v.key===key)?key:"etc";
+}
+
+function sortCastleRalliesByCreatedAt(rallies){
+  return[...rallies].sort((a,b)=>{
+    const ta=getTimeValue(a.createdAt);
+    const tb=getTimeValue(b.createdAt);
+    if(ta!==tb)return ta-tb;
+    return String(a.rallyName||a.name||"").localeCompare(String(b.rallyName||b.name||""),"ko");
+  });
+}
+
 function getCastleTgValue(tg,key){
   return tg&&tg[key]?String(tg[key]):"순금X";
 }
@@ -267,10 +295,18 @@ function renderCastleBattleEvent(){
     ? `
       <div class="party-card castle-manage-panel">
         <div class="party-title">캐슬 전투 집결 관리</div>
-        <div class="castle-manage-grid">
+        <div class="castle-manage-grid castle-manage-grid-3">
           <div class="form-group">
             <label>집결명</label>
             <input id="castleRallyNameInput" class="text-input" placeholder="예: 동포탑 1집결" />
+          </div>
+          <div class="form-group">
+            <label>집결 분류</label>
+            <select id="castleRallyCategorySelect" class="text-input">
+              ${getCastleRallyCategoryList().map(category=>`
+                <option value="${escapeHtml(category.key)}">${escapeHtml(category.name)}</option>
+              `).join("")}
+            </select>
           </div>
           <div class="form-group">
             <label>선택 인원 배치</label>
@@ -287,8 +323,20 @@ function renderCastleBattleEvent(){
     `
     : "";
 
+  const rallyGroups=getCastleRallyCategoryList().map(category=>{
+    const items=sortCastleRalliesByCreatedAt(rallies.filter(rally=>getCastleRallyCategoryKey(rally)===category.key));
+    if(!items.length)return"";
+
+    return`
+      <section class="castle-rally-category-column">
+        <div class="castle-rally-category-title">${escapeHtml(category.name)}</div>
+        <div class="castle-rally-category-list">${items.map(renderCastleRallyCard).join("")}</div>
+      </section>
+    `;
+  }).join("");
+
   const rallyCards=rallies.length
-    ? `<div class="castle-rally-grid">${rallies.map(renderCastleRallyCard).join("")}</div>`
+    ? `<div class="castle-rally-category-grid">${rallyGroups}</div>`
     : `<div class="empty-card">아직 생성된 캐슬 집결이 없습니다.</div>`;
 
   const rows=applicants.map((entry,idx)=>{
@@ -357,6 +405,9 @@ window.createCastleRally=async function(){
   if(!state.isAdmin)return;
 
   const name=(document.getElementById("castleRallyNameInput")?.value||"").trim();
+  const category=document.getElementById("castleRallyCategorySelect")?.value||"etc";
+  const safeCategory=getCastleRallyCategoryList().some(v=>v.key===category)?category:"etc";
+
   if(!name){
     alert("집결명을 입력하세요.");
     return;
@@ -367,6 +418,7 @@ window.createCastleRally=async function(){
     event:"castle_battle",
     name,
     rallyName:name,
+    rallyCategory:safeCategory,
     createdBy:state.currentUser,
     members:[],
     rallyLeader:"",
