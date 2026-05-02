@@ -781,6 +781,7 @@ function subscribeParties(){
 
         user:d.user||doc.id,
         tg:d.tg||{},
+        heroes:d.heroes||{},
         placement:d.placement||"미배치",
         updatedAt:d.updatedAt||null
       };
