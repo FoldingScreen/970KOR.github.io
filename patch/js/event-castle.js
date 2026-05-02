@@ -236,6 +236,7 @@ function renderCastleHeroAssignSelect(rallyId,user,currentHero){
 function renderCastleRallyCard(rally){
   const members=sortCastleMembers(rally.members,rally.rallyLeader);
   const memberHeroes=rally.memberHeroes||{};
+  const isManaging=state.isAdmin&&state.castleManagingRallyId===rally.id;
 
   const membersHtml=members.length
     ? members.map(name=>{
@@ -252,7 +253,7 @@ function renderCastleRallyCard(rally){
               ${heroName?`<span class="castle-member-hero-chip">${escapeHtml(heroName)}</span>`:""}
             </div>
 
-            ${state.isAdmin?`
+            ${state.isAdmin&&isManaging?`
               <div class="castle-rally-member-controls">
                 ${!isLeader?`
                   <button class="inline-btn castle-crown-btn" onclick="setCastleRallyLeader('${escapeJs(rally.id)}','${escapeJs(name)}')" title="집결장 지정">👑</button>
@@ -280,10 +281,64 @@ function renderCastleRallyCard(rally){
 
       ${state.isAdmin?`
         <div class="card-actions castle-rally-actions">
+          <button onclick="toggleCastleRallyManage('${escapeJs(rally.id)}')">${isManaging?"관리 종료":"관리"}</button>
           <button onclick="openCastleRallyRenamePrompt('${escapeJs(rally.id)}')">수정</button>
           <button onclick="deleteCastleRally('${escapeJs(rally.id)}')">삭제</button>
         </div>
       `:""}
+    </div>
+  `;
+}
+
+function renderCastleRallyAssignmentSelect(user){
+  const currentRally=getCastleRallies().find(rally=>normalizeMembers(rally.members).includes(user));
+  const currentId=currentRally?currentRally.id:"";
+
+  const groups=getCastleRallyCategoryList().map(category=>{
+    const items=sortCastleRalliesByCreatedAt(getCastleRallies().filter(rally=>getCastleRallyCategoryKey(rally)===category.key));
+    if(!items.length)return"";
+
+    return`
+      <optgroup label="${escapeHtml(category.name)}">
+        ${items.map(rally=>`
+          <option value="${escapeHtml(rally.id)}" ${rally.id===currentId?"selected":""}>${escapeHtml(rally.rallyName||rally.name||"집결")}</option>
+        `).join("")}
+      </optgroup>
+    `;
+  }).join("");
+
+  return`
+    <select class="castle-rally-assign-select" onchange="assignCastleApplicantToRally('${escapeJs(user)}',this.value)">
+      <option value="" ${!currentId?"selected":""}>미배치</option>
+      ${groups}
+    </select>
+  `;
+}
+
+function renderCastleCreatePanel(){
+  if(!state.isAdmin||!state.castleCreateMode)return"";
+
+  return`
+    <div class="party-card castle-manage-panel castle-create-panel">
+      <div class="party-title">집결 생성</div>
+      <div class="castle-manage-grid castle-create-grid">
+        <div class="form-group">
+          <label>집결명</label>
+          <input id="castleRallyNameInput" class="text-input" placeholder="예: 동포탑 1집결" />
+        </div>
+        <div class="form-group">
+          <label>집결 분류</label>
+          <select id="castleRallyCategorySelect" class="text-input">
+            ${getCastleRallyCategoryList().map(category=>`
+              <option value="${escapeHtml(category.key)}">${escapeHtml(category.name)}</option>
+            `).join("")}
+          </select>
+        </div>
+      </div>
+      <div class="card-actions castle-manage-actions">
+        <button onclick="createCastleRally()">집결 생성</button>
+        <button onclick="toggleCastleCreatePanel()">닫기</button>
+      </div>
     </div>
   `;
 }
@@ -293,45 +348,7 @@ function renderCastleBattleEvent(){
   const rallies=getCastleRallies();
   const displayHero=getCastleDisplayHero();
 
-  const managePanel=state.isAdmin&&state.castleManageMode
-    ? `
-      <div class="castle-manage-split">
-        <div class="party-card castle-manage-panel">
-          <div class="party-title">집결 생성</div>
-          <div class="castle-manage-grid castle-create-grid">
-            <div class="form-group">
-              <label>집결명</label>
-              <input id="castleRallyNameInput" class="text-input" placeholder="예: 동포탑 1집결" />
-            </div>
-            <div class="form-group">
-              <label>집결 분류</label>
-              <select id="castleRallyCategorySelect" class="text-input">
-                ${getCastleRallyCategoryList().map(category=>`
-                  <option value="${escapeHtml(category.key)}">${escapeHtml(category.name)}</option>
-                `).join("")}
-              </select>
-            </div>
-          </div>
-          <div class="card-actions castle-manage-actions">
-            <button onclick="createCastleRally()">집결 생성</button>
-          </div>
-        </div>
-
-        <div class="party-card castle-manage-panel">
-          <div class="party-title">인원 배치 관리</div>
-          <div class="form-group">
-            <label>선택 인원 배치</label>
-            <select id="castleRallyBulkSelect" class="text-input">${renderCastleRallySelectOptions()}</select>
-          </div>
-          <div class="card-actions castle-manage-actions">
-            <button onclick="applyCastleRallyMembers()">선택 인원 일괄 배치</button>
-            <button onclick="deleteSelectedCastleBattleEntries()">선택 인원 삭제</button>
-            <button class="danger-btn" onclick="resetCastleBattleEvent()">초기화</button>
-          </div>
-        </div>
-      </div>
-    `
-    : "";
+  const createPanel=renderCastleCreatePanel();
 
   const rallyGroups=getCastleRallyCategoryList().map(category=>{
     const items=sortCastleRalliesByCreatedAt(rallies.filter(rally=>getCastleRallyCategoryKey(rally)===category.key));
@@ -355,15 +372,12 @@ function renderCastleBattleEvent(){
     return`
       <tr>
         <td>${idx+1}</td>
-        <td class="left ${entry.user===state.currentUser?"my-name":""}">
-          ${state.isAdmin&&state.castleManageMode?`<input type="checkbox" class="castle-check" value="${escapeHtml(entry.id)}">`:""}
-          ${escapeHtml(entry.user)}
-        </td>
+        <td class="left ${entry.user===state.currentUser?"my-name":""}">${escapeHtml(entry.user)}</td>
         <td>${escapeHtml(getCastleTgValue(entry.tg,"infantry"))}</td>
         <td>${escapeHtml(getCastleTgValue(entry.tg,"cavalry"))}</td>
         <td>${escapeHtml(getCastleTgValue(entry.tg,"archer"))}</td>
         <td>${renderCastleHeroOne(entry.heroes,displayHero.key)}</td>
-        <td>${escapeHtml(getCastleRallyNameByUser(entry.user))}</td>
+        <td>${state.isAdmin?renderCastleRallyAssignmentSelect(entry.user):escapeHtml(getCastleRallyNameByUser(entry.user))}</td>
         <td>${canDelete?`<button class="rank-edit-btn" onclick="deleteCastleBattleEntry('${escapeJs(entry.id)}')">삭제</button>`:"-"}</td>
       </tr>
     `;
@@ -383,7 +397,7 @@ function renderCastleBattleEvent(){
                 <th>기병 TG</th>
                 <th>궁병 TG</th>
                 <th>${renderCastleHeroHeaderControl(displayHero)}</th>
-                <th>집결</th>
+                <th>집결 배정</th>
                 <th>삭제</th>
               </tr>
             </thead>
@@ -394,7 +408,7 @@ function renderCastleBattleEvent(){
     `
     : `<div class="empty-card">아직 신청자가 없습니다.</div>`;
 
-  el.partyList.innerHTML=managePanel+rallyCards+applicantTable;
+  el.partyList.innerHTML=createPanel+rallyCards+applicantTable;
 }
 
 window.setCastleDisplayHero=function(heroKey){
@@ -406,9 +420,48 @@ window.setCastleDisplayHero=function(heroKey){
   renderCastleBattleEvent();
 };
 
-window.toggleCastleManageMode=function(){
-  state.castleManageMode=!state.castleManageMode;
+window.toggleCastleCreatePanel=function(){
+  if(!state.isAdmin)return;
+  state.castleCreateMode=!state.castleCreateMode;
   renderCastleBattleEvent();
+};
+
+window.toggleCastleRallyManage=function(rallyId){
+  if(!state.isAdmin)return;
+  state.castleManagingRallyId=state.castleManagingRallyId===rallyId?"":rallyId;
+  renderCastleBattleEvent();
+};
+
+window.assignCastleApplicantToRally=async function(user,rallyId){
+  if(!state.isAdmin)return;
+
+  const applicant=getCastleApplicants().find(v=>v.user===user);
+  if(!applicant)return;
+
+  const batch=db.batch();
+
+  getCastleRallies().forEach(rally=>{
+    const isTarget=rallyId&&rally.id===rallyId;
+    const currentMembers=normalizeMembers(rally.members);
+    let nextMembers=currentMembers.filter(name=>name!==user);
+
+    if(isTarget)nextMembers=[...new Set([...nextMembers,user])];
+
+    const memberHeroes={...(rally.memberHeroes||{})};
+    delete memberHeroes[user];
+
+    const updates={
+      members:nextMembers,
+      memberHeroes,
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    if(rally.rallyLeader===user&&!isTarget)updates.rallyLeader="";
+
+    batch.update(partiesRef("castle_battle").doc(rally.id),updates);
+  });
+
+  await batch.commit();
 };
 
 window.createCastleRally=async function(){
@@ -436,6 +489,8 @@ window.createCastleRally=async function(){
     createdAt:firebase.firestore.FieldValue.serverTimestamp(),
     updatedAt:firebase.firestore.FieldValue.serverTimestamp()
   });
+
+  state.castleCreateMode=false;
 };
 
 window.openCastleRallyRenamePrompt=async function(rallyId){
