@@ -1577,6 +1577,22 @@ textarea.text-input{
   margin-top:10px;
 }
 
+.castle-create-panel{
+  margin-bottom:16px;
+}
+
+.castle-rally-assign-select{
+  width:140px;
+  min-height:30px;
+  border-radius:999px;
+  border:1px solid #30527f;
+  background:#0c1b2f;
+  color:#e7f1ff;
+  padding:4px 9px;
+  font-size:12px;
+  font-weight:900;
+}
+
 .castle-hero-header-select{
   width:110px;
   min-height:30px;
