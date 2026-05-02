@@ -1260,8 +1260,16 @@ textarea.text-input{
   font-size:14px;
 }
 
-.castle-manage-panel{
+.castle-manage-split{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:14px;
+  align-items:start;
   margin-bottom:16px;
+}
+
+.castle-manage-panel{
+  margin-bottom:0;
 }
 
 .castle-applicant-card{
@@ -1379,10 +1387,9 @@ textarea.text-input{
   }
 }
 
-
 .castle-rally-category-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  grid-template-columns:repeat(4,minmax(0,1fr));
   gap:14px;
   align-items:start;
   margin-bottom:16px;
@@ -1500,21 +1507,29 @@ textarea.text-input{
 
 .castle-rally-member-controls{
   display:grid;
-  grid-template-columns:36px 128px 36px;
+  grid-template-columns:36px 36px 36px;
   gap:6px;
   align-items:center;
 }
 
 .castle-member-hero-select{
-  width:128px;
+  width:36px;
+  min-width:36px;
   min-height:34px;
   border-radius:10px;
   border:1px solid #223653;
   background:#07111e;
-  color:#d9e6ff;
-  padding:5px 8px;
-  font-size:12px;
+  color:transparent;
+  padding:0;
+  font-size:0;
   font-weight:800;
+  cursor:pointer;
+}
+
+.castle-member-hero-select option{
+  color:#d9e6ff;
+  background:#07111e;
+  font-size:13px;
 }
 
 .castle-crown-btn,
@@ -1554,8 +1569,12 @@ textarea.text-input{
   gap:10px;
 }
 
-.castle-manage-grid-3{
-  grid-template-columns:1fr 180px 1fr;
+.castle-create-grid{
+  grid-template-columns:minmax(0,1fr) 180px;
+}
+
+.castle-manage-actions{
+  margin-top:10px;
 }
 
 .castle-hero-header-select{
@@ -1572,13 +1591,17 @@ textarea.text-input{
 
 @media(max-width:1200px){
   .castle-rally-category-grid{
-    grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+    grid-template-columns:repeat(2,minmax(0,1fr));
   }
 }
 
 @media(max-width:900px){
+  .castle-manage-split{
+    grid-template-columns:1fr;
+  }
+
   .castle-manage-grid,
-  .castle-manage-grid-3{
+  .castle-create-grid{
     grid-template-columns:1fr;
   }
 }
@@ -1601,14 +1624,17 @@ textarea.text-input{
   }
 
   .castle-rally-member-controls{
-    grid-template-columns:40px minmax(0,1fr) 40px;
-    width:100%;
+    grid-template-columns:40px 40px 40px;
+    width:auto;
+    justify-content:end;
   }
 
   .castle-member-hero-select{
-    width:100%;
+    width:40px;
+    min-width:40px;
   }
 }
+
 .clickable-event-card{
   cursor:pointer;
   transition:transform .15s ease, border-color .15s ease, background .15s ease;
