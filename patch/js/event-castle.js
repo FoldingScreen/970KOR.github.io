@@ -2,8 +2,32 @@ function getCastlePlacementList(){
   return["캐슬","포탑(동)","포탑(서)","포탑(남)","포탑(북)","미배치"];
 }
 
+function getCastleHeroList(){
+  return[
+    {key:"amadeus",name:"아마데우스"},
+    {key:"chenko",name:"첸코"},
+    {key:"yeonwoo",name:"연우"},
+    {key:"margo",name:"마르고"},
+    {key:"amane",name:"아마네"},
+    {key:"eric",name:"에릭"},
+    {key:"salo",name:"살로"},
+    {key:"littlefera",name:"리틀페라"},
+    {key:"marine",name:"마린"},
+    {key:"rosa",name:"로사"},
+    {key:"alka",name:"알카"},
+    {key:"fad",name:"파드"},
+    {key:"queen",name:"퀸"},
+    {key:"howard",name:"하워드"}
+  ];
+}
+
 function getCastleTgValue(tg,key){
   return tg&&tg[key]?String(tg[key]):"순금X";
+}
+
+function getCastleHeroValue(heroes,key){
+  const value=heroes&&heroes[key]!==undefined?Number(heroes[key]):0;
+  return Number.isFinite(value)?Math.max(0,Math.min(5,value)):0;
 }
 
 function getCastleSortedEntries(){
@@ -19,6 +43,10 @@ function getCastleSortedEntries(){
   });
 }
 
+function getCastleHeroSelects(){
+  return[...document.querySelectorAll(".castle-hero-select")];
+}
+
 function openCastleBattleModal(){
   const mine=state.parties.find(v=>v.user===state.currentUser);
 
@@ -31,6 +59,10 @@ function openCastleBattleModal(){
     el.castleCavalrySelect.value="순금X";
     el.castleArcherSelect.value="순금X";
   }
+
+  getCastleHeroSelects().forEach(select=>{
+    select.value=String(getCastleHeroValue(mine?.heroes,select.dataset.hero));
+  });
 
   el.castleBattleModal.classList.remove("hidden");
   syncOverlay();
@@ -51,6 +83,11 @@ window.submitCastleBattle=async function(){
     archer:el.castleArcherSelect.value
   };
 
+  const heroes={};
+  getCastleHeroSelects().forEach(select=>{
+    heroes[select.dataset.hero]=Number(select.value||0);
+  });
+
   const mine=state.parties.find(v=>v.user===state.currentUser);
 
   await partiesRef("castle_battle").doc(state.currentUser).set({
@@ -58,6 +95,7 @@ window.submitCastleBattle=async function(){
     event:"castle_battle",
     user:state.currentUser,
     tg,
+    heroes,
     placement:mine?.placement||"미배치",
     createdAt:mine?.createdAt||firebase.firestore.FieldValue.serverTimestamp(),
     updatedAt:firebase.firestore.FieldValue.serverTimestamp()
@@ -66,12 +104,39 @@ window.submitCastleBattle=async function(){
   closeCastleBattleModal();
 };
 
+function renderCastleTgSummary(tg){
+  return`
+    <div class="castle-tg-summary">
+      <span>보 ${escapeHtml(getCastleTgValue(tg,"infantry"))}</span>
+      <span>기 ${escapeHtml(getCastleTgValue(tg,"cavalry"))}</span>
+      <span>궁 ${escapeHtml(getCastleTgValue(tg,"archer"))}</span>
+    </div>
+  `;
+}
+
+function renderCastleHeroSummary(heroes){
+  return`
+    <div class="castle-hero-summary">
+      ${getCastleHeroList().map(hero=>`
+        <span>${escapeHtml(hero.name)} ${getCastleHeroValue(heroes,hero.key)}</span>
+      `).join("")}
+    </div>
+  `;
+}
+
 function renderCastleBattleEvent(){
   const entries=getCastleSortedEntries();
   const placements=getCastlePlacementList();
 
   if(!entries.length){
-    el.partyList.innerHTML=`<div class="empty-card">아직 신청자가 없습니다.</div>`;
+    el.partyList.innerHTML=state.isAdmin&&state.castleManageMode
+      ? `
+        <div class="party-card castle-manage-panel">
+          <div class="party-title">캐슬 전투 배치 관리</div>
+          <div class="empty-card">초기화할 신청자가 없습니다.</div>
+        </div>
+      `
+      : `<div class="empty-card">아직 신청자가 없습니다.</div>`;
     return;
   }
 
@@ -93,6 +158,7 @@ function renderCastleBattleEvent(){
         <div class="card-actions">
           <button onclick="applyCastlePlacement()">선택 인원 일괄 배치</button>
           <button onclick="deleteSelectedCastleBattleEntries()">선택 인원 삭제</button>
+          <button class="danger-btn" onclick="resetCastleBattleEvent()">초기화</button>
         </div>
       </div>
     `
@@ -129,9 +195,8 @@ function renderCastleBattleEvent(){
       <tr>
         <td>${idx+1}</td>
         <td class="left ${entry.user===state.currentUser?"my-name":""}">${escapeHtml(entry.user)}</td>
-        <td>${escapeHtml(getCastleTgValue(entry.tg,"infantry"))}</td>
-        <td>${escapeHtml(getCastleTgValue(entry.tg,"cavalry"))}</td>
-        <td>${escapeHtml(getCastleTgValue(entry.tg,"archer"))}</td>
+        <td>${renderCastleTgSummary(entry.tg)}</td>
+        <td>${renderCastleHeroSummary(entry.heroes)}</td>
         <td>${escapeHtml(entry.placement||"미배치")}</td>
         <td>${canDelete?`<button class="rank-edit-btn" onclick="deleteCastleBattleEntry('${escapeJs(entry.id)}')">삭제</button>`:"-"}</td>
       </tr>
@@ -141,15 +206,14 @@ function renderCastleBattleEvent(){
   const applicantTable=`
     <div class="party-card rank-table-card castle-applicant-card">
       <div class="party-title">신청 인원 전체</div>
-      <div class="rank-table-wrap">
-        <table class="rank-table">
+      <div class="rank-table-wrap castle-table-wrap">
+        <table class="rank-table castle-table">
           <thead>
             <tr>
               <th>연번</th>
               <th>닉네임</th>
-              <th>보병</th>
-              <th>기병</th>
-              <th>궁병</th>
+              <th>TG</th>
+              <th>영웅 스킬</th>
               <th>배치</th>
               <th>삭제</th>
             </tr>
@@ -234,4 +298,29 @@ window.deleteSelectedCastleBattleEntries=async function(){
   renderCastleBattleEvent();
 };
 
-/* ===== 미궁 시스템 ===== */
+window.resetCastleBattleEvent=async function(){
+  if(!state.isAdmin)return;
+
+  if(!state.parties.length){
+    alert("초기화할 신청자가 없습니다.");
+    return;
+  }
+
+  if(!confirm(`캐슬 전투 신청 ${state.parties.length}건을 전부 초기화하시겠습니까?`))return;
+  if(!confirm("정말 전체 신청 데이터를 삭제합니다. 복구할 수 없습니다."))return;
+
+  const snap=await partiesRef("castle_battle").get();
+  const docs=snap.docs;
+
+  for(let i=0;i<docs.length;i+=450){
+    const batch=db.batch();
+    docs.slice(i,i+450).forEach(doc=>batch.delete(doc.ref));
+    await batch.commit();
+  }
+
+  await writeAdminLog("캐슬 전투 초기화",{count:docs.length});
+
+  state.castleManageMode=false;
+  updateEventActionButtons();
+  renderCastleBattleEvent();
+};
