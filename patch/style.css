@@ -1353,6 +1353,16 @@ textarea.text-input{
   display:block;
 }
 
+#partyList:has(.castle-rally-category-grid){
+  display:block;
+  width:100%;
+  max-width:none;
+}
+
+#partyList:has(.castle-rally-category-grid) .rank-table-card{
+  width:100%;
+}
+
 @media(max-width:1200px){
   .castle-mini-grid{
     grid-template-columns:repeat(3,minmax(150px,1fr));
