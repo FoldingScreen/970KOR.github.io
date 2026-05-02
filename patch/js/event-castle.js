@@ -221,8 +221,10 @@ function renderCastleRallySelectOptions(selectedId=""){
 }
 
 function renderCastleHeroAssignSelect(rallyId,user,currentHero){
+  const currentHeroName=getCastleHeroName(currentHero)||"영웅 없음";
+
   return`
-    <select class="castle-member-hero-select" onchange="setCastleMemberHero('${escapeJs(rallyId)}','${escapeJs(user)}',this.value)">
+    <select class="castle-member-hero-select" title="영웅 지정: ${escapeHtml(currentHeroName)}" aria-label="영웅 지정" onchange="setCastleMemberHero('${escapeJs(rallyId)}','${escapeJs(user)}',this.value)">
       <option value="">영웅 없음</option>
       ${getCastleHeroList().map(hero=>`
         <option value="${escapeHtml(hero.key)}" ${hero.key===currentHero?"selected":""}>${escapeHtml(hero.name)}</option>
@@ -293,31 +295,39 @@ function renderCastleBattleEvent(){
 
   const managePanel=state.isAdmin&&state.castleManageMode
     ? `
-      <div class="party-card castle-manage-panel">
-        <div class="party-title">캐슬 전투 집결 관리</div>
-        <div class="castle-manage-grid castle-manage-grid-3">
-          <div class="form-group">
-            <label>집결명</label>
-            <input id="castleRallyNameInput" class="text-input" placeholder="예: 동포탑 1집결" />
+      <div class="castle-manage-split">
+        <div class="party-card castle-manage-panel">
+          <div class="party-title">집결 생성</div>
+          <div class="castle-manage-grid castle-create-grid">
+            <div class="form-group">
+              <label>집결명</label>
+              <input id="castleRallyNameInput" class="text-input" placeholder="예: 동포탑 1집결" />
+            </div>
+            <div class="form-group">
+              <label>집결 분류</label>
+              <select id="castleRallyCategorySelect" class="text-input">
+                ${getCastleRallyCategoryList().map(category=>`
+                  <option value="${escapeHtml(category.key)}">${escapeHtml(category.name)}</option>
+                `).join("")}
+              </select>
+            </div>
           </div>
-          <div class="form-group">
-            <label>집결 분류</label>
-            <select id="castleRallyCategorySelect" class="text-input">
-              ${getCastleRallyCategoryList().map(category=>`
-                <option value="${escapeHtml(category.key)}">${escapeHtml(category.name)}</option>
-              `).join("")}
-            </select>
+          <div class="card-actions castle-manage-actions">
+            <button onclick="createCastleRally()">집결 생성</button>
           </div>
+        </div>
+
+        <div class="party-card castle-manage-panel">
+          <div class="party-title">인원 배치 관리</div>
           <div class="form-group">
             <label>선택 인원 배치</label>
             <select id="castleRallyBulkSelect" class="text-input">${renderCastleRallySelectOptions()}</select>
           </div>
-        </div>
-        <div class="card-actions">
-          <button onclick="createCastleRally()">집결 생성</button>
-          <button onclick="applyCastleRallyMembers()">선택 인원 일괄 배치</button>
-          <button onclick="deleteSelectedCastleBattleEntries()">선택 인원 삭제</button>
-          <button class="danger-btn" onclick="resetCastleBattleEvent()">초기화</button>
+          <div class="card-actions castle-manage-actions">
+            <button onclick="applyCastleRallyMembers()">선택 인원 일괄 배치</button>
+            <button onclick="deleteSelectedCastleBattleEntries()">선택 인원 삭제</button>
+            <button class="danger-btn" onclick="resetCastleBattleEvent()">초기화</button>
+          </div>
         </div>
       </div>
     `
