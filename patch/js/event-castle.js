@@ -211,29 +211,45 @@ function renderCastleRallyCard(rally){
     ? members.map(name=>{
         const heroKey=memberHeroes[name]||"";
         const heroName=getCastleHeroName(heroKey);
+        const isLeader=name===rally.rallyLeader;
 
         return`
-          <div class="member-line castle-rally-member-line">
-            <span class="castle-rally-member-name ${name===state.currentUser?"my-name":""}">
-              ${name===rally.rallyLeader?"👑 ":""}${escapeHtml(name)}
-              ${heroName?`<small class="castle-member-hero-chip">${escapeHtml(heroName)}</small>`:""}
-            </span>
-            ${state.isAdmin&&name!==rally.rallyLeader?`<button class="inline-btn" onclick="setCastleRallyLeader('${escapeJs(rally.id)}','${escapeJs(name)}')">👑</button>`:""}
-            ${state.isAdmin?renderCastleHeroAssignSelect(rally.id,name,heroKey):""}
-            ${state.isAdmin?`<button class="inline-btn" onclick="removeCastleRallyMember('${escapeJs(rally.id)}','${escapeJs(name)}')">✖</button>`:""}
+          <div class="castle-rally-member-line">
+            <div class="castle-rally-member-main">
+              <span class="castle-rally-member-name ${name===state.currentUser?"my-name":""}">
+                ${escapeHtml(name)}
+              </span>
+              ${heroName?`<span class="castle-member-hero-chip">${escapeHtml(heroName)}</span>`:""}
+            </div>
+
+            ${state.isAdmin?`
+              <div class="castle-rally-member-controls">
+                ${!isLeader?`
+                  <button class="inline-btn castle-crown-btn" onclick="setCastleRallyLeader('${escapeJs(rally.id)}','${escapeJs(name)}')" title="집결장 지정">👑</button>
+                `:`<span class="castle-crown-fixed" title="집결장">👑</span>`}
+                ${renderCastleHeroAssignSelect(rally.id,name,heroKey)}
+                <button class="inline-btn castle-remove-btn" onclick="removeCastleRallyMember('${escapeJs(rally.id)}','${escapeJs(name)}')" title="집결원 제외">✖</button>
+              </div>
+            `:`${isLeader?`<span class="castle-crown-fixed" title="집결장">👑</span>`:""}`}
           </div>
         `;
       }).join("")
-    : `<div class="member-line"><span>집결원이 없습니다.</span></div>`;
+    : `<div class="castle-rally-empty">집결원이 없습니다.</div>`;
 
   return`
     <div class="party-card castle-rally-card">
-      <div class="party-title">${escapeHtml(rally.rallyName||rally.name||"집결")}</div>
-      <div class="party-sub">집결장: ${rally.rallyLeader?`👑 ${escapeHtml(rally.rallyLeader)}`:"미지정"}</div>
-      <div class="party-sub">인원: ${members.length}명</div>
+      <div class="castle-rally-head">
+        <div>
+          <div class="party-title">${escapeHtml(rally.rallyName||rally.name||"집결")}</div>
+          <div class="party-sub">집결장: ${rally.rallyLeader?`👑 ${escapeHtml(rally.rallyLeader)}`:"미지정"}</div>
+        </div>
+        <div class="castle-rally-count">${members.length}명</div>
+      </div>
+
       <div class="member-list compact castle-rally-member-list">${membersHtml}</div>
+
       ${state.isAdmin?`
-        <div class="card-actions">
+        <div class="card-actions castle-rally-actions">
           <button onclick="openCastleRallyRenamePrompt('${escapeJs(rally.id)}')">수정</button>
           <button onclick="deleteCastleRally('${escapeJs(rally.id)}')">삭제</button>
         </div>
