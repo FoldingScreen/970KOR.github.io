@@ -1156,14 +1156,14 @@ function getMoveDisplay(existingColumn,currentColumn){
 
 
 function getHolySwordBadgeSrc(area){
-  if(area==="마구간")return"../말.png";
-  if(area==="시계탑")return"../모래시계.png";
-  if(area==="수도원 1")return"../마름모 1.png";
-  if(area==="수도원 2")return"../마름모 2.png";
-  if(area==="수도원 3")return"../마름모 3.png";
-  if(area==="수도원 4")return"../마름모 4.png";
-  if(area==="성소 1")return"../원 1.png";
-  if(area==="성소 2")return"../원 2.png";
+  if(area==="마구간")return"말.png";
+  if(area==="시계탑")return"모래시계.png";
+  if(area==="수도원 1")return"마름모 1.png";
+  if(area==="수도원 2")return"마름모 2.png";
+  if(area==="수도원 3")return"마름모 3.png";
+  if(area==="수도원 4")return"마름모 4.png";
+  if(area==="성소 1")return"원 1.png";
+  if(area==="성소 2")return"원 2.png";
   return"";
 }
 
