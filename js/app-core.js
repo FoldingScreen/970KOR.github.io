@@ -684,8 +684,22 @@ function updateEventActionButtons(){
 }
 
 async function openEvent(id){
+  clearSubscriptions();
+
   state.currentEventId=id;
   state.castleManageMode=false;
+  state.castleCreateMode=false;
+  state.castleManagingRallyId="";
+
+  if(el.partyList){
+    el.partyList.innerHTML=`<div class="empty-card">불러오는 중입니다.</div>`;
+    el.partyList.classList.toggle("castle-battle-list",id==="castle_battle");
+    el.partyList.classList.remove("hidden");
+  }
+
+  if(el.escapeLabyrinthScreen)el.escapeLabyrinthScreen.classList.add("hidden");
+  if(el.labyrinthHomeView)el.labyrinthHomeView.classList.add("hidden");
+  if(el.labyrinthDetailView)el.labyrinthDetailView.classList.add("hidden");
 
   localStorage.setItem("partyAppEvent",id);
   setTopTabs(id);
@@ -698,12 +712,11 @@ async function openEvent(id){
   showOnly("event");
 
   if(id==="escape_labyrinth"){
+    if(el.partyList)el.partyList.classList.add("hidden");
+    if(el.escapeLabyrinthScreen)el.escapeLabyrinthScreen.classList.remove("hidden");
     subscribeEscapeLabyrinthHome();
     return;
   }
-
-  if(el.partyList)el.partyList.classList.remove("hidden");
-  if(el.escapeLabyrinthScreen)el.escapeLabyrinthScreen.classList.add("hidden");
 
   if(id==="rearrange")subscribeRearrange();
   else subscribeParties();
