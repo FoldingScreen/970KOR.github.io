@@ -375,6 +375,7 @@ function openLabyrinthDetail(id){
         type:d.type||"question",
         placeholder:d.placeholder||"",
         successMessage:d.successMessage||"",
+        contentHtml:d.contentHtml||"",
         isActive:d.isActive!==false,
         createdAt:d.createdAt||null,
         updatedAt:d.updatedAt||null
@@ -462,6 +463,137 @@ function renderFinalStageClearersCard(){
     </div>
   `;
 }
+
+function sanitizeLabyrinthContentHtml(html){
+  const wrap=document.createElement("div");
+  wrap.innerHTML=String(html||"");
+
+  const allowedTags=new Set(["DIV","P","BR","B","STRONG","I","EM","U","IMG"]);
+  const walker=document.createTreeWalker(wrap,NodeFilter.SHOW_ELEMENT,null);
+  const removeTargets=[];
+
+  while(walker.nextNode()){
+    const node=walker.currentNode;
+
+    if(!allowedTags.has(node.tagName)){
+      removeTargets.push(node);
+      continue;
+    }
+
+    [...node.attributes].forEach(attr=>{
+      const name=attr.name.toLowerCase();
+
+      if(node.tagName==="IMG"&&(name==="src"||name==="alt"||name==="data-path")){
+        return;
+      }
+
+      node.removeAttribute(attr.name);
+    });
+
+    if(node.tagName==="IMG"){
+      node.className="labyrinth-content-image";
+    }
+  }
+
+  removeTargets.forEach(node=>{
+    const text=document.createTextNode(node.textContent||"");
+    node.replaceWith(text);
+  });
+
+  return wrap.innerHTML.trim();
+}
+
+function renderLabyrinthContent(stage){
+  const html=sanitizeLabyrinthContentHtml(stage.contentHtml||"");
+
+  if(html){
+    return`<div class="labyrinth-content-view">${html}</div>`;
+  }
+
+  if(stage.question){
+    return`<div class="labyrinth-stage-question">${escapeHtml(stage.question)}</div>`;
+  }
+
+  return"";
+}
+
+function setupLabyrinthEditor(){
+  const editor=document.getElementById("stageContentEditor");
+  const imageInput=document.getElementById("stageContentImageInput");
+
+  if(!editor||!imageInput)return;
+
+  imageInput.onchange=async ()=>{
+    const file=imageInput.files&&imageInput.files[0];
+    imageInput.value="";
+
+    if(!file)return;
+
+    if(!file.type.startsWith("image/")){
+      alert("이미지 파일만 업로드할 수 있습니다.");
+      return;
+    }
+
+    if(file.size>5*1024*1024){
+      alert("이미지는 5MB 이하만 업로드하세요.");
+      return;
+    }
+
+    const item=state.currentLabyrinthData;
+    if(!item){
+      alert("미궁 정보를 찾을 수 없습니다.");
+      return;
+    }
+
+    const safeName=file.name.replace(/[^\w.\-가-힣]/g,"_");
+    const path=`labyrinths/${item.id}/editor/${Date.now()}-${safeName}`;
+    const ref=storage.ref().child(path);
+
+    await ref.put(file);
+    const url=await ref.getDownloadURL();
+
+    insertImageIntoLabyrinthEditor(url,path);
+  };
+}
+
+function insertImageIntoLabyrinthEditor(url,path){
+  const editor=document.getElementById("stageContentEditor");
+  if(!editor)return;
+
+  editor.focus();
+
+  const img=document.createElement("img");
+  img.src=url;
+  img.alt="문제 이미지";
+  img.dataset.path=path||"";
+  img.className="labyrinth-content-image";
+
+  const selection=window.getSelection();
+  if(selection&&selection.rangeCount>0&&editor.contains(selection.anchorNode)){
+    const range=selection.getRangeAt(0);
+    range.deleteContents();
+    range.insertNode(img);
+
+    const br=document.createElement("br");
+    img.after(br);
+
+    range.setStartAfter(br);
+    range.setEndAfter(br);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }else{
+    editor.appendChild(img);
+    editor.appendChild(document.createElement("br"));
+  }
+}
+
+window.clearLabyrinthEditorContent=function(){
+  const editor=document.getElementById("stageContentEditor");
+  if(!editor)return;
+
+  if(!confirm("본문 내용을 모두 지우시겠습니까?"))return;
+  editor.innerHTML="";
+};
 
 function renderLabyrinthDetail(){
   const item=state.currentLabyrinthData;
@@ -581,7 +713,7 @@ function renderLabyrinthDetail(){
             <span class="labyrinth-stage-order">${isFinal?"최종":"입장형"}</span>
           </div>
           ${stage.story?`<div class="labyrinth-stage-story">${escapeHtml(stage.story)}</div>`:""}
-          ${stage.question?`<div class="labyrinth-stage-question">${escapeHtml(stage.question)}</div>`:""}
+          ${renderLabyrinthContent(stage)}
           <div class="labyrinth-stage-footer">
             <div class="labyrinth-stage-meta">${isFinal?"최종 단계입니다.":"현재 입장 가능한 단계입니다."}</div>
             <div class="actions">
@@ -735,6 +867,11 @@ function openEditStageModal(stageId=""){
     el.stageTypeSelect.value=stage.type||"question";
     el.stageStoryInput.value=stage.story||"";
     el.stageQuestionInput.value=stage.question||"";
+    setTimeout(()=>{
+  const editor=document.getElementById("stageContentEditor");
+  if(editor)editor.innerHTML=sanitizeLabyrinthContentHtml(stage.contentHtml||"");
+  setupLabyrinthEditor();
+},0);
     el.stageAnswerInput.value=stage.answer||"";
     el.stagePlaceholderInput.value=stage.placeholder||"";
     el.stageSuccessMessageInput.value=stage.successMessage||"";
@@ -747,6 +884,11 @@ function openEditStageModal(stageId=""){
     el.stageTypeSelect.value="question";
     el.stageStoryInput.value="";
     el.stageQuestionInput.value="";
+    setTimeout(()=>{
+  const editor=document.getElementById("stageContentEditor");
+  if(editor)editor.innerHTML="";
+  setupLabyrinthEditor();
+},0);
     el.stageAnswerInput.value="";
     el.stagePlaceholderInput.value="";
     el.stageSuccessMessageInput.value="";
@@ -778,6 +920,7 @@ async function submitStage(){
   const type=String(el.stageTypeSelect.value||"question");
   const story=normalizeLabyrinthText(el.stageStoryInput.value);
   const question=normalizeLabyrinthText(el.stageQuestionInput.value);
+  const contentHtml=sanitizeLabyrinthContentHtml(document.getElementById("stageContentEditor")?.innerHTML||"");
   const answer=normalizeLabyrinthText(el.stageAnswerInput.value);
   const placeholder=normalizeLabyrinthText(el.stagePlaceholderInput.value);
   const successMessage=normalizeLabyrinthText(el.stageSuccessMessageInput.value);
@@ -804,6 +947,7 @@ async function submitStage(){
     type,
     story,
     question,
+    contentHtml,
     answer,
     placeholder,
     successMessage,
