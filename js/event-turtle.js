@@ -231,6 +231,7 @@ async function openTurtleSoupDetail(id){
   state.currentTurtleComments=[];
   state.currentTurtlePlayer=null;
   state.currentTurtleSubmissions=[];
+  state.currentTurtlePlayers=[];
   state.answeringTurtleCommentId="";
 
   if(state.unsubscribeTurtleComments){
@@ -248,6 +249,11 @@ async function openTurtleSoupDetail(id){
     state.unsubscribeTurtleSubmissions=null;
   }
 
+  if(state.unsubscribeTurtlePlayers){
+    state.unsubscribeTurtlePlayers();
+    state.unsubscribeTurtlePlayers=null;
+  }
+  
   await turtleSoupPlayerRef(id,state.currentUser).set({
     nickname:state.currentUser,
     startedAt:firebase.firestore.FieldValue.serverTimestamp(),
@@ -312,6 +318,25 @@ async function openTurtleSoupDetail(id){
       alert("정답 제출 목록을 불러오는 중 오류가 발생했습니다.");
     });
 
+    state.unsubscribeTurtlePlayers=turtleSoupPlayersRef(id)
+    .onSnapshot(snap=>{
+      state.currentTurtlePlayers=snap.docs.map(doc=>{
+        const d=doc.data()||{};
+
+        return{
+          id:doc.id,
+          nickname:d.nickname||doc.id,
+          isCleared:!!d.isCleared,
+          clearedAt:d.clearedAt||null
+        };
+      }).filter(v=>v.isCleared&&!isHiddenTestNickname(v.nickname));
+
+      renderTurtleSoupDetail();
+    },err=>{
+      console.error(err);
+      alert("정답자 목록을 불러오는 중 오류가 발생했습니다.");
+    });
+  
   document.getElementById("labyrinthHomeView")?.classList.add("hidden");
   document.getElementById("turtleSoupDetailView")?.classList.remove("hidden");
 
@@ -326,6 +351,7 @@ function closeTurtleSoupDetail(){
   state.currentTurtleComments=[];
   state.currentTurtlePlayer=null;
   state.currentTurtleSubmissions=[];
+  state.currentTurtlePlayers=[];
   state.answeringTurtleCommentId="";
 
   if(state.unsubscribeTurtleComments){
@@ -341,6 +367,11 @@ function closeTurtleSoupDetail(){
   if(state.unsubscribeTurtleSubmissions){
     state.unsubscribeTurtleSubmissions();
     state.unsubscribeTurtleSubmissions=null;
+  }
+
+    if(state.unsubscribeTurtlePlayers){
+    state.unsubscribeTurtlePlayers();
+    state.unsubscribeTurtlePlayers=null;
   }
 
   document.getElementById("turtleSoupDetailView")?.classList.add("hidden");
@@ -360,6 +391,9 @@ function renderTurtleSoupDetail(){
   const isCleared=!!state.currentTurtlePlayer?.isCleared;
   const comments=state.currentTurtleComments||[];
   const submissions=state.currentTurtleSubmissions||[];
+  const clearers=(state.currentTurtlePlayers||[])
+  .filter(v=>v.isCleared&&!isHiddenTestNickname(v.nickname))
+  .sort((a,b)=>getTimeValue(a.clearedAt)-getTimeValue(b.clearedAt));
   const answeringComment=comments.find(v=>v.id===state.answeringTurtleCommentId)||null;
   const answeringAnswer=answeringComment?.answer||"";
 
@@ -386,6 +420,7 @@ function renderTurtleSoupDetail(){
         ${comments.length?comments.map(comment=>renderTurtleComment(comment,isCreator)).join(""):`<div class="turtle-empty-chat">아직 질문이 없습니다.</div>`}
       </div>
 
+      ${renderTurtleClearersPanel(clearers)}
       ${renderTurtleSolutionPanel(isCreator,isCleared,item)}
       ${renderTurtleSubmissionPanel(isCreator,submissions,isCleared)}
 
@@ -410,6 +445,31 @@ function renderTurtleSoupDetail(){
             <button type="button" onclick="submitTurtleFinalAnswer()" ${isCleared?"disabled":""}>정답 제출</button>
           </div>
         `}
+      </div>
+    </div>
+  `;
+}
+
+function renderTurtleClearersPanel(clearers){
+  if(!clearers.length){
+    return`
+      <div class="turtle-clearers-panel">
+        <div class="turtle-submission-title">정답자</div>
+        <div class="turtle-submission-empty">아직 정답자가 없습니다.</div>
+      </div>
+    `;
+  }
+
+  return`
+    <div class="turtle-clearers-panel">
+      <div class="turtle-submission-title">정답자 ${clearers.length}명</div>
+      <div class="turtle-clearer-list">
+        ${clearers.map((item,idx)=>`
+          <div class="turtle-clearer-item">
+            <span>${idx+1}. ${escapeHtml(item.nickname)}</span>
+            <span class="muted">${escapeHtml(formatDateTime(item.clearedAt))}</span>
+          </div>
+        `).join("")}
       </div>
     </div>
   `;
