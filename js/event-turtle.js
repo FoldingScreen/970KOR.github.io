@@ -17,6 +17,16 @@ function getTurtleSoupStatus(item){
   };
 }
 
+function getTurtleDifficulty(value){
+  const n=Math.min(5,Math.max(1,Number(value||3)));
+  return n;
+}
+
+function renderTurtleDifficulty(value){
+  const n=getTurtleDifficulty(value);
+  return `<span class="turtle-difficulty" title="난이도 ${n}">${"★".repeat(n)}${"☆".repeat(5-n)}</span>`;
+}
+
 function renderTurtleSoupList(){
   const list=document.getElementById("turtleSoupList");
   if(!list)return;
@@ -39,7 +49,7 @@ function renderTurtleSoupList(){
         <div class="turtle-card-main">
           <div class="turtle-card-title">${escapeHtml(item.title||"제목 없음")}</div>
           <div class="turtle-card-meta">
-            출제자: ${escapeHtml(item.creator||"-")} · 질문 ${questionCount}개
+            출제자: ${escapeHtml(item.creator||"-")} · 난이도 ${renderTurtleDifficulty(item.difficulty)} · 질문 ${questionCount}개
           </div>
         </div>
         <div class="labyrinth-inline-status">
@@ -74,6 +84,7 @@ async function subscribeTurtleSoups(){
         title:d.title||"",
         contentText:d.contentText||d.contentHtml||"",
         solutionText:d.solutionText||"",
+        difficulty:getTurtleDifficulty(d.difficulty),
         creator:d.creator||"",
         isPublic:!!d.isPublic,
         questionCount:Number(d.questionCount||0),
@@ -102,6 +113,7 @@ function openCreateTurtleSoupModal(id=""){
 
   const titleInput=document.getElementById("turtleSoupTitleInput");
   const contentInput=document.getElementById("turtleSoupContentInput");
+  const difficultySelect=document.getElementById("turtleSoupDifficultySelect");
   const solutionInput=document.getElementById("turtleSoupSolutionInput");
   const publicCheckbox=document.getElementById("turtleSoupPublicCheckbox");
   const deleteBtn=document.getElementById("deleteTurtleSoupBtn");
@@ -122,6 +134,7 @@ function openCreateTurtleSoupModal(id=""){
   if(modalTitle)modalTitle.textContent=item?"바다거북스프 수정":"바다거북스프 만들기";
   if(titleInput)titleInput.value=item?.title||"";
   if(contentInput)contentInput.value=item?.contentText||"";
+  if(difficultySelect)difficultySelect.value=String(getTurtleDifficulty(item?.difficulty));
   if(solutionInput)solutionInput.value=item?.solutionText||"";
   if(publicCheckbox)publicCheckbox.checked=item?!!item.isPublic:true;
   if(deleteBtn)deleteBtn.classList.toggle("hidden",!item);
@@ -141,6 +154,7 @@ window.closeCreateTurtleSoupModal=closeCreateTurtleSoupModal;
 
 async function submitTurtleSoup(){
   const title=normalizeLabyrinthText(document.getElementById("turtleSoupTitleInput")?.value||"");
+  const difficulty=getTurtleDifficulty(document.getElementById("turtleSoupDifficultySelect")?.value||3);
   const contentText=normalizeLabyrinthText(document.getElementById("turtleSoupContentInput")?.value||"");
   const solutionText=normalizeLabyrinthText(document.getElementById("turtleSoupSolutionInput")?.value||"");
   const isPublic=!!document.getElementById("turtleSoupPublicCheckbox")?.checked;
@@ -159,6 +173,7 @@ async function submitTurtleSoup(){
 
   const payload={
     title,
+    difficulty,
     contentText,
     solutionText,
     isPublic,
@@ -411,7 +426,7 @@ function renderTurtleSoupDetail(){
 
       <div class="turtle-problem-card">
         <div class="turtle-problem-title">${escapeHtml(item.title||"제목 없음")}</div>
-        <div class="turtle-problem-meta">출제자: ${escapeHtml(item.creator||"-")}</div>
+        <div class="turtle-problem-meta">출제자: ${escapeHtml(item.creator||"-")} · 난이도 ${renderTurtleDifficulty(item.difficulty)}</div>
         <details class="turtle-problem-body" open>
           <summary>문제 보기 / 접기</summary>
           <div class="turtle-problem-content">${escapeHtml(item.contentText||"").replace(/\n/g,"<br>")}</div>
