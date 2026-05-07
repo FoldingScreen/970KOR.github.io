@@ -571,18 +571,21 @@ function renderLabyrinthDetail(){
       `;
     }
 
-    if(stage.type==="entry"){
+     if(stage.type==="entry"||stage.type==="final"){
+      const isFinal=stage.type==="final";
+
       return`
         <div class="labyrinth-stage-card current">
           <div class="labyrinth-stage-header">
             <h3 class="labyrinth-stage-title">${escapeHtml(stage.title||`단계 ${stage.order}`)}</h3>
-            <span class="labyrinth-stage-order">입장형</span>
+            <span class="labyrinth-stage-order">${isFinal?"최종":"입장형"}</span>
           </div>
           ${stage.story?`<div class="labyrinth-stage-story">${escapeHtml(stage.story)}</div>`:""}
+          ${stage.question?`<div class="labyrinth-stage-question">${escapeHtml(stage.question)}</div>`:""}
           <div class="labyrinth-stage-footer">
-            <div class="labyrinth-stage-meta">현재 입장 가능한 단계입니다.</div>
+            <div class="labyrinth-stage-meta">${isFinal?"최종 단계입니다.":"현재 입장 가능한 단계입니다."}</div>
             <div class="actions">
-              <button onclick="completeCurrentEntryStage(${stage.order})">${escapeHtml(stage.title||"입장하기")}</button>
+              <button onclick="completeCurrentEntryStage(${stage.order})">${isFinal?"미궁 클리어":"입장하기"}</button>
               ${isLabyrinthOwner(item)?`<button onclick="openEditStageModal('${escapeJs(stage.id)}')">수정</button>`:""}
             </div>
           </div>
@@ -790,7 +793,7 @@ async function submitStage(){
     return;
   }
 
-  if(type!=="entry"&&!answer){
+  if(type==="question"&&!answer){
     alert("정답을 입력하세요.");
     return;
   }
