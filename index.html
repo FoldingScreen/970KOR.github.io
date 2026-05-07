@@ -264,8 +264,15 @@
   <div id="stageContentEditor" class="labyrinth-content-editor" contenteditable="true" data-placeholder="스토리, 문제, 안내문, 사진을 자유롭게 작성하세요."></div>
   <p class="muted form-help">기존 스토리/문제 내용은 이 편집기 안으로 합쳐서 불러옵니다.</p>
 </div>
-    <div class="form-group"><label for="stageAnswerInput">정답</label><input id="stageAnswerInput" class="text-input" type="text" placeholder="정답 입력" /></div>
-    <div class="form-group"><label for="stagePlaceholderInput">입력창 안내문</label><input id="stagePlaceholderInput" class="text-input" type="text" placeholder="예: 비밀번호를 입력하세요." /></div>
+    <div class="form-group" id="stageAnswerWrap">
+  <label for="stageAnswerInput">정답</label>
+  <input id="stageAnswerInput" class="text-input" type="text" placeholder="정답 입력" />
+</div>
+
+<div class="form-group" id="stagePlaceholderWrap">
+  <label for="stagePlaceholderInput">입력창 안내문</label>
+  <input id="stagePlaceholderInput" class="text-input" type="text" placeholder="예: 비밀번호를 입력하세요." />
+</div>
     <div class="form-group"><label for="stageSuccessMessageInput">성공 메시지</label><textarea id="stageSuccessMessageInput" class="text-input labyrinth-textarea" placeholder="통과 시 보여줄 문구"></textarea></div>
     <div class="form-group"><label class="checkbox-label"><input type="checkbox" id="stageActiveCheckbox" checked />활성 단계</label></div>
     <div class="actions right-wrap"><button id="deleteStageBtn" type="button" class="hidden" onclick="deleteStage()">삭제</button><button type="button" onclick="submitStage()">저장</button></div>
