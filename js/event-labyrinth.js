@@ -730,8 +730,9 @@ function renderLabyrinthDetail(){
             <span class="labyrinth-clear-badge">최종 클리어</span>
           </div>
           ${renderLabyrinthContent(stage)}
+${renderLabyrinthStageClearSummary(stage)}
 <div class="labyrinth-stage-footer">
-            <div class="labyrinth-stage-meta">통과: ${formatDateTime(clearedAt)}</div>
+  <div class="labyrinth-stage-meta">통과: ${formatDateTime(clearedAt)}</div>
             ${isLabyrinthOwner(item)?`<button onclick="openEditStageModal('${escapeJs(stage.id)}')">수정</button>`:""}
           </div>
         </div>
@@ -748,8 +749,9 @@ function renderLabyrinthDetail(){
             <span class="labyrinth-stage-order">${isFinal?"최종":"입장형"}</span>
           </div>
           ${renderLabyrinthContent(stage)}
-          <div class="labyrinth-stage-footer">
-            <div class="labyrinth-stage-meta">${isFinal?"최종 단계입니다.":"현재 입장 가능한 단계입니다."}</div>
+          ${renderLabyrinthStageClearSummary(stage)}
+<div class="labyrinth-stage-footer">
+  <div class="labyrinth-stage-meta">${isFinal?"최종 단계입니다.":"현재 입장 가능한 단계입니다."}</div>
             <div class="actions">
               <button onclick="completeCurrentEntryStage(${stage.order})">${isFinal?"미궁 클리어":"입장하기"}</button>
               ${isLabyrinthOwner(item)?`<button onclick="openEditStageModal('${escapeJs(stage.id)}')">수정</button>`:""}
@@ -775,8 +777,9 @@ function renderLabyrinthDetail(){
             ${isLabyrinthOwner(item)?`<button onclick="openEditStageModal('${escapeJs(stage.id)}')">수정</button>`:""}
           </div>
         </div>
-        <div class="labyrinth-stage-footer">
-          <div class="labyrinth-stage-meta">입장 시각: ${formatDateTime(enteredAt)}</div>
+        ${renderLabyrinthStageClearSummary(stage)}
+<div class="labyrinth-stage-footer">
+  <div class="labyrinth-stage-meta">입장 시각: ${formatDateTime(enteredAt)}</div>
         </div>
       </div>
     `;
@@ -836,6 +839,93 @@ function renderLabyrinthDetail(){
     renderCurrentStageCard(isClearedAll?finalStage:currentStage)+
     renderClearedHistory();
 }
+
+function getLabyrinthStageClearers(order){
+  const key=String(order);
+
+  return (state.currentLabyrinthPlayers||[])
+    .filter(player=>{
+      if(player.nickname===state.currentLabyrinthData?.creator)return false;
+      return !!player?.stageClearedAtMap?.[key];
+    })
+    .sort((a,b)=>{
+      const aTime=a.stageClearedAtMap?.[key]||null;
+      const bTime=b.stageClearedAtMap?.[key]||null;
+      return getTimeValue(aTime)-getTimeValue(bTime);
+    });
+}
+
+function renderLabyrinthStageClearSummary(stage){
+  const clearers=getLabyrinthStageClearers(stage.order);
+  const count=clearers.length;
+
+  return`
+    <div class="labyrinth-stage-clear-summary">
+      <span>클리어 : ${count}명</span>
+      <button type="button" onclick="openLabyrinthStageClearersModal(${stage.order})">목록</button>
+    </div>
+  `;
+}
+
+function ensureLabyrinthStageClearersModal(){
+  let modal=document.getElementById("labyrinthStageClearersModal");
+
+  if(modal)return modal;
+
+  modal=document.createElement("div");
+  modal.id="labyrinthStageClearersModal";
+  modal.className="modal hidden labyrinth-hall-modal";
+  modal.innerHTML=`
+    <div class="modal-header">
+      <h3 id="labyrinthStageClearersTitle">클리어 명단</h3>
+      <button class="close-btn" type="button" onclick="closeLabyrinthStageClearersModal()">닫기</button>
+    </div>
+    <div id="labyrinthStageClearersBody"></div>
+  `;
+
+  document.body.appendChild(modal);
+  return modal;
+}
+
+window.openLabyrinthStageClearersModal=function(order){
+  const modal=ensureLabyrinthStageClearersModal();
+  const title=document.getElementById("labyrinthStageClearersTitle");
+  const body=document.getElementById("labyrinthStageClearersBody");
+
+  const stage=state.currentLabyrinthStages.find(v=>Number(v.order)===Number(order));
+  const clearers=getLabyrinthStageClearers(order);
+
+  if(title){
+    title.textContent=`${stage?stage.title:`${order}단계`} 클리어 명단`;
+  }
+
+  if(body){
+    body.innerHTML=clearers.length
+      ? `
+        <div class="member-list">
+          ${clearers.map((player,idx)=>{
+            const clearedAt=player.stageClearedAtMap?.[String(order)]||null;
+            return`
+              <div class="labyrinth-player-line">
+                <b>${idx+1}위</b> ${escapeHtml(player.nickname)}
+                <span class="muted">(${escapeHtml(formatDateTime(clearedAt))})</span>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `
+      : `<div class="party-sub">아직 이 단계를 클리어한 사람이 없습니다.</div>`;
+  }
+
+  modal.classList.remove("hidden");
+  el.modalOverlay?.classList.remove("hidden");
+};
+
+window.closeLabyrinthStageClearersModal=function(){
+  const modal=document.getElementById("labyrinthStageClearersModal");
+  modal?.classList.add("hidden");
+  syncOverlay();
+};
 
 function ensureLabyrinthHallModal(){
   let modal=document.getElementById("labyrinthHallModal");
