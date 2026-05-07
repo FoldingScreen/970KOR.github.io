@@ -11,83 +11,6 @@ function isCorrectTurtleAnswer(inputValue,answerText){
   return accepted.includes(value);
 }
 
-function sanitizeTurtleContentHtml(html){
-  return sanitizeLabyrinthContentHtml(html);
-}
-
-function setupTurtleSoupEditor(){
-  const editor=document.getElementById("turtleSoupEditor");
-  const imageInput=document.getElementById("turtleSoupImageInput");
-
-  if(!editor||!imageInput)return;
-
-  imageInput.onchange=async ()=>{
-    const file=imageInput.files&&imageInput.files[0];
-    imageInput.value="";
-
-    if(!file)return;
-
-    if(!file.type.startsWith("image/")){
-      alert("이미지 파일만 업로드할 수 있습니다.");
-      return;
-    }
-
-    if(file.size>3*1024*1024){
-      alert("이미지는 3MB 이하만 업로드하세요.");
-      return;
-    }
-
-    const safeName=file.name.replace(/[^\w.\-가-힣]/g,"_");
-    const baseId=state.editingTurtleSoupId||`new-${Date.now()}`;
-    const path=`turtleSoups/${baseId}/editor/${Date.now()}-${safeName}`;
-    const ref=storage.ref().child(path);
-
-    await ref.put(file);
-    const url=await ref.getDownloadURL();
-
-    insertImageIntoTurtleSoupEditor(url,path);
-  };
-}
-
-function insertImageIntoTurtleSoupEditor(url,path){
-  const editor=document.getElementById("turtleSoupEditor");
-  if(!editor)return;
-
-  editor.focus();
-
-  const img=document.createElement("img");
-  img.src=url;
-  img.alt="문제 이미지";
-  img.dataset.path=path||"";
-  img.className="labyrinth-content-image";
-
-  const selection=window.getSelection();
-
-  if(selection&&selection.rangeCount>0&&editor.contains(selection.anchorNode)){
-    const range=selection.getRangeAt(0);
-    range.deleteContents();
-    range.insertNode(img);
-
-    const br=document.createElement("br");
-    img.after(br);
-
-    range.setStartAfter(br);
-    range.setEndAfter(br);
-    selection.removeAllRanges();
-    selection.addRange(range);
-  }else{
-    editor.appendChild(img);
-    editor.appendChild(document.createElement("br"));
-  }
-}
-
-window.clearTurtleSoupEditorContent=function(){
-  const editor=document.getElementById("turtleSoupEditor");
-  if(!editor)return;
-
-  if(!confirm("본문 내용을 모두 지우시겠습니까?"))return;
-  editor.innerHTML="";
-};
 
 function getTurtleSoupStatus(item){
   const player=item.player||null;
@@ -163,7 +86,7 @@ async function subscribeTurtleSoups(){
       return{
         id:doc.id,
         title:d.title||"",
-        contentHtml:d.contentHtml||"",
+        contentText:d.contentText||d.contentHtml||"",
         answer:d.answer||"",
         creator:d.creator||"",
         isPublic:!!d.isPublic,
@@ -194,7 +117,7 @@ function openCreateTurtleSoupModal(id=""){
   const titleInput=document.getElementById("turtleSoupTitleInput");
   const answerInput=document.getElementById("turtleSoupAnswerInput");
   const publicCheckbox=document.getElementById("turtleSoupPublicCheckbox");
-  const editor=document.getElementById("turtleSoupEditor");
+  const contentInput=document.getElementById("turtleSoupContentInput");
   const deleteBtn=document.getElementById("deleteTurtleSoupBtn");
   const modalTitle=document.getElementById("turtleSoupModalTitle");
 
@@ -214,11 +137,10 @@ function openCreateTurtleSoupModal(id=""){
   if(titleInput)titleInput.value=item?.title||"";
   if(answerInput)answerInput.value=item?.answer||"";
   if(publicCheckbox)publicCheckbox.checked=item?!!item.isPublic:true;
-  if(editor)editor.innerHTML=sanitizeTurtleContentHtml(item?.contentHtml||"");
+  if(contentInput)contentInput.value=item?.contentText||item?.contentHtml||"";
   if(deleteBtn)deleteBtn.classList.toggle("hidden",!item);
 
   document.getElementById("createTurtleSoupModal")?.classList.remove("hidden");
-  setupTurtleSoupEditor();
   syncOverlay();
 }
 
@@ -234,7 +156,7 @@ window.closeCreateTurtleSoupModal=closeCreateTurtleSoupModal;
 async function submitTurtleSoup(){
   const title=normalizeLabyrinthText(document.getElementById("turtleSoupTitleInput")?.value||"");
   const answer=normalizeLabyrinthText(document.getElementById("turtleSoupAnswerInput")?.value||"");
-  const contentHtml=sanitizeTurtleContentHtml(document.getElementById("turtleSoupEditor")?.innerHTML||"");
+  const contentText=normalizeLabyrinthText(document.getElementById("turtleSoupContentInput")?.value||"");
   const isPublic=!!document.getElementById("turtleSoupPublicCheckbox")?.checked;
 
   if(!title){
@@ -242,10 +164,10 @@ async function submitTurtleSoup(){
     return;
   }
 
-  if(!contentHtml){
-    alert("문제 본문을 입력하세요.");
-    return;
-  }
+  if(!contentText){
+  alert("문제 본문을 입력하세요.");
+  return;
+}
 
   if(!answer){
     alert("정답을 입력하세요.");
@@ -257,7 +179,7 @@ async function submitTurtleSoup(){
   const payload={
     title,
     answer,
-    contentHtml,
+    contentText,
     isPublic,
     updatedAt:now
   };
@@ -431,7 +353,7 @@ function renderTurtleSoupDetail(){
         <div class="turtle-problem-meta">출제자: ${escapeHtml(item.creator||"-")}</div>
         <details class="turtle-problem-body" open>
           <summary>문제 보기 / 접기</summary>
-          <div class="turtle-problem-content">${sanitizeTurtleContentHtml(item.contentHtml||"")}</div>
+          <div class="turtle-problem-content">${escapeHtml(item.contentText||"").replace(/\n/g,"<br>")}</div>
         </details>
       </div>
 
