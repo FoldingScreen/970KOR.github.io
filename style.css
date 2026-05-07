@@ -1633,6 +1633,42 @@ textarea.text-input{
   margin-left:5px;
 }
 
+.turtle-bubble.question.spoiler{
+  cursor:pointer;
+  background:#111827;
+  border-color:#374151;
+  color:#cbd5e1;
+}
+
+.turtle-bubble.question.spoiler .spoiler-real{
+  display:none;
+}
+
+.turtle-bubble.question.spoiler.revealed .spoiler-placeholder{
+  display:none;
+}
+
+.turtle-bubble.question.spoiler.revealed .spoiler-real{
+  display:inline;
+}
+
+.turtle-spoiler-control{
+  margin-top:3px;
+  display:flex;
+  justify-content:flex-start;
+}
+
+.turtle-spoiler-control button{
+  border:1px solid #315a93;
+  background:#102545;
+  color:#e7f1ff;
+  border-radius:999px;
+  padding:3px 8px;
+  min-height:24px;
+  font-size:11px;
+  font-weight:900;
+}
+
 .turtle-clearers-panel{
   border:1px solid #28543f;
   border-radius:18px;
