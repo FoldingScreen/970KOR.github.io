@@ -266,16 +266,9 @@
   </div>
 
   <div class="form-group">
-    <label>문제 본문</label>
-    <div class="labyrinth-editor-toolbar">
-      <label class="labyrinth-editor-upload">
-        사진 삽입
-        <input id="turtleSoupImageInput" type="file" accept="image/*" hidden>
-      </label>
-      <button type="button" onclick="clearTurtleSoupEditorContent()">본문 초기화</button>
-    </div>
-    <div id="turtleSoupEditor" class="labyrinth-content-editor" contenteditable="true" data-placeholder="사건 설명을 작성하세요. 사진도 삽입할 수 있습니다."></div>
-  </div>
+  <label for="turtleSoupContentInput">문제 본문</label>
+  <textarea id="turtleSoupContentInput" class="text-input labyrinth-textarea" placeholder="사건 설명을 작성하세요."></textarea>
+</div>
 
   <div class="form-group">
     <label for="turtleSoupAnswerInput">정답</label>
