@@ -439,7 +439,6 @@ function renderFinalStageClearersCard(){
   if(!clearers.length){
     return`
       <div class="party-card">
-        <div class="party-title">명예의 전당</div>
         <div class="party-sub">아직 명예의 전당에 오른 사람이 없습니다.</div>
       </div>
     `;
@@ -454,7 +453,6 @@ function renderFinalStageClearersCard(){
 
   return`
     <div class="party-card">
-      <div class="party-title">명예의 전당</div>
       <div class="member-list">${lines}</div>
     </div>
   `;
