@@ -35,6 +35,9 @@ const state={
   unsubscribeLabyrinthStages:null,
   unsubscribeLabyrinthPlayer:null,
   unsubscribeLabyrinthPlayers:null,
+  unsubscribeTurtleSoups:null,
+unsubscribeTurtleComments:null,
+unsubscribeTurtlePlayer:null,
 
   labyrinths:[],
   labyrinthPlayerSummaryMap:{},
@@ -43,6 +46,13 @@ const state={
   currentLabyrinthStages:[],
   currentLabyrinthPlayer:null,
   currentLabyrinthPlayers:[],
+  turtleSoups:[],
+currentTurtleSoupId:"",
+currentTurtleSoupData:null,
+currentTurtleComments:[],
+currentTurtlePlayer:null,
+editingTurtleSoupId:"",
+answeringTurtleCommentId:"",
   editingLabyrinthId:"",
   editingStageId:"",
 
@@ -235,6 +245,11 @@ function labyrinthRef(id){return labyrinthsRef().doc(id);}
 function labyrinthStagesRef(id){return labyrinthRef(id).collection("stages");}
 function labyrinthPlayersRef(id){return labyrinthRef(id).collection("players");}
 function labyrinthPlayerRef(id,name){return labyrinthPlayersRef(id).doc(name);}
+function turtleSoupsRef(){return eventRef("escape_labyrinth").collection("turtleSoups");}
+function turtleSoupRef(id){return turtleSoupsRef().doc(id);}
+function turtleSoupCommentsRef(id){return turtleSoupRef(id).collection("comments");}
+function turtleSoupPlayersRef(id){return turtleSoupRef(id).collection("players");}
+function turtleSoupPlayerRef(id,name){return turtleSoupPlayersRef(id).doc(name);}
 
 function setTopTabs(active){
   document.querySelectorAll(".tab-btn").forEach(btn=>btn.classList.remove("active"));
@@ -317,6 +332,9 @@ function clearSubscriptions(){
   if(state.unsubscribeLabyrinthStages){state.unsubscribeLabyrinthStages();state.unsubscribeLabyrinthStages=null;}
   if(state.unsubscribeLabyrinthPlayer){state.unsubscribeLabyrinthPlayer();state.unsubscribeLabyrinthPlayer=null;}
   if(state.unsubscribeLabyrinthPlayers){state.unsubscribeLabyrinthPlayers();state.unsubscribeLabyrinthPlayers=null;}
+  if(state.unsubscribeTurtleSoups){state.unsubscribeTurtleSoups();state.unsubscribeTurtleSoups=null;}
+if(state.unsubscribeTurtleComments){state.unsubscribeTurtleComments();state.unsubscribeTurtleComments=null;}
+if(state.unsubscribeTurtlePlayer){state.unsubscribeTurtlePlayer();state.unsubscribeTurtlePlayer=null;}
 }
 
 async function ensureEventDocs(){
