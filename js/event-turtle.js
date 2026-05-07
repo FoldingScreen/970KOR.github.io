@@ -33,7 +33,14 @@ function renderTurtleSoupList(){
 
   const visibleItems=(state.turtleSoups||[])
     .filter(item=>item.isPublic||item.creator===state.currentUser)
-    .sort((a,b)=>getTimeValue(b.updatedAt||b.createdAt)-getTimeValue(a.updatedAt||a.createdAt));
+    .sort((a,b)=>{
+  const da=getTurtleDifficulty(a.difficulty);
+  const db=getTurtleDifficulty(b.difficulty);
+
+  if(da!==db)return da-db;
+
+  return getTimeValue(a.createdAt)-getTimeValue(b.createdAt);
+});
 
   if(!visibleItems.length){
     list.innerHTML=`<div class="labyrinth-empty">등록된 바다거북스프 문제가 없습니다.</div>`;
