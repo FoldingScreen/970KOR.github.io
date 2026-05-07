@@ -271,6 +271,7 @@ async function openTurtleSoupDetail(id){
           asker:d.asker||"",
           question:d.question||"",
           answer:d.answer||"",
+          isSpoiler:!!d.isSpoiler,
           answeredBy:d.answeredBy||"",
           createdAt:d.createdAt||null,
           answeredAt:d.answeredAt||null
@@ -585,7 +586,18 @@ function renderTurtleComment(comment,isCreator){
       <div class="turtle-bubble-row left">
         <div class="turtle-bubble-wrap">
           <div class="turtle-bubble-meta">${escapeHtml(comment.asker||"-")} · ${escapeHtml(formatDateTime(comment.createdAt))}</div>
-          <div class="turtle-bubble question">${escapeHtml(comment.question||"")}</div>
+          <div class="turtle-bubble question ${comment.isSpoiler&&!isCreator?"spoiler":""}" ${comment.isSpoiler&&!isCreator?`onclick="this.classList.toggle('revealed')"`:""}>
+  ${comment.isSpoiler&&!isCreator
+    ? `<span class="spoiler-placeholder">스포일러 질문입니다. 눌러서 보기</span><span class="spoiler-real">${escapeHtml(comment.question||"")}</span>`
+    : escapeHtml(comment.question||"")}
+</div>
+${isCreator?`
+  <div class="turtle-spoiler-control">
+    <button type="button" onclick="toggleTurtleQuestionSpoiler('${escapeJs(comment.id)}',${comment.isSpoiler?"false":"true"})">
+      ${comment.isSpoiler?"가리기 해제":"가리기"}
+    </button>
+  </div>
+`:""}
         </div>
       </div>
 
@@ -640,6 +652,7 @@ async function submitTurtleQuestion(){
     question,
     answer:"",
     answeredBy:"",
+    isSpoiler:false,
     createdAt:firebase.firestore.FieldValue.serverTimestamp(),
     answeredAt:null
   });
@@ -689,6 +702,23 @@ async function submitTurtleCustomAnswer(){
 }
 
 window.submitTurtleCustomAnswer=submitTurtleCustomAnswer;
+
+async function toggleTurtleQuestionSpoiler(commentId,nextValue){
+  const item=state.currentTurtleSoupData;
+
+  if(!item||!commentId)return;
+
+  if(item.creator!==state.currentUser){
+    alert("출제자만 가리기 처리할 수 있습니다.");
+    return;
+  }
+
+  await turtleSoupCommentsRef(item.id).doc(commentId).set({
+    isSpoiler:!!nextValue
+  },{merge:true});
+}
+
+window.toggleTurtleQuestionSpoiler=toggleTurtleQuestionSpoiler;
 
 async function saveTurtleAnswer(answer){
   const item=state.currentTurtleSoupData;
