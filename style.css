@@ -1641,6 +1641,88 @@ textarea.text-input{
   word-break:break-word;
 }
 
+.turtle-submission-panel{
+  border:1px solid #1f3657;
+  border-radius:18px;
+  background:rgba(7,17,30,.86);
+  padding:10px;
+}
+
+.turtle-submission-title{
+  color:#dbeafe;
+  font-size:13px;
+  font-weight:1000;
+  margin-bottom:8px;
+}
+
+.turtle-submission-empty{
+  color:#8ea3c2;
+  font-size:12px;
+  font-weight:800;
+  padding:8px 0;
+}
+
+.turtle-submission-item{
+  border-top:1px solid rgba(255,255,255,.06);
+  padding:8px 0;
+}
+
+.turtle-submission-item:first-of-type{
+  border-top:none;
+}
+
+.turtle-submission-item.judged{
+  opacity:.88;
+}
+
+.turtle-submission-meta{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  flex-wrap:wrap;
+  color:#8ea3c2;
+  font-size:11px;
+  font-weight:900;
+  margin-bottom:4px;
+}
+
+.turtle-submission-text{
+  color:#edf3ff;
+  font-size:13px;
+  line-height:1.45;
+  font-weight:800;
+  word-break:break-word;
+}
+
+.turtle-submission-actions{
+  display:flex;
+  gap:6px;
+  justify-content:flex-end;
+  margin-top:6px;
+}
+
+.turtle-submission-actions button{
+  border:1px solid #315a93;
+  background:#102545;
+  color:#e7f1ff;
+  border-radius:999px;
+  padding:5px 10px;
+  min-height:28px;
+  font-size:12px;
+  font-weight:900;
+}
+
+.turtle-submission-history{
+  margin-top:8px;
+}
+
+.turtle-submission-history summary{
+  cursor:pointer;
+  color:#bfdbfe;
+  font-size:12px;
+  font-weight:900;
+}
+
 .turtle-soup-card{
   display:flex;
   align-items:center;
