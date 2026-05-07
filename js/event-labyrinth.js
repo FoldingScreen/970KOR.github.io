@@ -878,6 +878,28 @@ window.toggleLabyrinthMakerTools=function(){
   renderLabyrinthDetail();
 };
 
+function updateStageTypeFields(){
+  const type=String(el.stageTypeSelect?.value||"question");
+  const isQuestion=type==="question";
+
+  const answerWrap=document.getElementById("stageAnswerWrap");
+  const placeholderWrap=document.getElementById("stagePlaceholderWrap");
+
+  answerWrap?.classList.toggle("hidden",!isQuestion);
+  placeholderWrap?.classList.toggle("hidden",!isQuestion);
+
+  if(!isQuestion){
+    if(el.stageAnswerInput)el.stageAnswerInput.value="";
+    if(el.stagePlaceholderInput)el.stagePlaceholderInput.value="";
+  }
+}
+
+window.updateStageTypeFields=updateStageTypeFields;
+
+if(el.stageTypeSelect){
+  el.stageTypeSelect.addEventListener("change",updateStageTypeFields);
+}
+
 function openEditStageModal(stageId=""){
   const item=state.currentLabyrinthData;
   if(!item||!isLabyrinthOwner(item)){
@@ -898,6 +920,7 @@ function openEditStageModal(stageId=""){
     el.stageOrderInput.value=String(stage.order);
     el.stageTitleInput.value=stage.title||"";
     el.stageTypeSelect.value=stage.type||"question";
+    updateStageTypeFields();
     el.stageStoryInput.value="";
 el.stageQuestionInput.value="";
 setTimeout(()=>{
@@ -915,6 +938,7 @@ setTimeout(()=>{
     el.stageOrderInput.value=String(state.currentLabyrinthStages.length);
     el.stageTitleInput.value="";
     el.stageTypeSelect.value="question";
+    updateStageTypeFields();
     el.stageStoryInput.value="";
     el.stageQuestionInput.value="";
     setTimeout(()=>{
