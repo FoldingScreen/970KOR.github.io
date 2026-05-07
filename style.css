@@ -1971,3 +1971,19 @@ textarea.text-input{
 .labyrinth-maker-panel-card{
   max-width:720px;
 }
+
+
+.labyrinth-hall-modal{
+  width:min(520px,92vw);
+}
+
+#labyrinthHallModalBody .party-card{
+  padding:0;
+  border:none;
+  background:transparent;
+  box-shadow:none;
+}
+
+#labyrinthHallModalBody .member-list{
+  margin-top:12px;
+}
