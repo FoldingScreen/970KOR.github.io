@@ -1633,6 +1633,34 @@ textarea.text-input{
   margin-left:5px;
 }
 
+.turtle-clearers-panel{
+  border:1px solid #28543f;
+  border-radius:18px;
+  background:rgba(8,35,24,.38);
+  padding:10px;
+}
+
+.turtle-clearer-list{
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+}
+
+.turtle-clearer-item{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  padding:5px 0;
+  border-top:1px solid rgba(255,255,255,.06);
+  color:#edf3ff;
+  font-size:13px;
+  font-weight:900;
+}
+
+.turtle-clearer-item:first-child{
+  border-top:none;
+}
+
 .turtle-soup-list{
   display:grid;
   gap:10px;
