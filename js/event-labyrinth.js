@@ -807,10 +807,13 @@ ${renderLabyrinthStageClearSummary(stage)}
         const items=clearedStages.map(stage=>{
       const clearedAt=stageClearedAtMap[String(stage.order)]||null;
       return`
-        <div class="labyrinth-player-line">
-          <b>${escapeHtml(stage.title||`단계 ${stage.order}`)}</b>
-          <span class="muted"> · ${formatDateTime(clearedAt)}</span>
-        </div>
+        <div class="labyrinth-player-line labyrinth-cleared-review-line">
+  <div>
+    <b>${escapeHtml(stage.title||`단계 ${stage.order}`)}</b>
+    <span class="muted"> · ${formatDateTime(clearedAt)}</span>
+  </div>
+  <button class="rank-edit-btn" onclick="openLabyrinthStageReviewModal(${stage.order})">다시 보기</button>
+</div>
       `;
     }).join("");
     
@@ -944,6 +947,73 @@ window.openLabyrinthStageClearersModal=function(order){
 
 window.closeLabyrinthStageClearersModal=function(){
   const modal=document.getElementById("labyrinthStageClearersModal");
+  modal?.classList.add("hidden");
+  syncOverlay();
+};
+
+function ensureLabyrinthStageReviewModal(){
+  let modal=document.getElementById("labyrinthStageReviewModal");
+
+  if(modal)return modal;
+
+  modal=document.createElement("div");
+  modal.id="labyrinthStageReviewModal";
+  modal.className="modal hidden labyrinth-stage-review-modal";
+  modal.innerHTML=`
+    <div class="modal-header">
+      <h3 id="labyrinthStageReviewTitle">통과한 단계 다시 보기</h3>
+      <button class="close-btn" type="button" onclick="closeLabyrinthStageReviewModal()">닫기</button>
+    </div>
+    <div id="labyrinthStageReviewBody"></div>
+  `;
+
+  document.body.appendChild(modal);
+  return modal;
+}
+
+window.openLabyrinthStageReviewModal=function(order){
+  const stage=state.currentLabyrinthStages.find(v=>Number(v.order)===Number(order));
+  if(!stage){
+    alert("단계를 찾을 수 없습니다.");
+    return;
+  }
+
+  const clearedOrders=Array.isArray(state.currentLabyrinthPlayer?.clearedStageOrders)
+    ? state.currentLabyrinthPlayer.clearedStageOrders.map(Number)
+    : [];
+
+  const canReview=clearedOrders.includes(Number(order))||isLabyrinthOwner(state.currentLabyrinthData);
+
+  if(!canReview){
+    alert("아직 통과하지 않은 단계입니다.");
+    return;
+  }
+
+  const modal=ensureLabyrinthStageReviewModal();
+  const title=document.getElementById("labyrinthStageReviewTitle");
+  const body=document.getElementById("labyrinthStageReviewBody");
+
+  if(title){
+    title.textContent=stage.title||`${order}단계`;
+  }
+
+  if(body){
+    const clearedAt=state.currentLabyrinthPlayer?.stageClearedAtMap?.[String(order)]||null;
+
+    body.innerHTML=`
+      <div class="labyrinth-stage-review-meta">
+        통과 시각: ${escapeHtml(formatDateTime(clearedAt))}
+      </div>
+      ${renderLabyrinthContent(stage)||`<div class="labyrinth-empty">표시할 내용이 없습니다.</div>`}
+    `;
+  }
+
+  modal.classList.remove("hidden");
+  el.modalOverlay?.classList.remove("hidden");
+};
+
+window.closeLabyrinthStageReviewModal=function(){
+  const modal=document.getElementById("labyrinthStageReviewModal");
   modal?.classList.add("hidden");
   syncOverlay();
 };
