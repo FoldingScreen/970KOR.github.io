@@ -360,6 +360,8 @@ function renderTurtleSoupDetail(){
   const isCleared=!!state.currentTurtlePlayer?.isCleared;
   const comments=state.currentTurtleComments||[];
   const submissions=state.currentTurtleSubmissions||[];
+  const answeringComment=comments.find(v=>v.id===state.answeringTurtleCommentId)||null;
+  const answeringAnswer=answeringComment?.answer||"";
 
   root.innerHTML=`
     <div class="turtle-detail-view">
@@ -399,7 +401,7 @@ function renderTurtleSoupDetail(){
           <button type="button" onclick="submitTurtleQuickAnswer('애매함')">애매함</button>
         </div>
         <div class="turtle-input-row">
-          <input id="turtleChatInput" class="text-input" type="text" maxlength="200" placeholder="${state.answeringTurtleCommentId?"답변 입력...":"'예/아니오'로 답변이 가능하도록 질문을 입력하세요."}">
+          <input id="turtleChatInput" class="text-input" type="text" maxlength="200" value="${escapeHtml(answeringAnswer)}" placeholder="${state.answeringTurtleCommentId?"답변 입력...":"'예/아니오'로 답변이 가능하도록 질문을 입력하세요."}">
           <button type="button" onclick="${state.answeringTurtleCommentId?"submitTurtleCustomAnswer()":"submitTurtleQuestion()"}">➤</button>
         </div>
         ${isCreator?"":`
@@ -530,8 +532,11 @@ function renderTurtleComment(comment,isCreator){
       ${hasAnswer?`
         <div class="turtle-bubble-row right">
           <div class="turtle-bubble-wrap">
-            <div class="turtle-bubble-meta right">${escapeHtml(comment.answeredBy||"출제자")} · ${escapeHtml(formatDateTime(comment.answeredAt))}</div>
-            <div class="turtle-bubble answer">${escapeHtml(comment.answer)}</div>
+            <div class="turtle-bubble-meta right">
+  ${escapeHtml(comment.answeredBy||"출제자")} · ${escapeHtml(formatDateTime(comment.answeredAt))}
+  ${isCreator?`<button type="button" class="turtle-answer-edit-btn" onclick="startTurtleAnswerMode('${escapeJs(comment.id)}')">수정</button>`:""}
+</div>
+<div class="turtle-bubble answer">${escapeHtml(comment.answer)}</div>
           </div>
         </div>
       `:`
