@@ -161,6 +161,8 @@ function renderLabyrinthCard(item){
   const statusClass=item.isPublic?(item.isOpen?"public":"closed"):"private";
   const statusText=item.isPublic?(item.isOpen?"공개":"공개중지"):"비공개";
   const desc=item.thumbnailText||item.description||"미궁 설명이 없습니다.";
+  const createdTime=getTimeValue(item.createdAt);
+  const isNew=createdTime>0&&(Date.now()-createdTime)<=7*24*60*60*1000;
 
   const progress=state.labyrinthPlayerSummaryMap?.[item.id]||{isCleared:false,isPlaying:false};
   const progressBadge=progress.isCleared
@@ -172,7 +174,10 @@ function renderLabyrinthCard(item){
   return`
     <div class="labyrinth-card">
       <div class="labyrinth-card-top">
-        <h3 class="labyrinth-card-title">${escapeHtml(item.title||"제목 없음")}</h3>
+        <h3 class="labyrinth-card-title">
+          ${escapeHtml(item.title||"제목 없음")}
+          ${isNew?`<span class="labyrinth-new-badge">NEW</span>`:""}
+        </h3>
         <div class="labyrinth-inline-status">
           <span class="labyrinth-status-badge ${statusClass}">${escapeHtml(statusText)}</span>
           ${progressBadge}
