@@ -2151,3 +2151,28 @@ textarea.text-input{
     justify-content:flex-start;
   }
 }
+
+.labyrinth-stage-review-modal{
+  width:min(760px,92vw);
+}
+
+.labyrinth-stage-review-meta{
+  margin-bottom:12px;
+  color:#92a3bf;
+  font-size:13px;
+  font-weight:800;
+}
+
+.labyrinth-cleared-review-line{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+
+@media(max-width:700px){
+  .labyrinth-cleared-review-line{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+}
