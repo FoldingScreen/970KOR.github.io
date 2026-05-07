@@ -428,7 +428,11 @@ function renderTurtleSoupDetail(){
           <button type="button" class="inline-btn" onclick="closeTurtleSoupDetail()">← 목록</button>
           ${isCreator?`<button type="button" class="inline-btn" onclick="openCreateTurtleSoupModal('${escapeJs(item.id)}')">문제 수정</button>`:""}
         </div>
-        <span class="labyrinth-status-badge ${isCleared?"public":"private"}">${isCleared?"완료":"진행중"}</span>
+        ${isCreator?"":`
+  <span class="labyrinth-status-badge ${isCleared?"public":"private"}">
+    ${isCleared?"완료":"진행중"}
+  </span>
+`}
       </div>
 
       <div class="turtle-problem-card">
