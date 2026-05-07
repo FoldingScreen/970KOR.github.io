@@ -26,6 +26,9 @@
       </nav>
       <div class="top-right">
         <button id="adminMenuBtn" class="pill hidden" onclick="toggleAdminMenu()">운영진 메뉴</button>
+        <button id="notificationBtn" class="pill notification-pill hidden" onclick="openNotificationModal()">
+  🔔 <span id="notificationCount" class="notification-count hidden">0</span>
+</button>
         <button class="pill" id="myNameBtn" disabled>로그인 안 됨</button>
         <button class="pill" onclick="logout()">로그아웃</button>
       </div>
@@ -104,6 +107,17 @@
     <div class="user-modal-grid"><div><h4>참여</h4><div id="joinedUsers" class="name-columns"></div></div><div><h4>미참여</h4><div id="notJoinedUsers" class="name-columns"></div></div></div>
   </div>
 
+<div id="notificationModal" class="modal hidden">
+  <div class="modal-header">
+    <h3>알림</h3>
+    <div class="actions right-wrap">
+      <button type="button" class="inline-btn" onclick="markAllNotificationsRead()">전체 읽음</button>
+      <button class="close-btn" type="button" onclick="closeNotificationModal()">닫기</button>
+    </div>
+  </div>
+  <div id="notificationList" class="notification-list"></div>
+</div>
+  
   <div id="logModal" class="modal hidden">
     <div class="modal-header"><h3>운영 로그</h3><button class="close-btn" onclick="closeLogModal()">닫기</button></div>
     <div id="logList" class="log-list"></div>
