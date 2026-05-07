@@ -2118,3 +2118,36 @@ textarea.text-input{
   font-size:12px;
   font-weight:900;
 }
+
+.labyrinth-stage-manage-line{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+
+.labyrinth-stage-manage-actions{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+
+.labyrinth-stage-clear-mini{
+  color:#dbeafe;
+  font-size:12px;
+  font-weight:900;
+  white-space:nowrap;
+}
+
+@media(max-width:700px){
+  .labyrinth-stage-manage-line{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+
+  .labyrinth-stage-manage-actions{
+    justify-content:flex-start;
+  }
+}
