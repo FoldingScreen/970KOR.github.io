@@ -39,6 +39,7 @@ const state={
   unsubscribeTurtleComments:null,
   unsubscribeTurtlePlayer:null,
   unsubscribeTurtleSubmissions:null,
+  unsubscribeTurtlePlayers:null,
 
   labyrinths:[],
   labyrinthPlayerSummaryMap:{},
@@ -53,6 +54,7 @@ const state={
   currentTurtleComments:[],
   currentTurtlePlayer:null,
   currentTurtleSubmissions:[],
+  currentTurtlePlayers:[],
   editingTurtleSoupId:"",
   answeringTurtleCommentId:"",
   editingLabyrinthId:"",
@@ -341,6 +343,7 @@ function clearSubscriptions(){
   if(state.unsubscribeTurtleComments){state.unsubscribeTurtleComments();state.unsubscribeTurtleComments=null;}
   if(state.unsubscribeTurtlePlayer){state.unsubscribeTurtlePlayer();state.unsubscribeTurtlePlayer=null;}
   if(state.unsubscribeTurtleSubmissions){state.unsubscribeTurtleSubmissions();state.unsubscribeTurtleSubmissions=null;}
+  if(state.unsubscribeTurtlePlayers){state.unsubscribeTurtlePlayers();state.unsubscribeTurtlePlayers=null;}
 }
 
 async function ensureEventDocs(){
