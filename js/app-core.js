@@ -9,6 +9,7 @@ const firebaseConfig={
 
 if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
 const db=firebase.firestore();
+const storage=firebase.storage();
 
 const HOLY_SWORD_AREAS=[
   "마구간",
