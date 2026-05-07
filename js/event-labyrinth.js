@@ -513,9 +513,7 @@ function renderLabyrinthDetail(){
         ${isClearedAll?"미궁 클리어 완료":currentStage?`현재 단계: ${escapeHtml(currentStage.title||`단계 ${currentStage.order}`)}`:"진행 가능한 단계 없음"}
       </div>
       <div class="labyrinth-detail-toggle-row">
-        <button type="button" onclick="toggleLabyrinthHallOfFame()">
-          ${state.labyrinthHallOpen?"명예의 전당 닫기":"명예의 전당"}
-        </button>
+        <button type="button" onclick="openLabyrinthHallOfFameModal()">명예의 전당</button>
         ${isLabyrinthOwner(item)?`
           <button type="button" onclick="toggleLabyrinthMakerTools()">
             ${state.labyrinthMakerOpen?"제작자 도구 닫기":"제작자 도구"}
@@ -651,7 +649,7 @@ function renderLabyrinthDetail(){
     `;
   }
 
-  const hallPanel=state.labyrinthHallOpen?renderFinalStageClearersCard():"";
+  const hallPanel="";
 
   const makerPanel=state.labyrinthMakerOpen&&isLabyrinthOwner(item)
     ? `
@@ -673,9 +671,40 @@ function renderLabyrinthDetail(){
     renderClearedHistory();
 }
 
-window.toggleLabyrinthHallOfFame=function(){
-  state.labyrinthHallOpen=!state.labyrinthHallOpen;
-  renderLabyrinthDetail();
+function ensureLabyrinthHallModal(){
+  let modal=document.getElementById("labyrinthHallModal");
+
+  if(modal)return modal;
+
+  modal=document.createElement("div");
+  modal.id="labyrinthHallModal";
+  modal.className="modal hidden labyrinth-hall-modal";
+  modal.innerHTML=`
+    <div class="modal-header">
+      <h3>명예의 전당</h3>
+      <button class="close-btn" type="button" onclick="closeLabyrinthHallOfFameModal()">닫기</button>
+    </div>
+    <div id="labyrinthHallModalBody"></div>
+  `;
+
+  document.body.appendChild(modal);
+  return modal;
+}
+
+window.openLabyrinthHallOfFameModal=function(){
+  const modal=ensureLabyrinthHallModal();
+  const body=document.getElementById("labyrinthHallModalBody");
+
+  if(body)body.innerHTML=renderFinalStageClearersCard();
+
+  modal.classList.remove("hidden");
+  el.modalOverlay?.classList.remove("hidden");
+};
+
+window.closeLabyrinthHallOfFameModal=function(){
+  const modal=document.getElementById("labyrinthHallModal");
+  modal?.classList.add("hidden");
+  syncOverlay();
 };
 
 window.toggleLabyrinthMakerTools=function(){
