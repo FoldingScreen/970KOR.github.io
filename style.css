@@ -1626,6 +1626,21 @@ textarea.text-input{
   gap:10px;
 }
 
+.turtle-solution-panel{
+  border:1px solid #28543f;
+  border-radius:18px;
+  background:rgba(8,35,24,.55);
+  padding:10px;
+}
+
+.turtle-solution-text{
+  color:#d8ffea;
+  font-size:13px;
+  line-height:1.55;
+  font-weight:800;
+  word-break:break-word;
+}
+
 .turtle-soup-card{
   display:flex;
   align-items:center;
