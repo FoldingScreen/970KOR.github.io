@@ -793,10 +793,17 @@ ${renderLabyrinthStageClearSummary(stage)}
     const items=clearedStages.map(stage=>{
       const clearedAt=stageClearedAtMap[String(stage.order)]||null;
       return`
-        <div class="labyrinth-player-line">
-          <b>${escapeHtml(stage.title||`단계 ${stage.order}`)}</b>
-          <span class="muted"> · ${formatDateTime(clearedAt)}</span>
-        </div>
+        <div class="labyrinth-player-line labyrinth-stage-manage-line">
+  <div>
+    <b>${stage.order}. ${escapeHtml(stage.title||"단계")}</b>
+    <span class="muted"> · ${stage.isActive?"활성":"비활성"} · ${escapeHtml(stage.type||"question")}</span>
+  </div>
+  <div class="labyrinth-stage-manage-actions">
+    <span class="labyrinth-stage-clear-mini">클리어 : ${getLabyrinthStageClearers(stage.order).length}명</span>
+    <button class="rank-edit-btn" onclick="openLabyrinthStageClearersModal(${stage.order})">목록</button>
+    <button class="rank-edit-btn" onclick="openEditStageModal('${escapeJs(stage.id)}')">수정</button>
+  </div>
+</div>
       `;
     }).join("");
 
