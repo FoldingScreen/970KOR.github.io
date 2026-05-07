@@ -1621,6 +1621,12 @@ textarea.text-input{
   margin-top:22px;
 }
 
+.danger-mini-btn{
+  border-color:#7f1d1d!important;
+  background:#351018!important;
+  color:#fecaca!important;
+}
+
 .turtle-answer-edit-btn{
   border:1px solid #315a93;
   background:#102545;
