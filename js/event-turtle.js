@@ -671,6 +671,14 @@ async function submitTurtleQuestion(){
     questionCount:firebase.firestore.FieldValue.increment(1),
     updatedAt:firebase.firestore.FieldValue.serverTimestamp()
   },{merge:true});
+
+  await createAppNotification(item.creator,{
+    type:"turtle_question",
+    title:"새 질문",
+    message:`${state.currentUser}님이 질문을 남겼습니다: ${question}`,
+    soupId:item.id,
+    soupTitle:item.title||""
+  });
 }
 
 window.submitTurtleQuestion=submitTurtleQuestion;
@@ -741,6 +749,8 @@ async function toggleTurtleQuestionSpoiler(commentId,nextValue){
     return;
   }
 
+  const comment=state.currentTurtleComments.find(v=>v.id===commentId)||null;
+  
   await turtleSoupCommentsRef(item.id).doc(commentId).set({
     isSpoiler:!!nextValue
   },{merge:true});
@@ -794,6 +804,16 @@ async function saveTurtleAnswer(answer){
     answeredAt:firebase.firestore.FieldValue.serverTimestamp()
   },{merge:true});
 
+  if(comment?.asker){
+    await createAppNotification(comment.asker,{
+      type:"turtle_answer",
+      title:"질문 답변 도착",
+      message:`${item.title||"바다거북스프"}에 남긴 질문에 답변이 달렸습니다.`,
+      soupId:item.id,
+      soupTitle:item.title||""
+    });
+  }
+  
   state.answeringTurtleCommentId="";
   renderTurtleSoupDetail();
 }
@@ -835,6 +855,14 @@ async function submitTurtleFinalAnswer(){
     updatedAt:firebase.firestore.FieldValue.serverTimestamp()
   },{merge:true});
 
+  await createAppNotification(item.creator,{
+    type:"turtle_submission",
+    title:"정답 제출",
+    message:`${state.currentUser}님이 정답을 제출했습니다.`,
+    soupId:item.id,
+    soupTitle:item.title||""
+  });
+  
   input.value="";
   state.isTurtleSubmitPanelOpen=false;
   renderTurtleSoupDetail();
@@ -877,6 +905,14 @@ async function judgeTurtleSubmission(submissionId,status,user){
   }
 
   await batch.commit();
+
+  await createAppNotification(user,{
+    type:"turtle_judged",
+    title:status==="correct"?"정답 처리됨":"오답 처리됨",
+    message:`${item.title||"바다거북스프"} 제출 답안이 ${status==="correct"?"정답":"오답"} 처리되었습니다.`,
+    soupId:item.id,
+    soupTitle:item.title||""
+  });
 }
 
 window.judgeTurtleSubmission=judgeTurtleSubmission;
