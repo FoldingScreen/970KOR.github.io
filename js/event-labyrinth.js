@@ -866,6 +866,7 @@ function getLabyrinthStageClearers(order){
   return (state.currentLabyrinthPlayers||[])
     .filter(player=>{
       if(player.nickname===state.currentLabyrinthData?.creator)return false;
+      if(isHiddenTestNickname(player.nickname))return false;
       return !!player?.stageClearedAtMap?.[key];
     })
     .sort((a,b)=>{
