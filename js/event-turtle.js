@@ -770,11 +770,14 @@ async function deleteTurtleComment(commentId){
 
   const batch=db.batch();
 
-  batch.delete(turtleSoupCommentsRef(item.id).doc(commentId));
-  batch.set(turtleSoupRef(item.id),{
-    questionCount:firebase.firestore.FieldValue.increment(-1),
-    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
-  },{merge:true});
+await turtleSoupCommentsRef(item.id).doc(commentId).delete();
+
+const snap=await turtleSoupCommentsRef(item.id).get();
+
+await turtleSoupRef(item.id).set({
+  questionCount:snap.size,
+  updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+},{merge:true});
 
   await batch.commit();
 
