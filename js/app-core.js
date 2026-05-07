@@ -40,6 +40,7 @@ const state={
   unsubscribeTurtlePlayer:null,
   unsubscribeTurtleSubmissions:null,
   unsubscribeTurtlePlayers:null,
+  unsubscribeNotifications:null,
 
   labyrinths:[],
   labyrinthPlayerSummaryMap:{},
@@ -60,6 +61,8 @@ const state={
   isTurtleSubmitPanelOpen:false,
   editingLabyrinthId:"",
   editingStageId:"",
+
+  notifications:[],
 
   parties:[],
   rearrangeProgressEntries:[],
@@ -109,6 +112,11 @@ const el={
   rearrangePublicBtn:document.getElementById("rearrangePublicBtn"),
   createLabyrinthBtn:document.getElementById("createLabyrinthBtn"),
   backToLabyrinthListBtn:document.getElementById("backToLabyrinthListBtn"),
+
+  notificationBtn:document.getElementById("notificationBtn"),
+  notificationCount:document.getElementById("notificationCount"),
+  notificationModal:document.getElementById("notificationModal"),
+  notificationList:document.getElementById("notificationList"),
 
   escapeLabyrinthScreen:document.getElementById("escapeLabyrinthScreen"),
   labyrinthHomeView:document.getElementById("labyrinthHomeView"),
@@ -257,6 +265,10 @@ function turtleSoupPlayersRef(id){return turtleSoupRef(id).collection("players")
 function turtleSoupPlayerRef(id,name){return turtleSoupPlayersRef(id).doc(name);}
 function turtleSoupSubmissionsRef(id){return turtleSoupRef(id).collection("submissions");}
 
+function userNotificationsRef(name){
+  return db.collection("users").doc(name).collection("notifications");
+}
+
 function setTopTabs(active){
   document.querySelectorAll(".tab-btn").forEach(btn=>btn.classList.remove("active"));
 
@@ -280,6 +292,8 @@ function updateUserBadge(){
     el.adminMenuBtn?.classList.add("hidden");
     closeAdminMenu();
   }
+
+  renderNotificationBadge();
 }
 
 function toggleAdminMenu(){
@@ -296,6 +310,7 @@ window.closeAdminMenu=closeAdminMenu;
 function syncOverlay(){
   const hasOpenModal=
     (el.userModal&&!el.userModal.classList.contains("hidden"))||
+    (el.notificationModal&&!el.notificationModal.classList.contains("hidden"))||
     (el.logModal&&!el.logModal.classList.contains("hidden"))||
     (el.ruinsCreateModal&&!el.ruinsCreateModal.classList.contains("hidden"))||
     (el.rearrangeModal&&!el.rearrangeModal.classList.contains("hidden"))||
@@ -307,7 +322,7 @@ function syncOverlay(){
     (el.editLabyrinthModal&&!el.editLabyrinthModal.classList.contains("hidden"))||
     (el.editStageModal&&!el.editStageModal.classList.contains("hidden"))||
     (document.getElementById("createTurtleSoupModal")&&!document.getElementById("createTurtleSoupModal").classList.contains("hidden"));
-  
+
   if(!el.modalOverlay)return;
 
   if(hasOpenModal)el.modalOverlay.classList.remove("hidden");
@@ -318,6 +333,7 @@ if(el.modalOverlay){
   el.modalOverlay.addEventListener("click",()=>{
     closeExampleImageModal();
     closeUserModal();
+    closeNotificationModal();
     closeLogModal();
     closeRuinsCreateModal();
     closeRearrangeModal();
@@ -345,6 +361,7 @@ function clearSubscriptions(){
   if(state.unsubscribeTurtlePlayer){state.unsubscribeTurtlePlayer();state.unsubscribeTurtlePlayer=null;}
   if(state.unsubscribeTurtleSubmissions){state.unsubscribeTurtleSubmissions();state.unsubscribeTurtleSubmissions=null;}
   if(state.unsubscribeTurtlePlayers){state.unsubscribeTurtlePlayers();state.unsubscribeTurtlePlayers=null;}
+  if(state.unsubscribeNotifications){state.unsubscribeNotifications();state.unsubscribeNotifications=null;}
 }
 
 async function ensureEventDocs(){
@@ -394,6 +411,171 @@ async function writeAdminLog(action,payload){
     undone:false
   });
 }
+
+function subscribeMyNotifications(){
+  if(state.unsubscribeNotifications){
+    state.unsubscribeNotifications();
+    state.unsubscribeNotifications=null;
+  }
+
+  if(!state.currentUser){
+    state.notifications=[];
+    renderNotificationBadge();
+    renderNotificationList();
+    return;
+  }
+
+  state.unsubscribeNotifications=userNotificationsRef(state.currentUser)
+    .orderBy("createdAt","desc")
+    .limit(50)
+    .onSnapshot(snap=>{
+      state.notifications=snap.docs.map(doc=>{
+        const d=doc.data()||{};
+
+        return{
+          id:doc.id,
+          type:d.type||"",
+          title:d.title||"알림",
+          message:d.message||"",
+          soupId:d.soupId||"",
+          soupTitle:d.soupTitle||"",
+          read:!!d.read,
+          createdAt:d.createdAt||null
+        };
+      });
+
+      renderNotificationBadge();
+      renderNotificationList();
+    },err=>{
+      console.error(err);
+    });
+}
+
+function renderNotificationBadge(){
+  const btn=el.notificationBtn;
+  const countEl=el.notificationCount;
+
+  if(!btn||!countEl)return;
+
+  if(!state.currentUser){
+    btn.classList.add("hidden");
+    countEl.classList.add("hidden");
+    countEl.textContent="0";
+    return;
+  }
+
+  btn.classList.remove("hidden");
+
+  const unread=(state.notifications||[]).filter(v=>!v.read).length;
+
+  if(unread>0){
+    countEl.textContent=String(unread);
+    countEl.classList.remove("hidden");
+  }else{
+    countEl.textContent="0";
+    countEl.classList.add("hidden");
+  }
+}
+
+function renderNotificationList(){
+  if(!el.notificationList)return;
+
+  const items=state.notifications||[];
+
+  if(!items.length){
+    el.notificationList.innerHTML=`<div class="notification-empty">알림이 없습니다.</div>`;
+    return;
+  }
+
+  el.notificationList.innerHTML=items.map(item=>`
+    <div class="notification-item ${item.read?"read":"unread"}">
+      <div class="notification-main">
+        <div class="notification-title">
+          ${escapeHtml(item.title)}
+          ${item.read?"":`<span class="notification-new">NEW</span>`}
+        </div>
+        <div class="notification-message">${escapeHtml(item.message)}</div>
+        <div class="notification-meta">
+          ${item.soupTitle?`바다거북스프: ${escapeHtml(item.soupTitle)} · `:""}${escapeHtml(formatDateTime(item.createdAt))}
+        </div>
+      </div>
+      <div class="notification-actions">
+        ${item.read?"":`<button type="button" onclick="markNotificationRead('${escapeJs(item.id)}')">읽음</button>`}
+      </div>
+    </div>
+  `).join("");
+}
+
+function openNotificationModal(){
+  renderNotificationList();
+  el.notificationModal?.classList.remove("hidden");
+  syncOverlay();
+}
+
+window.openNotificationModal=openNotificationModal;
+
+function closeNotificationModal(){
+  el.notificationModal?.classList.add("hidden");
+  syncOverlay();
+}
+
+window.closeNotificationModal=closeNotificationModal;
+
+async function markNotificationRead(id){
+  if(!state.currentUser||!id)return;
+
+  await userNotificationsRef(state.currentUser).doc(id).set({
+    read:true,
+    readAt:firebase.firestore.FieldValue.serverTimestamp()
+  },{merge:true});
+}
+
+window.markNotificationRead=markNotificationRead;
+
+async function markAllNotificationsRead(){
+  if(!state.currentUser)return;
+
+  const unread=(state.notifications||[]).filter(v=>!v.read);
+
+  if(!unread.length)return;
+
+  const batch=db.batch();
+  const now=firebase.firestore.FieldValue.serverTimestamp();
+
+  unread.forEach(item=>{
+    batch.set(userNotificationsRef(state.currentUser).doc(item.id),{
+      read:true,
+      readAt:now
+    },{merge:true});
+  });
+
+  await batch.commit();
+}
+
+window.markAllNotificationsRead=markAllNotificationsRead;
+
+async function createAppNotification(targetUser,payload){
+  const target=String(targetUser||"").trim();
+
+  if(!target)return;
+  if(target===state.currentUser)return;
+
+  try{
+    await userNotificationsRef(target).add({
+      type:payload.type||"",
+      title:payload.title||"알림",
+      message:payload.message||"",
+      soupId:payload.soupId||"",
+      soupTitle:payload.soupTitle||"",
+      read:false,
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }catch(err){
+    console.error("알림 생성 실패",err);
+  }
+}
+
+window.createAppNotification=createAppNotification;
 
 function initRuinsSelects(){
   if(!el.utcMonth||!el.utcDay||!el.utcHour)return;
@@ -493,6 +675,8 @@ async function login(){
     await refreshAdmin();
     await ensureEventDocs();
 
+    subscribeMyNotifications();
+
     goHome();
   }catch(e){
     console.error(e);
@@ -532,14 +716,28 @@ async function logout(){
   state.currentLabyrinthData=null;
   state.currentLabyrinthStages=[];
   state.currentLabyrinthPlayer=null;
+  state.currentLabyrinthPlayers=[];
+  state.turtleSoups=[];
+  state.currentTurtleSoupId="";
+  state.currentTurtleSoupData=null;
+  state.currentTurtleComments=[];
+  state.currentTurtlePlayer=null;
+  state.currentTurtleSubmissions=[];
+  state.currentTurtlePlayers=[];
+  state.editingTurtleSoupId="";
+  state.answeringTurtleCommentId="";
+  state.isTurtleSubmitPanelOpen=false;
   state.editingLabyrinthId="";
   state.editingStageId="";
+  state.notifications=[];
 
   localStorage.removeItem("partyAppUser");
   localStorage.removeItem("partyAppEvent");
 
   updateUserBadge();
   updateEventActionButtons();
+  renderNotificationBadge();
+  renderNotificationList();
   showOnly("login");
   setTopTabs("");
 }
@@ -553,6 +751,7 @@ async function tryAutoLogin(){
     ensureHolySwordFields();
     updateUserBadge();
     updateEventActionButtons();
+    renderNotificationBadge();
     showOnly("login");
 
     const savedUser=localStorage.getItem("partyAppUser");
@@ -564,6 +763,8 @@ async function tryAutoLogin(){
     await refreshAdmin();
     await ensureEventDocs();
 
+    subscribeMyNotifications();
+
     const savedEvent=localStorage.getItem("partyAppEvent");
 
     if(savedEvent)openEvent(savedEvent);
@@ -572,6 +773,7 @@ async function tryAutoLogin(){
     console.error(e);
     updateUserBadge();
     updateEventActionButtons();
+    renderNotificationBadge();
     showOnly("login");
   }
 }
@@ -604,6 +806,10 @@ async function goHome(){
   state.currentLabyrinthStages=[];
   state.currentLabyrinthPlayer=null;
   state.castleManageMode=false;
+
+  if(state.currentUser){
+    subscribeMyNotifications();
+  }
 
   localStorage.removeItem("partyAppEvent");
 
@@ -661,7 +867,7 @@ function updateEventActionButtons(){
     el.createPartyBtn.onclick=createParty;
   }
 
-    if(state.currentEventId==="castle_battle"){
+  if(state.currentEventId==="castle_battle"){
     el.createPartyBtn.classList.remove("hidden");
     el.createPartyBtn.textContent="캐슬 전투 신청";
     el.createPartyBtn.onclick=createParty;
@@ -715,6 +921,10 @@ function updateEventActionButtons(){
 async function openEvent(id){
   clearSubscriptions();
 
+  if(state.currentUser){
+    subscribeMyNotifications();
+  }
+
   state.currentEventId=id;
   state.castleManageMode=false;
   state.castleCreateMode=false;
@@ -755,6 +965,10 @@ window.openEvent=openEvent;
 
 function subscribeParties(){
   clearSubscriptions();
+
+  if(state.currentUser){
+    subscribeMyNotifications();
+  }
 
   if(
     state.currentEventId==="holy_sword"||
@@ -847,6 +1061,7 @@ function subscribeParties(){
 function rebuildMergedRearrangeEntries(){
   state.rearrangeEntries=state.rearrangeProgressEntries.map(progress=>{
     const ranking=state.rearrangeRankingMap[progress.user]||{};
+
     return{
       ...progress,
       power:Number(ranking.power||0),
@@ -863,6 +1078,10 @@ function rebuildMergedRearrangeEntries(){
 function subscribeRearrange(){
   clearSubscriptions();
 
+  if(state.currentUser){
+    subscribeMyNotifications();
+  }
+
   state.unsubscribeMeta=eventRef("rearrange").onSnapshot(doc=>{
     const d=doc.data()||{};
     state.rearrangePublic=!!d.rankingPublic;
@@ -878,6 +1097,7 @@ function subscribeRearrange(){
   state.unsubscribeParties=rearrangeProgressRef().onSnapshot(snap=>{
     state.rearrangeProgressEntries=snap.docs.map(doc=>{
       const d=doc.data()||{};
+
       return{
         id:doc.id,
         user:d.user||doc.id,
@@ -963,6 +1183,7 @@ function getTimeValue(t){
   if(t.seconds)return t.seconds*1000;
 
   const n=new Date(t).getTime();
+
   return Number.isFinite(n)?n:0;
 }
 
@@ -972,6 +1193,7 @@ function toDate(t){
   if(t.seconds)return new Date(t.seconds*1000);
 
   const d=new Date(t);
+
   return Number.isNaN(d.getTime())?null:d;
 }
 
@@ -1003,6 +1225,7 @@ function calcPower(memberCount){
 
 function myParty(){
   if(state.currentEventId!=="viking")return null;
+
   return state.parties.find(p=>p.members.includes(state.currentUser))||null;
 }
 
@@ -1015,6 +1238,7 @@ function getRearrangeColumn(rank){
   if(rank<=28)return 1;
   if(rank<=42)return 2;
   if(rank<=60)return 4;
+
   return 5;
 }
 
@@ -1031,6 +1255,7 @@ function getRearrangeRankMap(){
 
   displayedEntries.forEach(entry=>{
     if(!entry)return;
+
     map[entry.user]=n;
     n++;
   });
@@ -1053,18 +1278,21 @@ function getHolySwordSortedMembers(members){
 
 function getHolySwordDisplayIndex(idx){
   if(idx<30)return`${idx+1}.`;
+
   return`예비${idx-29}.`;
 }
 
 function getHolySwordSideLabel(side){
   if(side==="KOR")return"본연맹(KOR)";
   if(side==="KR1")return"아카데미(KR1)";
+
   return side||"-";
 }
 
 function getTripleAllianceSideLabel(side){
   if(side==="KOR")return"본연맹(KOR)";
   if(side==="KR1")return"아카데미(KR1)";
+
   return side||"-";
 }
 
@@ -1196,7 +1424,6 @@ function getMoveDisplay(existingColumn,currentColumn){
   return{text:`${existingColumn}→${currentColumn}`,className:"move-down"};
 }
 
-
 function getHolySwordBadgeSrc(area){
   if(area==="마구간")return"말.png";
   if(area==="시계탑")return"모래시계.png";
@@ -1206,6 +1433,7 @@ function getHolySwordBadgeSrc(area){
   if(area==="수도원 4")return"마름모 4.png";
   if(area==="성소 1")return"원 1.png";
   if(area==="성소 2")return"원 2.png";
+
   return"";
 }
 
@@ -1214,11 +1442,13 @@ function renderHolySwordBadge(area,size="small"){
   if(!src)return"";
 
   const cls=size==="large"?"holy-area-badge-img large":"holy-area-badge-img";
+
   return`<img src="${src}" alt="${escapeHtml(area)}" class="${cls}">`;
 }
 
 function renderHolySwordBadges(areas){
   if(!areas||!areas.length)return"";
+
   return`<span class="area-badges">${areas.map(area=>renderHolySwordBadge(area,"small")).join("")}</span>`;
 }
 
@@ -1277,6 +1507,6 @@ function renderHolySwordAreaBoard(assignments){
   }
 
   html+=`</div>`;
+
   return html;
 }
-
