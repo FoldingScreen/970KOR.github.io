@@ -466,181 +466,199 @@ function renderLabyrinthDetail(){
   if(!item)return;
 
   el.labyrinthDetailTitle.textContent=item.title||"미궁";
-  el.labyrinthDetailDescription.textContent=item.description||"";
-
-  const activeStages=state.currentLabyrinthStages.filter(v=>v.isActive);
-  const current=state.currentLabyrinthPlayer;
-  const currentOrder=current?Number(current.currentStageOrder||0):0;
-
-  const stageHtml=activeStages.map(stage=>{
-    const isCleared=current?.clearedStageOrders?.includes(stage.order);
-    const isCurrent=stage.order===currentOrder;
-
-    return`
-      <div class="labyrinth-stage ${isCleared?"cleared":""} ${isCurrent?"current":""}">
-        <div class="labyrinth-stage-title">
-          ${escapeHtml(stage.title||"단계")} (${stage.order})
-        </div>
-
-        ${stage.story?`<div class="labyrinth-stage-story">${escapeHtml(stage.story)}</div>`:""}
-
-        ${stage.question?`
-          <div class="labyrinth-stage-question">${escapeHtml(stage.question)}</div>
-          <input 
-            class="text-input" 
-            placeholder="${escapeHtml(stage.placeholder||"정답 입력")}" 
-            id="stageAnswerInput-${stage.id}"
-          >
-          <button onclick="submitLabyrinthAnswer('${escapeJs(stage.id)}')">제출</button>
-        `:""}
-
-        ${isCleared?`<div class="labyrinth-stage-cleared">✔ 클리어</div>`:""}
-      </div>
-    `;
-  }).join("");
-
-  const hallOfFame=renderFinalStageClearersCard();
-
-  el.labyrinthStageList.innerHTML=stageHtml+hallOfFame;
-}
-
-/* ===== 미궁 답안 처리 ===== */
-
-window.submitLabyrinthAnswer=async function(stageId){
-  const stage=state.currentLabyrinthStages.find(v=>v.id===stageId);
-  if(!stage)return;
-
-  const input=document.getElementById(`stageAnswerInput-${stageId}`);
-  if(!input)return;
-
-  const userAnswer=normalizeAnswerValue(input.value);
-  const correctAnswer=normalizeAnswerValue(stage.answer);
-
-  if(!userAnswer){
-    alert("정답을 입력하세요.");
-    return;
-  }
-
-  if(userAnswer!==correctAnswer){
-    alert("틀렸습니다.");
-    return;
-  }
-
-  const nextStageOrder=stage.order+1;
-
-  const ref=labyrinthPlayerRef(state.currentLabyrinthId,state.currentUser);
-
-  const now=firebase.firestore.FieldValue.serverTimestamp();
-
-  await ref.set({
-    nickname:state.currentUser,
-    currentStageOrder:nextStageOrder,
-    clearedStageOrders:firebase.firestore.FieldValue.arrayUnion(stage.order),
-    [`stageClearedAtMap.${stage.order}`]:now,
-    updatedAt:now,
-    createdAt:now
-  },{merge:true});
-
-  alert(stage.successMessage||"정답!");
-};
-
-function renderLabyrinthDetail(){
-  const item=state.currentLabyrinthData;
-  if(!item)return;
-
-  el.labyrinthDetailTitle.textContent=item.title||"미궁";
-  el.labyrinthDetailMeta.innerHTML=`제작자: ${escapeHtml(item.creator||"-")} · ${item.isPublic?"공개":"비공개"} · ${item.isOpen?"플레이 가능":"플레이 중지"}`;
+  el.labyrinthDetailMeta.innerHTML=
+    `제작자: ${escapeHtml(item.creator||"-")} · ${item.isPublic?"공개":"비공개"} · ${item.isOpen?"플레이 가능":"플레이 중지"}`;
   el.labyrinthDetailDescription.textContent=item.description||"설명이 없습니다.";
 
-  const currentOrder=Number(state.currentLabyrinthPlayer?.currentStageOrder||0);
-  const clearedOrders=Array.isArray(state.currentLabyrinthPlayer?.clearedStageOrders)?state.currentLabyrinthPlayer.clearedStageOrders.map(Number):[];
+  const activeStages=[...state.currentLabyrinthStages]
+    .filter(v=>v.isActive)
+    .sort((a,b)=>a.order-b.order);
+
+  const allStages=[...state.currentLabyrinthStages]
+    .sort((a,b)=>a.order-b.order);
+
+  const clearedOrders=Array.isArray(state.currentLabyrinthPlayer?.clearedStageOrders)
+    ? state.currentLabyrinthPlayer.clearedStageOrders.map(Number)
+    : [];
+
   const stageEnteredAtMap=state.currentLabyrinthPlayer?.stageEnteredAtMap||{};
   const stageClearedAtMap=state.currentLabyrinthPlayer?.stageClearedAtMap||{};
 
-  if(isLabyrinthOwner(item)){
-    el.labyrinthProgressSummary.classList.remove("hidden");
-    el.labyrinthProgressSummary.innerHTML=
-      `<div class="summary-card"><div class="muted">제작자 도구</div><div class="labyrinth-maker-tools"><button onclick="openEditLabyrinthModal('${escapeJs(item.id)}')">미궁 정보 수정</button><button onclick="openEditStageModal()">단계 추가</button></div></div>`+
-      renderFinalStageClearersCard();
-  }else{
-    el.labyrinthProgressSummary.classList.remove("hidden");
-    el.labyrinthProgressSummary.innerHTML=renderFinalStageClearersCard();
-  }
+  const firstStage=activeStages[0]||null;
+  const currentOrder=state.currentLabyrinthPlayer
+    ? Number(state.currentLabyrinthPlayer.currentStageOrder||0)
+    : (firstStage?firstStage.order:0);
 
-  if(!state.currentLabyrinthStages.length){
+  const currentStage=
+    activeStages.find(stage=>stage.order===currentOrder)||
+    activeStages.find(stage=>!clearedOrders.includes(stage.order))||
+    null;
+
+  const finalStage=
+    activeStages.find(stage=>stage.type==="final")||
+    [...activeStages].sort((a,b)=>b.order-a.order)[0]||
+    null;
+
+  const isClearedAll=!!finalStage&&!!stageClearedAtMap[String(finalStage.order)];
+  const clearedCount=activeStages.filter(stage=>clearedOrders.includes(stage.order)).length;
+  const totalCount=activeStages.length;
+
+  const hallOfFame=renderFinalStageClearersCard();
+
+  el.labyrinthProgressSummary.classList.remove("hidden");
+
+  const progressCard=`
+    <div class="summary-card">
+      <div class="muted">내 진행률</div>
+      <div class="big-number">${clearedCount}/${totalCount}</div>
+      <div class="labyrinth-small-note">
+        ${isClearedAll?"미궁 클리어 완료":currentStage?`현재 단계: ${escapeHtml(currentStage.title||`단계 ${currentStage.order}`)}`:"진행 가능한 단계 없음"}
+      </div>
+    </div>
+  `;
+
+  const makerTools=isLabyrinthOwner(item)
+    ? `
+      <div class="summary-card">
+        <div class="muted">제작자 도구</div>
+        <div class="labyrinth-maker-tools">
+          <button onclick="openEditLabyrinthModal('${escapeJs(item.id)}')">미궁 정보 수정</button>
+          <button onclick="openEditStageModal()">단계 추가</button>
+        </div>
+      </div>
+    `
+    : "";
+
+  el.labyrinthProgressSummary.innerHTML=progressCard+makerTools+hallOfFame;
+
+  if(!activeStages.length){
     el.labyrinthStageList.innerHTML=isLabyrinthOwner(item)
       ? `<div class="labyrinth-empty">아직 단계가 없습니다.<br><br><button onclick="openEditStageModal()">첫 단계 만들기</button></div>`
       : `<div class="labyrinth-empty">아직 등록된 단계가 없습니다.</div>`;
     return;
   }
 
-  const cards=state.currentLabyrinthStages.filter(v=>v.isActive).map(stage=>{
+  function renderCurrentStageCard(stage){
+    if(!stage){
+      return`
+        <div class="labyrinth-lock-card">
+          ${isClearedAll?"모든 단계를 클리어했습니다.":"현재 공개된 진행 단계가 없습니다."}
+        </div>
+      `;
+    }
+
     const enteredAt=stageEnteredAtMap[String(stage.order)]||null;
     const clearedAt=stageClearedAtMap[String(stage.order)]||null;
+    const isCleared=clearedOrders.includes(stage.order);
 
-    if(clearedOrders.includes(stage.order)){
+    if(isClearedAll&&isCleared){
       return`
         <div class="labyrinth-stage-card cleared">
           <div class="labyrinth-stage-header">
             <h3 class="labyrinth-stage-title">${escapeHtml(stage.title||`단계 ${stage.order}`)}</h3>
-            <span class="labyrinth-clear-badge">통과 완료</span>
+            <span class="labyrinth-clear-badge">최종 클리어</span>
           </div>
           ${stage.story?`<div class="labyrinth-stage-story">${escapeHtml(stage.story)}</div>`:""}
           <div class="labyrinth-stage-footer">
-            <div class="labyrinth-stage-meta">입장: ${formatDateTime(enteredAt)} · 통과: ${formatDateTime(clearedAt)}</div>
+            <div class="labyrinth-stage-meta">통과: ${formatDateTime(clearedAt)}</div>
             ${isLabyrinthOwner(item)?`<button onclick="openEditStageModal('${escapeJs(stage.id)}')">수정</button>`:""}
           </div>
         </div>
       `;
     }
 
-    if(stage.order===currentOrder){
-      if(stage.type==="entry"){
-        return`
-          <div class="labyrinth-stage-card current">
-            <div class="labyrinth-stage-header">
-              <h3 class="labyrinth-stage-title">${escapeHtml(stage.title||`단계 ${stage.order}`)}</h3>
-              <span class="labyrinth-stage-order">입장형</span>
-            </div>
-            ${stage.story?`<div class="labyrinth-stage-story">${escapeHtml(stage.story)}</div>`:""}
-            <div class="labyrinth-stage-footer">
-              <div class="labyrinth-stage-meta">현재 입장 가능한 단계입니다.</div>
-              <div class="actions">
-                <button onclick="completeCurrentEntryStage(${stage.order})">${escapeHtml(stage.title||"입장하기")}</button>
-                ${isLabyrinthOwner(item)?`<button onclick="openEditStageModal('${escapeJs(stage.id)}')">수정</button>`:""}
-              </div>
-            </div>
-          </div>
-        `;
-      }
-
-      const inputId=`labyrinthAnswerInput-${stage.order}`;
+    if(stage.type==="entry"){
       return`
         <div class="labyrinth-stage-card current">
           <div class="labyrinth-stage-header">
             <h3 class="labyrinth-stage-title">${escapeHtml(stage.title||`단계 ${stage.order}`)}</h3>
-            <span class="labyrinth-stage-order">${stage.type==="final"?"최종":"문제"}</span>
+            <span class="labyrinth-stage-order">입장형</span>
           </div>
           ${stage.story?`<div class="labyrinth-stage-story">${escapeHtml(stage.story)}</div>`:""}
-          ${stage.question?`<div class="labyrinth-stage-question">${escapeHtml(stage.question)}</div>`:""}
-          <div class="labyrinth-stage-input-wrap">
-            <input id="${inputId}" class="text-input" type="text" placeholder="${escapeHtml(stage.placeholder||"정답을 입력하세요.")}">
+          <div class="labyrinth-stage-footer">
+            <div class="labyrinth-stage-meta">현재 입장 가능한 단계입니다.</div>
             <div class="actions">
-              <button onclick="submitLabyrinthAnswer(${stage.order})">확인</button>
+              <button onclick="completeCurrentEntryStage(${stage.order})">${escapeHtml(stage.title||"입장하기")}</button>
               ${isLabyrinthOwner(item)?`<button onclick="openEditStageModal('${escapeJs(stage.id)}')">수정</button>`:""}
             </div>
-          </div>
-          <div class="labyrinth-stage-footer">
-            <div class="labyrinth-stage-meta">입장 시각: ${formatDateTime(enteredAt)}</div>
           </div>
         </div>
       `;
     }
 
-    return"";
-  }).filter(Boolean).join("");
+    const inputId=`labyrinthAnswerInput-${stage.order}`;
 
-  el.labyrinthStageList.innerHTML=cards||`<div class="labyrinth-lock-card">현재 공개된 진행 단계가 없습니다.</div>`;
+    return`
+      <div class="labyrinth-stage-card current">
+        <div class="labyrinth-stage-header">
+          <h3 class="labyrinth-stage-title">${escapeHtml(stage.title||`단계 ${stage.order}`)}</h3>
+          <span class="labyrinth-stage-order">${stage.type==="final"?"최종":"문제"}</span>
+        </div>
+        ${stage.story?`<div class="labyrinth-stage-story">${escapeHtml(stage.story)}</div>`:""}
+        ${stage.question?`<div class="labyrinth-stage-question">${escapeHtml(stage.question)}</div>`:""}
+        <div class="labyrinth-stage-input-wrap">
+          <input id="${inputId}" class="text-input" type="text" placeholder="${escapeHtml(stage.placeholder||"정답을 입력하세요.")}">
+          <div class="actions">
+            <button onclick="submitLabyrinthAnswer(${stage.order})">확인</button>
+            ${isLabyrinthOwner(item)?`<button onclick="openEditStageModal('${escapeJs(stage.id)}')">수정</button>`:""}
+          </div>
+        </div>
+        <div class="labyrinth-stage-footer">
+          <div class="labyrinth-stage-meta">입장 시각: ${formatDateTime(enteredAt)}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderClearedHistory(){
+    const clearedStages=activeStages.filter(stage=>clearedOrders.includes(stage.order));
+
+    if(!clearedStages.length)return"";
+
+    const items=clearedStages.map(stage=>{
+      const clearedAt=stageClearedAtMap[String(stage.order)]||null;
+      return`
+        <div class="labyrinth-player-line">
+          <b>${escapeHtml(stage.title||`단계 ${stage.order}`)}</b>
+          <span class="muted"> · ${formatDateTime(clearedAt)}</span>
+        </div>
+      `;
+    }).join("");
+
+    return`
+      <div class="party-card">
+        <div class="party-title">통과한 단계</div>
+        <div class="member-list">${items}</div>
+      </div>
+    `;
+  }
+
+  function renderOwnerStageManager(){
+    if(!isLabyrinthOwner(item))return"";
+
+    const items=allStages.length
+      ? allStages.map(stage=>`
+          <div class="labyrinth-player-line">
+            <b>${stage.order}. ${escapeHtml(stage.title||"단계")}</b>
+            <span class="muted"> · ${stage.isActive?"활성":"비활성"} · ${escapeHtml(stage.type||"question")}</span>
+            <button class="rank-edit-btn" onclick="openEditStageModal('${escapeJs(stage.id)}')">수정</button>
+          </div>
+        `).join("")
+      : `<div class="labyrinth-empty">등록된 단계가 없습니다.</div>`;
+
+    return`
+      <div class="party-card">
+        <div class="party-title">단계 관리</div>
+        <div class="party-sub">제작자에게만 보입니다.</div>
+        <div class="member-list">${items}</div>
+      </div>
+    `;
+  }
+
+  el.labyrinthStageList.innerHTML=
+    renderCurrentStageCard(isClearedAll?finalStage:currentStage)+
+    renderClearedHistory()+
+    renderOwnerStageManager();
 }
 
 function openEditStageModal(stageId=""){
