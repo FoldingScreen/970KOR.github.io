@@ -604,6 +604,9 @@ ${isCreator?`
     <button type="button" onclick="toggleTurtleQuestionSpoiler('${escapeJs(comment.id)}',${comment.isSpoiler?"false":"true"})">
       ${comment.isSpoiler?"가리기 해제":"가리기"}
     </button>
+    <button type="button" class="danger-mini-btn" onclick="deleteTurtleComment('${escapeJs(comment.id)}')">
+      삭제
+    </button>
   </div>
 `:""}
         </div>
@@ -745,6 +748,35 @@ async function toggleTurtleQuestionSpoiler(commentId,nextValue){
 }
 
 window.toggleTurtleQuestionSpoiler=toggleTurtleQuestionSpoiler;
+
+async function deleteTurtleComment(commentId){
+  const item=state.currentTurtleSoupData;
+
+  if(!item||!commentId)return;
+
+  if(item.creator!==state.currentUser){
+    alert("출제자만 질문을 삭제할 수 있습니다.");
+    return;
+  }
+
+  if(!confirm("이 질문과 답변을 삭제하시겠습니까?"))return;
+
+  const batch=db.batch();
+
+  batch.delete(turtleSoupCommentsRef(item.id).doc(commentId));
+  batch.set(turtleSoupRef(item.id),{
+    questionCount:firebase.firestore.FieldValue.increment(-1),
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+  },{merge:true});
+
+  await batch.commit();
+
+  if(state.answeringTurtleCommentId===commentId){
+    state.answeringTurtleCommentId="";
+  }
+}
+
+window.deleteTurtleComment=deleteTurtleComment;
 
 async function saveTurtleAnswer(answer){
   const item=state.currentTurtleSoupData;
