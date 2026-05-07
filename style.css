@@ -799,13 +799,76 @@ textarea.text-input{
 }
 
 .labyrinth-progress-summary{
+  display:grid;
+  grid-template-columns:220px minmax(280px,1fr) 380px;
+  gap:14px;
+  align-items:start;
   margin-bottom:18px;
 }
 
-.labyrinth-progress-summary .summary-card{
+.labyrinth-progress-summary .summary-card,
+.labyrinth-progress-summary .party-card{
+  min-height:0;
+  align-self:start;
+  padding:16px;
   border-color:#24466f;
   background:
     linear-gradient(180deg,rgba(14,35,62,.92),rgba(7,17,30,.96));
+}
+
+.labyrinth-progress-summary .summary-card .big-number{
+  font-size:30px;
+  margin-top:8px;
+}
+
+.labyrinth-progress-summary .party-title{
+  font-size:20px;
+  margin-bottom:8px;
+}
+
+.labyrinth-progress-summary .party-sub{
+  font-size:13px;
+  margin:4px 0 10px;
+}
+
+.labyrinth-progress-summary .member-list{
+  margin-top:8px;
+  padding-top:8px;
+}
+
+.labyrinth-progress-summary .labyrinth-player-line{
+  padding:5px 0;
+  font-size:13px;
+}
+
+.labyrinth-progress-summary .labyrinth-maker-tools{
+  padding:10px;
+  margin-top:8px;
+}
+
+.labyrinth-progress-summary .labyrinth-maker-tools button{
+  min-height:34px;
+  padding:7px 11px;
+  font-size:12px;
+}
+
+#labyrinthStageList.party-grid{
+  grid-template-columns:1fr;
+  gap:14px;
+}
+
+#labyrinthStageList .party-card{
+  max-width:720px;
+}
+
+@media(max-width:1100px){
+  .labyrinth-progress-summary{
+    grid-template-columns:1fr;
+  }
+
+  #labyrinthStageList .party-card{
+    max-width:none;
+  }
 }
 
 /* 단계 카드 */
@@ -1875,4 +1938,36 @@ textarea.text-input{
   .home-event-grid .event-card{
     padding:14px;
   }
+}
+
+.labyrinth-progress-summary{
+  display:block;
+  margin-bottom:14px;
+}
+
+.labyrinth-progress-main-card{
+  max-width:520px;
+  min-height:0;
+}
+
+.labyrinth-detail-toggle-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:14px;
+}
+
+.labyrinth-detail-toggle-row button{
+  border:1px solid #315a93;
+  background:#102545;
+  color:#e7f1ff;
+  border-radius:999px;
+  padding:8px 12px;
+  min-height:34px;
+  font-size:13px;
+  font-weight:900;
+}
+
+.labyrinth-maker-panel-card{
+  max-width:720px;
 }
