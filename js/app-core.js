@@ -57,6 +57,7 @@ const state={
   currentTurtlePlayers:[],
   editingTurtleSoupId:"",
   answeringTurtleCommentId:"",
+  isTurtleSubmitPanelOpen:false,
   editingLabyrinthId:"",
   editingStageId:"",
 
