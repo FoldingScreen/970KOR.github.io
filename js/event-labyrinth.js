@@ -503,33 +503,29 @@ function renderLabyrinthDetail(){
   const clearedCount=activeStages.filter(stage=>clearedOrders.includes(stage.order)).length;
   const totalCount=activeStages.length;
 
-  const hallOfFame=renderFinalStageClearersCard();
-
-  el.labyrinthProgressSummary.classList.remove("hidden");
+    el.labyrinthProgressSummary.classList.remove("hidden");
 
   const progressCard=`
-    <div class="summary-card">
+    <div class="summary-card labyrinth-progress-main-card">
       <div class="muted">내 진행률</div>
       <div class="big-number">${clearedCount}/${totalCount}</div>
       <div class="labyrinth-small-note">
         ${isClearedAll?"미궁 클리어 완료":currentStage?`현재 단계: ${escapeHtml(currentStage.title||`단계 ${currentStage.order}`)}`:"진행 가능한 단계 없음"}
       </div>
+      <div class="labyrinth-detail-toggle-row">
+        <button type="button" onclick="toggleLabyrinthHallOfFame()">
+          ${state.labyrinthHallOpen?"명예의 전당 닫기":"명예의 전당"}
+        </button>
+        ${isLabyrinthOwner(item)?`
+          <button type="button" onclick="toggleLabyrinthMakerTools()">
+            ${state.labyrinthMakerOpen?"제작자 도구 닫기":"제작자 도구"}
+          </button>
+        `:""}
+      </div>
     </div>
   `;
 
-  const makerTools=isLabyrinthOwner(item)
-    ? `
-      <div class="summary-card">
-        <div class="muted">제작자 도구</div>
-        <div class="labyrinth-maker-tools">
-          <button onclick="openEditLabyrinthModal('${escapeJs(item.id)}')">미궁 정보 수정</button>
-          <button onclick="openEditStageModal()">단계 추가</button>
-        </div>
-      </div>
-    `
-    : "";
-
-  el.labyrinthProgressSummary.innerHTML=progressCard+makerTools+hallOfFame;
+  el.labyrinthProgressSummary.innerHTML=progressCard;
 
   if(!activeStages.length){
     el.labyrinthStageList.innerHTML=isLabyrinthOwner(item)
@@ -655,11 +651,37 @@ function renderLabyrinthDetail(){
     `;
   }
 
+  const hallPanel=state.labyrinthHallOpen?renderFinalStageClearersCard():"";
+
+  const makerPanel=state.labyrinthMakerOpen&&isLabyrinthOwner(item)
+    ? `
+      <div class="party-card labyrinth-maker-panel-card">
+        <div class="party-title">제작자 도구</div>
+        <div class="labyrinth-maker-tools">
+          <button onclick="openEditLabyrinthModal('${escapeJs(item.id)}')">미궁 정보 수정</button>
+          <button onclick="openEditStageModal()">단계 추가</button>
+        </div>
+      </div>
+      ${renderOwnerStageManager()}
+    `
+    : "";
+
   el.labyrinthStageList.innerHTML=
     renderCurrentStageCard(isClearedAll?finalStage:currentStage)+
-    renderClearedHistory()+
-    renderOwnerStageManager();
+    hallPanel+
+    makerPanel+
+    renderClearedHistory();
 }
+
+window.toggleLabyrinthHallOfFame=function(){
+  state.labyrinthHallOpen=!state.labyrinthHallOpen;
+  renderLabyrinthDetail();
+};
+
+window.toggleLabyrinthMakerTools=function(){
+  state.labyrinthMakerOpen=!state.labyrinthMakerOpen;
+  renderLabyrinthDetail();
+};
 
 function openEditStageModal(stageId=""){
   const item=state.currentLabyrinthData;
