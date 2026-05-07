@@ -361,7 +361,6 @@ function clearSubscriptions(){
   if(state.unsubscribeTurtlePlayer){state.unsubscribeTurtlePlayer();state.unsubscribeTurtlePlayer=null;}
   if(state.unsubscribeTurtleSubmissions){state.unsubscribeTurtleSubmissions();state.unsubscribeTurtleSubmissions=null;}
   if(state.unsubscribeTurtlePlayers){state.unsubscribeTurtlePlayers();state.unsubscribeTurtlePlayers=null;}
-  if(state.unsubscribeNotifications){state.unsubscribeNotifications();state.unsubscribeNotifications=null;}
 }
 
 async function ensureEventDocs(){
@@ -698,6 +697,11 @@ window.login=login;
 
 async function logout(){
   clearSubscriptions();
+
+    if(state.unsubscribeNotifications){
+    state.unsubscribeNotifications();
+    state.unsubscribeNotifications=null;
+  }
 
   state.currentUser="";
   state.currentEventId="";
