@@ -748,8 +748,6 @@ async function toggleTurtleQuestionSpoiler(commentId,nextValue){
     alert("출제자만 가리기 처리할 수 있습니다.");
     return;
   }
-
-  const comment=state.currentTurtleComments.find(v=>v.id===commentId)||null;
   
   await turtleSoupCommentsRef(item.id).doc(commentId).set({
     isSpoiler:!!nextValue
@@ -790,6 +788,7 @@ window.deleteTurtleComment=deleteTurtleComment;
 async function saveTurtleAnswer(answer){
   const item=state.currentTurtleSoupData;
   const commentId=state.answeringTurtleCommentId;
+  const comment=state.currentTurtleComments.find(v=>v.id===commentId)||null;
 
   if(!item||!commentId)return;
 
