@@ -233,6 +233,7 @@ async function openTurtleSoupDetail(id){
   state.currentTurtleSubmissions=[];
   state.currentTurtlePlayers=[];
   state.answeringTurtleCommentId="";
+  state.isTurtleSubmitPanelOpen=false;
 
   if(state.unsubscribeTurtleComments){
     state.unsubscribeTurtleComments();
@@ -354,6 +355,7 @@ function closeTurtleSoupDetail(){
   state.currentTurtleSubmissions=[];
   state.currentTurtlePlayers=[];
   state.answeringTurtleCommentId="";
+  state.isTurtleSubmitPanelOpen=false;
 
   if(state.unsubscribeTurtleComments){
     state.unsubscribeTurtleComments();
@@ -438,12 +440,18 @@ function renderTurtleSoupDetail(){
         </div>
         <div class="turtle-input-row">
           <input id="turtleChatInput" class="text-input" type="text" maxlength="200" value="${escapeHtml(answeringAnswer)}" placeholder="${state.answeringTurtleCommentId?"답변 입력...":"'예/아니오'로 답변이 가능하도록 질문을 입력하세요."}">
-          <button type="button" onclick="${state.answeringTurtleCommentId?"submitTurtleCustomAnswer()":"submitTurtleQuestion()"}">➤</button>
+          <div class="turtle-input-actions">
+            <button type="button" onclick="${state.answeringTurtleCommentId?"submitTurtleCustomAnswer()":"submitTurtleQuestion()"}">➤</button>
+            ${isCreator?"":`<button type="button" onclick="openTurtleSubmitPanel()" ${isCleared?"disabled":""}>정답제출</button>`}
+          </div>
         </div>
         ${isCreator?"":`
-          <div class="turtle-answer-row">
+          <div class="turtle-answer-row ${state.isTurtleSubmitPanelOpen?"":"hidden"}">
             <input id="turtleFinalAnswerInput" class="text-input" type="text" placeholder="${isCleared?"이미 완료했습니다.":"정답이라고 생각하는 내용을 입력하세요."}" ${isCleared?"disabled":""}>
-            <button type="button" onclick="submitTurtleFinalAnswer()" ${isCleared?"disabled":""}>정답 제출</button>
+            <div class="turtle-answer-actions">
+              <button type="button" onclick="submitTurtleFinalAnswer()" ${isCleared?"disabled":""}>제출</button>
+              <button type="button" onclick="closeTurtleSubmitPanel()">닫기</button>
+            </div>
           </div>
         `}
       </div>
@@ -683,6 +691,24 @@ function cancelTurtleAnswerMode(){
 
 window.cancelTurtleAnswerMode=cancelTurtleAnswerMode;
 
+function openTurtleSubmitPanel(){
+  state.isTurtleSubmitPanelOpen=true;
+  renderTurtleSoupDetail();
+
+  setTimeout(()=>{
+    document.getElementById("turtleFinalAnswerInput")?.focus();
+  },0);
+}
+
+window.openTurtleSubmitPanel=openTurtleSubmitPanel;
+
+function closeTurtleSubmitPanel(){
+  state.isTurtleSubmitPanelOpen=false;
+  renderTurtleSoupDetail();
+}
+
+window.closeTurtleSubmitPanel=closeTurtleSubmitPanel;
+
 async function submitTurtleQuickAnswer(answer){
   await saveTurtleAnswer(answer);
 }
@@ -779,6 +805,8 @@ async function submitTurtleFinalAnswer(){
   },{merge:true});
 
   input.value="";
+  state.isTurtleSubmitPanelOpen=false;
+  renderTurtleSoupDetail();
   alert("정답이 제출되었습니다. 출제자 판정을 기다려 주세요.");
 }
 
