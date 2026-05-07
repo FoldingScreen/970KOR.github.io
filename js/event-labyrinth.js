@@ -455,7 +455,6 @@ function renderFinalStageClearersCard(){
   return`
     <div class="party-card">
       <div class="party-title">명예의 전당</div>
-      <div class="party-sub">제작자를 제외한 최종장 클리어 순서입니다.</div>
       <div class="member-list">${lines}</div>
     </div>
   `;
