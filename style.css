@@ -1616,6 +1616,286 @@ textarea.text-input{
   margin-top:12px;
 }
 
+/* ===== 바다거북스프 ===== */
+.turtle-section{
+  margin-top:22px;
+}
+
+.turtle-soup-list{
+  display:grid;
+  gap:10px;
+}
+
+.turtle-soup-card{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  border:1px solid rgba(49,90,147,.7);
+  background:rgba(7,17,30,.86);
+  border-radius:18px;
+  padding:12px 14px;
+  cursor:pointer;
+  transition:border-color .15s ease,background .15s ease,transform .15s ease;
+}
+
+.turtle-soup-card:hover{
+  border-color:#60a5fa;
+  background:rgba(13,31,54,.9);
+  transform:translateY(-1px);
+}
+
+.turtle-card-main{
+  min-width:0;
+}
+
+.turtle-card-title{
+  color:#edf3ff;
+  font-size:16px;
+  font-weight:1000;
+  line-height:1.25;
+  word-break:break-word;
+}
+
+.turtle-card-meta{
+  margin-top:4px;
+  color:#8ea3c2;
+  font-size:12px;
+  font-weight:800;
+}
+
+#turtleSoupDetailView{
+  grid-column:1 / -1;
+}
+
+.turtle-detail-view{
+  height:calc(100vh - 150px);
+  min-height:580px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.turtle-detail-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+
+.turtle-problem-card{
+  border:1px solid #1f3657;
+  border-radius:18px;
+  background:rgba(7,17,30,.9);
+  padding:12px 14px;
+}
+
+.turtle-problem-title{
+  font-size:20px;
+  font-weight:1000;
+  color:#edf3ff;
+  line-height:1.25;
+}
+
+.turtle-problem-meta{
+  margin-top:4px;
+  color:#8ea3c2;
+  font-size:12px;
+  font-weight:800;
+}
+
+.turtle-problem-body{
+  margin-top:8px;
+}
+
+.turtle-problem-body summary{
+  cursor:pointer;
+  color:#bfdbfe;
+  font-size:12px;
+  font-weight:900;
+  margin-bottom:8px;
+}
+
+.turtle-problem-content{
+  max-height:240px;
+  overflow:auto;
+  background:
+    linear-gradient(180deg,rgba(13,27,47,.92),rgba(8,18,31,.94));
+  border:1px solid #2b4770;
+  border-radius:14px;
+  padding:12px;
+  line-height:1.6;
+  color:#edf3ff;
+  font-size:14px;
+  word-break:break-word;
+}
+
+.turtle-chat-list{
+  flex:1;
+  min-height:0;
+  overflow-y:auto;
+  border:1px solid #14233a;
+  border-radius:18px;
+  background:rgba(5,13,24,.72);
+  padding:12px;
+}
+
+.turtle-empty-chat{
+  color:#8ea3c2;
+  text-align:center;
+  font-size:13px;
+  font-weight:900;
+  padding:28px 0;
+}
+
+.turtle-thread{
+  margin-bottom:8px;
+}
+
+.turtle-bubble-row{
+  display:flex;
+  margin:2px 0;
+}
+
+.turtle-bubble-row.left{
+  justify-content:flex-start;
+}
+
+.turtle-bubble-row.right{
+  justify-content:flex-end;
+}
+
+.turtle-bubble-wrap{
+  max-width:min(78%,620px);
+}
+
+.turtle-bubble-meta{
+  color:#8ea3c2;
+  font-size:11px;
+  font-weight:800;
+  margin:0 0 2px 2px;
+}
+
+.turtle-bubble-meta.right{
+  text-align:right;
+  margin:0 2px 2px 0;
+}
+
+.turtle-bubble{
+  border-radius:14px;
+  padding:7px 10px;
+  line-height:1.42;
+  font-size:13px;
+  font-weight:800;
+  word-break:break-word;
+}
+
+.turtle-bubble.question{
+  border:1px solid #243a5f;
+  background:#0b1a2d;
+  color:#e7f1ff;
+  border-top-left-radius:5px;
+}
+
+.turtle-bubble.answer{
+  border:1px solid #315a93;
+  background:#102545;
+  color:#dbeafe;
+  border-top-right-radius:5px;
+}
+
+.turtle-pending-row{
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  gap:6px;
+  color:#8ea3c2;
+  font-size:11px;
+  font-weight:900;
+  margin-top:2px;
+}
+
+.turtle-pending-row button,
+.turtle-quick-row button{
+  border:1px solid #315a93;
+  background:#102545;
+  color:#e7f1ff;
+  border-radius:999px;
+  padding:4px 8px;
+  min-height:24px;
+  font-size:11px;
+  font-weight:900;
+}
+
+.turtle-composer{
+  position:sticky;
+  bottom:0;
+  border:1px solid #1f3657;
+  border-radius:18px;
+  background:rgba(5,8,16,.98);
+  padding:10px;
+  box-shadow:0 -12px 22px rgba(0,0,0,.24);
+}
+
+.turtle-answering-label{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+  color:#bfdbfe;
+  font-size:12px;
+  font-weight:900;
+  margin-bottom:6px;
+}
+
+.turtle-answering-label button{
+  border:none;
+  background:transparent;
+  color:#93c5fd;
+  font-size:12px;
+  font-weight:900;
+}
+
+.turtle-quick-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  margin-bottom:7px;
+}
+
+.turtle-input-row,
+.turtle-answer-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:7px;
+  align-items:center;
+}
+
+.turtle-input-row{
+  margin-bottom:7px;
+}
+
+.turtle-input-row .text-input,
+.turtle-answer-row .text-input{
+  min-height:38px;
+  border-radius:999px;
+  font-size:13px;
+  padding:8px 12px;
+}
+
+.turtle-input-row button,
+.turtle-answer-row button{
+  border:1px solid #315a93;
+  background:#102545;
+  color:#e7f1ff;
+  border-radius:999px;
+  padding:7px 11px;
+  min-height:36px;
+  font-size:13px;
+  font-weight:900;
+  white-space:nowrap;
+}
+
 /* ===== 반응형 ===== */
 @media(min-width:1000px){
   .home-event-grid{
@@ -1932,6 +2212,24 @@ textarea.text-input{
   .castle-member-hero-select{
     width:30px;
     min-width:30px;
+  }
+
+    .turtle-soup-card{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+
+  .turtle-detail-view{
+    height:calc(100vh - 130px);
+    min-height:520px;
+  }
+
+  .turtle-bubble-wrap{
+    max-width:86%;
+  }
+
+  .turtle-answer-row{
+    grid-template-columns:1fr;
   }
 }
 
