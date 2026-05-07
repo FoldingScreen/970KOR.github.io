@@ -36,8 +36,9 @@ const state={
   unsubscribeLabyrinthPlayer:null,
   unsubscribeLabyrinthPlayers:null,
   unsubscribeTurtleSoups:null,
-unsubscribeTurtleComments:null,
-unsubscribeTurtlePlayer:null,
+  unsubscribeTurtleComments:null,
+  unsubscribeTurtlePlayer:null,
+  unsubscribeTurtleSubmissions:null,
 
   labyrinths:[],
   labyrinthPlayerSummaryMap:{},
@@ -47,12 +48,13 @@ unsubscribeTurtlePlayer:null,
   currentLabyrinthPlayer:null,
   currentLabyrinthPlayers:[],
   turtleSoups:[],
-currentTurtleSoupId:"",
-currentTurtleSoupData:null,
-currentTurtleComments:[],
-currentTurtlePlayer:null,
-editingTurtleSoupId:"",
-answeringTurtleCommentId:"",
+  currentTurtleSoupId:"",
+  currentTurtleSoupData:null,
+  currentTurtleComments:[],
+  currentTurtlePlayer:null,
+  currentTurtleSubmissions:[],
+  editingTurtleSoupId:"",
+  answeringTurtleCommentId:"",
   editingLabyrinthId:"",
   editingStageId:"",
 
@@ -250,6 +252,7 @@ function turtleSoupRef(id){return turtleSoupsRef().doc(id);}
 function turtleSoupCommentsRef(id){return turtleSoupRef(id).collection("comments");}
 function turtleSoupPlayersRef(id){return turtleSoupRef(id).collection("players");}
 function turtleSoupPlayerRef(id,name){return turtleSoupPlayersRef(id).doc(name);}
+function turtleSoupSubmissionsRef(id){return turtleSoupRef(id).collection("submissions");}
 
 function setTopTabs(active){
   document.querySelectorAll(".tab-btn").forEach(btn=>btn.classList.remove("active"));
@@ -300,8 +303,8 @@ function syncOverlay(){
     (el.createLabyrinthModal&&!el.createLabyrinthModal.classList.contains("hidden"))||
     (el.editLabyrinthModal&&!el.editLabyrinthModal.classList.contains("hidden"))||
     (el.editStageModal&&!el.editStageModal.classList.contains("hidden"))||
-(!document.getElementById("createTurtleSoupModal")?.classList.contains("hidden"));
-
+    (document.getElementById("createTurtleSoupModal")&&!document.getElementById("createTurtleSoupModal").classList.contains("hidden"));
+  
   if(!el.modalOverlay)return;
 
   if(hasOpenModal)el.modalOverlay.classList.remove("hidden");
@@ -320,7 +323,7 @@ if(el.modalOverlay){
     closeCastleBattleModal();
     closeCreateLabyrinthModal();
     closeEditLabyrinthModal();
-    closeCreateTurtleSoupModal?.();
+    window.closeCreateTurtleSoupModal?.();
     closeEditStageModal();
     syncOverlay();
   });
@@ -335,8 +338,9 @@ function clearSubscriptions(){
   if(state.unsubscribeLabyrinthPlayer){state.unsubscribeLabyrinthPlayer();state.unsubscribeLabyrinthPlayer=null;}
   if(state.unsubscribeLabyrinthPlayers){state.unsubscribeLabyrinthPlayers();state.unsubscribeLabyrinthPlayers=null;}
   if(state.unsubscribeTurtleSoups){state.unsubscribeTurtleSoups();state.unsubscribeTurtleSoups=null;}
-if(state.unsubscribeTurtleComments){state.unsubscribeTurtleComments();state.unsubscribeTurtleComments=null;}
-if(state.unsubscribeTurtlePlayer){state.unsubscribeTurtlePlayer();state.unsubscribeTurtlePlayer=null;}
+  if(state.unsubscribeTurtleComments){state.unsubscribeTurtleComments();state.unsubscribeTurtleComments=null;}
+  if(state.unsubscribeTurtlePlayer){state.unsubscribeTurtlePlayer();state.unsubscribeTurtlePlayer=null;}
+  if(state.unsubscribeTurtleSubmissions){state.unsubscribeTurtleSubmissions();state.unsubscribeTurtleSubmissions=null;}
 }
 
 async function ensureEventDocs(){
