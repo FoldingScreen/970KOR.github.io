@@ -1621,6 +1621,18 @@ textarea.text-input{
   margin-top:22px;
 }
 
+.turtle-answer-edit-btn{
+  border:1px solid #315a93;
+  background:#102545;
+  color:#e7f1ff;
+  border-radius:999px;
+  padding:2px 7px;
+  min-height:20px;
+  font-size:10px;
+  font-weight:900;
+  margin-left:5px;
+}
+
 .turtle-soup-list{
   display:grid;
   gap:10px;
