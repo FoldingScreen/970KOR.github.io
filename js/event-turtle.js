@@ -1,17 +1,3 @@
-function getAcceptedTurtleAnswers(answerText){
-  return String(answerText||"")
-    .split(/[,;\n/]+/)
-    .map(v=>normalizeAnswerValue(v))
-    .filter(Boolean);
-}
-
-function isCorrectTurtleAnswer(inputValue,answerText){
-  const value=normalizeAnswerValue(inputValue);
-  const accepted=getAcceptedTurtleAnswers(answerText);
-  return accepted.includes(value);
-}
-
-
 function getTurtleSoupStatus(item){
   const player=item.player||null;
 
@@ -87,7 +73,7 @@ async function subscribeTurtleSoups(){
         id:doc.id,
         title:d.title||"",
         contentText:d.contentText||d.contentHtml||"",
-        answer:d.answer||"",
+        solutionText:d.solutionText||"",
         creator:d.creator||"",
         isPublic:!!d.isPublic,
         questionCount:Number(d.questionCount||0),
@@ -115,9 +101,9 @@ function openCreateTurtleSoupModal(id=""){
   state.editingTurtleSoupId=id||"";
 
   const titleInput=document.getElementById("turtleSoupTitleInput");
-  const answerInput=document.getElementById("turtleSoupAnswerInput");
-  const publicCheckbox=document.getElementById("turtleSoupPublicCheckbox");
   const contentInput=document.getElementById("turtleSoupContentInput");
+  const solutionInput=document.getElementById("turtleSoupSolutionInput");
+  const publicCheckbox=document.getElementById("turtleSoupPublicCheckbox");
   const deleteBtn=document.getElementById("deleteTurtleSoupBtn");
   const modalTitle=document.getElementById("turtleSoupModalTitle");
 
@@ -135,9 +121,9 @@ function openCreateTurtleSoupModal(id=""){
 
   if(modalTitle)modalTitle.textContent=item?"바다거북스프 수정":"바다거북스프 만들기";
   if(titleInput)titleInput.value=item?.title||"";
-  if(answerInput)answerInput.value=item?.answer||"";
+  if(contentInput)contentInput.value=item?.contentText||"";
+  if(solutionInput)solutionInput.value=item?.solutionText||"";
   if(publicCheckbox)publicCheckbox.checked=item?!!item.isPublic:true;
-  if(contentInput)contentInput.value=item?.contentText||item?.contentHtml||"";
   if(deleteBtn)deleteBtn.classList.toggle("hidden",!item);
 
   document.getElementById("createTurtleSoupModal")?.classList.remove("hidden");
@@ -155,8 +141,8 @@ window.closeCreateTurtleSoupModal=closeCreateTurtleSoupModal;
 
 async function submitTurtleSoup(){
   const title=normalizeLabyrinthText(document.getElementById("turtleSoupTitleInput")?.value||"");
-  const answer=normalizeLabyrinthText(document.getElementById("turtleSoupAnswerInput")?.value||"");
   const contentText=normalizeLabyrinthText(document.getElementById("turtleSoupContentInput")?.value||"");
+  const solutionText=normalizeLabyrinthText(document.getElementById("turtleSoupSolutionInput")?.value||"");
   const isPublic=!!document.getElementById("turtleSoupPublicCheckbox")?.checked;
 
   if(!title){
@@ -165,12 +151,7 @@ async function submitTurtleSoup(){
   }
 
   if(!contentText){
-  alert("문제 본문을 입력하세요.");
-  return;
-}
-
-  if(!answer){
-    alert("정답을 입력하세요.");
+    alert("문제 본문을 입력하세요.");
     return;
   }
 
@@ -178,14 +159,15 @@ async function submitTurtleSoup(){
 
   const payload={
     title,
-    answer,
     contentText,
+    solutionText,
     isPublic,
     updatedAt:now
   };
 
   if(state.editingTurtleSoupId){
     const item=state.turtleSoups.find(v=>v.id===state.editingTurtleSoupId);
+
     if(!item||item.creator!==state.currentUser){
       alert("수정 권한이 없습니다.");
       return;
@@ -248,6 +230,7 @@ async function openTurtleSoupDetail(id){
   state.currentTurtleSoupData=item;
   state.currentTurtleComments=[];
   state.currentTurtlePlayer=null;
+  state.currentTurtleSubmissions=[];
   state.answeringTurtleCommentId="";
 
   if(state.unsubscribeTurtleComments){
@@ -258,6 +241,11 @@ async function openTurtleSoupDetail(id){
   if(state.unsubscribeTurtlePlayer){
     state.unsubscribeTurtlePlayer();
     state.unsubscribeTurtlePlayer=null;
+  }
+
+  if(state.unsubscribeTurtleSubmissions){
+    state.unsubscribeTurtleSubmissions();
+    state.unsubscribeTurtleSubmissions=null;
   }
 
   await turtleSoupPlayerRef(id,state.currentUser).set({
@@ -271,6 +259,7 @@ async function openTurtleSoupDetail(id){
     .onSnapshot(snap=>{
       state.currentTurtleComments=snap.docs.map(doc=>{
         const d=doc.data()||{};
+
         return{
           id:doc.id,
           asker:d.asker||"",
@@ -296,6 +285,33 @@ async function openTurtleSoupDetail(id){
     console.error(err);
   });
 
+  state.unsubscribeTurtleSubmissions=turtleSoupSubmissionsRef(id)
+    .orderBy("submittedAt","asc")
+    .onSnapshot(snap=>{
+      state.currentTurtleSubmissions=snap.docs.map(doc=>{
+        const d=doc.data()||{};
+
+        return{
+          id:doc.id,
+          user:d.user||"",
+          answerText:d.answerText||"",
+          status:d.status||"pending",
+          judgedBy:d.judgedBy||"",
+          submittedAt:d.submittedAt||null,
+          judgedAt:d.judgedAt||null
+        };
+      }).filter(v=>{
+        if(isHiddenTestNickname(v.user))return false;
+        if(item.creator===state.currentUser)return true;
+        return v.user===state.currentUser;
+      });
+
+      renderTurtleSoupDetail();
+    },err=>{
+      console.error(err);
+      alert("정답 제출 목록을 불러오는 중 오류가 발생했습니다.");
+    });
+
   document.getElementById("labyrinthHomeView")?.classList.add("hidden");
   document.getElementById("turtleSoupDetailView")?.classList.remove("hidden");
 
@@ -309,6 +325,7 @@ function closeTurtleSoupDetail(){
   state.currentTurtleSoupData=null;
   state.currentTurtleComments=[];
   state.currentTurtlePlayer=null;
+  state.currentTurtleSubmissions=[];
   state.answeringTurtleCommentId="";
 
   if(state.unsubscribeTurtleComments){
@@ -319,6 +336,11 @@ function closeTurtleSoupDetail(){
   if(state.unsubscribeTurtlePlayer){
     state.unsubscribeTurtlePlayer();
     state.unsubscribeTurtlePlayer=null;
+  }
+
+  if(state.unsubscribeTurtleSubmissions){
+    state.unsubscribeTurtleSubmissions();
+    state.unsubscribeTurtleSubmissions=null;
   }
 
   document.getElementById("turtleSoupDetailView")?.classList.add("hidden");
@@ -337,6 +359,7 @@ function renderTurtleSoupDetail(){
   const isCreator=item.creator===state.currentUser;
   const isCleared=!!state.currentTurtlePlayer?.isCleared;
   const comments=state.currentTurtleComments||[];
+  const submissions=state.currentTurtleSubmissions||[];
 
   root.innerHTML=`
     <div class="turtle-detail-view">
@@ -361,6 +384,9 @@ function renderTurtleSoupDetail(){
         ${comments.length?comments.map(comment=>renderTurtleComment(comment,isCreator)).join(""):`<div class="turtle-empty-chat">아직 질문이 없습니다.</div>`}
       </div>
 
+      ${renderTurtleSolutionPanel(isCreator,isCleared,item)}
+      ${renderTurtleSubmissionPanel(isCreator,submissions,isCleared)}
+
       <div class="turtle-composer">
         <div id="turtleAnsweringLabel" class="turtle-answering-label ${state.answeringTurtleCommentId?"":"hidden"}">
           답변 작성 중
@@ -376,11 +402,114 @@ function renderTurtleSoupDetail(){
           <input id="turtleChatInput" class="text-input" type="text" maxlength="200" placeholder="${state.answeringTurtleCommentId?"답변 입력...":"질문을 입력하세요..."}">
           <button type="button" onclick="${state.answeringTurtleCommentId?"submitTurtleCustomAnswer()":"submitTurtleQuestion()"}">➤</button>
         </div>
-        <div class="turtle-answer-row">
-          <input id="turtleFinalAnswerInput" class="text-input" type="text" placeholder="정답 입력">
-          <button type="button" onclick="submitTurtleFinalAnswer()">정답 제출</button>
-        </div>
+        ${isCreator?"":`
+          <div class="turtle-answer-row">
+            <input id="turtleFinalAnswerInput" class="text-input" type="text" placeholder="${isCleared?"이미 완료했습니다.":"정답이라고 생각하는 내용을 입력하세요."}" ${isCleared?"disabled":""}>
+            <button type="button" onclick="submitTurtleFinalAnswer()" ${isCleared?"disabled":""}>정답 제출</button>
+          </div>
+        `}
       </div>
+    </div>
+  `;
+}
+
+function renderTurtleSolutionPanel(isCreator,isCleared,item){
+  if(!item)return"";
+
+  if(!isCreator&&!isCleared)return"";
+
+  const solution=normalizeLabyrinthText(item.solutionText||"");
+
+  if(!solution){
+    return isCreator
+      ? `<div class="turtle-solution-panel"><div class="turtle-submission-title">해설</div><div class="turtle-submission-empty">등록된 해설이 없습니다.</div></div>`
+      : "";
+  }
+
+  return`
+    <div class="turtle-solution-panel">
+      <div class="turtle-submission-title">${isCreator?"출제자용 해설":"해설"}</div>
+      <div class="turtle-solution-text">${escapeHtml(solution).replace(/\n/g,"<br>")}</div>
+    </div>
+  `;
+}
+
+function renderTurtleSubmissionPanel(isCreator,submissions,isCleared){
+  if(isCreator){
+    const pending=submissions.filter(v=>v.status==="pending");
+    const judged=submissions.filter(v=>v.status!=="pending");
+
+    return`
+      <div class="turtle-submission-panel">
+        <div class="turtle-submission-title">정답 제출 검토 ${pending.length?`· 대기 ${pending.length}건`:""}</div>
+        ${pending.length?pending.map(renderTurtlePendingSubmission).join(""):`<div class="turtle-submission-empty">검토 대기 중인 정답이 없습니다.</div>`}
+        ${judged.length?`
+          <details class="turtle-submission-history">
+            <summary>처리한 제출 ${judged.length}건</summary>
+            ${judged.map(renderTurtleJudgedSubmission).join("")}
+          </details>
+        `:""}
+      </div>
+    `;
+  }
+
+  if(!submissions.length){
+    return"";
+  }
+
+  return`
+    <div class="turtle-submission-panel">
+      <div class="turtle-submission-title">내 정답 제출 상태 ${isCleared?"· 완료":""}</div>
+      ${submissions.map(renderMyTurtleSubmission).join("")}
+    </div>
+  `;
+}
+
+function renderTurtlePendingSubmission(item){
+  return`
+    <div class="turtle-submission-item">
+      <div class="turtle-submission-meta">
+        ${escapeHtml(item.user)} · ${escapeHtml(formatDateTime(item.submittedAt))}
+      </div>
+      <div class="turtle-submission-text">${escapeHtml(item.answerText).replace(/\n/g,"<br>")}</div>
+      <div class="turtle-submission-actions">
+        <button type="button" onclick="judgeTurtleSubmission('${escapeJs(item.id)}','correct','${escapeJs(item.user)}')">정답</button>
+        <button type="button" onclick="judgeTurtleSubmission('${escapeJs(item.id)}','wrong','${escapeJs(item.user)}')">오답</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderTurtleJudgedSubmission(item){
+  const label=item.status==="correct"?"정답":"오답";
+  const cls=item.status==="correct"?"public":"closed";
+
+  return`
+    <div class="turtle-submission-item judged">
+      <div class="turtle-submission-meta">
+        ${escapeHtml(item.user)} · ${escapeHtml(formatDateTime(item.submittedAt))}
+        <span class="labyrinth-status-badge ${cls}">${label}</span>
+      </div>
+      <div class="turtle-submission-text">${escapeHtml(item.answerText).replace(/\n/g,"<br>")}</div>
+    </div>
+  `;
+}
+
+function renderMyTurtleSubmission(item){
+  const statusMap={
+    pending:["검토 대기","private"],
+    correct:["정답","public"],
+    wrong:["오답","closed"]
+  };
+  const pair=statusMap[item.status]||statusMap.pending;
+
+  return`
+    <div class="turtle-submission-item judged">
+      <div class="turtle-submission-meta">
+        제출: ${escapeHtml(formatDateTime(item.submittedAt))}
+        <span class="labyrinth-status-badge ${pair[1]}">${pair[0]}</span>
+      </div>
+      <div class="turtle-submission-text">${escapeHtml(item.answerText).replace(/\n/g,"<br>")}</div>
     </div>
   `;
 }
@@ -418,6 +547,7 @@ function renderTurtleComment(comment,isCreator){
 function scrollTurtleChatToBottom(){
   const list=document.getElementById("turtleChatList");
   if(!list)return;
+
   list.scrollTop=list.scrollHeight;
 }
 
@@ -460,6 +590,7 @@ window.submitTurtleQuestion=submitTurtleQuestion;
 function startTurtleAnswerMode(commentId){
   state.answeringTurtleCommentId=commentId;
   renderTurtleSoupDetail();
+
   setTimeout(()=>{
     document.getElementById("turtleChatInput")?.focus();
   },0);
@@ -518,32 +649,83 @@ async function saveTurtleAnswer(answer){
 async function submitTurtleFinalAnswer(){
   const item=state.currentTurtleSoupData;
   const input=document.getElementById("turtleFinalAnswerInput");
-  const value=String(input?.value||"").trim();
+  const value=normalizeLabyrinthText(input?.value||"");
 
   if(!item)return;
+
+  if(item.creator===state.currentUser){
+    alert("출제자는 정답을 제출할 수 없습니다.");
+    return;
+  }
+
+  if(state.currentTurtlePlayer?.isCleared){
+    alert("이미 완료한 문제입니다.");
+    return;
+  }
 
   if(!value){
     input?.focus();
     return;
   }
 
-  if(!isCorrectTurtleAnswer(value,item.answer||"")){
-    alert("정답이 아닙니다.");
-    input?.focus();
-    return;
-  }
+  await turtleSoupSubmissionsRef(item.id).add({
+    user:state.currentUser,
+    answerText:value,
+    status:"pending",
+    judgedBy:"",
+    submittedAt:firebase.firestore.FieldValue.serverTimestamp(),
+    judgedAt:null
+  });
 
   await turtleSoupPlayerRef(item.id,state.currentUser).set({
     nickname:state.currentUser,
-    isCleared:true,
-    clearedAt:firebase.firestore.FieldValue.serverTimestamp(),
+    startedAt:state.currentTurtlePlayer?.startedAt||firebase.firestore.FieldValue.serverTimestamp(),
     updatedAt:firebase.firestore.FieldValue.serverTimestamp()
   },{merge:true});
 
-  alert("정답입니다!");
+  input.value="";
+  alert("정답이 제출되었습니다. 출제자 판정을 기다려 주세요.");
 }
 
 window.submitTurtleFinalAnswer=submitTurtleFinalAnswer;
+
+async function judgeTurtleSubmission(submissionId,status,user){
+  const item=state.currentTurtleSoupData;
+
+  if(!item||!submissionId||!user)return;
+
+  if(item.creator!==state.currentUser){
+    alert("출제자만 판정할 수 있습니다.");
+    return;
+  }
+
+  if(status!=="correct"&&status!=="wrong"){
+    alert("판정 값이 올바르지 않습니다.");
+    return;
+  }
+
+  const now=firebase.firestore.FieldValue.serverTimestamp();
+  const batch=db.batch();
+
+  batch.set(turtleSoupSubmissionsRef(item.id).doc(submissionId),{
+    status,
+    judgedBy:state.currentUser,
+    judgedAt:now
+  },{merge:true});
+
+  if(status==="correct"){
+    batch.set(turtleSoupPlayerRef(item.id,user),{
+      nickname:user,
+      isCleared:true,
+      clearedAt:now,
+      updatedAt:now
+    },{merge:true});
+  }
+
+  await batch.commit();
+}
+
+window.judgeTurtleSubmission=judgeTurtleSubmission;
 
 (function patchEscapeLabyrinthForTurtleSoup(){
   const original=window.subscribeEscapeLabyrinthHome;
@@ -556,6 +738,7 @@ window.submitTurtleFinalAnswer=submitTurtleFinalAnswer;
   }
 
   const originalHome=window.openEscapeLabyrinthHome;
+
   if(typeof originalHome==="function"){
     window.openEscapeLabyrinthHome=function(skipResubscribe){
       closeTurtleSoupDetail();
