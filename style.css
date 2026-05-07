@@ -1758,6 +1758,16 @@ textarea.text-input{
   color:#cbd5e1;
 }
 
+.turtle-difficulty{
+  display:inline-flex;
+  align-items:center;
+  letter-spacing:1px;
+  color:#fbbf24;
+  font-size:12px;
+  font-weight:1000;
+  white-space:nowrap;
+}
+
 .turtle-bubble.question.spoiler .spoiler-real{
   display:none;
 }
