@@ -399,7 +399,7 @@ function renderTurtleSoupDetail(){
           <button type="button" onclick="submitTurtleQuickAnswer('애매함')">애매함</button>
         </div>
         <div class="turtle-input-row">
-          <input id="turtleChatInput" class="text-input" type="text" maxlength="200" placeholder="${state.answeringTurtleCommentId?"답변 입력...":"질문을 입력하세요..."}">
+          <input id="turtleChatInput" class="text-input" type="text" maxlength="200" placeholder="${state.answeringTurtleCommentId?"답변 입력...":"'예/아니오'로 답변이 가능하도록 질문을 입력하세요."}">
           <button type="button" onclick="${state.answeringTurtleCommentId?"submitTurtleCustomAnswer()":"submitTurtleQuestion()"}">➤</button>
         </div>
         ${isCreator?"":`
