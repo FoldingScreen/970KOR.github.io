@@ -34,7 +34,8 @@ function subscribeEscapeLabyrinthHome(){
         isOpen:d.isOpen!==false,
         thumbnailText:d.thumbnailText||"",
         createdAt:d.createdAt||null,
-        updatedAt:d.updatedAt||null
+        updatedAt:d.updatedAt||null,
+        publishedAt:d.publishedAt||null
       };
     }).sort((a,b)=>getTimeValue(b.updatedAt||b.createdAt)-getTimeValue(a.updatedAt||a.createdAt));
 
@@ -161,8 +162,8 @@ function renderLabyrinthCard(item){
   const statusClass=item.isPublic?(item.isOpen?"public":"closed"):"private";
   const statusText=item.isPublic?(item.isOpen?"공개":"공개중지"):"비공개";
   const desc=item.thumbnailText||item.description||"미궁 설명이 없습니다.";
-  const createdTime=getTimeValue(item.createdAt);
-  const isNew=createdTime>0&&(Date.now()-createdTime)<=7*24*60*60*1000;
+  const publishedTime=getTimeValue(item.publishedAt);
+const isNew=item.isPublic&&publishedTime>0&&(Date.now()-publishedTime)<=7*24*60*60*1000;
 
   const progress=state.labyrinthPlayerSummaryMap?.[item.id]||{isCleared:false,isPlaying:false};
   const progressBadge=progress.isCleared
@@ -232,16 +233,24 @@ async function submitCreateLabyrinth(){
     return;
   }
 
-  const ref=await labyrinthsRef().add({
-    title,
-    description,
-    thumbnailText,
-    creator:state.currentUser,
-    isPublic,
-    isOpen,
-    createdAt:firebase.firestore.FieldValue.serverTimestamp(),
-    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
-  });
+  const now=firebase.firestore.FieldValue.serverTimestamp();
+
+const payload={
+  title,
+  description,
+  thumbnailText,
+  creator:state.currentUser,
+  isPublic,
+  isOpen,
+  createdAt:now,
+  updatedAt:now
+};
+
+if(isPublic){
+  payload.publishedAt=now;
+}
+
+const ref=await labyrinthsRef().add(payload);
 
   closeCreateLabyrinthModal();
   openLabyrinthDetail(ref.id);
@@ -306,14 +315,23 @@ async function submitEditLabyrinth(){
     return;
   }
 
-  await labyrinthRef(id).set({
-    title,
-    description,
-    thumbnailText,
-    isPublic:!!el.editLabyrinthPublicCheckbox.checked,
-    isOpen:!!el.editLabyrinthOpenCheckbox.checked,
-    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
-  },{merge:true});
+  const nextIsPublic=!!el.editLabyrinthPublicCheckbox.checked;
+const now=firebase.firestore.FieldValue.serverTimestamp();
+
+const payload={
+  title,
+  description,
+  thumbnailText,
+  isPublic:nextIsPublic,
+  isOpen:!!el.editLabyrinthOpenCheckbox.checked,
+  updatedAt:now
+};
+
+if(nextIsPublic&&!item.publishedAt){
+  payload.publishedAt=now;
+}
+
+await labyrinthRef(id).set(payload,{merge:true});
 
   closeEditLabyrinthModal();
 }
