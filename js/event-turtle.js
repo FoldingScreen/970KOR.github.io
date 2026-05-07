@@ -277,7 +277,7 @@ async function openTurtleSoupDetail(id){
           createdAt:d.createdAt||null,
           answeredAt:d.answeredAt||null
         };
-      }).filter(v=>!isHiddenTestNickname(v.asker));
+      });
 
       renderTurtleSoupDetail();
       setTimeout(scrollTurtleChatToBottom,0);
@@ -309,7 +309,6 @@ async function openTurtleSoupDetail(id){
           judgedAt:d.judgedAt||null
         };
       }).filter(v=>{
-        if(isHiddenTestNickname(v.user))return false;
         if(item.creator===state.currentUser)return true;
         return v.user===state.currentUser;
       });
