@@ -249,10 +249,11 @@
     <div class="form-group"><label for="stageOrderInput">순서</label><input id="stageOrderInput" class="text-input" type="number" min="0" step="1" placeholder="예: 0" /></div>
     <div class="form-group"><label for="stageTitleInput">단계 제목</label><input id="stageTitleInput" class="text-input" type="text" placeholder="예: 첨탑 입구 / 1층" /></div>
     <div class="form-group"><label for="stageTypeSelect">단계 유형</label><select id="stageTypeSelect"><option value="entry">입장형</option><option value="question">문제형</option><option value="final">최종형</option></select></div>
-    <div class="form-group"><label for="stageStoryInput">스토리</label><textarea id="stageStoryInput" class="text-input labyrinth-textarea" placeholder="단계 소개/스토리를 입력하세요."></textarea></div>
-    <div class="form-group"><label for="stageQuestionInput">문제</label><textarea id="stageQuestionInput" class="text-input labyrinth-textarea" placeholder="문제 내용을 입력하세요."></textarea></div>
-    <div class="form-group">
-  <label>문제 본문 편집기</label>
+    <input id="stageStoryInput" type="hidden" />
+<input id="stageQuestionInput" type="hidden" />
+
+<div class="form-group">
+  <label>단계 내용</label>
   <div class="labyrinth-editor-toolbar">
     <label class="labyrinth-editor-upload">
       사진 삽입
@@ -260,8 +261,8 @@
     </label>
     <button type="button" onclick="clearLabyrinthEditorContent()">본문 초기화</button>
   </div>
-  <div id="stageContentEditor" class="labyrinth-content-editor" contenteditable="true" data-placeholder="글을 쓰고 원하는 위치에 사진을 삽입하세요."></div>
-  <p class="muted form-help">사진은 현재 커서 위치에 삽입됩니다. 삽입 후 글을 계속 이어서 작성할 수 있습니다.</p>
+  <div id="stageContentEditor" class="labyrinth-content-editor" contenteditable="true" data-placeholder="스토리, 문제, 안내문, 사진을 자유롭게 작성하세요."></div>
+  <p class="muted form-help">기존 스토리/문제 내용은 이 편집기 안으로 합쳐서 불러옵니다.</p>
 </div>
     <div class="form-group"><label for="stageAnswerInput">정답</label><input id="stageAnswerInput" class="text-input" type="text" placeholder="정답 입력" /></div>
     <div class="form-group"><label for="stagePlaceholderInput">입력창 안내문</label><input id="stagePlaceholderInput" class="text-input" type="text" placeholder="예: 비밀번호를 입력하세요." /></div>
