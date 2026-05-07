@@ -534,8 +534,8 @@ function setupLabyrinthEditor(){
       return;
     }
 
-    if(file.size>5*1024*1024){
-      alert("이미지는 5MB 이하만 업로드하세요.");
+    if(file.size>3*1024*1024){
+      alert("이미지는 3MB 이하만 업로드하세요.");
       return;
     }
 
@@ -734,7 +734,7 @@ function renderLabyrinthDetail(){
           <span class="labyrinth-stage-order">${stage.type==="final"?"최종":"문제"}</span>
         </div>
         ${stage.story?`<div class="labyrinth-stage-story">${escapeHtml(stage.story)}</div>`:""}
-        ${stage.question?`<div class="labyrinth-stage-question">${escapeHtml(stage.question)}</div>`:""}
+        ${renderLabyrinthContent(stage)}
         <div class="labyrinth-stage-input-wrap">
           <input id="${inputId}" class="text-input" type="text" placeholder="${escapeHtml(stage.placeholder||"정답을 입력하세요.")}">
           <div class="actions">
