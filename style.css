@@ -2044,6 +2044,14 @@ textarea.text-input{
   align-items:center;
 }
 
+.turtle-input-actions,
+.turtle-answer-actions{
+  display:flex;
+  gap:7px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
 .turtle-input-row{
   margin-bottom:7px;
 }
