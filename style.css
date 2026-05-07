@@ -580,20 +580,25 @@ textarea.text-input{
 /* ===== 미궁 시스템 ===== */
 .labyrinth-hero{
   background:
-    radial-gradient(circle at top left, rgba(46,79,146,.22), transparent 34%),
-    radial-gradient(circle at bottom right, rgba(104,167,255,.14), transparent 32%),
-    #07111e;
+    radial-gradient(circle at 10% 0%, rgba(96,165,250,.24), transparent 32%),
+    radial-gradient(circle at 90% 20%, rgba(168,85,247,.16), transparent 34%),
+    linear-gradient(135deg,#07111e 0%,#081827 45%,#050810 100%);
+  border-color:#203a61;
 }
 
 .labyrinth-home-grid{
   display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:20px;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:22px;
   align-items:start;
 }
 
 .labyrinth-section{
   min-width:0;
+  background:rgba(7,17,30,.42);
+  border:1px solid rgba(42,66,102,.65);
+  border-radius:24px;
+  padding:18px;
 }
 
 .section-header-row{
@@ -601,28 +606,62 @@ textarea.text-input{
   align-items:center;
   justify-content:space-between;
   gap:10px;
-  margin-bottom:8px;
+  margin-bottom:14px;
+}
+
+.labyrinth-section .section-title{
+  margin:0;
+  font-size:22px;
+  font-weight:1000;
+  letter-spacing:-.4px;
 }
 
 .labyrinth-card-grid{
   display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
   gap:16px;
 }
 
 .labyrinth-card{
-  background:#07111e;
-  border:1px solid #1a2943;
-  border-radius:22px;
+  position:relative;
+  overflow:hidden;
+  background:
+    linear-gradient(180deg,rgba(15,35,62,.86) 0%,rgba(7,17,30,.98) 100%);
+  border:1px solid rgba(56,96,150,.78);
+  border-radius:24px;
   padding:18px;
-  box-shadow:0 0 0 1px rgba(255,255,255,.02) inset;
+  box-shadow:
+    0 18px 34px rgba(0,0,0,.28),
+    0 0 0 1px rgba(255,255,255,.025) inset;
   display:flex;
   flex-direction:column;
-  gap:10px;
-  min-height:220px;
+  gap:12px;
+  min-height:230px;
+  transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease;
+}
+
+.labyrinth-card::before{
+  content:"";
+  position:absolute;
+  inset:-80px -80px auto auto;
+  width:180px;
+  height:180px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(96,165,250,.18),transparent 68%);
+  pointer-events:none;
+}
+
+.labyrinth-card:hover{
+  transform:translateY(-3px);
+  border-color:rgba(96,165,250,.9);
+  box-shadow:
+    0 22px 42px rgba(0,0,0,.36),
+    0 0 0 1px rgba(96,165,250,.18) inset;
 }
 
 .labyrinth-card-top{
+  position:relative;
+  z-index:1;
   display:flex;
   align-items:flex-start;
   justify-content:space-between;
@@ -631,9 +670,10 @@ textarea.text-input{
 
 .labyrinth-card-title{
   margin:0;
-  font-size:22px;
-  font-weight:800;
-  line-height:1.2;
+  font-size:24px;
+  font-weight:1000;
+  line-height:1.15;
+  letter-spacing:-.5px;
   word-break:break-word;
 }
 
@@ -641,104 +681,189 @@ textarea.text-input{
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  padding:5px 10px;
+  padding:6px 10px;
   border-radius:999px;
   border:1px solid #29466f;
-  background:#0b1220;
+  background:rgba(11,18,32,.9);
   color:#dbe7ff;
-  font-size:12px;
-  font-weight:700;
+  font-size:11px;
+  font-weight:900;
   white-space:nowrap;
 }
 
 .labyrinth-status-badge.public{
-  border-color:#28558f;
-  background:#10203a;
+  border-color:#2563eb;
+  background:rgba(37,99,235,.18);
+  color:#dbeafe;
 }
+
 .labyrinth-status-badge.private{
-  border-color:#5a3d2a;
-  background:#22160f;
+  border-color:#b45309;
+  background:rgba(180,83,9,.16);
+  color:#ffedd5;
 }
+
 .labyrinth-status-badge.closed{
-  border-color:#5a2a2a;
-  background:#261313;
+  border-color:#b91c1c;
+  background:rgba(185,28,28,.16);
+  color:#fee2e2;
 }
 
 .labyrinth-card-description{
+  position:relative;
+  z-index:1;
   color:#c8d5ea;
-  line-height:1.5;
-  font-size:15px;
+  line-height:1.55;
+  font-size:14px;
   min-height:48px;
   word-break:break-word;
 }
 
 .labyrinth-card-meta{
+  position:relative;
+  z-index:1;
   display:flex;
   flex-direction:column;
-  gap:4px;
-  font-size:13px;
-  color:#92a3bf;
+  gap:5px;
+  font-size:12px;
+  color:#93a8c7;
+  padding:10px 12px;
+  border:1px solid rgba(42,66,102,.58);
+  border-radius:16px;
+  background:rgba(5,13,24,.55);
 }
 
 .labyrinth-card-actions{
+  position:relative;
+  z-index:1;
   display:flex;
   flex-wrap:wrap;
   gap:8px;
   margin-top:auto;
 }
 
-.labyrinth-empty{
-  background:#07111e;
-  border:1px dashed #28405f;
-  border-radius:20px;
-  padding:24px;
-  text-align:center;
-  color:#8ea3c2;
+.labyrinth-card-actions button,
+.labyrinth-maker-tools button,
+.labyrinth-stage-footer button{
+  border:1px solid #315a93;
+  background:#102545;
+  color:#e7f1ff;
+  border-radius:999px;
+  padding:8px 12px;
+  min-height:36px;
+  font-size:13px;
+  font-weight:900;
 }
 
-.labyrinth-detail-top{
-  margin-bottom:16px;
+.labyrinth-card-actions button:hover,
+.labyrinth-maker-tools button:hover,
+.labyrinth-stage-footer button:hover{
+  border-color:#60a5fa;
+  background:#183965;
+}
+
+.labyrinth-empty{
   background:
-    radial-gradient(circle at top right, rgba(81,123,214,.18), transparent 36%),
-    #07111e;
+    linear-gradient(180deg,rgba(8,18,31,.9),rgba(5,11,20,.9));
+  border:1px dashed #33557f;
+  border-radius:22px;
+  padding:28px;
+  text-align:center;
+  color:#9db4d4;
+  font-weight:800;
+}
+
+/* 상세 화면 상단 */
+.labyrinth-detail-top{
+  margin-bottom:18px;
+  background:
+    radial-gradient(circle at top right, rgba(96,165,250,.24), transparent 34%),
+    linear-gradient(135deg,#07111e 0%,#0a1f35 58%,#050810 100%);
+  border-color:#25446c;
+  box-shadow:0 18px 36px rgba(0,0,0,.28);
 }
 
 .labyrinth-detail-top h2{
   margin:0 0 8px;
-  font-size:30px;
-  line-height:1.2;
+  font-size:34px;
+  line-height:1.16;
+  letter-spacing:-.7px;
 }
 
 .labyrinth-detail-description{
-  margin:10px 0 0;
-  line-height:1.6;
-  color:#c8d5ea;
+  margin:12px 0 0;
+  line-height:1.65;
+  color:#d0ddf2;
   white-space:pre-wrap;
   word-break:break-word;
 }
 
 .labyrinth-progress-summary{
-  margin-bottom:16px;
+  margin-bottom:18px;
 }
 
+.labyrinth-progress-summary .summary-card{
+  border-color:#24466f;
+  background:
+    linear-gradient(180deg,rgba(14,35,62,.92),rgba(7,17,30,.96));
+}
+
+/* 단계 카드 */
 .labyrinth-stage-card{
-  background:#07111e;
-  border:1px solid #1a2943;
-  border-radius:22px;
+  position:relative;
+  overflow:hidden;
+  background:
+    linear-gradient(180deg,rgba(9,22,38,.98),rgba(5,13,24,.98));
+  border:1px solid #1f3657;
+  border-radius:24px;
   padding:20px;
   display:flex;
   flex-direction:column;
-  gap:12px;
-  box-shadow:0 0 0 1px rgba(255,255,255,.02) inset;
+  gap:14px;
+  box-shadow:
+    0 16px 32px rgba(0,0,0,.26),
+    0 0 0 1px rgba(255,255,255,.025) inset;
 }
 
 .labyrinth-stage-card.current{
-  border-color:#315a93;
-  box-shadow:0 0 0 1px rgba(104,167,255,.10) inset;
+  border-color:#3b82f6;
+  box-shadow:
+    0 20px 40px rgba(0,0,0,.32),
+    0 0 0 1px rgba(96,165,250,.22) inset;
+}
+
+.labyrinth-stage-card.current::before{
+  content:"현재 단계";
+  position:absolute;
+  top:14px;
+  right:14px;
+  border:1px solid #3b82f6;
+  background:rgba(37,99,235,.18);
+  color:#dbeafe;
+  border-radius:999px;
+  padding:5px 10px;
+  font-size:11px;
+  font-weight:1000;
 }
 
 .labyrinth-stage-card.cleared{
-  border-color:#234a36;
+  border-color:#22c55e;
+  background:
+    linear-gradient(180deg,rgba(8,35,24,.7),rgba(5,13,24,.98));
+}
+
+.labyrinth-stage-card.cleared::before{
+  content:"완료";
+  position:absolute;
+  top:14px;
+  right:14px;
+  border:1px solid #22c55e;
+  background:rgba(34,197,94,.15);
+  color:#dcfce7;
+  border-radius:999px;
+  padding:5px 10px;
+  font-size:11px;
+  font-weight:1000;
 }
 
 .labyrinth-stage-header{
@@ -746,13 +871,15 @@ textarea.text-input{
   align-items:flex-start;
   justify-content:space-between;
   gap:12px;
+  padding-right:72px;
 }
 
 .labyrinth-stage-title{
   margin:0;
-  font-size:24px;
-  font-weight:800;
+  font-size:25px;
+  font-weight:1000;
   line-height:1.2;
+  letter-spacing:-.5px;
 }
 
 .labyrinth-stage-order{
@@ -763,34 +890,44 @@ textarea.text-input{
   padding:6px 10px;
   border-radius:999px;
   background:#0d1728;
-  border:1px solid #22304a;
+  border:1px solid #28476e;
   color:#dce7ff;
   font-size:12px;
-  font-weight:700;
+  font-weight:900;
 }
 
 .labyrinth-stage-story{
-  color:#c8d5ea;
-  line-height:1.6;
-  white-space:pre-wrap;
-  word-break:break-word;
-}
-
-.labyrinth-stage-question{
-  background:#0b1220;
-  border:1px solid #1f2d44;
-  border-radius:16px;
-  padding:14px;
-  color:#edf3ff;
+  color:#cad8ef;
   line-height:1.65;
   white-space:pre-wrap;
   word-break:break-word;
+  border-left:3px solid #315a93;
+  padding-left:12px;
+}
+
+.labyrinth-stage-question{
+  background:
+    linear-gradient(180deg,rgba(13,27,47,.92),rgba(8,18,31,.94));
+  border:1px solid #2b4770;
+  border-radius:18px;
+  padding:16px;
+  color:#edf3ff;
+  line-height:1.7;
+  white-space:pre-wrap;
+  word-break:break-word;
+  font-weight:700;
 }
 
 .labyrinth-stage-input-wrap{
-  display:flex;
-  flex-direction:column;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
   gap:10px;
+  align-items:center;
+}
+
+.labyrinth-stage-input-wrap .text-input{
+  min-height:46px;
+  border-radius:999px;
 }
 
 .labyrinth-stage-footer{
@@ -803,8 +940,8 @@ textarea.text-input{
 
 .labyrinth-stage-meta{
   color:#8ea3c2;
-  font-size:13px;
-  line-height:1.4;
+  font-size:12px;
+  line-height:1.45;
 }
 
 .labyrinth-clear-badge{
@@ -813,27 +950,33 @@ textarea.text-input{
   justify-content:center;
   padding:6px 12px;
   border-radius:999px;
-  background:#10281b;
+  background:rgba(34,197,94,.13);
   border:1px solid #28543f;
   color:#d8ffea;
   font-size:12px;
-  font-weight:700;
+  font-weight:900;
 }
 
 .labyrinth-lock-card{
-  background:#06101c;
-  border:1px dashed #28405f;
+  background:
+    linear-gradient(180deg,rgba(6,16,28,.9),rgba(4,10,18,.9));
+  border:1px dashed #33557f;
   border-radius:22px;
-  padding:20px;
-  color:#8ea3c2;
+  padding:22px;
+  color:#9db4d4;
   text-align:center;
+  font-weight:800;
 }
 
 .labyrinth-maker-tools{
   display:flex;
   flex-wrap:wrap;
   gap:8px;
-  margin-top:8px;
+  margin-top:10px;
+  padding:12px;
+  border:1px solid rgba(42,66,102,.58);
+  border-radius:18px;
+  background:rgba(5,13,24,.48);
 }
 
 .labyrinth-textarea{
@@ -842,12 +985,13 @@ textarea.text-input{
 }
 
 .labyrinth-player-line{
-  padding:6px 0;
-  border-bottom:1px solid rgba(255,255,255,.04);
+  padding:7px 0;
+  border-bottom:1px solid rgba(255,255,255,.05);
   color:#dfe9fb;
   font-size:14px;
   word-break:break-word;
 }
+
 .labyrinth-player-line:last-child{
   border-bottom:none;
 }
@@ -866,7 +1010,7 @@ textarea.text-input{
 }
 
 .labyrinth-dim{
-  opacity:.75;
+  opacity:.72;
 }
 
 /* ===== 반응형 ===== */
