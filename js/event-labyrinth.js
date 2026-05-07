@@ -521,15 +521,32 @@ function sanitizeLabyrinthContentHtml(html){
   return wrap.innerHTML.trim();
 }
 
-function renderLabyrinthContent(stage){
-  const html=sanitizeLabyrinthContentHtml(stage.contentHtml||"");
+function makeLabyrinthLegacyHtml(stage){
+  const parts=[];
 
-  if(html){
-    return`<div class="labyrinth-content-view">${html}</div>`;
+  if(stage.story){
+    parts.push(`<p>${escapeHtml(stage.story).replace(/\n/g,"<br>")}</p>`);
   }
 
   if(stage.question){
-    return`<div class="labyrinth-stage-question">${escapeHtml(stage.question)}</div>`;
+    parts.push(`<p>${escapeHtml(stage.question).replace(/\n/g,"<br>")}</p>`);
+  }
+
+  return parts.join("");
+}
+
+function getLabyrinthContentHtml(stage){
+  const html=sanitizeLabyrinthContentHtml(stage.contentHtml||"");
+  if(html)return html;
+
+  return sanitizeLabyrinthContentHtml(makeLabyrinthLegacyHtml(stage));
+}
+
+function renderLabyrinthContent(stage){
+  const html=getLabyrinthContentHtml(stage);
+
+  if(html){
+    return`<div class="labyrinth-content-view">${html}</div>`;
   }
 
   return"";
@@ -712,8 +729,8 @@ function renderLabyrinthDetail(){
             <h3 class="labyrinth-stage-title">${escapeHtml(stage.title||`단계 ${stage.order}`)}</h3>
             <span class="labyrinth-clear-badge">최종 클리어</span>
           </div>
-          ${stage.story?`<div class="labyrinth-stage-story">${escapeHtml(stage.story)}</div>`:""}
-          <div class="labyrinth-stage-footer">
+          ${renderLabyrinthContent(stage)}
+<div class="labyrinth-stage-footer">
             <div class="labyrinth-stage-meta">통과: ${formatDateTime(clearedAt)}</div>
             ${isLabyrinthOwner(item)?`<button onclick="openEditStageModal('${escapeJs(stage.id)}')">수정</button>`:""}
           </div>
@@ -730,7 +747,6 @@ function renderLabyrinthDetail(){
             <h3 class="labyrinth-stage-title">${escapeHtml(stage.title||`단계 ${stage.order}`)}</h3>
             <span class="labyrinth-stage-order">${isFinal?"최종":"입장형"}</span>
           </div>
-          ${stage.story?`<div class="labyrinth-stage-story">${escapeHtml(stage.story)}</div>`:""}
           ${renderLabyrinthContent(stage)}
           <div class="labyrinth-stage-footer">
             <div class="labyrinth-stage-meta">${isFinal?"최종 단계입니다.":"현재 입장 가능한 단계입니다."}</div>
@@ -751,7 +767,6 @@ function renderLabyrinthDetail(){
           <h3 class="labyrinth-stage-title">${escapeHtml(stage.title||`단계 ${stage.order}`)}</h3>
           <span class="labyrinth-stage-order">${stage.type==="final"?"최종":"문제"}</span>
         </div>
-        ${stage.story?`<div class="labyrinth-stage-story">${escapeHtml(stage.story)}</div>`:""}
         ${renderLabyrinthContent(stage)}
         <div class="labyrinth-stage-input-wrap">
           <input id="${inputId}" class="text-input" type="text" placeholder="${escapeHtml(stage.placeholder||"정답을 입력하세요.")}">
@@ -883,11 +898,11 @@ function openEditStageModal(stageId=""){
     el.stageOrderInput.value=String(stage.order);
     el.stageTitleInput.value=stage.title||"";
     el.stageTypeSelect.value=stage.type||"question";
-    el.stageStoryInput.value=stage.story||"";
-    el.stageQuestionInput.value=stage.question||"";
-    setTimeout(()=>{
+    el.stageStoryInput.value="";
+el.stageQuestionInput.value="";
+setTimeout(()=>{
   const editor=document.getElementById("stageContentEditor");
-  if(editor)editor.innerHTML=sanitizeLabyrinthContentHtml(stage.contentHtml||"");
+  if(editor)editor.innerHTML=getLabyrinthContentHtml(stage);
   setupLabyrinthEditor();
 },0);
     el.stageAnswerInput.value=stage.answer||"";
@@ -936,9 +951,9 @@ async function submitStage(){
   const order=Number(el.stageOrderInput.value);
   const title=normalizeLabyrinthText(el.stageTitleInput.value);
   const type=String(el.stageTypeSelect.value||"question");
-  const story=normalizeLabyrinthText(el.stageStoryInput.value);
-  const question=normalizeLabyrinthText(el.stageQuestionInput.value);
-  const contentHtml=sanitizeLabyrinthContentHtml(document.getElementById("stageContentEditor")?.innerHTML||"");
+  const story="";
+const question="";
+const contentHtml=sanitizeLabyrinthContentHtml(document.getElementById("stageContentEditor")?.innerHTML||"");
   const answer=normalizeLabyrinthText(el.stageAnswerInput.value);
   const placeholder=normalizeLabyrinthText(el.stagePlaceholderInput.value);
   const successMessage=normalizeLabyrinthText(el.stageSuccessMessageInput.value);
