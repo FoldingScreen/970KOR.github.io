@@ -73,9 +73,19 @@
         <section id="escapeLabyrinthScreen" class="hidden">
           <div id="labyrinthHomeView" class="hidden">
             <div class="labyrinth-home-grid">
-              <div class="labyrinth-section"><div class="section-header-row"><h3 class="section-title">공개 미궁</h3></div><div id="publicLabyrinthList" class="labyrinth-card-grid"></div></div>
-              <div class="labyrinth-section"><div class="section-header-row"><h3 class="section-title">내 미궁</h3></div><div id="myLabyrinthList" class="labyrinth-card-grid"></div></div>
-            </div>
+  <div class="labyrinth-section"><div class="section-header-row"><h3 class="section-title">공개 미궁</h3></div><div id="publicLabyrinthList" class="labyrinth-card-grid"></div></div>
+  <div class="labyrinth-section"><div class="section-header-row"><h3 class="section-title">내 미궁</h3></div><div id="myLabyrinthList" class="labyrinth-card-grid"></div></div>
+</div>
+
+<div class="labyrinth-section turtle-section">
+  <div class="section-header-row">
+    <h3 class="section-title">바다거북스프</h3>
+    <button type="button" class="inline-btn" onclick="openCreateTurtleSoupModal()">문제 만들기</button>
+  </div>
+  <div id="turtleSoupList" class="turtle-soup-list"></div>
+</div>
+
+<div id="turtleSoupDetailView" class="hidden"></div>
           </div>
           <div id="labyrinthDetailView" class="hidden">
             <div class="labyrinth-detail-top card"><h2 id="labyrinthDetailTitle">미궁 제목</h2><div id="labyrinthDetailMeta" class="muted"></div><p id="labyrinthDetailDescription" class="labyrinth-detail-description"></p></div>
@@ -244,6 +254,44 @@
     <div class="actions right-wrap"><button type="button" onclick="submitEditLabyrinth()">저장</button></div>
   </div>
 
+<div id="createTurtleSoupModal" class="modal hidden">
+  <div class="modal-header">
+    <h3 id="turtleSoupModalTitle">바다거북스프 만들기</h3>
+    <button class="close-btn" type="button" onclick="closeCreateTurtleSoupModal()">닫기</button>
+  </div>
+
+  <div class="form-group">
+    <label for="turtleSoupTitleInput">문제 제목</label>
+    <input id="turtleSoupTitleInput" class="text-input" type="text" placeholder="예: 잠긴 방의 물컵" />
+  </div>
+
+  <div class="form-group">
+    <label>문제 본문</label>
+    <div class="labyrinth-editor-toolbar">
+      <label class="labyrinth-editor-upload">
+        사진 삽입
+        <input id="turtleSoupImageInput" type="file" accept="image/*" hidden>
+      </label>
+      <button type="button" onclick="clearTurtleSoupEditorContent()">본문 초기화</button>
+    </div>
+    <div id="turtleSoupEditor" class="labyrinth-content-editor" contenteditable="true" data-placeholder="사건 설명을 작성하세요. 사진도 삽입할 수 있습니다."></div>
+  </div>
+
+  <div class="form-group">
+    <label for="turtleSoupAnswerInput">정답</label>
+    <input id="turtleSoupAnswerInput" class="text-input" type="text" placeholder="복수정답은 쉼표로 구분" />
+  </div>
+
+  <div class="form-group">
+    <label class="checkbox-label"><input type="checkbox" id="turtleSoupPublicCheckbox" checked />공개</label>
+  </div>
+
+  <div class="actions right-wrap">
+    <button id="deleteTurtleSoupBtn" type="button" class="danger-btn hidden" onclick="deleteTurtleSoup()">삭제</button>
+    <button type="button" onclick="submitTurtleSoup()">저장</button>
+  </div>
+</div>
+  
   <div id="editStageModal" class="modal hidden">
     <div class="modal-header"><h3 id="editStageModalTitle">단계 편집</h3><button class="close-btn" type="button" onclick="closeEditStageModal()">닫기</button></div>
     <div class="form-group"><label for="stageOrderInput">순서</label><input id="stageOrderInput" class="text-input" type="number" min="0" step="1" placeholder="예: 0" /></div>
@@ -287,6 +335,7 @@
   <script src="js/event-castle.js?v=split-1"></script>
   <script src="js/event-rearrange.js?v=split-1"></script>
   <script src="js/event-labyrinth.js?v=split-1"></script>
+  <script src="js/event-turtle.js?v=split-1"></script>
   <script src="js/script.js?v=split-1"></script>
 </body>
 </html>
