@@ -552,6 +552,20 @@ function renderLabyrinthContent(stage){
   return"";
 }
 
+function getAcceptedLabyrinthAnswers(answerText){
+  return String(answerText||"")
+    .split(/[,;\n/]+/)
+    .map(v=>normalizeAnswerValue(v))
+    .filter(Boolean);
+}
+
+function isCorrectLabyrinthAnswer(inputValue,answerText){
+  const value=normalizeAnswerValue(inputValue);
+  const accepted=getAcceptedLabyrinthAnswers(answerText);
+
+  return accepted.includes(value);
+}
+
 function setupLabyrinthEditor(){
   const editor=document.getElementById("stageContentEditor");
   const imageInput=document.getElementById("stageContentImageInput");
@@ -1179,8 +1193,8 @@ window.submitLabyrinthAnswer=async function(order){
   if(!item||!stage)return;
 
   const input=document.getElementById(`labyrinthAnswerInput-${order}`);
-  const value=normalizeAnswerValue(input?.value||"");
-  const expected=normalizeAnswerValue(stage.answer||"");
+  const rawValue=input?.value||"";
+const value=normalizeAnswerValue(rawValue);
 
   if(!value){
     alert("정답을 입력하세요.");
@@ -1188,11 +1202,11 @@ window.submitLabyrinthAnswer=async function(order){
     return;
   }
 
-  if(value!==expected){
-    alert("정답이 아닙니다.");
-    input?.focus();
-    return;
-  }
+  if(!isCorrectLabyrinthAnswer(rawValue,stage.answer||"")){
+  alert("정답이 아닙니다.");
+  input?.focus();
+  return;
+}
 
   const stages=[...state.currentLabyrinthStages].filter(v=>v.isActive).sort((a,b)=>a.order-b.order);
   const next=stages.find(v=>v.order>order)||null;
