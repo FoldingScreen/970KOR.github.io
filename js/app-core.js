@@ -299,7 +299,8 @@ function syncOverlay(){
     (el.castleBattleModal&&!el.castleBattleModal.classList.contains("hidden"))||
     (el.createLabyrinthModal&&!el.createLabyrinthModal.classList.contains("hidden"))||
     (el.editLabyrinthModal&&!el.editLabyrinthModal.classList.contains("hidden"))||
-    (el.editStageModal&&!el.editStageModal.classList.contains("hidden"));
+    (el.editStageModal&&!el.editStageModal.classList.contains("hidden"))||
+(!document.getElementById("createTurtleSoupModal")?.classList.contains("hidden"));
 
   if(!el.modalOverlay)return;
 
@@ -319,6 +320,7 @@ if(el.modalOverlay){
     closeCastleBattleModal();
     closeCreateLabyrinthModal();
     closeEditLabyrinthModal();
+    closeCreateTurtleSoupModal?.();
     closeEditStageModal();
     syncOverlay();
   });
