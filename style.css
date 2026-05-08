@@ -2987,3 +2987,12 @@ textarea.text-input{
     font-size:24px;
   }
 }
+
+@media(max-width:720px){
+  .turtle-input-row .text-input,
+  .turtle-answer-row .text-input,
+  #turtleChatInput,
+  #turtleFinalAnswerInput{
+    font-size:16px!important;
+  }
+}
