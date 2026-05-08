@@ -48,6 +48,7 @@ img{
   max-width:1380px;
   margin:0 auto;
   padding:20px;
+  padding-top:78px;
   overflow-x:hidden;
 }
 
@@ -125,9 +126,11 @@ img{
   padding:12px 14px;
   border-bottom:1px solid #162033;
   background:#050810;
-  position:sticky;
+  position:fixed;
   top:0;
-  z-index:80;
+  left:0;
+  right:0;
+  z-index:120;
   min-height:58px;
 }
 
@@ -2416,6 +2419,7 @@ textarea.text-input{
 
   .container{
     padding:14px;
+    padding-top:78px;
   }
 
   .card,
