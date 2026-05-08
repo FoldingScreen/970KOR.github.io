@@ -96,71 +96,74 @@
 
         <div id="partyList" class="party-grid"></div>
 
-        <section id="escapeLabyrinthScreen" class="hidden">
-          <div id="labyrinthHomeView" class="hidden">
-            <div id="labyrinthMenuPanel">
-              <div class="webgame-select-grid">
-  <div class="webgame-select-card" onclick="openEscapeLabyrinthMenu('labyrinth')">
-    <div class="webgame-select-title">미궁</div>
-    <div class="webgame-select-desc">
-      단계형으로 이뤄진 문제를 풀이합니다.<br>
-      문제 유형은 제작자에 따라 다양하며,<br>
-      누구든지 문제를 내거나 맞힐 수 있습니다.
+<section id="escapeLabyrinthScreen" class="hidden">
+  <div id="labyrinthHomeView" class="hidden">
+
+    <div id="labyrinthMenuPanel">
+      <div class="webgame-select-grid">
+        <div class="webgame-select-card" onclick="openEscapeLabyrinthMenu('labyrinth')">
+          <div class="webgame-select-title">미궁</div>
+          <div class="webgame-select-desc">
+            단계형으로 이뤄진 문제를 풀이합니다.<br>
+            문제 유형은 제작자에 따라 다양하며,<br>
+            누구든지 문제를 내거나 맞힐 수 있습니다.
+          </div>
+        </div>
+
+        <div class="webgame-select-card" onclick="openEscapeLabyrinthMenu('turtle')">
+          <div class="webgame-select-title">바다거북스프</div>
+          <div class="webgame-select-desc">
+            질문으로 사건의 전말을 추리합니다.<br>
+            스무고개처럼 예/아니오로 답변이 가능한 질문으로<br>
+            전체 스토리를 맞히는 게임이며,<br>
+            누구든지 문제를 내거나 맞힐 수 있습니다.
+          </div>
+        </div>
+      </div>
     </div>
+
+    <div id="labyrinthRealHome" class="hidden">
+      <div class="labyrinth-home-grid">
+        <div class="labyrinth-section">
+          <div class="section-header-row">
+            <h3 class="section-title">공개 미궁</h3>
+          </div>
+          <div id="publicLabyrinthList" class="labyrinth-card-grid"></div>
+        </div>
+
+        <div class="labyrinth-section">
+          <div class="section-header-row">
+            <h3 class="section-title">내 미궁</h3>
+          </div>
+          <div id="myLabyrinthList" class="labyrinth-card-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="turtleMenuPanel" class="hidden">
+      <div class="labyrinth-section turtle-section">
+        <div class="section-header-row">
+          <h3 class="section-title">바다거북스프</h3>
+          <button type="button" class="inline-btn" onclick="openCreateTurtleSoupModal()">문제 만들기</button>
+        </div>
+        <div id="turtleSoupList" class="turtle-soup-list"></div>
+      </div>
+    </div>
+
   </div>
 
-  <div class="webgame-select-card" onclick="openEscapeLabyrinthMenu('turtle')">
-    <div class="webgame-select-title">바다거북스프</div>
-    <div class="webgame-select-desc">
-      질문으로 사건의 전말을 추리합니다.<br>
-      스무고개처럼 예/아니오로 답변이 가능한 질문으로<br>
-      전체 스토리를 맞히는 게임이며,<br>
-      누구든지 문제를 내거나 맞힐 수 있습니다.
+  <div id="turtleSoupDetailView" class="hidden"></div>
+
+  <div id="labyrinthDetailView" class="hidden">
+    <div class="labyrinth-detail-top card">
+      <h2 id="labyrinthDetailTitle">미궁 제목</h2>
+      <div id="labyrinthDetailMeta" class="muted"></div>
+      <p id="labyrinthDetailDescription" class="labyrinth-detail-description"></p>
     </div>
+    <div id="labyrinthProgressSummary" class="summary-grid labyrinth-progress-summary hidden"></div>
+    <div id="labyrinthStageList" class="party-grid"></div>
   </div>
-</div>
-              <div id="labyrinthRealHome" class="hidden">
-                <div class="labyrinth-section">
-                  <div class="section-header-row">
-                    <h3 class="section-title">공개 미궁</h3>
-                  </div>
-                  <div id="publicLabyrinthList" class="labyrinth-card-grid"></div>
-                </div>
-
-                <div class="labyrinth-section">
-                  <div class="section-header-row">
-                    <h3 class="section-title">내 미궁</h3>
-                  </div>
-                  <div id="myLabyrinthList" class="labyrinth-card-grid"></div>
-                </div>
-              </div>
-            </div>
-
-            </div>
-
-            <div id="turtleMenuPanel" class="hidden">
-              <div class="labyrinth-section turtle-section">
-                <div class="section-header-row">
-                  <h3 class="section-title">바다거북스프</h3>
-                  <button type="button" class="inline-btn" onclick="openCreateTurtleSoupModal()">문제 만들기</button>
-                </div>
-                <div id="turtleSoupList" class="turtle-soup-list"></div>
-              </div>
-            </div>
-          </div>
-
-          <div id="turtleSoupDetailView" class="hidden"></div>
-
-          <div id="labyrinthDetailView" class="hidden">
-            <div class="labyrinth-detail-top card">
-              <h2 id="labyrinthDetailTitle">미궁 제목</h2>
-              <div id="labyrinthDetailMeta" class="muted"></div>
-              <p id="labyrinthDetailDescription" class="labyrinth-detail-description"></p>
-            </div>
-            <div id="labyrinthProgressSummary" class="summary-grid labyrinth-progress-summary hidden"></div>
-            <div id="labyrinthStageList" class="party-grid"></div>
-          </div>
-        </section>
+</section>
       </section>
     </main>
   </div>
