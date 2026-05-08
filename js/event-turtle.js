@@ -448,30 +448,29 @@ function renderTurtleSoupDetail(){
 `:""}
       </div>
 
-      <div class="turtle-problem-card">
-        <div class="turtle-problem-title">${escapeHtml(item.title||"제목 없음")}</div>
-        <div class="turtle-problem-meta">
-  출제자: ${escapeHtml(item.creator||"-")}
-  · 난이도 ${renderTurtleDifficulty(item.difficulty)}
-  · 클리어: ${clearers.length}명${clearers.length?` (${clearers.map(v=>escapeHtml(v.nickname)).join(", ")})`:""}
-</div>
-        <details class="turtle-problem-body" open>
-          <summary>문제 보기 / 접기</summary>
-          <div class="turtle-problem-content">${escapeHtml(item.contentText||"").replace(/\n/g,"<br>")}</div>
-        </details>
-      </div>
-
       <div class="turtle-detail-left">
-      <div id="turtleChatList" class="turtle-chat-list">
-        ${comments.length?comments.map(comment=>renderTurtleComment(comment,isCreator)).join(""):`<div class="turtle-empty-chat">아직 질문이 없습니다.</div>`}
-      </div>
-
-      ${renderTurtleSolutionPanel(isCreator,isCleared,item)}
-      ${renderTurtleSubmissionPanel(isCreator,submissions,isCleared)}
-      </div>
-
-   <div class="turtle-detail-right">
+  <div class="turtle-problem-card">
+    <div class="turtle-problem-title">${escapeHtml(item.title||"제목 없음")}</div>
+    <div class="turtle-problem-meta">
+      출제자: ${escapeHtml(item.creator||"-")}
+      · 난이도 ${renderTurtleDifficulty(item.difficulty)}
+      · 클리어: ${clearers.length}명${clearers.length?` (${clearers.map(v=>escapeHtml(v.nickname)).join(", ")})`:""}
     </div>
+    <details class="turtle-problem-body" open>
+      <summary>문제 보기 / 접기</summary>
+      <div class="turtle-problem-content">${escapeHtml(item.contentText||"").replace(/\n/g,"<br>")}</div>
+    </details>
+  </div>
+
+  ${renderTurtleSolutionPanel(isCreator,isCleared,item)}
+  ${renderTurtleSubmissionPanel(isCreator,submissions,isCleared)}
+</div>
+
+<div class="turtle-detail-right">
+  <div id="turtleChatList" class="turtle-chat-list">
+    ${comments.length?comments.map(comment=>renderTurtleComment(comment,isCreator)).join(""):`<div class="turtle-empty-chat">아직 질문이 없습니다.</div>`}
+  </div>
+  
       <div class="turtle-composer">
         <div id="turtleAnsweringLabel" class="turtle-answering-label ${state.answeringTurtleCommentId?"":"hidden"}">
           답변 작성 중
