@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>970KOR</title>
-  <link rel="stylesheet" href="style.css?v=split-2" />
+  <link rel="stylesheet" href="style.css?v=split-4" />
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -34,7 +34,10 @@
   </nav>
 
   <div class="top-right">
-    <button class="pill notification-btn" type="button" onclick="openNotificationModal()">🔔</button>
+    <button id="notificationBtn" class="pill notification-pill" type="button" onclick="openNotificationModal()">
+  🔔
+  <span id="notificationCount" class="notification-count hidden">0</span>
+</button>
     <button id="adminMenuBtn" class="pill hidden" onclick="toggleAdminMenu()">운영진 메뉴</button>
     <button class="pill" id="myNameBtn" disabled>로그인 안 됨</button>
     <button class="pill" onclick="logout()">로그아웃</button>
