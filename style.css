@@ -2967,3 +2967,23 @@ textarea.text-input{
     max-height:none;
   }
 }
+
+#eventScreen #eventTitle{
+  margin-top:0;
+  font-size:28px;
+  line-height:1.2;
+}
+
+#eventScreen #eventDesc:empty{
+  display:none;
+}
+
+#escapeLabyrinthScreen{
+  padding-top:8px;
+}
+
+@media(max-width:720px){
+  #eventScreen #eventTitle{
+    font-size:24px;
+  }
+}
