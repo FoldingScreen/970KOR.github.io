@@ -2837,3 +2837,16 @@ textarea.text-input{
     flex-direction:column;
   }
 }
+
+.brand-home-btn{
+  border:none;
+  background:transparent;
+  color:#e8edf7;
+  padding:0;
+  cursor:pointer;
+  text-align:left;
+}
+
+.brand-home-btn:hover{
+  color:#bfdbfe;
+}
