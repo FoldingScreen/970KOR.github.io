@@ -57,7 +57,10 @@ function renderTurtleSoupList(){
         <div class="turtle-card-main">
           <div class="turtle-card-title">${escapeHtml(item.title||"제목 없음")}</div>
           <div class="turtle-card-meta">
-            출제자: ${escapeHtml(item.creator||"-")} · 난이도 ${renderTurtleDifficulty(item.difficulty)} · 질문 ${questionCount}개
+            출제자: ${escapeHtml(item.creator||"-")}
+· 난이도 ${renderTurtleDifficulty(item.difficulty)}
+· 질문 ${questionCount}개
+· 클리어 ${(state.currentTurtlePlayersMap?.[item.id]||0)}명
           </div>
         </div>
         <div class="labyrinth-inline-status">
@@ -362,6 +365,11 @@ async function openTurtleSoupDetail(id){
       }).filter(v=>v.isCleared&&!isHiddenTestNickname(v.nickname));
 
       renderTurtleSoupDetail();
+      state.currentTurtlePlayersMap=state.currentTurtlePlayersMap||{};
+      state.currentTurtlePlayersMap[item.id]=state.currentTurtlePlayers.length;
+
+      renderTurtleSoupList();
+      
     },err=>{
       console.error(err);
       alert("정답자 목록을 불러오는 중 오류가 발생했습니다.");
@@ -429,36 +437,41 @@ function renderTurtleSoupDetail(){
   const answeringAnswer=answeringComment?.answer||"";
 
   root.innerHTML=`
-    <div class="turtle-detail-view">
+    <div class="turtle-detail-view turtle-detail-layout">
       <div class="turtle-detail-header">
         <div>
           <button type="button" class="inline-btn" onclick="closeTurtleSoupDetail()">← 목록</button>
           ${isCreator?`<button type="button" class="inline-btn" onclick="openCreateTurtleSoupModal('${escapeJs(item.id)}')">문제 수정</button>`:""}
         </div>
-        ${isCreator?"":`
-  <span class="labyrinth-status-badge ${isCleared?"public":"private"}">
-    ${isCleared?"완료":"진행중"}
-  </span>
-`}
+        ${!isCreator&&isCleared?`
+  <span class="labyrinth-status-badge public">완료</span>
+`:""}
       </div>
 
       <div class="turtle-problem-card">
         <div class="turtle-problem-title">${escapeHtml(item.title||"제목 없음")}</div>
-        <div class="turtle-problem-meta">출제자: ${escapeHtml(item.creator||"-")} · 난이도 ${renderTurtleDifficulty(item.difficulty)}</div>
+        <div class="turtle-problem-meta">
+  출제자: ${escapeHtml(item.creator||"-")}
+  · 난이도 ${renderTurtleDifficulty(item.difficulty)}
+  · 클리어: ${clearers.length}명${clearers.length?` (${clearers.map(v=>escapeHtml(v.nickname)).join(", ")})`:""}
+</div>
         <details class="turtle-problem-body" open>
           <summary>문제 보기 / 접기</summary>
           <div class="turtle-problem-content">${escapeHtml(item.contentText||"").replace(/\n/g,"<br>")}</div>
         </details>
       </div>
 
+      <div class="turtle-detail-left">
       <div id="turtleChatList" class="turtle-chat-list">
         ${comments.length?comments.map(comment=>renderTurtleComment(comment,isCreator)).join(""):`<div class="turtle-empty-chat">아직 질문이 없습니다.</div>`}
       </div>
 
-      ${renderTurtleClearersPanel(clearers)}
       ${renderTurtleSolutionPanel(isCreator,isCleared,item)}
       ${renderTurtleSubmissionPanel(isCreator,submissions,isCleared)}
+      </div>
 
+   <div class="turtle-detail-right">
+    </div>
       <div class="turtle-composer">
         <div id="turtleAnsweringLabel" class="turtle-answering-label ${state.answeringTurtleCommentId?"":"hidden"}">
           답변 작성 중
