@@ -257,6 +257,7 @@ async function openTurtleSoupDetail(id){
   state.currentTurtlePlayers=[];
   state.answeringTurtleCommentId="";
   state.isTurtleSubmitPanelOpen=false;
+  state.shouldScrollTurtleChatTop=true;  
 
   if(state.unsubscribeTurtleComments){
     state.unsubscribeTurtleComments();
@@ -303,7 +304,12 @@ async function openTurtleSoupDetail(id){
       });
 
       renderTurtleSoupDetail();
-      setTimeout(scrollTurtleChatToBottom,0);
+      if(state.shouldScrollTurtleChatTop){
+        state.shouldScrollTurtleChatTop=false;
+        setTimeout(scrollTurtleChatToTop,0);
+      }else{
+        setTimeout(scrollTurtleChatToBottom,0);
+      }
     },err=>{
       console.error(err);
       alert("질문 목록을 불러오는 중 오류가 발생했습니다.");
@@ -656,6 +662,12 @@ ${isCreator?`
       `}
     </div>
   `;
+}
+
+function scrollTurtleChatToTop(){
+  const list=document.getElementById("turtleChatList");
+  if(!list)return;
+  list.scrollTop=0;
 }
 
 function scrollTurtleChatToBottom(){
