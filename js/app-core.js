@@ -25,7 +25,7 @@ const HOLY_SWORD_AREAS=[
 const state={
   currentUser:"",
   currentEventId:"",
-  escapeLabyrinthTab:"labyrinth",
+  escapeLabyrinthTab:"home",
   isAdmin:false,
 
   unsubscribeParties:null,
@@ -88,7 +88,7 @@ const state={
     {id:"triple_alliance",name:"삼대 연맹전",desc:"아빠는 5대, 아들은 2대 맞는 이유는? 세대차이 엌ㅋㅋ"},
     {id:"castle_battle",name:"캐슬 전투",desc:"서버전 전략 수립용"},
     {id:"rearrange",name:"자리 재배치",desc:"자동차에서 가장 시원한 자리는? 차가운데 엌ㅋㅋ"},
-    {id:"escape_labyrinth",name:"사바나의 첨탑",desc:"바나나가 사악하면? 사바나. ㅇㅇ."},
+    {id:"escape_labyrinth",name:"웹게임",desc:"웹에서 즐길 수 있는 게임"},
   ]
 };
 
@@ -325,7 +325,7 @@ function updateEscapeLabyrinthHomePanels(){
 
 function openEscapeLabyrinthMenu(tab){
   state.escapeLabyrinthTab=tab;
-  onclick="openEvent('escape_labyrinth')"
+  openEvent("escape_labyrinth");
 }
 
 window.updateEscapeLabyrinthHomePanels=updateEscapeLabyrinthHomePanels;
@@ -1023,8 +1023,13 @@ async function openEvent(id){
 
   const meta=state.events.find(v=>v.id===id);
   if(id==="escape_labyrinth"){
-  el.eventTitle.textContent=state.escapeLabyrinthTab==="turtle"?"바다거북스프":"사바나의 첨탑 - 미궁";
-  el.eventDesc.textContent=state.escapeLabyrinthTab==="turtle"?"질문으로 진실을 찾아가는 바다거북스프":"단계형 미궁을 플레이합니다.";
+  if(state.currentTurtleSoupId){
+  el.eventTitle.textContent="";
+  el.eventDesc.textContent="";
+}else{
+  el.eventTitle.textContent="웹게임";
+  el.eventDesc.textContent="플레이할 콘텐츠를 선택하세요.";
+}
 }else{
   el.eventTitle.textContent=meta?meta.name:id;
   el.eventDesc.textContent=meta?meta.desc:"";
