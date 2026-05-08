@@ -2891,26 +2891,6 @@ textarea.text-input{
   line-height:1.5;
 }
 
-.turtle-detail-layout{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) 420px;
-  gap:20px;
-}
-
-.turtle-detail-left{
-  min-width:0;
-}
-
-.turtle-detail-right{
-  min-width:0;
-}
-
-@media(max-width:980px){
-  .turtle-detail-layout{
-    grid-template-columns:1fr;
-  }
-}
-
 #labyrinthRealHome.hidden{
   display:none!important;
 }
@@ -2994,5 +2974,224 @@ textarea.text-input{
   #turtleChatInput,
   #turtleFinalAnswerInput{
     font-size:16px!important;
+  }
+}
+
+/* ===== 최종 정리: 웹게임/미궁/바거슾 시인성 개선 ===== */
+
+/* 웹게임 화면 상단 정리 */
+#eventScreen #eventTitle{
+  margin:0 0 10px;
+  font-size:24px;
+  line-height:1.2;
+  letter-spacing:-.4px;
+}
+
+#eventScreen #eventDesc{
+  margin-top:0;
+}
+
+#eventScreen #eventDesc:empty{
+  display:none;
+}
+
+#escapeLabyrinthScreen{
+  padding-top:4px;
+}
+
+/* 웹게임 선택 카드 */
+.webgame-select-grid{
+  gap:18px;
+}
+
+.webgame-select-card{
+  background:linear-gradient(180deg,rgba(13,27,47,.95),rgba(7,17,30,.98));
+  border-color:#315a93;
+  box-shadow:0 12px 28px rgba(0,0,0,.24);
+}
+
+.webgame-select-title{
+  font-size:24px;
+  color:#edf3ff;
+  letter-spacing:-.5px;
+}
+
+.webgame-select-desc{
+  color:#c5d7f4;
+  font-size:14px;
+  line-height:1.65;
+  font-weight:700;
+}
+
+/* 바거슾 목록 카드 */
+.turtle-soup-card{
+  align-items:flex-start;
+  background:linear-gradient(180deg,rgba(11,26,45,.96),rgba(7,17,30,.98));
+  border-color:#28476e;
+  padding:14px 16px;
+}
+
+.turtle-card-title{
+  font-size:18px;
+  line-height:1.3;
+}
+
+.turtle-card-meta{
+  margin-top:7px;
+  color:#b7c8e6;
+  line-height:1.55;
+}
+
+/* 바거슾 상세 레이아웃 최종 */
+.turtle-detail-layout{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(360px,420px);
+  gap:18px;
+  align-items:start;
+  height:auto;
+  min-height:0;
+}
+
+.turtle-detail-header{
+  grid-column:1 / -1;
+  margin-bottom:2px;
+}
+
+.turtle-detail-left{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+.turtle-detail-right{
+  min-width:0;
+  position:sticky;
+  top:76px;
+  max-height:calc(100vh - 96px);
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.turtle-detail-right .turtle-chat-list{
+  flex:1;
+  min-height:360px;
+  max-height:none;
+  overflow-y:auto;
+}
+
+/* 문제 카드 */
+.turtle-problem-card,
+.turtle-submission-panel,
+.turtle-solution-panel{
+  border-color:#28476e;
+  background:linear-gradient(180deg,rgba(9,22,38,.98),rgba(5,13,24,.98));
+}
+
+.turtle-problem-title{
+  font-size:22px;
+  letter-spacing:-.4px;
+}
+
+.turtle-problem-meta{
+  color:#b7c8e6;
+  line-height:1.55;
+}
+
+.turtle-problem-content{
+  max-height:320px;
+  color:#f3f7ff;
+  font-size:15px;
+  line-height:1.75;
+}
+
+/* 채팅 말풍선 */
+.turtle-bubble{
+  font-size:14px;
+  line-height:1.55;
+  padding:9px 12px;
+}
+
+.turtle-bubble-meta{
+  color:#9fb3d3;
+}
+
+.turtle-bubble.question{
+  background:#0d2038;
+  border-color:#315a93;
+}
+
+.turtle-bubble.answer{
+  background:#12396c;
+  border-color:#4f8cff;
+}
+
+/* 입력창 */
+.turtle-composer{
+  border-color:#315a93;
+  background:rgba(5,8,16,.98);
+}
+
+.turtle-input-row .text-input,
+.turtle-answer-row .text-input,
+#turtleChatInput,
+#turtleFinalAnswerInput{
+  font-size:16px!important;
+}
+
+/* 모바일 보정 */
+@media(max-width:980px){
+  .turtle-detail-layout{
+    grid-template-columns:1fr;
+  }
+
+  .turtle-detail-right{
+    position:static;
+    max-height:none;
+  }
+
+  .turtle-detail-right .turtle-chat-list{
+    min-height:320px;
+    max-height:55vh;
+  }
+}
+
+@media(max-width:720px){
+  #eventScreen #eventTitle{
+    font-size:21px;
+  }
+
+  .webgame-select-card{
+    padding:18px;
+  }
+
+  .webgame-select-title{
+    font-size:22px;
+  }
+
+  .turtle-card-title{
+    font-size:17px;
+  }
+
+  .turtle-problem-title{
+    font-size:20px;
+  }
+
+  .turtle-problem-content{
+    max-height:260px;
+    font-size:15px;
+  }
+
+  .turtle-bubble-wrap{
+    max-width:90%;
+  }
+
+  .turtle-input-row{
+    grid-template-columns:1fr;
+  }
+
+  .turtle-input-actions{
+    justify-content:flex-end;
   }
 }
