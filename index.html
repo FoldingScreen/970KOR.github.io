@@ -32,10 +32,9 @@
         <button class="tab-btn" onclick="openEvent('rearrange')">자리재배치</button>
 
         <div class="drawer-header" style="margin-top:8px;">
-          <strong>사바나의 첨탑</strong>
+          <strong>웹게</strong>
         </div>
-        <button class="tab-btn" onclick="openEscapeLabyrinthMenu('labyrinth')">미궁</button>
-        <button class="tab-btn" onclick="openEscapeLabyrinthMenu('turtle')">바다거북스프</button>
+        <button class="tab-btn" onclick="openEvent('escape_labyrinth')">웹게임 홈</button>
       </nav>
 
       <div class="top-right">
@@ -100,6 +99,26 @@
         <section id="escapeLabyrinthScreen" class="hidden">
           <div id="labyrinthHomeView" class="hidden">
             <div id="labyrinthMenuPanel">
+              <div class="webgame-select-grid">
+  <div class="webgame-select-card" onclick="openEscapeLabyrinthMenu('labyrinth')">
+    <div class="webgame-select-title">미궁</div>
+    <div class="webgame-select-desc">
+      단계형으로 이뤄진 문제를 풀이합니다.<br>
+      문제 유형은 제작자에 따라 다양하며,<br>
+      누구든지 문제를 내거나 맞힐 수 있습니다.
+    </div>
+  </div>
+
+  <div class="webgame-select-card" onclick="openEscapeLabyrinthMenu('turtle')">
+    <div class="webgame-select-title">바다거북스프</div>
+    <div class="webgame-select-desc">
+      질문으로 사건의 전말을 추리합니다.<br>
+      스무고개처럼 예/아니오로 답변이 가능한 질문으로<br>
+      전체 스토리를 맞히는 게임이며,<br>
+      누구든지 문제를 내거나 맞힐 수 있습니다.
+    </div>
+  </div>
+</div>
               <div class="labyrinth-home-grid">
                 <div class="labyrinth-section">
                   <div class="section-header-row">
