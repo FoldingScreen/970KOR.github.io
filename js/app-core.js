@@ -304,19 +304,28 @@ window.closeEventMenu=closeEventMenu;
 window.toggleEventMenu=toggleEventMenu;
 
 function updateEscapeLabyrinthHomePanels(){
-  const isTurtle=state.escapeLabyrinthTab==="turtle";
-  const isLabyrinth=state.escapeLabyrinthTab==="labyrinth";
+  const tab=state.escapeLabyrinthTab||"home";
 
-  document.getElementById("labyrinthMenuPanel")?.classList.toggle("hidden",isLabyrinth||isTurtle);
+  const labyrinthMenuPanel=document.getElementById("labyrinthMenuPanel");
+  const labyrinthRealHome=document.getElementById("labyrinthRealHome");
+  const turtleMenuPanel=document.getElementById("turtleMenuPanel");
 
-  document.getElementById("labyrinthRealHome")?.classList.toggle("hidden",!isLabyrinth);
+  labyrinthMenuPanel?.classList.add("hidden");
+  labyrinthRealHome?.classList.add("hidden");
+  turtleMenuPanel?.classList.add("hidden");
 
-  document.getElementById("turtleMenuPanel")?.classList.toggle("hidden",!isTurtle);
+  if(tab==="home"){
+    labyrinthMenuPanel?.classList.remove("hidden");
+  }else if(tab==="labyrinth"){
+    labyrinthRealHome?.classList.remove("hidden");
+  }else if(tab==="turtle"){
+    turtleMenuPanel?.classList.remove("hidden");
+  }
 }
 
 function openEscapeLabyrinthMenu(tab){
-  state.escapeLabyrinthTab=tab==="turtle"?"turtle":"labyrinth";
-  openEvent("escape_labyrinth");
+  state.escapeLabyrinthTab=tab;
+  onclick="openEvent('escape_labyrinth')"
 }
 
 window.updateEscapeLabyrinthHomePanels=updateEscapeLabyrinthHomePanels;
