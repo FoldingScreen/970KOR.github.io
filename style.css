@@ -2865,3 +2865,66 @@ textarea.text-input{
   font-size:11px;
   font-weight:900;
 }
+
+/* ===== 모바일 바거슾 화면 정리 ===== */
+@media(max-width:720px){
+  /* 바거슾 목록 화면에서 상단 '바다거북스프' 제목 숨김 */
+  #eventScreen:has(#turtleMenuPanel:not(.hidden)) #eventTitle,
+  #eventScreen:has(#turtleMenuPanel:not(.hidden)) #eventDesc{
+    display:none;
+  }
+
+  #eventScreen:has(#turtleMenuPanel:not(.hidden)) .event-top-row{
+    margin-bottom:8px;
+  }
+
+  /* 바거슾 목록 카드 compact */
+  #turtleMenuPanel .labyrinth-section{
+    padding:12px;
+    border-radius:18px;
+  }
+
+  #turtleMenuPanel .section-header-row{
+    margin-bottom:10px;
+  }
+
+  #turtleMenuPanel .section-title{
+    font-size:18px;
+  }
+
+  #turtleMenuPanel .inline-btn{
+    min-height:34px;
+    padding:6px 10px;
+    font-size:12px;
+  }
+
+  #turtleMenuPanel .turtle-soup-list{
+    gap:8px;
+  }
+
+  #turtleMenuPanel .turtle-soup-card{
+    padding:11px 12px;
+    border-radius:15px;
+    gap:8px;
+  }
+
+  #turtleMenuPanel .turtle-card-title{
+    font-size:15px;
+    line-height:1.3;
+  }
+
+  #turtleMenuPanel .turtle-card-meta{
+    margin-top:5px;
+    font-size:11px;
+    line-height:1.45;
+  }
+
+  #turtleMenuPanel .labyrinth-inline-status{
+    gap:5px;
+  }
+
+  #turtleMenuPanel .labyrinth-status-badge{
+    padding:4px 8px;
+    font-size:10px;
+  }
+}
