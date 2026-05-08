@@ -3195,3 +3195,27 @@ textarea.text-input{
     justify-content:flex-end;
   }
 }
+
+/* ===== 바거슾 PC 레이아웃: 질답창 왼쪽, 문제정보 오른쪽 ===== */
+@media(min-width:981px){
+  .turtle-detail-layout{
+    grid-template-columns:minmax(0,1.6fr) minmax(320px,400px);
+  }
+
+  .turtle-detail-right{
+    grid-column:1;
+    grid-row:2;
+    position:sticky;
+    top:76px;
+    max-height:calc(100vh - 96px);
+  }
+
+  .turtle-detail-left{
+    grid-column:2;
+    grid-row:2;
+  }
+
+  .turtle-detail-right .turtle-chat-list{
+    min-height:520px;
+  }
+}
