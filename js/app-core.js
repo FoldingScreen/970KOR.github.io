@@ -1026,7 +1026,8 @@ if(state.currentEventId==="escape_labyrinth"){
     el.createLabyrinthBtn.onclick=openCreateLabyrinthModal;
   }
 }
-
+}
+  
 async function openEvent(id){
   closeEventMenu();  
     history.pushState({app:true},"","");
