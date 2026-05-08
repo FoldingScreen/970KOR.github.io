@@ -3320,3 +3320,52 @@ textarea.text-input{
     bottom:8px;
   }
 }
+
+/* ===== 바거슾 상세 상단/채팅창 정리 ===== */
+
+/* 목록/문제수정 버튼은 상단 공통 버튼줄로 올렸으므로 상세 내부 버튼줄 숨김 */
+#turtleSoupDetailView .turtle-detail-header{
+  display:none!important;
+}
+
+/* 고정 입력창이 질답창을 가리지 않도록 여백 확보 */
+#turtleSoupDetailView .turtle-detail-layout{
+  padding-bottom:160px;
+}
+
+#turtleSoupDetailView .turtle-detail-right .turtle-chat-list{
+  padding-bottom:130px;
+  scroll-padding-bottom:130px;
+}
+
+/* PC 질답창 높이 보정 */
+@media(min-width:981px){
+  #turtleSoupDetailView .turtle-detail-right .turtle-chat-list{
+    height:calc(100vh - 220px);
+    min-height:420px;
+  }
+}
+
+/* 모바일 질답창 높이 보정 */
+@media(max-width:980px){
+  #turtleSoupDetailView .turtle-detail-layout{
+    padding-bottom:180px;
+  }
+
+  #turtleSoupDetailView .turtle-detail-right .turtle-chat-list{
+    max-height:calc(100vh - 280px);
+    min-height:320px;
+    padding-bottom:150px;
+    scroll-padding-bottom:150px;
+  }
+}
+
+@media(max-width:480px){
+  #turtleSoupDetailView .turtle-detail-layout{
+    padding-bottom:200px;
+  }
+
+  #turtleSoupDetailView .turtle-detail-right .turtle-chat-list{
+    max-height:calc(100vh - 300px);
+  }
+}
