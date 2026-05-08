@@ -2098,9 +2098,16 @@ textarea.text-input{
 
 .turtle-bubble.question.spoiler{
   cursor:pointer;
-  background:#111827;
-  border-color:#374151;
-  color:#cbd5e1;
+  background:#1a0f14;
+  border-color:#ef4444;
+  color:#fecaca;
+  box-shadow:0 0 0 1px rgba(239,68,68,.28) inset;
+}
+
+.turtle-bubble.question.creator-spoiler{
+  background:#201018;
+  border-color:#ef4444;
+  color:#ffd7d7;
 }
 
 .turtle-bubble.question.spoiler .spoiler-real{
@@ -2113,13 +2120,6 @@ textarea.text-input{
 
 .turtle-bubble.question.spoiler.revealed .spoiler-real{
   display:inline;
-}
-
-.turtle-spoiler-control{
-  margin-top:3px;
-  display:flex;
-  justify-content:flex-start;
-  gap:4px;
 }
 
 .turtle-spoiler-control button,
@@ -2846,4 +2846,22 @@ textarea.text-input{
   .castle-rally-normal-grid{
     grid-template-columns:1fr;
   }
+}
+
+.turtle-comment-options{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  margin-top:5px;
+}
+
+.turtle-comment-options button{
+  border:1px solid #315a93;
+  background:#102545;
+  color:#e7f1ff;
+  border-radius:999px;
+  padding:4px 9px;
+  min-height:26px;
+  font-size:11px;
+  font-weight:900;
 }
