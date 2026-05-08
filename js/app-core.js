@@ -997,6 +997,7 @@ if(state.currentEventId==="escape_labyrinth"){
 
 async function openEvent(id){
   closeEventMenu();  
+    history.pushState({app:true},"","");
   clearSubscriptions();
 
   if(state.currentUser){
@@ -1050,6 +1051,35 @@ async function openEvent(id){
 }
 
 window.openEvent=openEvent;
+function handleAppBack(){
+  if(state.currentEventId==="escape_labyrinth"){
+    if(state.currentTurtleSoupId){
+  closeTurtleSoupDetail();
+  return;
+}
+
+    if(state.currentLabyrinthId){
+  openEscapeLabyrinthHome();
+  return;
+}
+
+    if(state.escapeLabyrinthTab==="labyrinth"||state.escapeLabyrinthTab==="turtle"){
+  state.escapeLabyrinthTab="home";
+  window.updateEscapeLabyrinthHomePanels?.();
+  updateEventActionButtons();
+  return;
+}
+  }
+
+  if(state.currentEventId){
+  goHome();
+  return;
+}
+}
+
+window.addEventListener("popstate",e=>{
+  handleAppBack();
+});
 
 function subscribeParties(){
   clearSubscriptions();
