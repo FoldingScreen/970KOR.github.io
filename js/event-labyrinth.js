@@ -135,6 +135,9 @@ function openEscapeLabyrinthHome(skipResubscribe=false){
   el.labyrinthHomeView?.classList.remove("hidden");
   el.labyrinthDetailView?.classList.add("hidden");
 
+  document.getElementById("turtleSoupDetailView")?.classList.add("hidden");
+window.updateEscapeLabyrinthHomePanels?.();
+
   updateEventActionButtons();
 
   if(!skipResubscribe)renderLabyrinthHome();
@@ -155,6 +158,8 @@ function renderLabyrinthHome(){
   el.myLabyrinthList.innerHTML=myItems.length
     ? myItems.map(renderLabyrinthCard).join("")
     : `<div class="labyrinth-empty">아직 만든 미궁이 없습니다.<br>상단의 "미궁 제작하기" 버튼으로 시작하세요.</div>`;
+
+    window.updateEscapeLabyrinthHomePanels?.();
 }
 
 function renderLabyrinthCard(item){
