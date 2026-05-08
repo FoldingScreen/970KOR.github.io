@@ -1040,11 +1040,22 @@ async function openEvent(id){
   showOnly("event");
 
   if(id==="escape_labyrinth"){
-    if(el.partyList)el.partyList.classList.add("hidden");
-    if(el.escapeLabyrinthScreen)el.escapeLabyrinthScreen.classList.remove("hidden");
-    subscribeEscapeLabyrinthHome();
-    return;
-  }
+  state.currentLabyrinthId="";
+  state.currentLabyrinthData=null;
+
+  state.currentTurtleSoupId="";
+  state.currentTurtleSoupData=null;
+
+  state.escapeLabyrinthTab="home";
+
+  if(el.partyList)el.partyList.classList.add("hidden");
+  if(el.escapeLabyrinthScreen)el.escapeLabyrinthScreen.classList.remove("hidden");
+
+  document.getElementById("turtleSoupDetailView")?.classList.add("hidden");
+
+  subscribeEscapeLabyrinthHome();
+  return;
+}
 
   if(id==="rearrange")subscribeRearrange();
   else subscribeParties();
