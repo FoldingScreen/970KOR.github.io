@@ -866,12 +866,18 @@ async function renderHomeSummary(){
 }
 
 function renderHomeEventCards(){
-  el.homeEventCards.innerHTML=state.events.map(e=>`
-    <div class="event-card clickable-event-card" onclick="openEvent('${escapeJs(e.id)}')">
-      <h3>${escapeHtml(e.name)}</h3>
-      <p>${escapeHtml(e.desc)}</p>
-    </div>
-  `).join("");
+  el.homeEventCards.innerHTML=state.events.map(e=>{
+    const onclick=e.id==="escape_labyrinth"
+      ? `state.escapeLabyrinthTab='home';openEvent('escape_labyrinth')`
+      : `openEvent('${escapeJs(e.id)}')`;
+
+    return`
+      <div class="event-card clickable-event-card" onclick="${onclick}">
+        <h3>${escapeHtml(e.name)}</h3>
+        <p>${escapeHtml(e.desc)}</p>
+      </div>
+    `;
+  }).join("");
 }
 
 async function goHome(){
