@@ -155,6 +155,7 @@ img{
 }
 
 .top-tabs{
+  pointer-events:auto;
   position:fixed;
   top:0;
   left:0;
@@ -187,6 +188,7 @@ img{
 }
 
 .event-menu-backdrop{
+  pointer-events:auto;  
   position:fixed;
   inset:0;
   background:rgba(0,0,0,.48);
