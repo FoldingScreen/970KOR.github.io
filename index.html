@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>970KOR</title>
-  <link rel="stylesheet" href="style.css?v=split-13" />
+  <link rel="stylesheet" href="style.css?v=split-14" />
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -47,7 +47,7 @@
     <div id="eventMenuBackdrop" class="event-menu-backdrop hidden" onclick="closeEventMenu()"></div>
 
     <div id="adminMenu" class="admin-menu hidden">
-      <button id="showAllUsersBtn" onclick="showAllUsers()">전체 사용자</button>
+      <button id="adminShowAllUsersBtn" onclick="showAllUsers()">전체 사용자</button>
       <button onclick="showAdminLogs()">운영 로그</button>
       <button onclick="closeAdminMenu()">닫기</button>
     </div>
@@ -86,7 +86,7 @@
             <button id="rearrangePublicBtn" class="hidden" onclick="toggleRearrangePublic()">순위 공개</button>
             <button id="createLabyrinthBtn" class="hidden" onclick="openCreateLabyrinthModal()">미궁 제작하기</button>
             <button id="backToLabyrinthListBtn" class="hidden" onclick="openEscapeLabyrinthHome()">목록으로</button>
-            <button onclick="showAllUsers()">전체 사용자</button>
+            <button id="eventShowAllUsersBtn" onclick="showAllUsers()">전체 사용자</button>
           </div>
         </div>
 
