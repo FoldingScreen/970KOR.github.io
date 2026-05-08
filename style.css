@@ -3056,3 +3056,39 @@ textarea.text-input{
     font-size:11px;
   }
 }
+
+.labyrinth-create-empty-card{
+  width:100%;
+  min-height:150px;
+  border:1px dashed #315a93;
+  background:rgba(16,37,69,.28);
+  color:#dbeafe;
+  border-radius:22px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  font-size:18px;
+  font-weight:1000;
+  cursor:pointer;
+}
+
+.labyrinth-create-empty-card:hover{
+  border-color:#60a5fa;
+  background:rgba(16,37,69,.48);
+}
+
+.labyrinth-create-plus{
+  width:42px;
+  height:42px;
+  border-radius:999px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid #60a5fa;
+  background:#102545;
+  color:#e7f1ff;
+  font-size:28px;
+  line-height:1;
+}
