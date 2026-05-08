@@ -632,30 +632,56 @@ function renderMyTurtleSubmission(item){
   `;
 }
 
+function toggleTurtleCommentOptions(commentId){
+  const target=document.getElementById(`turtleCommentOptions_${commentId}`);
+  if(!target)return;
+
+  document.querySelectorAll(".turtle-comment-options").forEach(el=>{
+    if(el!==target)el.classList.add("hidden");
+  });
+
+  target.classList.toggle("hidden");
+}
+
+window.toggleTurtleCommentOptions=toggleTurtleCommentOptions;
+
 function renderTurtleComment(comment,isCreator){
   const hasAnswer=!!comment.answer;
-  const canAnswer=isCreator&&!hasAnswer;
+  const optionId=`turtleCommentOptions_${comment.id}`;
+
+  const questionClick=isCreator
+    ? `onclick="toggleTurtleCommentOptions('${escapeJs(comment.id)}')"`
+    : comment.isSpoiler
+      ? `onclick="this.classList.toggle('revealed')"`
+      : "";
+
+  const questionContent=comment.isSpoiler&&!isCreator
+    ? `<span class="spoiler-placeholder">스포일러 질문입니다. 눌러서 보기</span><span class="spoiler-real">${escapeHtml(comment.question||"")}</span>`
+    : escapeHtml(comment.question||"");
 
   return`
     <div class="turtle-thread">
       <div class="turtle-bubble-row left">
         <div class="turtle-bubble-wrap">
           <div class="turtle-bubble-meta">${escapeHtml(comment.asker||"-")} · ${escapeHtml(formatDateTime(comment.createdAt))}</div>
-          <div class="turtle-bubble question ${comment.isSpoiler&&!isCreator?"spoiler":""}" ${comment.isSpoiler&&!isCreator?`onclick="this.classList.toggle('revealed')"`:""}>
-  ${comment.isSpoiler&&!isCreator
-    ? `<span class="spoiler-placeholder">스포일러 질문입니다. 눌러서 보기</span><span class="spoiler-real">${escapeHtml(comment.question||"")}</span>`
-    : escapeHtml(comment.question||"")}
-</div>
-${isCreator?`
-  <div class="turtle-spoiler-control">
-    <button type="button" onclick="toggleTurtleQuestionSpoiler('${escapeJs(comment.id)}',${comment.isSpoiler?"false":"true"})">
-      ${comment.isSpoiler?"가리기 해제":"가리기"}
-    </button>
-    <button type="button" class="danger-mini-btn" onclick="deleteTurtleComment('${escapeJs(comment.id)}')">
-      삭제
-    </button>
-  </div>
-`:""}
+
+          <div class="turtle-bubble question ${comment.isSpoiler?"spoiler":""} ${comment.isSpoiler&&isCreator?"creator-spoiler":""}" ${questionClick}>
+            ${questionContent}
+          </div>
+
+          ${isCreator?`
+            <div id="${optionId}" class="turtle-comment-options hidden">
+              <button type="button" onclick="startTurtleAnswerMode('${escapeJs(comment.id)}')">
+                ${hasAnswer?"답변 수정":"답변"}
+              </button>
+              <button type="button" onclick="toggleTurtleQuestionSpoiler('${escapeJs(comment.id)}',${comment.isSpoiler?"false":"true"})">
+                ${comment.isSpoiler?"가리기 해제":"가리기(스포)"}
+              </button>
+              <button type="button" class="danger-mini-btn" onclick="deleteTurtleComment('${escapeJs(comment.id)}')">
+                삭제
+              </button>
+            </div>
+          `:""}
         </div>
       </div>
 
@@ -663,16 +689,14 @@ ${isCreator?`
         <div class="turtle-bubble-row right">
           <div class="turtle-bubble-wrap">
             <div class="turtle-bubble-meta right">
-  ${escapeHtml(comment.answeredBy||"출제자")} · ${escapeHtml(formatDateTime(comment.answeredAt))}
-  ${isCreator?`<button type="button" class="turtle-answer-edit-btn" onclick="startTurtleAnswerMode('${escapeJs(comment.id)}')">수정</button>`:""}
-</div>
-<div class="turtle-bubble answer">${escapeHtml(comment.answer)}</div>
+              ${escapeHtml(comment.answeredBy||"출제자")} · ${escapeHtml(formatDateTime(comment.answeredAt))}
+            </div>
+            <div class="turtle-bubble answer">${escapeHtml(comment.answer)}</div>
           </div>
         </div>
       `:`
         <div class="turtle-pending-row">
           <span>답변 대기중</span>
-          ${canAnswer?`<button type="button" onclick="startTurtleAnswerMode('${escapeJs(comment.id)}')">답변</button>`:""}
         </div>
       `}
     </div>
