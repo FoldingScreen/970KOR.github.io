@@ -1052,20 +1052,16 @@ async function openEvent(id){
 
 window.openEvent=openEvent;
 function handleAppBack(){
-
-  // 바거슾 상세 → 바거슾 목록
   if(state.currentTurtleSoupId){
     closeTurtleSoupDetail();
     return;
   }
 
-  // 미궁 상세 → 미궁 홈
   if(state.currentLabyrinthId){
     openEscapeLabyrinthHome();
     return;
   }
 
-  // 웹게임 내부 탭 → 웹게임 메인
   if(
     state.currentEventId==="escape_labyrinth" &&
     (state.escapeLabyrinthTab==="labyrinth"||state.escapeLabyrinthTab==="turtle")
@@ -1076,30 +1072,10 @@ function handleAppBack(){
     return;
   }
 
-  // 이벤트 화면 → 홈
   if(state.currentEventId){
     goHome();
     return;
   }
-}
-
-    if(state.currentLabyrinthId){
-  openEscapeLabyrinthHome();
-  return;
-}
-
-    if(state.escapeLabyrinthTab==="labyrinth"||state.escapeLabyrinthTab==="turtle"){
-  state.escapeLabyrinthTab="home";
-  window.updateEscapeLabyrinthHomePanels?.();
-  updateEventActionButtons();
-  return;
-}
-  }
-
-  if(state.currentEventId){
-  goHome();
-  return;
-}
 }
 
 window.addEventListener("popstate",e=>{
