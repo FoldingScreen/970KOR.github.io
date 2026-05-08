@@ -2922,3 +2922,48 @@ textarea.text-input{
 #labyrinthMenuPanel.hidden{
   display:none!important;
 }
+
+.turtle-detail-layout{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 420px;
+  gap:20px;
+  align-items:start;
+}
+
+.turtle-detail-header{
+  grid-column:1 / -1;
+}
+
+.turtle-detail-left{
+  min-width:0;
+}
+
+.turtle-detail-right{
+  min-width:0;
+  position:sticky;
+  top:88px;
+  max-height:calc(100vh - 110px);
+  display:flex;
+  flex-direction:column;
+}
+
+.turtle-detail-right .turtle-chat-list{
+  flex:1;
+  max-height:none;
+  overflow-y:auto;
+}
+
+.turtle-detail-right .turtle-composer{
+  flex-shrink:0;
+}
+
+@media(max-width:980px){
+  .turtle-detail-layout{
+    grid-template-columns:1fr;
+  }
+
+  .turtle-detail-right{
+    position:static;
+    max-height:none;
+  }
+}
