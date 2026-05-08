@@ -486,7 +486,7 @@ function renderTurtleSoupDetail(){
           <button type="button" onclick="submitTurtleQuickAnswer('애매함')">애매함</button>
         </div>
         <div class="turtle-input-row">
-          <input id="turtleChatInput" class="text-input" type="text" maxlength="200" value="${escapeHtml(answeringAnswer)}" placeholder="${state.answeringTurtleCommentId?"답변 입력...":"'예/아니오'로 답변이 가능하도록 질문을 입력하세요."}">
+          <input id="turtleChatInput" class="text-input" type="text" maxlength="200" value="${escapeHtml(answeringAnswer)}" placeholder="${state.answeringTurtleCommentId?"답변 입력...":"'예/아니오'로 답변 가능토록 질문 입력."}">
           <div class="turtle-input-actions">
             <button type="button" onclick="${state.answeringTurtleCommentId?"submitTurtleCustomAnswer()":"submitTurtleQuestion()"}">➤</button>
             ${isCreator?"":`<button type="button" onclick="openTurtleSubmitPanel()" ${isCleared?"disabled":""}>정답제출</button>`}
@@ -494,7 +494,7 @@ function renderTurtleSoupDetail(){
         </div>
         ${isCreator?"":`
           <div class="turtle-answer-row ${state.isTurtleSubmitPanelOpen?"":"hidden"}">
-            <input id="turtleFinalAnswerInput" class="text-input" type="text" placeholder="${isCleared?"이미 완료했습니다.":"정답이라고 생각하는 내용을 입력하세요."}" ${isCleared?"disabled":""}>
+            <input id="turtleFinalAnswerInput" class="text-input" type="text" placeholder="${isCleared?"이미 완료했습니다.":"추리한 전체 스토리 입력."}" ${isCleared?"disabled":""}>
             <div class="turtle-answer-actions">
               <button type="button" onclick="submitTurtleFinalAnswer()" ${isCleared?"disabled":""}>제출</button>
               <button type="button" onclick="closeTurtleSubmitPanel()">닫기</button>
