@@ -2910,3 +2910,15 @@ textarea.text-input{
     grid-template-columns:1fr;
   }
 }
+
+#labyrinthRealHome.hidden{
+  display:none!important;
+}
+
+#turtleMenuPanel.hidden{
+  display:none!important;
+}
+
+#labyrinthMenuPanel.hidden{
+  display:none!important;
+}
