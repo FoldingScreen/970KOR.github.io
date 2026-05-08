@@ -457,7 +457,9 @@ function renderFinalStageClearersCard(){
     .filter(player=>{
       const clearedAt=player?.stageClearedAtMap?.[String(finalStage.order)];
       if(!clearedAt)return false;
-      return player.nickname!==state.currentLabyrinthData?.creator;
+      if(player.nickname===state.currentLabyrinthData?.creator)return false;
+if(isHiddenTestNickname(player.nickname))return false;
+return true;
     })
     .sort((a,b)=>{
       const aTime=a.stageClearedAtMap?.[String(finalStage.order)]||null;
