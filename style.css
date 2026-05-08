@@ -121,13 +121,21 @@ img{
   display:flex;
   align-items:center;
   justify-content:space-between;
-  gap:16px;
-  padding:16px 20px;
+  gap:10px;
+  padding:12px 14px;
   border-bottom:1px solid #162033;
   background:#050810;
   position:sticky;
   top:0;
-  z-index:30;
+  z-index:80;
+  min-height:58px;
+}
+
+.top-left{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
 }
 
 .brand{
@@ -136,19 +144,61 @@ img{
   white-space:nowrap;
 }
 
+.menu-btn{
+  border:1px solid #22304a;
+  background:#0b1220;
+  color:#dce7ff;
+  border-radius:12px;
+  padding:8px 11px;
+  min-height:38px;
+  font-weight:1000;
+}
+
 .top-tabs{
+  position:fixed;
+  top:0;
+  left:0;
+  width:min(290px,86vw);
+  height:100vh;
+  background:#07111e;
+  border-right:1px solid #22304a;
+  box-shadow:18px 0 40px rgba(0,0,0,.38);
+  z-index:100;
+  padding:14px;
   display:flex;
+  flex-direction:column;
+  gap:8px;
+  transform:translateX(-105%);
+  transition:transform .18s ease;
+}
+
+.top-tabs.open{
+  transform:translateX(0);
+}
+
+.drawer-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
   gap:10px;
-  flex:1;
-  min-width:0;
+  margin-bottom:8px;
+  padding-bottom:10px;
+  border-bottom:1px solid #162033;
+}
+
+.event-menu-backdrop{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.48);
+  z-index:90;
 }
 
 .top-right{
   display:flex;
-  gap:8px;
+  gap:6px;
   align-items:center;
-  flex-wrap:wrap;
   justify-content:flex-end;
+  min-width:0;
 }
 
 .tab-btn,
@@ -164,18 +214,24 @@ img{
 }
 
 .tab-btn{
+  width:100%;
   white-space:nowrap;
   min-height:44px;
+  text-align:left;
 }
 
 .tab-btn.active{
   background:#1a2f66;
 }
 
+.pill{
+  white-space:nowrap;
+}
+
 .admin-menu{
-  position:absolute;
-  top:72px;
-  right:20px;
+  position:fixed;
+  top:64px;
+  right:14px;
   background:#0b1220;
   border:1px solid #22304a;
   border-radius:16px;
@@ -183,7 +239,7 @@ img{
   display:flex;
   flex-direction:column;
   gap:8px;
-  z-index:40;
+  z-index:110;
 }
 
 /* ===== 버튼/폼 ===== */
@@ -2318,28 +2374,20 @@ textarea.text-input{
 
 @media(max-width:720px){
   .topbar{
-    flex-wrap:wrap;
+    flex-wrap:nowrap;
   }
 
-  .top-tabs{
-    order:3;
-    width:100%;
-    display:grid;
-    grid-template-columns:repeat(7,minmax(0,1fr));
-    gap:6px;
-  }
-
-  .tab-btn{
-    white-space:nowrap;
-    font-size:12px;
-    padding:9px 4px;
-    min-height:42px;
+  .brand{
+    font-size:18px;
   }
 
   .top-right{
-    width:100%;
-    justify-content:flex-end;
-    flex-wrap:wrap;
+    flex-wrap:nowrap;
+  }
+
+  .top-right .pill{
+    font-size:12px;
+    padding:8px 9px;
   }
 
   .event-top-row{
