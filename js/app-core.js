@@ -512,6 +512,29 @@ function renderNotificationBadge(){
   }
 }
 
+async function openNotificationTarget(id){
+  const item=(state.notifications||[]).find(v=>v.id===id);
+
+  if(!item)return;
+
+  if(!item.read){
+    await markNotificationRead(id);
+  }
+
+  closeNotificationModal();
+
+  if(item.soupId){
+    state.escapeLabyrinthTab="turtle";
+    await openEvent("escape_labyrinth");
+
+    setTimeout(()=>{
+      openTurtleSoupDetail(item.soupId);
+    },300);
+  }
+}
+
+window.openNotificationTarget=openNotificationTarget;
+
 function renderNotificationList(){
   if(!el.notificationList)return;
 
@@ -523,7 +546,7 @@ function renderNotificationList(){
   }
 
   el.notificationList.innerHTML=items.map(item=>`
-    <div class="notification-item ${item.read?"read":"unread"}">
+    <div class="notification-item ${item.read?"read":"unread"}" onclick="openNotificationTarget('${escapeJs(item.id)}')">
       <div class="notification-main">
         <div class="notification-title">
           ${escapeHtml(item.title)}
@@ -535,7 +558,7 @@ function renderNotificationList(){
         </div>
       </div>
       <div class="notification-actions">
-        ${item.read?"":`<button type="button" onclick="markNotificationRead('${escapeJs(item.id)}')">읽음</button>`}
+        ${item.read?"":`<button type="button" onclick="event.stopPropagation();markNotificationRead('${escapeJs(item.id)}')">읽음</button>`}
       </div>
     </div>
   `).join("");
