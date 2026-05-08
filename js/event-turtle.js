@@ -18,8 +18,9 @@ function getTurtleSoupStatus(item){
 }
 
 function getTurtleDifficulty(value){
-  const n=Math.min(5,Math.max(1,Number(value||3)));
-  return n;
+  const raw=value===0||value==="0"?0:Number(value||3);
+  const n=Math.min(5,Math.max(0,raw));
+  return Number.isFinite(n)?n:3;
 }
 
 function renderTurtleDifficulty(value){
