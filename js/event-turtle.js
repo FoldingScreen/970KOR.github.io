@@ -253,6 +253,7 @@ async function openTurtleSoupDetail(id){
   }
 
   state.currentTurtleSoupId=id;
+  updateEventActionButtons();
   state.currentTurtleSoupData=item;
   state.currentTurtleComments=[];
   state.currentTurtlePlayer=null;
@@ -385,6 +386,7 @@ window.openTurtleSoupDetail=openTurtleSoupDetail;
 
 function closeTurtleSoupDetail(){
   state.currentTurtleSoupId="";
+  updateEventActionButtons();
   state.currentTurtleSoupData=null;
   state.currentTurtleComments=[];
   state.currentTurtlePlayer=null;
