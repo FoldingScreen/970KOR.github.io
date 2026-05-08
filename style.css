@@ -3369,3 +3369,51 @@ textarea.text-input{
     max-height:calc(100vh - 300px);
   }
 }
+
+
+/* ===== 바거슾 상세: 페이지 스크롤 제거, 질답창 내부 스크롤 ===== */
+@media(min-width:981px){
+  #turtleSoupDetailView .turtle-detail-layout{
+    height:calc(100vh - 96px);
+    min-height:0;
+    padding-bottom:0!important;
+    overflow:hidden;
+  }
+
+  #turtleSoupDetailView .turtle-detail-left{
+    height:100%;
+    min-height:0;
+    overflow-y:auto;
+    padding-right:4px;
+  }
+
+  #turtleSoupDetailView .turtle-detail-right{
+    position:static!important;
+    height:100%;
+    max-height:none!important;
+    min-height:0;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+
+  #turtleSoupDetailView .turtle-detail-right .turtle-chat-list{
+    flex:1;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow-y:auto;
+    padding-bottom:12px!important;
+  }
+
+  #turtleSoupDetailView .turtle-composer{
+    position:static!important;
+    left:auto!important;
+    right:auto!important;
+    bottom:auto!important;
+    transform:none!important;
+    width:auto!important;
+    flex-shrink:0;
+    margin-top:10px;
+  }
+}
