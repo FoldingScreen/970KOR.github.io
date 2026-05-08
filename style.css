@@ -1989,8 +1989,8 @@ textarea.text-input{
   grid-template-columns:minmax(0,1.6fr) minmax(320px,400px);
   gap:18px;
   align-items:start;
-  height:calc(100vh - 96px);
-  min-height:0;
+  height:calc(100dvh - 170px);
+  min-height:420px;
   overflow:hidden;
 }
 
