@@ -12,39 +12,44 @@
 </head>
 <body>
   <div id="app">
-<header class="topbar">
-  <div class="top-left">
-    <button class="menu-btn" type="button" onclick="toggleEventMenu()">☰</button>
-    <div class="brand">970KOR</div>
-  </div>
+    <header class="topbar">
+      <div class="top-left">
+        <button class="menu-btn" type="button" onclick="toggleEventMenu()">☰</button>
+        <div class="brand">970KOR</div>
+      </div>
 
-  <nav class="top-tabs" id="topTabs" onclick="event.stopPropagation()">
-    <div class="drawer-header">
-      <strong>이벤트 메뉴</strong>
-      <button class="close-btn" type="button" onclick="closeEventMenu()">닫기</button>
-    </div>
-    <button class="tab-btn active" onclick="goHome()">홈</button>
-    <button class="tab-btn" onclick="openEvent('viking')">바이킹</button>
-    <button class="tab-btn" onclick="openEvent('ruins')">유적쟁탈</button>
-    <button class="tab-btn" onclick="openEvent('holy_sword')">성검쟁탈</button>
-    <button class="tab-btn" onclick="openEvent('triple_alliance')">삼대연맹전</button>
-    <button class="tab-btn" onclick="openEvent('castle_battle')">캐슬전투</button>
-    <button class="tab-btn" onclick="openEvent('rearrange')">자리재배치</button>
-    <button class="tab-btn" onclick="openEvent('escape_labyrinth')">사바나의 첨탑</button>
-  </nav>
+      <nav class="top-tabs" id="topTabs" onclick="event.stopPropagation()">
+        <div class="drawer-header">
+          <strong>이벤트 메뉴</strong>
+          <button class="close-btn" type="button" onclick="closeEventMenu()">닫기</button>
+        </div>
+        <button class="tab-btn active" onclick="goHome()">홈</button>
+        <button class="tab-btn" onclick="openEvent('viking')">바이킹</button>
+        <button class="tab-btn" onclick="openEvent('ruins')">유적쟁탈</button>
+        <button class="tab-btn" onclick="openEvent('holy_sword')">성검쟁탈</button>
+        <button class="tab-btn" onclick="openEvent('triple_alliance')">삼대연맹전</button>
+        <button class="tab-btn" onclick="openEvent('castle_battle')">캐슬전투</button>
+        <button class="tab-btn" onclick="openEvent('rearrange')">자리재배치</button>
 
-  <div class="top-right">
-    <button id="notificationBtn" class="pill notification-pill" type="button" onclick="openNotificationModal()">
-  🔔
-  <span id="notificationCount" class="notification-count hidden">0</span>
-</button>
-    <button id="adminMenuBtn" class="pill hidden" onclick="toggleAdminMenu()">운영진 메뉴</button>
-    <button class="pill" id="myNameBtn" disabled>로그인 안 됨</button>
-    <button class="pill" onclick="logout()">로그아웃</button>
-  </div>
-</header>
+        <div class="drawer-header" style="margin-top:8px;">
+          <strong>사바나의 첨탑</strong>
+        </div>
+        <button class="tab-btn" onclick="openEscapeLabyrinthMenu('labyrinth')">미궁</button>
+        <button class="tab-btn" onclick="openEscapeLabyrinthMenu('turtle')">바다거북스프</button>
+      </nav>
 
-<div id="eventMenuBackdrop" class="event-menu-backdrop hidden" onclick="closeEventMenu()"></div>
+      <div class="top-right">
+        <button id="notificationBtn" class="pill notification-pill" type="button" onclick="openNotificationModal()">
+          🔔
+          <span id="notificationCount" class="notification-count hidden">0</span>
+        </button>
+        <button id="adminMenuBtn" class="pill hidden" onclick="toggleAdminMenu()">운영진 메뉴</button>
+        <button class="pill" id="myNameBtn" disabled>로그인 안 됨</button>
+        <button class="pill" onclick="logout()">로그아웃</button>
+      </div>
+    </header>
+
+    <div id="eventMenuBackdrop" class="event-menu-backdrop hidden" onclick="closeEventMenu()"></div>
 
     <div id="adminMenu" class="admin-menu hidden">
       <button onclick="showAllUsers()">전체 사용자</button>
@@ -63,7 +68,10 @@
       </section>
 
       <section id="homeScreen" class="screen hidden">
-        <div class="hero card"><h1>970KOR 이벤트 로비</h1><p class="muted">사바나가 보고있다</p></div>
+        <div class="hero card">
+          <h1>970KOR 이벤트 로비</h1>
+          <p class="muted">사바나가 보고있다</p>
+        </div>
         <h2 class="section-title">이벤트 바로가기</h2>
         <div id="homeEventCards" class="home-event-grid"></div>
         <h2 class="section-title">전체 현황</h2>
@@ -72,7 +80,10 @@
 
       <section id="eventScreen" class="screen hidden">
         <div class="event-top-row">
-          <div><h1 id="eventTitle">이벤트</h1><div id="eventDesc" class="muted"></div></div>
+          <div>
+            <h1 id="eventTitle">이벤트</h1>
+            <div id="eventDesc" class="muted"></div>
+          </div>
           <div class="actions right-wrap">
             <button id="createPartyBtn" onclick="createParty()">파티 생성</button>
             <button id="rearrangeEditBtn" class="hidden" onclick="openMyRearrangeModal()">내 진척도 입력</button>
@@ -83,27 +94,48 @@
             <button onclick="showAllUsers()">전체 사용자</button>
           </div>
         </div>
+
         <div id="partyList" class="party-grid"></div>
 
         <section id="escapeLabyrinthScreen" class="hidden">
           <div id="labyrinthHomeView" class="hidden">
-            <div class="labyrinth-home-grid">
-  <div class="labyrinth-section"><div class="section-header-row"><h3 class="section-title">공개 미궁</h3></div><div id="publicLabyrinthList" class="labyrinth-card-grid"></div></div>
-  <div class="labyrinth-section"><div class="section-header-row"><h3 class="section-title">내 미궁</h3></div><div id="myLabyrinthList" class="labyrinth-card-grid"></div></div>
-</div>
+            <div id="labyrinthMenuPanel">
+              <div class="labyrinth-home-grid">
+                <div class="labyrinth-section">
+                  <div class="section-header-row">
+                    <h3 class="section-title">공개 미궁</h3>
+                  </div>
+                  <div id="publicLabyrinthList" class="labyrinth-card-grid"></div>
+                </div>
 
-<div class="labyrinth-section turtle-section">
-  <div class="section-header-row">
-    <h3 class="section-title">바다거북스프</h3>
-    <button type="button" class="inline-btn" onclick="openCreateTurtleSoupModal()">문제 만들기</button>
-  </div>
-  <div id="turtleSoupList" class="turtle-soup-list"></div>
-  </div>
-</div>
-          
+                <div class="labyrinth-section">
+                  <div class="section-header-row">
+                    <h3 class="section-title">내 미궁</h3>
+                  </div>
+                  <div id="myLabyrinthList" class="labyrinth-card-grid"></div>
+                </div>
+              </div>
+            </div>
+
+            <div id="turtleMenuPanel" class="hidden">
+              <div class="labyrinth-section turtle-section">
+                <div class="section-header-row">
+                  <h3 class="section-title">바다거북스프</h3>
+                  <button type="button" class="inline-btn" onclick="openCreateTurtleSoupModal()">문제 만들기</button>
+                </div>
+                <div id="turtleSoupList" class="turtle-soup-list"></div>
+              </div>
+            </div>
+          </div>
+
           <div id="turtleSoupDetailView" class="hidden"></div>
+
           <div id="labyrinthDetailView" class="hidden">
-            <div class="labyrinth-detail-top card"><h2 id="labyrinthDetailTitle">미궁 제목</h2><div id="labyrinthDetailMeta" class="muted"></div><p id="labyrinthDetailDescription" class="labyrinth-detail-description"></p></div>
+            <div class="labyrinth-detail-top card">
+              <h2 id="labyrinthDetailTitle">미궁 제목</h2>
+              <div id="labyrinthDetailMeta" class="muted"></div>
+              <p id="labyrinthDetailDescription" class="labyrinth-detail-description"></p>
+            </div>
             <div id="labyrinthProgressSummary" class="summary-grid labyrinth-progress-summary hidden"></div>
             <div id="labyrinthStageList" class="party-grid"></div>
           </div>
@@ -115,69 +147,203 @@
   <div id="modalOverlay" class="modal-overlay hidden"></div>
 
   <div id="userModal" class="modal hidden">
-    <div class="modal-header"><h3>전체 사용자</h3><button class="close-btn" onclick="closeUserModal()">닫기</button></div>
-    <div class="user-modal-grid"><div><h4>참여</h4><div id="joinedUsers" class="name-columns"></div></div><div><h4>미참여</h4><div id="notJoinedUsers" class="name-columns"></div></div></div>
-  </div>
-
-<div id="notificationModal" class="modal hidden">
-  <div class="modal-header">
-    <h3>알림</h3>
-    <div class="actions right-wrap">
-      <button type="button" class="inline-btn" onclick="markAllNotificationsRead()">전체 읽음</button>
-      <button class="close-btn" type="button" onclick="closeNotificationModal()">닫기</button>
+    <div class="modal-header">
+      <h3>전체 사용자</h3>
+      <button class="close-btn" onclick="closeUserModal()">닫기</button>
+    </div>
+    <div class="user-modal-grid">
+      <div>
+        <h4>참여</h4>
+        <div id="joinedUsers" class="name-columns"></div>
+      </div>
+      <div>
+        <h4>미참여</h4>
+        <div id="notJoinedUsers" class="name-columns"></div>
+      </div>
     </div>
   </div>
-  <div id="notificationList" class="notification-list"></div>
-</div>
-  
+
+  <div id="notificationModal" class="modal hidden">
+    <div class="modal-header">
+      <h3>알림</h3>
+      <div class="actions right-wrap">
+        <button type="button" class="inline-btn" onclick="markAllNotificationsRead()">전체 읽음</button>
+        <button class="close-btn" type="button" onclick="closeNotificationModal()">닫기</button>
+      </div>
+    </div>
+    <div id="notificationList" class="notification-list"></div>
+  </div>
+
   <div id="logModal" class="modal hidden">
-    <div class="modal-header"><h3>운영 로그</h3><button class="close-btn" onclick="closeLogModal()">닫기</button></div>
+    <div class="modal-header">
+      <h3>운영 로그</h3>
+      <button class="close-btn" onclick="closeLogModal()">닫기</button>
+    </div>
     <div id="logList" class="log-list"></div>
   </div>
 
   <div id="ruinsCreateModal" class="modal hidden">
-    <div class="modal-header"><h3 id="ruinsModalTitle">유적 파티 생성</h3><button class="close-btn" onclick="closeRuinsCreateModal()">닫기</button></div>
-    <div class="form-group" id="ruinNameWrap"><label>이름</label><input id="ruinNameInput" class="text-input" placeholder="예: 4번 성채" /></div>
-    <div class="form-group hidden" id="holySwordSideWrap"><label>소속</label><select id="holySwordSideSelect"><option value="KOR">본연맹(KOR)</option><option value="KR1">아카데미(KR1)</option></select></div>
-    <div class="form-group hidden" id="firstGroupWrap"><label class="checkbox-label"><input type="checkbox" id="firstGroupCheckbox" />1군</label></div>
-    <div class="form-group"><label>UTC 월/일/시간</label><div class="triple-grid"><select id="utcMonth"></select><select id="utcDay"></select><select id="utcHour"></select></div></div>
-    <div class="actions right-wrap"><button id="ruinsSubmitBtn" onclick="submitRuinsParty()">생성</button></div>
+    <div class="modal-header">
+      <h3 id="ruinsModalTitle">유적 파티 생성</h3>
+      <button class="close-btn" onclick="closeRuinsCreateModal()">닫기</button>
+    </div>
+    <div class="form-group" id="ruinNameWrap">
+      <label>이름</label>
+      <input id="ruinNameInput" class="text-input" placeholder="예: 4번 성채" />
+    </div>
+    <div class="form-group hidden" id="holySwordSideWrap">
+      <label>소속</label>
+      <select id="holySwordSideSelect">
+        <option value="KOR">본연맹(KOR)</option>
+        <option value="KR1">아카데미(KR1)</option>
+      </select>
+    </div>
+    <div class="form-group hidden" id="firstGroupWrap">
+      <label class="checkbox-label"><input type="checkbox" id="firstGroupCheckbox" />1군</label>
+    </div>
+    <div class="form-group">
+      <label>UTC 월/일/시간</label>
+      <div class="triple-grid">
+        <select id="utcMonth"></select>
+        <select id="utcDay"></select>
+        <select id="utcHour"></select>
+      </div>
+    </div>
+    <div class="actions right-wrap">
+      <button id="ruinsSubmitBtn" onclick="submitRuinsParty()">생성</button>
+    </div>
   </div>
 
   <div id="rearrangeModal" class="modal hidden">
-    <div class="modal-header"><h3 id="rearrangeModalTitle">내 진척도 입력</h3><button class="close-btn" onclick="closeRearrangeModal()">닫기</button></div>
-    <div class="rearrange-modal-body"><div class="form-group"><label>'빛나는 첨탑' 도달한 최고 스테이지</label><input id="rearrangeStageInput" class="text-input" type="text" inputmode="text" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="예: 15-4" /><p class="muted form-help">입력 형식: 큰 스테이지-세부 스테이지 (예: 15-4)</p></div><div class="form-group rearrange-example-wrap"><label>입력 예시</label><img src="빛나는첨탑순위.png" alt="빛나는 첨탑 순위 예시" class="example-image" onclick="openExampleImageModal('tower')" /></div></div>
-    <div class="actions right-wrap"><button id="rearrangeSubmitBtn" onclick="submitRearrangeProgress()">저장</button></div>
+    <div class="modal-header">
+      <h3 id="rearrangeModalTitle">내 진척도 입력</h3>
+      <button class="close-btn" onclick="closeRearrangeModal()">닫기</button>
+    </div>
+    <div class="rearrange-modal-body">
+      <div class="form-group">
+        <label>'빛나는 첨탑' 도달한 최고 스테이지</label>
+        <input id="rearrangeStageInput" class="text-input" type="text" inputmode="text" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="예: 15-4" />
+        <p class="muted form-help">입력 형식: 큰 스테이지-세부 스테이지 (예: 15-4)</p>
+      </div>
+      <div class="form-group rearrange-example-wrap">
+        <label>입력 예시</label>
+        <img src="빛나는첨탑순위.png" alt="빛나는 첨탑 순위 예시" class="example-image" onclick="openExampleImageModal('tower')" />
+      </div>
+    </div>
+    <div class="actions right-wrap">
+      <button id="rearrangeSubmitBtn" onclick="submitRearrangeProgress()">저장</button>
+    </div>
   </div>
 
-  <div id="exampleImageModal" class="modal hidden image-modal"><div class="modal-header"><h3 id="exampleImageModalTitle">예시 보기</h3><button class="close-btn" onclick="closeExampleImageModal()">닫기</button></div><div class="image-modal-body"><img id="exampleImageModalImg" src="" alt="예시 이미지" class="example-image-large" /></div></div>
+  <div id="exampleImageModal" class="modal hidden image-modal">
+    <div class="modal-header">
+      <h3 id="exampleImageModalTitle">예시 보기</h3>
+      <button class="close-btn" onclick="closeExampleImageModal()">닫기</button>
+    </div>
+    <div class="image-modal-body">
+      <img id="exampleImageModalImg" src="" alt="예시 이미지" class="example-image-large" />
+    </div>
+  </div>
 
   <div id="rearrangeRankEditModal" class="modal hidden">
-    <div class="modal-header"><h3 id="rearrangeRankEditTitle">순위표 관리</h3><button class="close-btn" onclick="closeRearrangeRankEditModal()">닫기</button></div>
-    <div class="form-group"><label>닉네임</label><input id="rankEditNicknameInput" class="text-input" type="text" placeholder="닉네임 입력" /></div>
-    <div class="form-group"><label>스테이지</label><input id="rankEditStageInput" class="text-input" type="text" placeholder="예: 15-4" /></div>
-    <div class="form-group"><label>전투력</label><input id="rankEditPowerInput" class="text-input" type="number" min="0" step="1" placeholder="예: 123456789" /></div>
-    <div class="form-group"><label>비고</label><input id="rankEditNoteInput" class="text-input" type="text" placeholder="비고 입력" /></div>
-    <div class="actions right-wrap"><button id="rankEditDeleteBtn" class="hidden" onclick="deleteRearrangeRankRow()">삭제</button><button id="rankEditSubmitBtn" onclick="submitRearrangeRankEdit()">저장</button></div>
+    <div class="modal-header">
+      <h3 id="rearrangeRankEditTitle">순위표 관리</h3>
+      <button class="close-btn" onclick="closeRearrangeRankEditModal()">닫기</button>
+    </div>
+    <div class="form-group">
+      <label>닉네임</label>
+      <input id="rankEditNicknameInput" class="text-input" type="text" placeholder="닉네임 입력" />
+    </div>
+    <div class="form-group">
+      <label>스테이지</label>
+      <input id="rankEditStageInput" class="text-input" type="text" placeholder="예: 15-4" />
+    </div>
+    <div class="form-group">
+      <label>전투력</label>
+      <input id="rankEditPowerInput" class="text-input" type="number" min="0" step="1" placeholder="예: 123456789" />
+    </div>
+    <div class="form-group">
+      <label>비고</label>
+      <input id="rankEditNoteInput" class="text-input" type="text" placeholder="비고 입력" />
+    </div>
+    <div class="actions right-wrap">
+      <button id="rankEditDeleteBtn" class="hidden" onclick="deleteRearrangeRankRow()">삭제</button>
+      <button id="rankEditSubmitBtn" onclick="submitRearrangeRankEdit()">저장</button>
+    </div>
   </div>
 
   <div id="holySwordAreaModal" class="modal hidden">
-    <div class="modal-header"><h3 id="holySwordAreaModalTitle">구역장 지정</h3><button class="close-btn" type="button" onclick="closeHolySwordAreaModal()">닫기</button></div>
-    <div class="form-group"><label for="holySwordAreaUserSelect">파티원</label><select id="holySwordAreaUserSelect"></select></div>
-    <div class="form-group"><label for="holySwordAreaSelect">구역</label><select id="holySwordAreaSelect"><option value="마구간">마구간</option><option value="시계탑">시계탑</option><option value="수도원 1">수도원 1</option><option value="수도원 2">수도원 2</option><option value="수도원 3">수도원 3</option><option value="수도원 4">수도원 4</option><option value="성소 1">성소 1</option><option value="성소 2">성소 2</option></select></div>
-    <div class="actions"><button type="button" onclick="addHolySwordAreaAssignment()">추가</button></div>
-    <div class="form-group"><div id="holySwordAreaAssignmentList"></div></div>
+    <div class="modal-header">
+      <h3 id="holySwordAreaModalTitle">구역장 지정</h3>
+      <button class="close-btn" type="button" onclick="closeHolySwordAreaModal()">닫기</button>
+    </div>
+    <div class="form-group">
+      <label for="holySwordAreaUserSelect">파티원</label>
+      <select id="holySwordAreaUserSelect"></select>
+    </div>
+    <div class="form-group">
+      <label for="holySwordAreaSelect">구역</label>
+      <select id="holySwordAreaSelect">
+        <option value="마구간">마구간</option>
+        <option value="시계탑">시계탑</option>
+        <option value="수도원 1">수도원 1</option>
+        <option value="수도원 2">수도원 2</option>
+        <option value="수도원 3">수도원 3</option>
+        <option value="수도원 4">수도원 4</option>
+        <option value="성소 1">성소 1</option>
+        <option value="성소 2">성소 2</option>
+      </select>
+    </div>
+    <div class="actions">
+      <button type="button" onclick="addHolySwordAreaAssignment()">추가</button>
+    </div>
+    <div class="form-group">
+      <div id="holySwordAreaAssignmentList"></div>
+    </div>
   </div>
 
   <div id="castleBattleModal" class="modal hidden castle-battle-modal">
-    <div class="modal-header"><h3>캐슬 전투 신청</h3><button class="close-btn" type="button" onclick="closeCastleBattleModal()">닫기</button></div>
+    <div class="modal-header">
+      <h3>캐슬 전투 신청</h3>
+      <button class="close-btn" type="button" onclick="closeCastleBattleModal()">닫기</button>
+    </div>
 
     <div class="castle-form-section">
       <div class="castle-form-title">TG</div>
       <div class="castle-form-grid castle-tg-grid">
-        <div class="form-group"><label>보병 TG</label><select id="castleInfantrySelect" class="text-input"><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option><option value="순금X">순금X</option></select></div>
-        <div class="form-group"><label>기병 TG</label><select id="castleCavalrySelect" class="text-input"><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option><option value="순금X">순금X</option></select></div>
-        <div class="form-group"><label>궁병 TG</label><select id="castleArcherSelect" class="text-input"><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option><option value="순금X">순금X</option></select></div>
+        <div class="form-group">
+          <label>보병 TG</label>
+          <select id="castleInfantrySelect" class="text-input">
+            <option value="5">5</option>
+            <option value="4">4</option>
+            <option value="3">3</option>
+            <option value="2">2</option>
+            <option value="1">1</option>
+            <option value="순금X">순금X</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>기병 TG</label>
+          <select id="castleCavalrySelect" class="text-input">
+            <option value="5">5</option>
+            <option value="4">4</option>
+            <option value="3">3</option>
+            <option value="2">2</option>
+            <option value="1">1</option>
+            <option value="순금X">순금X</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>궁병 TG</label>
+          <select id="castleArcherSelect" class="text-input">
+            <option value="5">5</option>
+            <option value="4">4</option>
+            <option value="3">3</option>
+            <option value="2">2</option>
+            <option value="1">1</option>
+            <option value="순금X">순금X</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -187,177 +353,358 @@
         <div class="castle-hero-card">
           <input type="hidden" class="castle-hero-level-input" data-hero="amadeus" value="0" />
           <div class="castle-hero-name">아마데우스</div>
-          <div class="castle-hero-levels"><button type="button" class="castle-hero-level-btn" data-hero="amadeus" data-level="0" onclick="setCastleHeroLevel('amadeus',0)">0</button><button type="button" class="castle-hero-level-btn" data-hero="amadeus" data-level="1" onclick="setCastleHeroLevel('amadeus',1)">1</button><button type="button" class="castle-hero-level-btn" data-hero="amadeus" data-level="2" onclick="setCastleHeroLevel('amadeus',2)">2</button><button type="button" class="castle-hero-level-btn" data-hero="amadeus" data-level="3" onclick="setCastleHeroLevel('amadeus',3)">3</button><button type="button" class="castle-hero-level-btn" data-hero="amadeus" data-level="4" onclick="setCastleHeroLevel('amadeus',4)">4</button><button type="button" class="castle-hero-level-btn" data-hero="amadeus" data-level="5" onclick="setCastleHeroLevel('amadeus',5)">5</button></div>
+          <div class="castle-hero-levels">
+            <button type="button" class="castle-hero-level-btn" data-hero="amadeus" data-level="0" onclick="setCastleHeroLevel('amadeus',0)">0</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="amadeus" data-level="1" onclick="setCastleHeroLevel('amadeus',1)">1</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="amadeus" data-level="2" onclick="setCastleHeroLevel('amadeus',2)">2</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="amadeus" data-level="3" onclick="setCastleHeroLevel('amadeus',3)">3</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="amadeus" data-level="4" onclick="setCastleHeroLevel('amadeus',4)">4</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="amadeus" data-level="5" onclick="setCastleHeroLevel('amadeus',5)">5</button>
+          </div>
         </div>
+
         <div class="castle-hero-card">
           <input type="hidden" class="castle-hero-level-input" data-hero="chenko" value="0" />
           <div class="castle-hero-name">첸코</div>
-          <div class="castle-hero-levels"><button type="button" class="castle-hero-level-btn" data-hero="chenko" data-level="0" onclick="setCastleHeroLevel('chenko',0)">0</button><button type="button" class="castle-hero-level-btn" data-hero="chenko" data-level="1" onclick="setCastleHeroLevel('chenko',1)">1</button><button type="button" class="castle-hero-level-btn" data-hero="chenko" data-level="2" onclick="setCastleHeroLevel('chenko',2)">2</button><button type="button" class="castle-hero-level-btn" data-hero="chenko" data-level="3" onclick="setCastleHeroLevel('chenko',3)">3</button><button type="button" class="castle-hero-level-btn" data-hero="chenko" data-level="4" onclick="setCastleHeroLevel('chenko',4)">4</button><button type="button" class="castle-hero-level-btn" data-hero="chenko" data-level="5" onclick="setCastleHeroLevel('chenko',5)">5</button></div>
+          <div class="castle-hero-levels">
+            <button type="button" class="castle-hero-level-btn" data-hero="chenko" data-level="0" onclick="setCastleHeroLevel('chenko',0)">0</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="chenko" data-level="1" onclick="setCastleHeroLevel('chenko',1)">1</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="chenko" data-level="2" onclick="setCastleHeroLevel('chenko',2)">2</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="chenko" data-level="3" onclick="setCastleHeroLevel('chenko',3)">3</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="chenko" data-level="4" onclick="setCastleHeroLevel('chenko',4)">4</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="chenko" data-level="5" onclick="setCastleHeroLevel('chenko',5)">5</button>
+          </div>
         </div>
+
         <div class="castle-hero-card">
           <input type="hidden" class="castle-hero-level-input" data-hero="yeonwoo" value="0" />
           <div class="castle-hero-name">연우</div>
-          <div class="castle-hero-levels"><button type="button" class="castle-hero-level-btn" data-hero="yeonwoo" data-level="0" onclick="setCastleHeroLevel('yeonwoo',0)">0</button><button type="button" class="castle-hero-level-btn" data-hero="yeonwoo" data-level="1" onclick="setCastleHeroLevel('yeonwoo',1)">1</button><button type="button" class="castle-hero-level-btn" data-hero="yeonwoo" data-level="2" onclick="setCastleHeroLevel('yeonwoo',2)">2</button><button type="button" class="castle-hero-level-btn" data-hero="yeonwoo" data-level="3" onclick="setCastleHeroLevel('yeonwoo',3)">3</button><button type="button" class="castle-hero-level-btn" data-hero="yeonwoo" data-level="4" onclick="setCastleHeroLevel('yeonwoo',4)">4</button><button type="button" class="castle-hero-level-btn" data-hero="yeonwoo" data-level="5" onclick="setCastleHeroLevel('yeonwoo',5)">5</button></div>
+          <div class="castle-hero-levels">
+            <button type="button" class="castle-hero-level-btn" data-hero="yeonwoo" data-level="0" onclick="setCastleHeroLevel('yeonwoo',0)">0</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="yeonwoo" data-level="1" onclick="setCastleHeroLevel('yeonwoo',1)">1</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="yeonwoo" data-level="2" onclick="setCastleHeroLevel('yeonwoo',2)">2</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="yeonwoo" data-level="3" onclick="setCastleHeroLevel('yeonwoo',3)">3</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="yeonwoo" data-level="4" onclick="setCastleHeroLevel('yeonwoo',4)">4</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="yeonwoo" data-level="5" onclick="setCastleHeroLevel('yeonwoo',5)">5</button>
+          </div>
         </div>
+
         <div class="castle-hero-card">
           <input type="hidden" class="castle-hero-level-input" data-hero="margo" value="0" />
           <div class="castle-hero-name">마르고</div>
-          <div class="castle-hero-levels"><button type="button" class="castle-hero-level-btn" data-hero="margo" data-level="0" onclick="setCastleHeroLevel('margo',0)">0</button><button type="button" class="castle-hero-level-btn" data-hero="margo" data-level="1" onclick="setCastleHeroLevel('margo',1)">1</button><button type="button" class="castle-hero-level-btn" data-hero="margo" data-level="2" onclick="setCastleHeroLevel('margo',2)">2</button><button type="button" class="castle-hero-level-btn" data-hero="margo" data-level="3" onclick="setCastleHeroLevel('margo',3)">3</button><button type="button" class="castle-hero-level-btn" data-hero="margo" data-level="4" onclick="setCastleHeroLevel('margo',4)">4</button><button type="button" class="castle-hero-level-btn" data-hero="margo" data-level="5" onclick="setCastleHeroLevel('margo',5)">5</button></div>
+          <div class="castle-hero-levels">
+            <button type="button" class="castle-hero-level-btn" data-hero="margo" data-level="0" onclick="setCastleHeroLevel('margo',0)">0</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="margo" data-level="1" onclick="setCastleHeroLevel('margo',1)">1</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="margo" data-level="2" onclick="setCastleHeroLevel('margo',2)">2</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="margo" data-level="3" onclick="setCastleHeroLevel('margo',3)">3</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="margo" data-level="4" onclick="setCastleHeroLevel('margo',4)">4</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="margo" data-level="5" onclick="setCastleHeroLevel('margo',5)">5</button>
+          </div>
         </div>
+
         <div class="castle-hero-card">
           <input type="hidden" class="castle-hero-level-input" data-hero="amane" value="0" />
           <div class="castle-hero-name">아마네</div>
-          <div class="castle-hero-levels"><button type="button" class="castle-hero-level-btn" data-hero="amane" data-level="0" onclick="setCastleHeroLevel('amane',0)">0</button><button type="button" class="castle-hero-level-btn" data-hero="amane" data-level="1" onclick="setCastleHeroLevel('amane',1)">1</button><button type="button" class="castle-hero-level-btn" data-hero="amane" data-level="2" onclick="setCastleHeroLevel('amane',2)">2</button><button type="button" class="castle-hero-level-btn" data-hero="amane" data-level="3" onclick="setCastleHeroLevel('amane',3)">3</button><button type="button" class="castle-hero-level-btn" data-hero="amane" data-level="4" onclick="setCastleHeroLevel('amane',4)">4</button><button type="button" class="castle-hero-level-btn" data-hero="amane" data-level="5" onclick="setCastleHeroLevel('amane',5)">5</button></div>
+          <div class="castle-hero-levels">
+            <button type="button" class="castle-hero-level-btn" data-hero="amane" data-level="0" onclick="setCastleHeroLevel('amane',0)">0</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="amane" data-level="1" onclick="setCastleHeroLevel('amane',1)">1</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="amane" data-level="2" onclick="setCastleHeroLevel('amane',2)">2</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="amane" data-level="3" onclick="setCastleHeroLevel('amane',3)">3</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="amane" data-level="4" onclick="setCastleHeroLevel('amane',4)">4</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="amane" data-level="5" onclick="setCastleHeroLevel('amane',5)">5</button>
+          </div>
         </div>
+
         <div class="castle-hero-card">
           <input type="hidden" class="castle-hero-level-input" data-hero="eric" value="0" />
           <div class="castle-hero-name">에릭</div>
-          <div class="castle-hero-levels"><button type="button" class="castle-hero-level-btn" data-hero="eric" data-level="0" onclick="setCastleHeroLevel('eric',0)">0</button><button type="button" class="castle-hero-level-btn" data-hero="eric" data-level="1" onclick="setCastleHeroLevel('eric',1)">1</button><button type="button" class="castle-hero-level-btn" data-hero="eric" data-level="2" onclick="setCastleHeroLevel('eric',2)">2</button><button type="button" class="castle-hero-level-btn" data-hero="eric" data-level="3" onclick="setCastleHeroLevel('eric',3)">3</button><button type="button" class="castle-hero-level-btn" data-hero="eric" data-level="4" onclick="setCastleHeroLevel('eric',4)">4</button><button type="button" class="castle-hero-level-btn" data-hero="eric" data-level="5" onclick="setCastleHeroLevel('eric',5)">5</button></div>
+          <div class="castle-hero-levels">
+            <button type="button" class="castle-hero-level-btn" data-hero="eric" data-level="0" onclick="setCastleHeroLevel('eric',0)">0</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="eric" data-level="1" onclick="setCastleHeroLevel('eric',1)">1</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="eric" data-level="2" onclick="setCastleHeroLevel('eric',2)">2</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="eric" data-level="3" onclick="setCastleHeroLevel('eric',3)">3</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="eric" data-level="4" onclick="setCastleHeroLevel('eric',4)">4</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="eric" data-level="5" onclick="setCastleHeroLevel('eric',5)">5</button>
+          </div>
         </div>
+
         <div class="castle-hero-card">
           <input type="hidden" class="castle-hero-level-input" data-hero="salo" value="0" />
           <div class="castle-hero-name">살로</div>
-          <div class="castle-hero-levels"><button type="button" class="castle-hero-level-btn" data-hero="salo" data-level="0" onclick="setCastleHeroLevel('salo',0)">0</button><button type="button" class="castle-hero-level-btn" data-hero="salo" data-level="1" onclick="setCastleHeroLevel('salo',1)">1</button><button type="button" class="castle-hero-level-btn" data-hero="salo" data-level="2" onclick="setCastleHeroLevel('salo',2)">2</button><button type="button" class="castle-hero-level-btn" data-hero="salo" data-level="3" onclick="setCastleHeroLevel('salo',3)">3</button><button type="button" class="castle-hero-level-btn" data-hero="salo" data-level="4" onclick="setCastleHeroLevel('salo',4)">4</button><button type="button" class="castle-hero-level-btn" data-hero="salo" data-level="5" onclick="setCastleHeroLevel('salo',5)">5</button></div>
+          <div class="castle-hero-levels">
+            <button type="button" class="castle-hero-level-btn" data-hero="salo" data-level="0" onclick="setCastleHeroLevel('salo',0)">0</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="salo" data-level="1" onclick="setCastleHeroLevel('salo',1)">1</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="salo" data-level="2" onclick="setCastleHeroLevel('salo',2)">2</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="salo" data-level="3" onclick="setCastleHeroLevel('salo',3)">3</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="salo" data-level="4" onclick="setCastleHeroLevel('salo',4)">4</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="salo" data-level="5" onclick="setCastleHeroLevel('salo',5)">5</button>
+          </div>
         </div>
+
         <div class="castle-hero-card">
           <input type="hidden" class="castle-hero-level-input" data-hero="littlefera" value="0" />
           <div class="castle-hero-name">리틀페라</div>
-          <div class="castle-hero-levels"><button type="button" class="castle-hero-level-btn" data-hero="littlefera" data-level="0" onclick="setCastleHeroLevel('littlefera',0)">0</button><button type="button" class="castle-hero-level-btn" data-hero="littlefera" data-level="1" onclick="setCastleHeroLevel('littlefera',1)">1</button><button type="button" class="castle-hero-level-btn" data-hero="littlefera" data-level="2" onclick="setCastleHeroLevel('littlefera',2)">2</button><button type="button" class="castle-hero-level-btn" data-hero="littlefera" data-level="3" onclick="setCastleHeroLevel('littlefera',3)">3</button><button type="button" class="castle-hero-level-btn" data-hero="littlefera" data-level="4" onclick="setCastleHeroLevel('littlefera',4)">4</button><button type="button" class="castle-hero-level-btn" data-hero="littlefera" data-level="5" onclick="setCastleHeroLevel('littlefera',5)">5</button></div>
+          <div class="castle-hero-levels">
+            <button type="button" class="castle-hero-level-btn" data-hero="littlefera" data-level="0" onclick="setCastleHeroLevel('littlefera',0)">0</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="littlefera" data-level="1" onclick="setCastleHeroLevel('littlefera',1)">1</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="littlefera" data-level="2" onclick="setCastleHeroLevel('littlefera',2)">2</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="littlefera" data-level="3" onclick="setCastleHeroLevel('littlefera',3)">3</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="littlefera" data-level="4" onclick="setCastleHeroLevel('littlefera',4)">4</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="littlefera" data-level="5" onclick="setCastleHeroLevel('littlefera',5)">5</button>
+          </div>
         </div>
+
         <div class="castle-hero-card">
           <input type="hidden" class="castle-hero-level-input" data-hero="marine" value="0" />
           <div class="castle-hero-name">마린</div>
-          <div class="castle-hero-levels"><button type="button" class="castle-hero-level-btn" data-hero="marine" data-level="0" onclick="setCastleHeroLevel('marine',0)">0</button><button type="button" class="castle-hero-level-btn" data-hero="marine" data-level="1" onclick="setCastleHeroLevel('marine',1)">1</button><button type="button" class="castle-hero-level-btn" data-hero="marine" data-level="2" onclick="setCastleHeroLevel('marine',2)">2</button><button type="button" class="castle-hero-level-btn" data-hero="marine" data-level="3" onclick="setCastleHeroLevel('marine',3)">3</button><button type="button" class="castle-hero-level-btn" data-hero="marine" data-level="4" onclick="setCastleHeroLevel('marine',4)">4</button><button type="button" class="castle-hero-level-btn" data-hero="marine" data-level="5" onclick="setCastleHeroLevel('marine',5)">5</button></div>
+          <div class="castle-hero-levels">
+            <button type="button" class="castle-hero-level-btn" data-hero="marine" data-level="0" onclick="setCastleHeroLevel('marine',0)">0</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="marine" data-level="1" onclick="setCastleHeroLevel('marine',1)">1</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="marine" data-level="2" onclick="setCastleHeroLevel('marine',2)">2</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="marine" data-level="3" onclick="setCastleHeroLevel('marine',3)">3</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="marine" data-level="4" onclick="setCastleHeroLevel('marine',4)">4</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="marine" data-level="5" onclick="setCastleHeroLevel('marine',5)">5</button>
+          </div>
         </div>
+
         <div class="castle-hero-card">
           <input type="hidden" class="castle-hero-level-input" data-hero="rosa" value="0" />
           <div class="castle-hero-name">로사</div>
-          <div class="castle-hero-levels"><button type="button" class="castle-hero-level-btn" data-hero="rosa" data-level="0" onclick="setCastleHeroLevel('rosa',0)">0</button><button type="button" class="castle-hero-level-btn" data-hero="rosa" data-level="1" onclick="setCastleHeroLevel('rosa',1)">1</button><button type="button" class="castle-hero-level-btn" data-hero="rosa" data-level="2" onclick="setCastleHeroLevel('rosa',2)">2</button><button type="button" class="castle-hero-level-btn" data-hero="rosa" data-level="3" onclick="setCastleHeroLevel('rosa',3)">3</button><button type="button" class="castle-hero-level-btn" data-hero="rosa" data-level="4" onclick="setCastleHeroLevel('rosa',4)">4</button><button type="button" class="castle-hero-level-btn" data-hero="rosa" data-level="5" onclick="setCastleHeroLevel('rosa',5)">5</button></div>
+          <div class="castle-hero-levels">
+            <button type="button" class="castle-hero-level-btn" data-hero="rosa" data-level="0" onclick="setCastleHeroLevel('rosa',0)">0</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="rosa" data-level="1" onclick="setCastleHeroLevel('rosa',1)">1</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="rosa" data-level="2" onclick="setCastleHeroLevel('rosa',2)">2</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="rosa" data-level="3" onclick="setCastleHeroLevel('rosa',3)">3</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="rosa" data-level="4" onclick="setCastleHeroLevel('rosa',4)">4</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="rosa" data-level="5" onclick="setCastleHeroLevel('rosa',5)">5</button>
+          </div>
         </div>
+
         <div class="castle-hero-card">
           <input type="hidden" class="castle-hero-level-input" data-hero="alka" value="0" />
           <div class="castle-hero-name">알카</div>
-          <div class="castle-hero-levels"><button type="button" class="castle-hero-level-btn" data-hero="alka" data-level="0" onclick="setCastleHeroLevel('alka',0)">0</button><button type="button" class="castle-hero-level-btn" data-hero="alka" data-level="1" onclick="setCastleHeroLevel('alka',1)">1</button><button type="button" class="castle-hero-level-btn" data-hero="alka" data-level="2" onclick="setCastleHeroLevel('alka',2)">2</button><button type="button" class="castle-hero-level-btn" data-hero="alka" data-level="3" onclick="setCastleHeroLevel('alka',3)">3</button><button type="button" class="castle-hero-level-btn" data-hero="alka" data-level="4" onclick="setCastleHeroLevel('alka',4)">4</button><button type="button" class="castle-hero-level-btn" data-hero="alka" data-level="5" onclick="setCastleHeroLevel('alka',5)">5</button></div>
+          <div class="castle-hero-levels">
+            <button type="button" class="castle-hero-level-btn" data-hero="alka" data-level="0" onclick="setCastleHeroLevel('alka',0)">0</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="alka" data-level="1" onclick="setCastleHeroLevel('alka',1)">1</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="alka" data-level="2" onclick="setCastleHeroLevel('alka',2)">2</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="alka" data-level="3" onclick="setCastleHeroLevel('alka',3)">3</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="alka" data-level="4" onclick="setCastleHeroLevel('alka',4)">4</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="alka" data-level="5" onclick="setCastleHeroLevel('alka',5)">5</button>
+          </div>
         </div>
+
         <div class="castle-hero-card">
           <input type="hidden" class="castle-hero-level-input" data-hero="fad" value="0" />
           <div class="castle-hero-name">파드</div>
-          <div class="castle-hero-levels"><button type="button" class="castle-hero-level-btn" data-hero="fad" data-level="0" onclick="setCastleHeroLevel('fad',0)">0</button><button type="button" class="castle-hero-level-btn" data-hero="fad" data-level="1" onclick="setCastleHeroLevel('fad',1)">1</button><button type="button" class="castle-hero-level-btn" data-hero="fad" data-level="2" onclick="setCastleHeroLevel('fad',2)">2</button><button type="button" class="castle-hero-level-btn" data-hero="fad" data-level="3" onclick="setCastleHeroLevel('fad',3)">3</button><button type="button" class="castle-hero-level-btn" data-hero="fad" data-level="4" onclick="setCastleHeroLevel('fad',4)">4</button><button type="button" class="castle-hero-level-btn" data-hero="fad" data-level="5" onclick="setCastleHeroLevel('fad',5)">5</button></div>
+          <div class="castle-hero-levels">
+            <button type="button" class="castle-hero-level-btn" data-hero="fad" data-level="0" onclick="setCastleHeroLevel('fad',0)">0</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="fad" data-level="1" onclick="setCastleHeroLevel('fad',1)">1</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="fad" data-level="2" onclick="setCastleHeroLevel('fad',2)">2</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="fad" data-level="3" onclick="setCastleHeroLevel('fad',3)">3</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="fad" data-level="4" onclick="setCastleHeroLevel('fad',4)">4</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="fad" data-level="5" onclick="setCastleHeroLevel('fad',5)">5</button>
+          </div>
         </div>
+
         <div class="castle-hero-card">
           <input type="hidden" class="castle-hero-level-input" data-hero="queen" value="0" />
           <div class="castle-hero-name">퀸</div>
-          <div class="castle-hero-levels"><button type="button" class="castle-hero-level-btn" data-hero="queen" data-level="0" onclick="setCastleHeroLevel('queen',0)">0</button><button type="button" class="castle-hero-level-btn" data-hero="queen" data-level="1" onclick="setCastleHeroLevel('queen',1)">1</button><button type="button" class="castle-hero-level-btn" data-hero="queen" data-level="2" onclick="setCastleHeroLevel('queen',2)">2</button><button type="button" class="castle-hero-level-btn" data-hero="queen" data-level="3" onclick="setCastleHeroLevel('queen',3)">3</button><button type="button" class="castle-hero-level-btn" data-hero="queen" data-level="4" onclick="setCastleHeroLevel('queen',4)">4</button><button type="button" class="castle-hero-level-btn" data-hero="queen" data-level="5" onclick="setCastleHeroLevel('queen',5)">5</button></div>
+          <div class="castle-hero-levels">
+            <button type="button" class="castle-hero-level-btn" data-hero="queen" data-level="0" onclick="setCastleHeroLevel('queen',0)">0</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="queen" data-level="1" onclick="setCastleHeroLevel('queen',1)">1</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="queen" data-level="2" onclick="setCastleHeroLevel('queen',2)">2</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="queen" data-level="3" onclick="setCastleHeroLevel('queen',3)">3</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="queen" data-level="4" onclick="setCastleHeroLevel('queen',4)">4</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="queen" data-level="5" onclick="setCastleHeroLevel('queen',5)">5</button>
+          </div>
         </div>
+
         <div class="castle-hero-card">
           <input type="hidden" class="castle-hero-level-input" data-hero="howard" value="0" />
           <div class="castle-hero-name">하워드</div>
-          <div class="castle-hero-levels"><button type="button" class="castle-hero-level-btn" data-hero="howard" data-level="0" onclick="setCastleHeroLevel('howard',0)">0</button><button type="button" class="castle-hero-level-btn" data-hero="howard" data-level="1" onclick="setCastleHeroLevel('howard',1)">1</button><button type="button" class="castle-hero-level-btn" data-hero="howard" data-level="2" onclick="setCastleHeroLevel('howard',2)">2</button><button type="button" class="castle-hero-level-btn" data-hero="howard" data-level="3" onclick="setCastleHeroLevel('howard',3)">3</button><button type="button" class="castle-hero-level-btn" data-hero="howard" data-level="4" onclick="setCastleHeroLevel('howard',4)">4</button><button type="button" class="castle-hero-level-btn" data-hero="howard" data-level="5" onclick="setCastleHeroLevel('howard',5)">5</button></div>
+          <div class="castle-hero-levels">
+            <button type="button" class="castle-hero-level-btn" data-hero="howard" data-level="0" onclick="setCastleHeroLevel('howard',0)">0</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="howard" data-level="1" onclick="setCastleHeroLevel('howard',1)">1</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="howard" data-level="2" onclick="setCastleHeroLevel('howard',2)">2</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="howard" data-level="3" onclick="setCastleHeroLevel('howard',3)">3</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="howard" data-level="4" onclick="setCastleHeroLevel('howard',4)">4</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="howard" data-level="5" onclick="setCastleHeroLevel('howard',5)">5</button>
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="actions right-wrap castle-submit-actions"><button type="button" onclick="submitCastleBattle()">신청</button></div>
+    <div class="actions right-wrap castle-submit-actions">
+      <button type="button" onclick="submitCastleBattle()">신청</button>
+    </div>
   </div>
 
   <div id="createLabyrinthModal" class="modal hidden">
-    <div class="modal-header"><h3>미궁 제작하기</h3><button class="close-btn" type="button" onclick="closeCreateLabyrinthModal()">닫기</button></div>
-    <div class="form-group"><label for="labyrinthTitleInput">미궁 제목</label><input id="labyrinthTitleInput" class="text-input" type="text" placeholder="예: 사바나의 첨탑" /></div>
-    <div class="form-group"><label for="labyrinthDescriptionInput">미궁 설명</label><textarea id="labyrinthDescriptionInput" class="text-input labyrinth-textarea" placeholder="미궁 소개를 입력하세요."></textarea></div>
-    <div class="form-group"><label for="labyrinthThumbnailTextInput">카드 한줄 문구</label><input id="labyrinthThumbnailTextInput" class="text-input" type="text" placeholder="예: 사바나가 지켜보는 탑" /></div>
-    <div class="form-group"><label class="checkbox-label"><input type="checkbox" id="labyrinthPublicCheckbox" />공개 미궁으로 설정</label></div>
-    <div class="form-group"><label class="checkbox-label"><input type="checkbox" id="labyrinthOpenCheckbox" checked />플레이 가능 상태로 설정</label></div>
-    <div class="actions right-wrap"><button type="button" onclick="submitCreateLabyrinth()">생성</button></div>
+    <div class="modal-header">
+      <h3>미궁 제작하기</h3>
+      <button class="close-btn" type="button" onclick="closeCreateLabyrinthModal()">닫기</button>
+    </div>
+    <div class="form-group">
+      <label for="labyrinthTitleInput">미궁 제목</label>
+      <input id="labyrinthTitleInput" class="text-input" type="text" placeholder="예: 사바나의 첨탑" />
+    </div>
+    <div class="form-group">
+      <label for="labyrinthDescriptionInput">미궁 설명</label>
+      <textarea id="labyrinthDescriptionInput" class="text-input labyrinth-textarea" placeholder="미궁 소개를 입력하세요."></textarea>
+    </div>
+    <div class="form-group">
+      <label for="labyrinthThumbnailTextInput">카드 한줄 문구</label>
+      <input id="labyrinthThumbnailTextInput" class="text-input" type="text" placeholder="예: 사바나가 지켜보는 탑" />
+    </div>
+    <div class="form-group">
+      <label class="checkbox-label"><input type="checkbox" id="labyrinthPublicCheckbox" />공개 미궁으로 설정</label>
+    </div>
+    <div class="form-group">
+      <label class="checkbox-label"><input type="checkbox" id="labyrinthOpenCheckbox" checked />플레이 가능 상태로 설정</label>
+    </div>
+    <div class="actions right-wrap">
+      <button type="button" onclick="submitCreateLabyrinth()">생성</button>
+    </div>
   </div>
 
   <div id="editLabyrinthModal" class="modal hidden">
-    <div class="modal-header"><h3>미궁 정보 수정</h3><button class="close-btn" type="button" onclick="closeEditLabyrinthModal()">닫기</button></div>
-    <div class="form-group"><label for="editLabyrinthTitleInput">미궁 제목</label><input id="editLabyrinthTitleInput" class="text-input" type="text" /></div>
-    <div class="form-group"><label for="editLabyrinthDescriptionInput">미궁 설명</label><textarea id="editLabyrinthDescriptionInput" class="text-input labyrinth-textarea"></textarea></div>
-    <div class="form-group"><label for="editLabyrinthThumbnailTextInput">카드 한줄 문구</label><input id="editLabyrinthThumbnailTextInput" class="text-input" type="text" /></div>
-    <div class="form-group"><label class="checkbox-label"><input type="checkbox" id="editLabyrinthPublicCheckbox" />공개 미궁으로 설정</label></div>
-    <div class="form-group"><label class="checkbox-label"><input type="checkbox" id="editLabyrinthOpenCheckbox" />플레이 가능 상태로 설정</label></div>
-    <div class="actions right-wrap"><button type="button" onclick="submitEditLabyrinth()">저장</button></div>
+    <div class="modal-header">
+      <h3>미궁 정보 수정</h3>
+      <button class="close-btn" type="button" onclick="closeEditLabyrinthModal()">닫기</button>
+    </div>
+    <div class="form-group">
+      <label for="editLabyrinthTitleInput">미궁 제목</label>
+      <input id="editLabyrinthTitleInput" class="text-input" type="text" />
+    </div>
+    <div class="form-group">
+      <label for="editLabyrinthDescriptionInput">미궁 설명</label>
+      <textarea id="editLabyrinthDescriptionInput" class="text-input labyrinth-textarea"></textarea>
+    </div>
+    <div class="form-group">
+      <label for="editLabyrinthThumbnailTextInput">카드 한줄 문구</label>
+      <input id="editLabyrinthThumbnailTextInput" class="text-input" type="text" />
+    </div>
+    <div class="form-group">
+      <label class="checkbox-label"><input type="checkbox" id="editLabyrinthPublicCheckbox" />공개 미궁으로 설정</label>
+    </div>
+    <div class="form-group">
+      <label class="checkbox-label"><input type="checkbox" id="editLabyrinthOpenCheckbox" />플레이 가능 상태로 설정</label>
+    </div>
+    <div class="actions right-wrap">
+      <button type="button" onclick="submitEditLabyrinth()">저장</button>
+    </div>
   </div>
 
-<div id="createTurtleSoupModal" class="modal hidden">
-  <div class="modal-header">
-    <h3 id="turtleSoupModalTitle">바다거북스프 만들기</h3>
-    <button class="close-btn" type="button" onclick="closeCreateTurtleSoupModal()">닫기</button>
+  <div id="createTurtleSoupModal" class="modal hidden">
+    <div class="modal-header">
+      <h3 id="turtleSoupModalTitle">바다거북스프 만들기</h3>
+      <button class="close-btn" type="button" onclick="closeCreateTurtleSoupModal()">닫기</button>
+    </div>
+
+    <div class="form-group">
+      <label for="turtleSoupTitleInput">문제 제목</label>
+      <input id="turtleSoupTitleInput" class="text-input" type="text" placeholder="예: 잠긴 방의 물컵" />
+    </div>
+
+    <div class="form-group">
+      <label for="turtleSoupDifficultySelect">난이도</label>
+      <select id="turtleSoupDifficultySelect" class="text-input">
+        <option value="0">☆☆☆☆☆ 0</option>
+        <option value="1">★☆☆☆☆ 1</option>
+        <option value="2">★★☆☆☆ 2</option>
+        <option value="3" selected>★★★☆☆ 3</option>
+        <option value="4">★★★★☆ 4</option>
+        <option value="5">★★★★★ 5</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="turtleSoupContentInput">문제 본문</label>
+      <textarea id="turtleSoupContentInput" class="text-input labyrinth-textarea" placeholder="사건 설명을 작성하세요."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="turtleSoupSolutionInput">문제 해설</label>
+      <textarea id="turtleSoupSolutionInput" class="text-input labyrinth-textarea" placeholder="정답 처리된 사람에게만 보여줄 해설을 작성하세요."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="checkbox-label"><input type="checkbox" id="turtleSoupPublicCheckbox" checked />공개</label>
+    </div>
+
+    <div class="actions right-wrap">
+      <button id="deleteTurtleSoupBtn" type="button" class="danger-btn hidden" onclick="deleteTurtleSoup()">삭제</button>
+      <button type="button" onclick="submitTurtleSoup()">저장</button>
+    </div>
   </div>
 
-  <div class="form-group">
-    <label for="turtleSoupTitleInput">문제 제목</label>
-    <input id="turtleSoupTitleInput" class="text-input" type="text" placeholder="예: 잠긴 방의 물컵" />
-  </div>
-
-<div class="form-group">
-  <label for="turtleSoupDifficultySelect">난이도</label>
-  <select id="turtleSoupDifficultySelect" class="text-input">
-    <option value="0">☆☆☆☆☆ 0</option>
-    <option value="1">★☆☆☆☆ 1</option>
-    <option value="2">★★☆☆☆ 2</option>
-    <option value="3" selected>★★★☆☆ 3</option>
-    <option value="4">★★★★☆ 4</option>
-    <option value="5">★★★★★ 5</option>
-  </select>
-</div>
-  
-  <div class="form-group">
-    <label for="turtleSoupContentInput">문제 본문</label>
-    <textarea id="turtleSoupContentInput" class="text-input labyrinth-textarea" placeholder="사건 설명을 작성하세요."></textarea>
-  </div>
-
-<div class="form-group">
-  <label for="turtleSoupSolutionInput">문제 해설</label>
-  <textarea id="turtleSoupSolutionInput" class="text-input labyrinth-textarea" placeholder="정답 처리된 사람에게만 보여줄 해설을 작성하세요."></textarea>
-</div>
-  
-  <div class="form-group">
-    <label class="checkbox-label"><input type="checkbox" id="turtleSoupPublicCheckbox" checked />공개</label>
-  </div>
-
-  <div class="actions right-wrap">
-    <button id="deleteTurtleSoupBtn" type="button" class="danger-btn hidden" onclick="deleteTurtleSoup()">삭제</button>
-    <button type="button" onclick="submitTurtleSoup()">저장</button>
-  </div>
-</div>
-  
   <div id="editStageModal" class="modal hidden">
-    <div class="modal-header"><h3 id="editStageModalTitle">단계 편집</h3><button class="close-btn" type="button" onclick="closeEditStageModal()">닫기</button></div>
-    <div class="form-group"><label for="stageOrderInput">순서</label><input id="stageOrderInput" class="text-input" type="number" min="0" step="1" placeholder="예: 0" /></div>
-    <div class="form-group"><label for="stageTitleInput">단계 제목</label><input id="stageTitleInput" class="text-input" type="text" placeholder="예: 첨탑 입구 / 1층" /></div>
-    <div class="form-group"><label for="stageTypeSelect">단계 유형</label><select id="stageTypeSelect"><option value="entry">입장형</option><option value="question">문제형</option><option value="final">최종형</option></select></div>
+    <div class="modal-header">
+      <h3 id="editStageModalTitle">단계 편집</h3>
+      <button class="close-btn" type="button" onclick="closeEditStageModal()">닫기</button>
+    </div>
+
+    <div class="form-group">
+      <label for="stageOrderInput">순서</label>
+      <input id="stageOrderInput" class="text-input" type="number" min="0" step="1" placeholder="예: 0" />
+    </div>
+
+    <div class="form-group">
+      <label for="stageTitleInput">단계 제목</label>
+      <input id="stageTitleInput" class="text-input" type="text" placeholder="예: 첨탑 입구 / 1층" />
+    </div>
+
+    <div class="form-group">
+      <label for="stageTypeSelect">단계 유형</label>
+      <select id="stageTypeSelect">
+        <option value="entry">입장형</option>
+        <option value="question">문제형</option>
+        <option value="final">최종형</option>
+      </select>
+    </div>
+
     <input id="stageStoryInput" type="hidden" />
-<input id="stageQuestionInput" type="hidden" />
+    <input id="stageQuestionInput" type="hidden" />
 
-<div class="form-group">
-  <label>단계 내용</label>
-  <div class="labyrinth-editor-toolbar">
-    <label class="labyrinth-editor-upload">
-      사진 삽입
-      <input id="stageContentImageInput" type="file" accept="image/*" hidden>
-    </label>
-    <button type="button" onclick="clearLabyrinthEditorContent()">본문 초기화</button>
-  </div>
-  <div id="stageContentEditor" class="labyrinth-content-editor" contenteditable="true" data-placeholder="스토리, 문제, 안내문, 사진을 자유롭게 작성하세요."></div>
-  <p class="muted form-help">기존 스토리/문제 내용은 이 편집기 안으로 합쳐서 불러옵니다.</p>
-</div>
+    <div class="form-group">
+      <label>단계 내용</label>
+      <div class="labyrinth-editor-toolbar">
+        <label class="labyrinth-editor-upload">
+          사진 삽입
+          <input id="stageContentImageInput" type="file" accept="image/*" hidden>
+        </label>
+        <button type="button" onclick="clearLabyrinthEditorContent()">본문 초기화</button>
+      </div>
+      <div id="stageContentEditor" class="labyrinth-content-editor" contenteditable="true" data-placeholder="스토리, 문제, 안내문, 사진을 자유롭게 작성하세요."></div>
+      <p class="muted form-help">기존 스토리/문제 내용은 이 편집기 안으로 합쳐서 불러옵니다.</p>
+    </div>
+
     <div class="form-group" id="stageAnswerWrap">
-  <label for="stageAnswerInput">정답</label>
-  <input id="stageAnswerInput" class="text-input" type="text" placeholder="정답 입력" />
-</div>
+      <label for="stageAnswerInput">정답</label>
+      <input id="stageAnswerInput" class="text-input" type="text" placeholder="정답 입력" />
+    </div>
 
-<div class="form-group" id="stagePlaceholderWrap">
-  <label for="stagePlaceholderInput">입력창 안내문</label>
-  <input id="stagePlaceholderInput" class="text-input" type="text" placeholder="예: 비밀번호를 입력하세요." />
-</div>
-    <div class="form-group"><label for="stageSuccessMessageInput">성공 메시지</label><textarea id="stageSuccessMessageInput" class="text-input labyrinth-textarea" placeholder="통과 시 보여줄 문구"></textarea></div>
-    <div class="form-group"><label class="checkbox-label"><input type="checkbox" id="stageActiveCheckbox" checked />활성 단계</label></div>
-    <div class="actions right-wrap"><button id="deleteStageBtn" type="button" class="hidden" onclick="deleteStage()">삭제</button><button type="button" onclick="submitStage()">저장</button></div>
+    <div class="form-group" id="stagePlaceholderWrap">
+      <label for="stagePlaceholderInput">입력창 안내문</label>
+      <input id="stagePlaceholderInput" class="text-input" type="text" placeholder="예: 비밀번호를 입력하세요." />
+    </div>
+
+    <div class="form-group">
+      <label for="stageSuccessMessageInput">성공 메시지</label>
+      <textarea id="stageSuccessMessageInput" class="text-input labyrinth-textarea" placeholder="통과 시 보여줄 문구"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="checkbox-label"><input type="checkbox" id="stageActiveCheckbox" checked />활성 단계</label>
+    </div>
+
+    <div class="actions right-wrap">
+      <button id="deleteStageBtn" type="button" class="hidden" onclick="deleteStage()">삭제</button>
+      <button type="button" onclick="submitStage()">저장</button>
+    </div>
   </div>
 
-  <script src="js/app-core.js?v=split-4"></script>
+  <script src="js/app-core.js?v=split-5"></script>
   <script src="js/events-common.js?v=split-1"></script>
   <script src="js/event-viking.js?v=split-1"></script>
   <script src="js/event-ruins.js?v=split-1"></script>
@@ -365,7 +712,7 @@
   <script src="js/event-triple.js?v=split-1"></script>
   <script src="js/event-castle.js?v=split-1"></script>
   <script src="js/event-rearrange.js?v=split-1"></script>
-  <script src="js/event-labyrinth.js?v=split-1"></script>
+  <script src="js/event-labyrinth.js?v=split-2"></script>
   <script src="js/event-turtle.js?v=split-4"></script>
   <script src="js/script.js?v=split-1"></script>
 </body>
