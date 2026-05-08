@@ -993,6 +993,10 @@ if(el.eventShowAllUsersBtn){
   }
 
 if(state.currentEventId==="escape_labyrinth"){
+  if(el.eventShowAllUsersBtn){
+    el.eventShowAllUsersBtn.classList.add("hidden");
+  }
+
   if(state.currentTurtleSoupId){
     el.backToLabyrinthListBtn.classList.remove("hidden");
     el.backToLabyrinthListBtn.textContent="목록으로";
@@ -1005,16 +1009,22 @@ if(state.currentEventId==="escape_labyrinth"){
       el.createLabyrinthBtn.textContent="문제 수정";
       el.createLabyrinthBtn.onclick=()=>openCreateTurtleSoupModal(state.currentTurtleSoupId);
     }
-  }else if(state.currentLabyrinthId){
+
+    return;
+  }
+
+  if(state.currentLabyrinthId){
     el.backToLabyrinthListBtn.classList.remove("hidden");
     el.backToLabyrinthListBtn.textContent="목록으로";
     el.backToLabyrinthListBtn.onclick=openEscapeLabyrinthHome;
-  }else if(state.escapeLabyrinthTab==="labyrinth"){
+    return;
+  }
+
+  if(state.escapeLabyrinthTab==="labyrinth"){
     el.createLabyrinthBtn.classList.remove("hidden");
     el.createLabyrinthBtn.textContent="미궁 제작하기";
     el.createLabyrinthBtn.onclick=openCreateLabyrinthModal;
   }
-}
 }
 
 async function openEvent(id){
