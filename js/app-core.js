@@ -305,8 +305,12 @@ window.toggleEventMenu=toggleEventMenu;
 
 function updateEscapeLabyrinthHomePanels(){
   const isTurtle=state.escapeLabyrinthTab==="turtle";
+  const isLabyrinth=state.escapeLabyrinthTab==="labyrinth";
 
-  document.getElementById("labyrinthMenuPanel")?.classList.toggle("hidden",isTurtle);
+  document.getElementById("labyrinthMenuPanel")?.classList.toggle("hidden",isLabyrinth||isTurtle);
+
+  document.getElementById("labyrinthRealHome")?.classList.toggle("hidden",!isLabyrinth);
+
   document.getElementById("turtleMenuPanel")?.classList.toggle("hidden",!isTurtle);
 }
 
