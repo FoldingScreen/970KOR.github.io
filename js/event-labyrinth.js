@@ -155,9 +155,14 @@ function renderLabyrinthHome(){
     ? publicItems.map(renderLabyrinthCard).join("")
     : `<div class="labyrinth-empty">공개된 미궁이 없습니다.</div>`;
 
-  el.myLabyrinthList.innerHTML=myItems.length
+el.myLabyrinthList.innerHTML=myItems.length
     ? myItems.map(renderLabyrinthCard).join("")
-    : `<div class="labyrinth-empty">아직 만든 미궁이 없습니다.<br>상단의 "미궁 제작하기" 버튼으로 시작하세요.</div>`;
+    : `
+      <button type="button" class="labyrinth-create-empty-card" onclick="openCreateLabyrinthModal()">
+        <span class="labyrinth-create-plus">＋</span>
+        <span>내 미궁 만들기</span>
+      </button>
+    `;
 
     window.updateEscapeLabyrinthHomePanels?.();
 }
