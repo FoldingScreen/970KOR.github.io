@@ -1049,14 +1049,16 @@ async function openEvent(id){
   updateEventActionButtons();
   showOnly("event");
 
-  if(id==="escape_labyrinth"){
+if(id==="escape_labyrinth"){
   state.currentLabyrinthId="";
   state.currentLabyrinthData=null;
 
   state.currentTurtleSoupId="";
   state.currentTurtleSoupData=null;
 
-  state.escapeLabyrinthTab="home";
+  if(!["home","labyrinth","turtle"].includes(state.escapeLabyrinthTab)){
+    state.escapeLabyrinthTab="home";
+  }
 
   if(el.partyList)el.partyList.classList.add("hidden");
   if(el.escapeLabyrinthScreen)el.escapeLabyrinthScreen.classList.remove("hidden");
