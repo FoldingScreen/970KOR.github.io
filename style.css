@@ -3259,3 +3259,64 @@ textarea.text-input{
     bottom:8px;
   }
 }
+
+/* ===== 바거슾 입력창 PC/모바일 공통 하단 고정 ===== */
+#turtleSoupDetailView .turtle-detail-layout{
+  padding-bottom:150px;
+}
+
+#turtleSoupDetailView .turtle-composer{
+  position:fixed!important;
+  left:50%;
+  bottom:12px;
+  transform:translateX(-50%);
+  width:min(720px,calc(100vw - 24px));
+  z-index:110;
+  border-color:#315a93;
+  background:rgba(5,8,16,.98);
+  box-shadow:0 -12px 30px rgba(0,0,0,.5);
+}
+
+/* PC에서는 질답창 쪽 너비에 맞춰 살짝 넓게 */
+@media(min-width:981px){
+  #turtleSoupDetailView .turtle-composer{
+    left:calc(50% - 210px);
+    width:min(760px,calc(100vw - 460px));
+  }
+
+  #turtleSoupDetailView .turtle-detail-right .turtle-chat-list{
+    padding-bottom:16px;
+  }
+}
+
+/* 모바일에서는 화면 전체 하단 */
+@media(max-width:980px){
+  #turtleSoupDetailView .turtle-detail-layout{
+    padding-bottom:170px;
+  }
+
+  #turtleSoupDetailView .turtle-composer{
+    left:10px;
+    right:10px;
+    bottom:10px;
+    transform:none;
+    width:auto;
+  }
+
+  #turtleSoupDetailView .turtle-detail-right .turtle-chat-list{
+    min-height:360px;
+    padding-bottom:12px;
+  }
+}
+
+@media(max-width:480px){
+  #turtleSoupDetailView .turtle-detail-layout{
+    padding-bottom:190px;
+  }
+
+  #turtleSoupDetailView .turtle-composer{
+    left:8px;
+    right:8px;
+    bottom:8px;
+  }
+}
