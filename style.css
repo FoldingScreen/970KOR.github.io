@@ -2928,3 +2928,131 @@ textarea.text-input{
     font-size:10px;
   }
 }
+
+/* ===== 모바일 바거슾 상세: 질문 입력창 1줄 압축 ===== */
+@media(max-width:720px){
+  #turtleSoupDetailView .turtle-detail-layout{
+    padding-bottom:76px;
+  }
+
+  #turtleSoupDetailView .turtle-detail-left{
+    gap:8px;
+  }
+
+  #turtleSoupDetailView .turtle-problem-card,
+  #turtleSoupDetailView .turtle-submission-panel,
+  #turtleSoupDetailView .turtle-solution-panel{
+    padding:10px 11px;
+    border-radius:15px;
+  }
+
+  #turtleSoupDetailView .turtle-problem-title{
+    font-size:17px;
+    line-height:1.25;
+  }
+
+  #turtleSoupDetailView .turtle-problem-meta{
+    font-size:11px;
+    line-height:1.4;
+  }
+
+  #turtleSoupDetailView .turtle-problem-body{
+    margin-top:5px;
+  }
+
+  #turtleSoupDetailView .turtle-problem-content{
+    max-height:120px;
+    padding:9px;
+    font-size:13px;
+    line-height:1.5;
+  }
+
+  #turtleSoupDetailView .turtle-chat-list{
+    min-height:0;
+    max-height:calc(100dvh - 330px);
+    padding:9px;
+  }
+
+  #turtleSoupDetailView .turtle-composer{
+    left:8px;
+    right:8px;
+    bottom:8px;
+    padding:7px;
+    border-radius:15px;
+  }
+
+  #turtleSoupDetailView .turtle-input-row{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto auto;
+    gap:5px;
+    align-items:center;
+    margin-bottom:0;
+  }
+
+  #turtleSoupDetailView .turtle-input-actions{
+    display:contents;
+  }
+
+  #turtleSoupDetailView #turtleChatInput{
+    min-height:38px;
+    height:38px;
+    padding:7px 10px;
+    font-size:16px!important;
+    border-radius:999px;
+  }
+
+  #turtleSoupDetailView .turtle-input-row button{
+    min-height:38px;
+    height:38px;
+    padding:0 10px;
+    font-size:12px;
+    border-radius:999px;
+    white-space:nowrap;
+  }
+
+  #turtleSoupDetailView .turtle-input-row button:first-child{
+    width:40px;
+    padding:0;
+    font-size:16px;
+  }
+
+  #turtleSoupDetailView .turtle-answer-row{
+    margin-top:6px;
+    grid-template-columns:1fr auto auto;
+    gap:5px;
+  }
+
+  #turtleSoupDetailView #turtleFinalAnswerInput{
+    min-height:38px;
+    height:38px;
+    padding:7px 10px;
+    font-size:16px!important;
+  }
+
+  #turtleSoupDetailView .turtle-answer-actions{
+    display:contents;
+  }
+
+  #turtleSoupDetailView .turtle-answer-row button{
+    min-height:38px;
+    height:38px;
+    padding:0 9px;
+    font-size:12px;
+  }
+
+  #turtleSoupDetailView .turtle-answering-label{
+    margin-bottom:4px;
+    font-size:11px;
+  }
+
+  #turtleSoupDetailView .turtle-quick-row{
+    margin-bottom:5px;
+    gap:4px;
+  }
+
+  #turtleSoupDetailView .turtle-quick-row button{
+    min-height:26px;
+    padding:3px 7px;
+    font-size:11px;
+  }
+}
