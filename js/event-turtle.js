@@ -255,6 +255,7 @@ async function openTurtleSoupDetail(id){
   state.currentTurtleSoupId=id;
   updateEventActionButtons();
   state.currentTurtleSoupData=item;
+  updateEventActionButtons();
   state.currentTurtleComments=[];
   state.currentTurtlePlayer=null;
   state.currentTurtleSubmissions=[];
