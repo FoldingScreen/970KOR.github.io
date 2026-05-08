@@ -282,6 +282,26 @@ function setTopTabs(active){
   if(active==="escape_labyrinth")document.querySelectorAll(".tab-btn")[7]?.classList.add("active");
 }
 
+function openEventMenu(){
+  document.getElementById("topTabs")?.classList.add("open");
+  document.getElementById("eventMenuBackdrop")?.classList.remove("hidden");
+}
+
+function closeEventMenu(){
+  document.getElementById("topTabs")?.classList.remove("open");
+  document.getElementById("eventMenuBackdrop")?.classList.add("hidden");
+}
+
+function toggleEventMenu(){
+  const menu=document.getElementById("topTabs");
+  if(menu?.classList.contains("open"))closeEventMenu();
+  else openEventMenu();
+}
+
+window.openEventMenu=openEventMenu;
+window.closeEventMenu=closeEventMenu;
+window.toggleEventMenu=toggleEventMenu;
+
 function updateUserBadge(){
   if(!el.myNameBtn)return;
 
@@ -802,6 +822,7 @@ function renderHomeEventCards(){
 }
 
 async function goHome(){
+  closeEventMenu();  
   clearSubscriptions();
 
   state.currentEventId="";
@@ -923,6 +944,7 @@ function updateEventActionButtons(){
 }
 
 async function openEvent(id){
+  closeEventMenu();  
   clearSubscriptions();
 
   if(state.currentUser){
