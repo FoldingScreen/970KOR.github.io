@@ -107,6 +107,7 @@ const el={
   partyList:document.getElementById("partyList"),
   eventTitle:document.getElementById("eventTitle"),
   eventDesc:document.getElementById("eventDesc"),
+  showAllUsersBtn:document.getElementById("showAllUsersBtn"),
   createPartyBtn:document.getElementById("createPartyBtn"),
   rearrangeEditBtn:document.getElementById("rearrangeEditBtn"),
   rearrangeManageBtn:document.getElementById("rearrangeManageBtn"),
@@ -917,6 +918,9 @@ function updateEventActionButtons(){
   el.rearrangeManageBtn.classList.add("hidden");
   el.createLabyrinthBtn.classList.add("hidden");
   el.backToLabyrinthListBtn.classList.add("hidden");
+  if(el.showAllUsersBtn){
+  el.showAllUsersBtn.classList.toggle("hidden",state.currentEventId==="escape_labyrinth");
+}
 
   const canToggleRearrangePublic=state.currentUser==="병풍";
 
@@ -1024,13 +1028,19 @@ async function openEvent(id){
 
   const meta=state.events.find(v=>v.id===id);
   if(id==="escape_labyrinth"){
-  if(state.currentTurtleSoupId){
-  el.eventTitle.textContent="";
-  el.eventDesc.textContent="";
-}else{
-  el.eventTitle.textContent="웹게임";
-  el.eventDesc.textContent="플레이할 콘텐츠를 선택하세요.";
-}
+  if(state.currentTurtleSoupId||state.currentLabyrinthId){
+    el.eventTitle.textContent="";
+    el.eventDesc.textContent="";
+  }else if(state.escapeLabyrinthTab==="labyrinth"){
+    el.eventTitle.textContent="미궁";
+    el.eventDesc.textContent="";
+  }else if(state.escapeLabyrinthTab==="turtle"){
+    el.eventTitle.textContent="바다거북스프";
+    el.eventDesc.textContent="";
+  }else{
+    el.eventTitle.textContent="웹게임";
+    el.eventDesc.textContent="";
+  }
 }else{
   el.eventTitle.textContent=meta?meta.name:id;
   el.eventDesc.textContent=meta?meta.desc:"";
