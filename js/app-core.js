@@ -107,7 +107,7 @@ const el={
   partyList:document.getElementById("partyList"),
   eventTitle:document.getElementById("eventTitle"),
   eventDesc:document.getElementById("eventDesc"),
-  showAllUsersBtn:document.getElementById("showAllUsersBtn"),
+  eventShowAllUsersBtn:document.getElementById("eventShowAllUsersBtn"),
   createPartyBtn:document.getElementById("createPartyBtn"),
   rearrangeEditBtn:document.getElementById("rearrangeEditBtn"),
   rearrangeManageBtn:document.getElementById("rearrangeManageBtn"),
@@ -924,8 +924,8 @@ function updateEventActionButtons(){
   el.rearrangeManageBtn.classList.add("hidden");
   el.createLabyrinthBtn.classList.add("hidden");
   el.backToLabyrinthListBtn.classList.add("hidden");
-  if(el.showAllUsersBtn){
-  el.showAllUsersBtn.classList.toggle("hidden",state.currentEventId==="escape_labyrinth");
+if(el.eventShowAllUsersBtn){
+  el.eventShowAllUsersBtn.classList.toggle("hidden",state.currentEventId==="escape_labyrinth");
 }
 
   const canToggleRearrangePublic=state.currentUser==="병풍";
@@ -993,7 +993,19 @@ function updateEventActionButtons(){
   }
 
 if(state.currentEventId==="escape_labyrinth"){
-  if(state.currentLabyrinthId){
+  if(state.currentTurtleSoupId){
+    el.backToLabyrinthListBtn.classList.remove("hidden");
+    el.backToLabyrinthListBtn.textContent="목록으로";
+    el.backToLabyrinthListBtn.onclick=closeTurtleSoupDetail;
+
+    const turtle=state.currentTurtleSoupData;
+
+    if(turtle&&turtle.creator===state.currentUser){
+      el.createLabyrinthBtn.classList.remove("hidden");
+      el.createLabyrinthBtn.textContent="문제 수정";
+      el.createLabyrinthBtn.onclick=()=>openCreateTurtleSoupModal(state.currentTurtleSoupId);
+    }
+  }else if(state.currentLabyrinthId){
     el.backToLabyrinthListBtn.classList.remove("hidden");
     el.backToLabyrinthListBtn.textContent="목록으로";
     el.backToLabyrinthListBtn.onclick=openEscapeLabyrinthHome;
