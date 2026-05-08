@@ -25,6 +25,7 @@ const HOLY_SWORD_AREAS=[
 const state={
   currentUser:"",
   currentEventId:"",
+  escapeLabyrinthTab:"labyrinth",
   isAdmin:false,
 
   unsubscribeParties:null,
@@ -301,6 +302,21 @@ function toggleEventMenu(){
 window.openEventMenu=openEventMenu;
 window.closeEventMenu=closeEventMenu;
 window.toggleEventMenu=toggleEventMenu;
+
+function updateEscapeLabyrinthHomePanels(){
+  const isTurtle=state.escapeLabyrinthTab==="turtle";
+
+  document.getElementById("labyrinthMenuPanel")?.classList.toggle("hidden",isTurtle);
+  document.getElementById("turtleMenuPanel")?.classList.toggle("hidden",!isTurtle);
+}
+
+function openEscapeLabyrinthMenu(tab){
+  state.escapeLabyrinthTab=tab==="turtle"?"turtle":"labyrinth";
+  openEvent("escape_labyrinth");
+}
+
+window.updateEscapeLabyrinthHomePanels=updateEscapeLabyrinthHomePanels;
+window.openEscapeLabyrinthMenu=openEscapeLabyrinthMenu;
 
 function updateUserBadge(){
   if(!el.myNameBtn)return;
@@ -930,17 +946,17 @@ function updateEventActionButtons(){
     }
   }
 
-  if(state.currentEventId==="escape_labyrinth"){
-    if(state.currentLabyrinthId){
-      el.backToLabyrinthListBtn.classList.remove("hidden");
-      el.backToLabyrinthListBtn.textContent="목록으로";
-      el.backToLabyrinthListBtn.onclick=openEscapeLabyrinthHome;
-    }else{
-      el.createLabyrinthBtn.classList.remove("hidden");
-      el.createLabyrinthBtn.textContent="미궁 제작하기";
-      el.createLabyrinthBtn.onclick=openCreateLabyrinthModal;
-    }
+if(state.currentEventId==="escape_labyrinth"){
+  if(state.currentLabyrinthId){
+    el.backToLabyrinthListBtn.classList.remove("hidden");
+    el.backToLabyrinthListBtn.textContent="목록으로";
+    el.backToLabyrinthListBtn.onclick=openEscapeLabyrinthHome;
+  }else if(state.escapeLabyrinthTab==="labyrinth"){
+    el.createLabyrinthBtn.classList.remove("hidden");
+    el.createLabyrinthBtn.textContent="미궁 제작하기";
+    el.createLabyrinthBtn.onclick=openCreateLabyrinthModal;
   }
+}
 }
 
 async function openEvent(id){
@@ -970,8 +986,13 @@ async function openEvent(id){
   setTopTabs(id);
 
   const meta=state.events.find(v=>v.id===id);
+  if(id==="escape_labyrinth"){
+  el.eventTitle.textContent=state.escapeLabyrinthTab==="turtle"?"바다거북스프":"사바나의 첨탑 - 미궁";
+  el.eventDesc.textContent=state.escapeLabyrinthTab==="turtle"?"질문으로 진실을 찾아가는 바다거북스프":"단계형 미궁을 플레이합니다.";
+}else{
   el.eventTitle.textContent=meta?meta.name:id;
   el.eventDesc.textContent=meta?meta.desc:"";
+}
 
   updateEventActionButtons();
   showOnly("event");
