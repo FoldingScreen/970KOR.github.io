@@ -1,3 +1,5 @@
+const STACK_TILE_QUEUE_LIMIT=7;
+
 const STACK_TILE_ICONS=[
   "🦁","🐻","🐺","🦊","🐯","🐼","🐸","🐵",
   "🐰","🐨","🐹","🐧","🦉","🐢","🦄","🐲"
@@ -136,38 +138,87 @@ function generateStackTileTypes(config){
 }
 
 function generateStackTileSlots(config){
-  const slots=[];
-  const cols=10;
-  const rows=7;
+  const anchors=[];
+  const cols=5;
+  const rows=5;
 
-  for(let z=0;z<config.layers;z++){
-    const layerCols=Math.max(4,cols-z);
-    const layerRows=Math.max(3,rows-z);
-    const xStart=1+z;
-    const yStart=1+z;
-    const offset=z%2;
-
-    for(let r=0;r<layerRows;r++){
-      for(let c=0;c<layerCols;c++){
-        slots.push({
-          x:xStart+c*2-offset,
-          y:yStart+r*2-offset,
-          z
-        });
-      }
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      anchors.push({
+        x:1+c*3,
+        y:1+r*3
+      });
     }
   }
 
-  const centered=slots.sort((a,b)=>{
-    if(a.z!==b.z)return a.z-b.z;
+  const anchorCount=Math.min(
+    anchors.length,
+    Math.max(
+      Math.ceil(config.total/3),
+      Math.ceil(config.total/config.layers)
+    )
+  );
 
-    const ac=Math.abs(a.x-10)+Math.abs(a.y-7);
-    const bc=Math.abs(b.x-10)+Math.abs(b.y-7);
+  const selectedAnchors=shuffleArray(anchors).slice(0,anchorCount);
+  const heights=selectedAnchors.map(()=>1);
+  let remaining=config.total-anchorCount;
 
-    return ac-bc;
+  while(remaining>0){
+    const idx=Math.floor(Math.random()*heights.length);
+    if(heights[idx]>=config.layers)continue;
+    heights[idx]++;
+    remaining--;
+  }
+
+  const offsetPatterns=[
+    [
+      {dx:0,dy:0},
+      {dx:0,dy:0},
+      {dx:1,dy:0},
+      {dx:1,dy:1},
+      {dx:0,dy:1}
+    ],
+    [
+      {dx:0,dy:0},
+      {dx:1,dy:0},
+      {dx:0,dy:0},
+      {dx:0,dy:1},
+      {dx:1,dy:1}
+    ],
+    [
+      {dx:0,dy:0},
+      {dx:0,dy:1},
+      {dx:0,dy:0},
+      {dx:1,dy:0},
+      {dx:1,dy:1}
+    ],
+    [
+      {dx:0,dy:0},
+      {dx:1,dy:1},
+      {dx:0,dy:0},
+      {dx:1,dy:0},
+      {dx:0,dy:1}
+    ]
+  ];
+
+  const slots=[];
+
+  selectedAnchors.forEach((anchor,idx)=>{
+    const pattern=offsetPatterns[Math.floor(Math.random()*offsetPatterns.length)];
+    const height=heights[idx];
+
+    for(let z=0;z<height;z++){
+      const offset=pattern[Math.min(z,pattern.length-1)];
+
+      slots.push({
+        x:anchor.x+offset.dx,
+        y:anchor.y+offset.dy,
+        z
+      });
+    }
   });
 
-  return shuffleArray(centered).slice(0,config.total);
+  return shuffleArray(slots);
 }
 
 function createStackTileTiles(){
@@ -365,7 +416,7 @@ function checkStackTileEnd(removedCount){
     return;
   }
 
-  if(stackTileState.queue.length>=8&&removedCount===0){
+  if(stackTileState.queue.length>=STACK_TILE_QUEUE_LIMIT&&removedCount===0){
     stackTileState.status="fail";
     stackTileState.endedAt=Date.now();
     stackTileState.message="대기열이 가득 찼습니다. 실패!";
@@ -560,7 +611,7 @@ function renderStackTileQueue(){
   const tiles=stackTileState.queue.map(tileId=>stackTileState.tiles.find(v=>v.id===tileId)).filter(Boolean);
   const slots=[];
 
-  for(let i=0;i<8;i++){
+  for(let i=0;i<STACK_TILE_QUEUE_LIMIT;i++){
     const tile=tiles[i];
 
     slots.push(tile
@@ -571,7 +622,7 @@ function renderStackTileQueue(){
 
   return`
     <div class="stack-tile-lane-card">
-      <div class="stack-tile-lane-title">대기열 8칸</div>
+      <div class="stack-tile-lane-title">대기열 ${STACK_TILE_QUEUE_LIMIT}칸</div>
       <div class="stack-tile-queue">${slots.join("")}</div>
     </div>
   `;
