@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>970KOR</title>
-  <link rel="stylesheet" href="style.css?v=split-25" />
+  <link rel="stylesheet" href="style.css?v=split-26" />
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -115,17 +115,6 @@
             누구든지 문제를 내거나 맞힐 수 있습니다.
           </div>
         </div>
-
-        <div class="webgame-select-card" onclick="openEscapeLabyrinthMenu('stackTile')">
-  <div class="webgame-select-title">겹겹타일</div>
-  <div class="webgame-select-desc">
-    겹쳐진 타일 중 완전히 드러난 타일만 선택합니다.<br>
-    선택한 타일은 7칸 대기열로 이동하며,<br>
-    같은 타일 3개가 모이면 사라지는 퍼즐입니다.
-  </div>
-</div>
-
-        
       </div>
     </div>
 
@@ -157,16 +146,6 @@
       </div>
     </div>
 
-<div id="stackTilePanel" class="hidden">
-  <div class="labyrinth-section stack-tile-section">
-    <div class="section-header-row">
-      <h3 class="section-title">겹겹타일</h3>
-      <button type="button" class="inline-btn" onclick="restartStackTileGame()">새 게임</button>
-    </div>
-    <div id="stackTileRoot"></div>
-  </div>
-</div>
-    
   </div>
 
   <div id="turtleSoupDetailView" class="hidden"></div>
@@ -745,7 +724,7 @@
     </div>
   </div>
 
-  <script src="js/app-core.js?v=split-10"></script>
+  <script src="js/app-core.js?v=split-8"></script>
   <script src="js/events-common.js?v=split-1"></script>
   <script src="js/event-viking.js?v=split-1"></script>
   <script src="js/event-ruins.js?v=split-1"></script>
@@ -753,9 +732,8 @@
   <script src="js/event-triple.js?v=split-1"></script>
   <script src="js/event-castle.js?v=split-1"></script>
   <script src="js/event-rearrange.js?v=split-1"></script>
-  <script src="js/event-labyrinth.js?v=split-3"></script>
-  <script src="js/event-turtle.js?v=split-7"></script>
-  <script src="js/event-stack-tile.js?v=split-4"></script>
+  <script src="js/event-labyrinth.js?v=split-2"></script>
+  <script src="js/event-turtle.js?v=split-6"></script>
   <script src="js/script.js?v=split-1"></script>
 </body>
 </html>
