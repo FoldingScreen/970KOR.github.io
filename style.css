@@ -3496,3 +3496,214 @@ textarea.text-input{
     font-size:12px;
   }
 }
+
+/* ===== 겹겹타일: 한 화면 compact 구성 ===== */
+#eventScreen:has(#stackTilePanel:not(.hidden)) .event-top-row{
+  display:none;
+}
+
+#eventScreen:has(#stackTilePanel:not(.hidden)){
+  padding-top:0;
+}
+
+#escapeLabyrinthScreen:has(#stackTilePanel:not(.hidden)){
+  padding-top:0;
+}
+
+#stackTilePanel .stack-tile-section{
+  margin-top:0;
+  padding:14px 16px;
+}
+
+#stackTilePanel .section-header-row{
+  margin-bottom:8px;
+}
+
+#stackTilePanel .section-title{
+  font-size:22px;
+  line-height:1.1;
+}
+
+#stackTilePanel .stack-tile-wrap{
+  gap:8px;
+}
+
+#stackTilePanel .stack-tile-top{
+  gap:6px;
+}
+
+#stackTilePanel .stack-tile-stats{
+  gap:6px;
+}
+
+#stackTilePanel .stack-tile-stat{
+  padding:5px 9px;
+  font-size:11px;
+}
+
+#stackTilePanel .stack-tile-difficulty-row{
+  gap:5px;
+}
+
+#stackTilePanel .stack-tile-difficulty-row button{
+  min-height:30px;
+  padding:5px 9px;
+  font-size:11px;
+}
+
+#stackTilePanel .stack-tile-board-card{
+  padding:8px;
+  border-radius:18px;
+}
+
+#stackTilePanel .stack-tile-board{
+  height:calc(100dvh - 360px);
+  min-height:300px;
+  max-height:460px;
+}
+
+#stackTilePanel .stack-tile-bottom{
+  gap:7px;
+}
+
+#stackTilePanel .stack-tile-lane-card{
+  padding:7px 8px;
+  border-radius:14px;
+}
+
+#stackTilePanel .stack-tile-lane-title{
+  margin-bottom:5px;
+  font-size:11px;
+}
+
+#stackTilePanel .stack-tile-item-row{
+  gap:5px;
+}
+
+#stackTilePanel .stack-tile-item-row button{
+  min-height:30px;
+  padding:5px 9px;
+  font-size:11px;
+}
+
+#stackTilePanel .stack-tile-message{
+  padding:7px 9px;
+  font-size:12px;
+  border-radius:12px;
+}
+
+/* ===== 겹겹타일 모바일: 화면 안에 맞춤 ===== */
+@media(max-width:720px){
+  #eventScreen:has(#stackTilePanel:not(.hidden)){
+    padding-top:0;
+  }
+
+  #stackTilePanel .stack-tile-section{
+    margin-top:0;
+    padding:9px;
+    border-radius:15px;
+  }
+
+  #stackTilePanel .section-header-row{
+    margin-bottom:6px;
+  }
+
+  #stackTilePanel .section-title{
+    font-size:18px;
+  }
+
+  #stackTilePanel .section-header-row .inline-btn{
+    min-height:30px;
+    padding:5px 9px;
+    font-size:11px;
+  }
+
+  #stackTilePanel .stack-tile-top{
+    gap:5px;
+  }
+
+  #stackTilePanel .stack-tile-stats{
+    gap:4px;
+  }
+
+  #stackTilePanel .stack-tile-stat{
+    padding:4px 7px;
+    font-size:10px;
+  }
+
+  #stackTilePanel .stack-tile-difficulty-row button{
+    min-height:28px;
+    padding:4px 7px;
+    font-size:10px;
+  }
+
+  #stackTilePanel .stack-tile-board-card{
+    padding:6px;
+    border-radius:15px;
+  }
+
+  #stackTilePanel .stack-tile-board{
+    height:calc(100dvh - 315px);
+    min-height:260px;
+    max-height:390px;
+  }
+
+  /* 모바일은 화면 밖으로 안 나가게 타일 좌표 단위 축소 */
+  #stackTilePanel .stack-tile{
+    width:38px;
+    height:38px;
+    left:calc(var(--x) * 19px + var(--offset-x, 0px));
+    top:calc(var(--y) * 19px + var(--offset-y, 0px));
+    border-radius:10px;
+    font-size:20px;
+  }
+
+  #stackTilePanel .stack-tile-queue{
+    grid-template-columns:repeat(7,38px);
+  }
+
+  #stackTilePanel .stack-tile-storage{
+    grid-template-columns:repeat(3,38px);
+  }
+
+  #stackTilePanel .stack-tile-slot,
+  #stackTilePanel .stack-tile-queue-tile,
+  #stackTilePanel .stack-tile-storage-tile{
+    width:38px;
+    height:38px;
+    border-radius:10px;
+    font-size:20px;
+  }
+
+  #stackTilePanel .stack-tile-bottom{
+    gap:5px;
+  }
+
+  #stackTilePanel .stack-tile-lane-card{
+    padding:6px;
+    border-radius:12px;
+  }
+
+  #stackTilePanel .stack-tile-lane-title{
+    margin-bottom:4px;
+    font-size:10px;
+  }
+
+  #stackTilePanel .stack-tile-item-row{
+    gap:4px;
+  }
+
+  #stackTilePanel .stack-tile-item-row button{
+    flex:1 1 calc(33.333% - 4px);
+    min-width:70px;
+    min-height:28px;
+    padding:4px 6px;
+    font-size:10px;
+  }
+
+  #stackTilePanel .stack-tile-message{
+    padding:6px 8px;
+    font-size:11px;
+    line-height:1.35;
+  }
+}
