@@ -310,10 +310,12 @@ function updateEscapeLabyrinthHomePanels(){
   const labyrinthMenuPanel=document.getElementById("labyrinthMenuPanel");
   const labyrinthRealHome=document.getElementById("labyrinthRealHome");
   const turtleMenuPanel=document.getElementById("turtleMenuPanel");
+  const stackTilePanel=document.getElementById("stackTilePanel");
 
   labyrinthMenuPanel?.classList.add("hidden");
   labyrinthRealHome?.classList.add("hidden");
   turtleMenuPanel?.classList.add("hidden");
+  stackTilePanel?.classList.add("hidden");
 
   if(tab==="home"){
     labyrinthMenuPanel?.classList.remove("hidden");
@@ -321,12 +323,23 @@ function updateEscapeLabyrinthHomePanels(){
     labyrinthRealHome?.classList.remove("hidden");
   }else if(tab==="turtle"){
     turtleMenuPanel?.classList.remove("hidden");
+  }else if(tab==="stackTile"){
+    stackTilePanel?.classList.remove("hidden");
+    window.renderStackTileScreen?.();
   }
 }
 
 function openEscapeLabyrinthMenu(tab){
+  if(!["home","labyrinth","turtle","stackTile"].includes(tab)){
+    tab="home";
+  }
+
   state.escapeLabyrinthTab=tab;
   openEvent("escape_labyrinth");
+
+  setTimeout(()=>{
+    window.updateEscapeLabyrinthHomePanels?.();
+  },0);
 }
 
 window.updateEscapeLabyrinthHomePanels=updateEscapeLabyrinthHomePanels;
@@ -1066,6 +1079,9 @@ async function openEvent(id){
   }else if(state.escapeLabyrinthTab==="turtle"){
     el.eventTitle.textContent="바다거북스프";
     el.eventDesc.textContent="";
+  }else if(state.escapeLabyrinthTab==="stackTile"){
+    el.eventTitle.textContent="겹겹타일";
+    el.eventDesc.textContent="";
   }else{
     el.eventTitle.textContent="웹게임";
     el.eventDesc.textContent="";
@@ -1085,7 +1101,7 @@ if(id==="escape_labyrinth"){
   state.currentTurtleSoupId="";
   state.currentTurtleSoupData=null;
 
-  if(!["home","labyrinth","turtle"].includes(state.escapeLabyrinthTab)){
+  if(!["home","labyrinth","turtle","stackTile"].includes(state.escapeLabyrinthTab)){
     state.escapeLabyrinthTab="home";
   }
 
@@ -1116,7 +1132,7 @@ function handleAppBack(){
 
   if(
     state.currentEventId==="escape_labyrinth" &&
-    (state.escapeLabyrinthTab==="labyrinth"||state.escapeLabyrinthTab==="turtle")
+    (state.escapeLabyrinthTab==="labyrinth"||state.escapeLabyrinthTab==="turtle"||state.escapeLabyrinthTab==="stackTile")
   ){
     state.escapeLabyrinthTab="home";
     updateEscapeLabyrinthHomePanels();
