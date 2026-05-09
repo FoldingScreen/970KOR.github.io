@@ -14,8 +14,8 @@ const STACK_TILE_DIFFICULTIES={
     types:8,
     total:48,
     layers:3,
-    shuffle:2,
-    store:1,
+    shuffle:3,
+    store:3,
     multiplier:1,
     templates:["smallDiamond","multiPile"],
     selectableMin:12,
@@ -26,8 +26,8 @@ const STACK_TILE_DIFFICULTIES={
     types:10,
     total:60,
     layers:4,
-    shuffle:1,
-    store:1,
+    shuffle:2,
+    store:2,
     multiplier:1.2,
     templates:["diamond","multiPile","bridge"],
     selectableMin:9,
@@ -38,8 +38,8 @@ const STACK_TILE_DIFFICULTIES={
     types:12,
     total:84,
     layers:6,
-    shuffle:1,
-    store:1,
+    shuffle:2,
+    store:2,
     multiplier:1.5,
     templates:["bridge","compactCore","multiPile"],
     selectableMin:6,
@@ -50,8 +50,8 @@ const STACK_TILE_DIFFICULTIES={
     types:14,
     total:105,
     layers:7,
-    shuffle:0,
-    store:1,
+    shuffle:1,
+    store:2,
     multiplier:2,
     templates:["compactCore","bridge","diamondCore"],
     selectableMin:5,
@@ -72,15 +72,8 @@ const stackTileState={
   message:"",
   moveCount:0,
   maxQueueLength:0,
-  usedItems:{
-    undo:0,
-    shuffle:0,
-    store:0
-  },
-  itemCounts:{
-    shuffle:0,
-    store:0
-  },
+  usedItems:{undo:0,shuffle:0,store:0},
+  itemCounts:{shuffle:0,store:0},
   lastFeedbackTileId:"",
   lastAddedTileId:"",
   lastStoredTileIds:[],
@@ -132,12 +125,10 @@ function restoreStackTileSnapshot(snapshot){
 
 function shuffleArray(arr){
   const copy=[...arr];
-
   for(let i=copy.length-1;i>0;i--){
     const j=Math.floor(Math.random()*(i+1));
     [copy[i],copy[j]]=[copy[j],copy[i]];
   }
-
   return copy;
 }
 
@@ -148,12 +139,10 @@ function randomPick(arr){
 function generateStackTileTypes(config){
   const groups=Math.floor(config.total/3);
   const types=[];
-
   for(let i=0;i<groups;i++){
     const icon=STACK_TILE_ICONS[i%config.types];
     types.push(icon,icon,icon);
   }
-
   return shuffleArray(types);
 }
 
@@ -169,7 +158,6 @@ function buildStackTileAnchors(template){
     const cx=8;
     const cy=6;
     const radius=3;
-
     for(let dy=-radius;dy<=radius;dy++){
       for(let dx=-radius;dx<=radius;dx++){
         const dist=Math.abs(dx)+Math.abs(dy);
@@ -183,12 +171,10 @@ function buildStackTileAnchors(template){
     const cx=8;
     const cy=6;
     const radius=template==="diamondCore"?5:4;
-
     for(let dy=-radius;dy<=radius;dy++){
       for(let dx=-radius;dx<=radius;dx++){
         const dist=Math.abs(dx)+Math.abs(dy);
         if(dist>radius)continue;
-
         const step=dist<=2?1:2;
         addAnchor(anchors,cx+dx*step,cy+dy*step,Math.max(1,radius-dist+1));
       }
@@ -203,10 +189,8 @@ function buildStackTileAnchors(template){
       {x:4,y:10},
       {x:12,y:10}
     ];
-
     centers.forEach((center,idx)=>{
       const radius=idx===2?3:2;
-
       for(let dy=-radius;dy<=radius;dy++){
         for(let dx=-radius;dx<=radius;dx++){
           const dist=Math.abs(dx)+Math.abs(dy);
@@ -220,7 +204,6 @@ function buildStackTileAnchors(template){
   if(template==="bridge"){
     const left={x:5,y:6};
     const right={x:12,y:6};
-
     [left,right].forEach(center=>{
       for(let dy=-3;dy<=3;dy++){
         for(let dx=-3;dx<=3;dx++){
@@ -230,32 +213,19 @@ function buildStackTileAnchors(template){
         }
       }
     });
-
-    for(let i=0;i<8;i++){
-      addAnchor(anchors,5+i,6+(i%2),3);
-    }
-
-    for(let i=0;i<6;i++){
-      addAnchor(anchors,6+i,8-(i%2),2);
-    }
+    for(let i=0;i<8;i++)addAnchor(anchors,5+i,6+(i%2),3);
+    for(let i=0;i<6;i++)addAnchor(anchors,6+i,8-(i%2),2);
   }
 
   if(template==="compactCore"){
     const cx=8;
     const cy=7;
-
     for(let dy=-5;dy<=5;dy++){
       for(let dx=-5;dx<=5;dx++){
         const dist=Math.abs(dx)+Math.abs(dy);
         if(dist>6)continue;
-
         const dense=dist<=3;
-        addAnchor(
-          anchors,
-          cx+dx,
-          cy+dy,
-          dense?6-dist:2
-        );
+        addAnchor(anchors,cx+dx,cy+dy,dense?6-dist:2);
       }
     }
   }
@@ -265,44 +235,11 @@ function buildStackTileAnchors(template){
 
 function getStackTileOffsetPattern(){
   const patterns=[
-    [
-      {dx:0,dy:0},
-      {dx:0,dy:0},
-      {dx:1,dy:0},
-      {dx:1,dy:1},
-      {dx:0,dy:1},
-      {dx:0,dy:0},
-      {dx:1,dy:1}
-    ],
-    [
-      {dx:0,dy:0},
-      {dx:1,dy:0},
-      {dx:0,dy:0},
-      {dx:0,dy:1},
-      {dx:1,dy:1},
-      {dx:0,dy:0},
-      {dx:1,dy:0}
-    ],
-    [
-      {dx:0,dy:0},
-      {dx:0,dy:1},
-      {dx:0,dy:0},
-      {dx:1,dy:0},
-      {dx:1,dy:1},
-      {dx:0,dy:1},
-      {dx:0,dy:0}
-    ],
-    [
-      {dx:0,dy:0},
-      {dx:1,dy:1},
-      {dx:0,dy:0},
-      {dx:1,dy:0},
-      {dx:0,dy:1},
-      {dx:1,dy:1},
-      {dx:0,dy:0}
-    ]
+    [{dx:0,dy:0},{dx:0,dy:0},{dx:1,dy:0},{dx:1,dy:1},{dx:0,dy:1},{dx:0,dy:0},{dx:1,dy:1}],
+    [{dx:0,dy:0},{dx:1,dy:0},{dx:0,dy:0},{dx:0,dy:1},{dx:1,dy:1},{dx:0,dy:0},{dx:1,dy:0}],
+    [{dx:0,dy:0},{dx:0,dy:1},{dx:0,dy:0},{dx:1,dy:0},{dx:1,dy:1},{dx:0,dy:1},{dx:0,dy:0}],
+    [{dx:0,dy:0},{dx:1,dy:1},{dx:0,dy:0},{dx:1,dy:0},{dx:0,dy:1},{dx:1,dy:1},{dx:0,dy:0}]
   ];
-
   return randomPick(patterns);
 }
 
@@ -312,9 +249,7 @@ function generateStackTileSlotsByTemplate(config,template){
 
   anchors.forEach((anchor,idx)=>{
     const weight=Math.max(1,Number(anchor.weight||1));
-    for(let i=0;i<weight;i++){
-      weighted.push(idx);
-    }
+    for(let i=0;i<weight;i++)weighted.push(idx);
   });
 
   const heights=new Map();
@@ -323,40 +258,28 @@ function generateStackTileSlotsByTemplate(config,template){
   while(total<config.total&&weighted.length){
     const anchorIdx=randomPick(weighted);
     const current=heights.get(anchorIdx)||0;
-
     if(current>=config.layers)continue;
-
     heights.set(anchorIdx,current+1);
     total++;
   }
 
   let safety=0;
-
   while(total<config.total&&safety<5000){
     safety++;
     const anchorIdx=Math.floor(Math.random()*anchors.length);
     const current=heights.get(anchorIdx)||0;
-
     if(current>=config.layers)continue;
-
     heights.set(anchorIdx,current+1);
     total++;
   }
 
   const slots=[];
-
   [...heights.entries()].forEach(([anchorIdx,height])=>{
     const anchor=anchors[anchorIdx];
     const pattern=getStackTileOffsetPattern();
-
     for(let z=0;z<height;z++){
       const offset=pattern[z%pattern.length];
-
-      slots.push({
-        x:anchor.x+offset.dx,
-        y:anchor.y+offset.dy,
-        z
-      });
+      slots.push({x:anchor.x+offset.dx,y:anchor.y+offset.dy,z});
     }
   });
 
@@ -378,20 +301,16 @@ function getStackTileDrawRank(tile){
 
 function isStackTileSelectableFromList(tile,tiles){
   if(!tile||tile.removed)return false;
-
   if(tile.area==="storage")return true;
   if(tile.area!=="board")return false;
 
   const tileRank=getStackTileDrawRank(tile);
-
   return !tiles.some(other=>{
     if(!other||other.removed)return false;
     if(other.area!=="board")return false;
     if(other.id===tile.id)return false;
     if(!isStackTileOverlapping(tile,other))return false;
-
     const otherRank=getStackTileDrawRank(other);
-
     return otherRank>tileRank;
   });
 }
@@ -462,10 +381,7 @@ function resetStackTileRunWithTiles(tiles,message){
   stackTileState.moveCount=0;
   stackTileState.maxQueueLength=0;
   stackTileState.usedItems={undo:0,shuffle:0,store:0};
-  stackTileState.itemCounts={
-    shuffle:config.shuffle,
-    store:config.store
-  };
+  stackTileState.itemCounts={shuffle:config.shuffle,store:config.store};
   stackTileState.lastFeedbackTileId="";
   stackTileState.lastAddedTileId="";
   stackTileState.lastStoredTileIds=[];
@@ -478,11 +394,9 @@ function resetStackTileRunWithTiles(tiles,message){
 
 function restartStackTileGame(){
   const tiles=createStackTileTiles();
-
   stackTileState.initialTiles=cloneStackTileTiles(tiles);
   resetStackTileRunWithTiles(tiles,"새 게임을 시작했습니다.");
 }
-
 window.restartStackTileGame=restartStackTileGame;
 
 function retryStackTileGame(){
@@ -490,19 +404,15 @@ function retryStackTileGame(){
     restartStackTileGame();
     return;
   }
-
   resetStackTileRunWithTiles(stackTileState.initialTiles,"같은 배치로 다시 시작했습니다.");
 }
-
 window.retryStackTileGame=retryStackTileGame;
 
 function setStackTileDifficulty(level){
   if(!STACK_TILE_DIFFICULTIES[level])return;
-
   stackTileState.difficulty=level;
   restartStackTileGame();
 }
-
 window.setStackTileDifficulty=setStackTileDifficulty;
 
 function startStackTileTimer(){
@@ -510,11 +420,8 @@ function startStackTileTimer(){
     clearInterval(stackTileState.timerId);
     stackTileState.timerId=null;
   }
-
   stackTileState.timerId=setInterval(()=>{
-    if(stackTileState.status==="playing"){
-      renderStackTileGame();
-    }
+    if(stackTileState.status==="playing")renderStackTileGame();
   },1000);
 }
 
@@ -527,7 +434,6 @@ function stopStackTileTimer(){
 
 function getStackTileElapsedMs(){
   if(!stackTileState.startedAt)return 0;
-
   const end=stackTileState.endedAt||Date.now();
   return Math.max(0,end-stackTileState.startedAt);
 }
@@ -536,13 +442,11 @@ function formatStackTileTime(ms){
   const sec=Math.floor(ms/1000);
   const m=String(Math.floor(sec/60)).padStart(2,"0");
   const s=String(sec%60).padStart(2,"0");
-
   return `${m}:${s}`;
 }
 
 function calculateStackTileScore(){
   if(stackTileState.status!=="clear")return 0;
-
   const config=getStackTileConfig();
   const base=10000;
   const elapsedSec=Math.floor(getStackTileElapsedMs()/1000);
@@ -554,15 +458,7 @@ function calculateStackTileScore(){
     stackTileState.usedItems.store*400;
 
   let bonus=0;
-
-  if(
-    stackTileState.usedItems.undo===0&&
-    stackTileState.usedItems.shuffle===0&&
-    stackTileState.usedItems.store===0
-  ){
-    bonus+=1000;
-  }
-
+  if(stackTileState.usedItems.undo===0&&stackTileState.usedItems.shuffle===0&&stackTileState.usedItems.store===0)bonus+=1000;
   if(stackTileState.maxQueueLength<=5)bonus+=700;
 
   return Math.max(0,Math.floor((base-timePenalty-movePenalty-itemPenalty+bonus)*config.multiplier));
@@ -574,18 +470,13 @@ function getStackTileRemainingCount(){
 
 function insertStackTileIntoQueue(tile){
   const sameIndexes=[];
-
   stackTileState.queue.forEach((tileId,index)=>{
     const qTile=stackTileState.tiles.find(v=>v.id===tileId);
-
-    if(qTile&&qTile.type===tile.type){
-      sameIndexes.push(index);
-    }
+    if(qTile&&qTile.type===tile.type)sameIndexes.push(index);
   });
 
   if(sameIndexes.length){
-    const insertIndex=Math.max(...sameIndexes)+1;
-    stackTileState.queue.splice(insertIndex,0,tile.id);
+    stackTileState.queue.splice(Math.max(...sameIndexes)+1,0,tile.id);
   }else{
     stackTileState.queue.push(tile.id);
   }
@@ -600,9 +491,7 @@ function getStackTileTripleIds(type){
 
 function removeStackTileIds(ids){
   const removeIds=new Set(ids);
-
   stackTileState.queue=stackTileState.queue.filter(tileId=>!removeIds.has(tileId));
-
   stackTileState.tiles.forEach(tile=>{
     if(removeIds.has(tile.id)){
       tile.removed=true;
@@ -630,9 +519,7 @@ function finishStackTileMove(removedCount){
     return;
   }
 
-  stackTileState.message=removedCount
-    ? "같은 타일 3개가 사라졌습니다."
-    : "타일을 대기열에 넣었습니다.";
+  stackTileState.message=removedCount?"같은 타일 3개가 사라졌습니다.":"타일을 대기열에 넣었습니다.";
 }
 
 function handleStackTileClick(tileId){
@@ -640,20 +527,17 @@ function handleStackTileClick(tileId){
   if(stackTileState.isAnimating)return;
 
   const tile=stackTileState.tiles.find(v=>v.id===tileId);
-
   if(!tile||tile.removed)return;
 
   if(!isStackTileSelectable(tile)){
     stackTileState.lastFeedbackTileId=tileId;
     renderStackTileGame();
-
     setTimeout(()=>{
       if(stackTileState.lastFeedbackTileId===tileId){
         stackTileState.lastFeedbackTileId="";
         renderStackTileGame();
       }
     },220);
-
     return;
   }
 
@@ -669,7 +553,6 @@ function handleStackTileClick(tileId){
   stackTileState.maxQueueLength=Math.max(stackTileState.maxQueueLength,stackTileState.queue.length);
 
   const tripleIds=getStackTileTripleIds(tile.type);
-
   if(tripleIds.length>=3){
     stackTileState.matchingIds=tripleIds;
     stackTileState.isAnimating=true;
@@ -684,13 +567,11 @@ function handleStackTileClick(tileId){
       finishStackTileMove(3);
       renderStackTileGame();
     },260);
-
     return;
   }
 
   finishStackTileMove(0);
   renderStackTileGame();
-
   setTimeout(()=>{
     if(stackTileState.lastAddedTileId===tile.id){
       stackTileState.lastAddedTileId="";
@@ -698,32 +579,25 @@ function handleStackTileClick(tileId){
     }
   },260);
 }
-
 window.handleStackTileClick=handleStackTileClick;
 
 function useStackTileUndo(){
   if(stackTileState.status!=="playing")return;
   if(stackTileState.isAnimating)return;
   if(!stackTileState.history.length)return;
-
   const snapshot=stackTileState.history.pop();
-
   stackTileState.usedItems.undo++;
-
   restoreStackTileSnapshot(snapshot);
   stackTileState.status="playing";
   stackTileState.message="이전 상태로 되돌렸습니다.";
-
   renderStackTileGame();
 }
-
 window.useStackTileUndo=useStackTileUndo;
 
 function useStackTileStore(){
   if(stackTileState.status!=="playing")return;
   if(stackTileState.isAnimating)return;
   if(stackTileState.itemCounts.store<=0)return;
-
   if(stackTileState.queue.length<3){
     stackTileState.message="대기열에 타일이 3개 이상 있어야 합니다.";
     renderStackTileGame();
@@ -731,14 +605,12 @@ function useStackTileStore(){
   }
 
   saveStackTileHistory();
-
   const targets=stackTileState.queue.slice(0,3);
   stackTileState.queue=stackTileState.queue.slice(3);
 
   targets.forEach((tileId,idx)=>{
     const tile=stackTileState.tiles.find(v=>v.id===tileId);
     if(!tile)return;
-
     tile.area="storage";
     tile.storageIndex=idx;
   });
@@ -747,7 +619,6 @@ function useStackTileStore(){
   stackTileState.itemCounts.store--;
   stackTileState.usedItems.store++;
   stackTileState.message="대기열 앞 3칸을 보관 영역에 내려놓았습니다.";
-
   renderStackTileGame();
 
   setTimeout(()=>{
@@ -755,7 +626,6 @@ function useStackTileStore(){
     renderStackTileGame();
   },300);
 }
-
 window.useStackTileStore=useStackTileStore;
 
 function useStackTileShuffle(){
@@ -764,17 +634,10 @@ function useStackTileShuffle(){
   if(stackTileState.itemCounts.shuffle<=0)return;
 
   const boardTiles=stackTileState.tiles.filter(tile=>tile.area==="board"&&!tile.removed);
-
   if(boardTiles.length<2)return;
 
   saveStackTileHistory();
-
-  const positions=shuffleArray(boardTiles.map(tile=>({
-    x:tile.x,
-    y:tile.y,
-    z:tile.z
-  })));
-
+  const positions=shuffleArray(boardTiles.map(tile=>({x:tile.x,y:tile.y,z:tile.z})));
   boardTiles.forEach((tile,idx)=>{
     tile.x=positions[idx].x;
     tile.y=positions[idx].y;
@@ -784,10 +647,8 @@ function useStackTileShuffle(){
   stackTileState.itemCounts.shuffle--;
   stackTileState.usedItems.shuffle++;
   stackTileState.message="보드에 남은 타일을 재배치했습니다.";
-
   renderStackTileGame();
 }
-
 window.useStackTileShuffle=useStackTileShuffle;
 
 function renderStackTileStats(){
@@ -795,7 +656,6 @@ function renderStackTileStats(){
   const elapsed=formatStackTileTime(getStackTileElapsedMs());
   const remaining=getStackTileRemainingCount();
   const score=stackTileState.status==="clear"?calculateStackTileScore():0;
-
   return`
     <div class="stack-tile-stats">
       <span class="stack-tile-stat">난이도 ${config.label}</span>
@@ -835,7 +695,6 @@ function renderStackTileBoard(){
           const feedback=stackTileState.lastFeedbackTileId===tile.id?"blocked-feedback":"";
           const cls=selectable?"selectable":"blocked";
           const zIndex=10+tile.z*120+idx;
-
           return`
             <button
               type="button"
@@ -857,11 +716,9 @@ function renderStackTileQueue(){
 
   for(let i=0;i<STACK_TILE_QUEUE_LIMIT;i++){
     const tile=tiles[i];
-
     if(tile){
       const matching=stackTileState.matchingIds.includes(tile.id)?"matching":"";
       const added=stackTileState.lastAddedTileId===tile.id?"added-pop":"";
-
       slots.push(`<div class="stack-tile-queue-tile ${matching} ${added}">${tile.type}</div>`);
     }else{
       slots.push(`<div class="stack-tile-slot">${i+1}</div>`);
@@ -882,13 +739,10 @@ function renderStackTileStorage(){
     .sort((a,b)=>(a.storageIndex||0)-(b.storageIndex||0));
 
   const slots=[];
-
   for(let i=0;i<3;i++){
     const tile=storageTiles[i];
-
     if(tile){
       const pop=stackTileState.lastStoredTileIds.includes(tile.id)?"stored-pop":"";
-
       slots.push(`
         <button type="button" class="stack-tile-storage-tile ${pop}" onclick="handleStackTileClick('${tile.id}')">
           ${tile.type}
@@ -929,6 +783,29 @@ function renderStackTileItems(){
   `;
 }
 
+function renderStackTileFailOverlay(){
+  if(stackTileState.status!=="fail")return"";
+  return`
+    <div class="stack-tile-result-overlay">
+      <div class="stack-tile-result-box">
+        <div class="stack-tile-result-title">실패!</div>
+        <div class="stack-tile-result-desc">
+          대기열이 가득 찼습니다.<br>
+          같은 배치로 다시 도전하거나 새 게임을 시작할 수 있습니다.
+        </div>
+        <div class="stack-tile-result-meta">
+          시간 ${escapeHtml(formatStackTileTime(getStackTileElapsedMs()))}
+          · 이동 ${stackTileState.moveCount}
+        </div>
+        <div class="stack-tile-result-actions">
+          <button type="button" onclick="retryStackTileGame()">다시하기</button>
+          <button type="button" onclick="restartStackTileGame()">새 게임</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function renderStackTileGame(){
   const root=document.getElementById("stackTileRoot");
   if(!root)return;
@@ -938,12 +815,7 @@ function renderStackTileGame(){
     return;
   }
 
-  const msgClass=stackTileState.status==="clear"
-    ? "clear"
-    : stackTileState.status==="fail"
-      ? "fail"
-      : "";
-
+  const msgClass=stackTileState.status==="clear"?"clear":stackTileState.status==="fail"?"fail":"";
   root.innerHTML=`
     <div class="stack-tile-wrap">
       <div class="stack-tile-top">
@@ -960,6 +832,7 @@ function renderStackTileGame(){
         <div class="stack-tile-message ${msgClass}">
           ${escapeHtml(stackTileState.message||"")}
         </div>
+        ${renderStackTileFailOverlay()}
       </div>
     </div>
   `;
@@ -968,32 +841,22 @@ function renderStackTileGame(){
 function renderStackTileScreen(){
   const panel=document.getElementById("stackTilePanel");
   if(!panel)return;
-
   if(stackTileState.status==="idle"){
     restartStackTileGame();
     return;
   }
-
   renderStackTileGame();
 }
-
 window.renderStackTileScreen=renderStackTileScreen;
 
 (function patchStackTileWebgamePanel(){
   const original=window.updateEscapeLabyrinthHomePanels;
-
   window.updateEscapeLabyrinthHomePanels=function(){
     if(typeof original==="function")original();
-
     const panel=document.getElementById("stackTilePanel");
     if(!panel)return;
-
     const isStackTile=state.escapeLabyrinthTab==="stackTile";
-
     panel.classList.toggle("hidden",!isStackTile);
-
-    if(isStackTile){
-      renderStackTileScreen();
-    }
+    if(isStackTile)renderStackTileScreen();
   };
 })();
