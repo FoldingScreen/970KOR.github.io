@@ -372,19 +372,27 @@ function isStackTileOverlapping(a,b){
   );
 }
 
+function getStackTileDrawRank(tile){
+  return Number(tile.z||0)*10000 + Number(tile.y||0)*100 + Number(tile.x||0);
+}
+
 function isStackTileSelectableFromList(tile,tiles){
   if(!tile||tile.removed)return false;
 
   if(tile.area==="storage")return true;
   if(tile.area!=="board")return false;
 
+  const tileRank=getStackTileDrawRank(tile);
+
   return !tiles.some(other=>{
     if(!other||other.removed)return false;
     if(other.area!=="board")return false;
     if(other.id===tile.id)return false;
-    if(other.z<=tile.z)return false;
+    if(!isStackTileOverlapping(tile,other))return false;
 
-    return isStackTileOverlapping(tile,other);
+    const otherRank=getStackTileDrawRank(other);
+
+    return otherRank>tileRank;
   });
 }
 
