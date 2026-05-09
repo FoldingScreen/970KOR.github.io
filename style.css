@@ -3393,12 +3393,12 @@ textarea.text-input{
 }
 
 .stack-tile{
-  width:42px;
-  height:42px;
-  left:calc(var(--x) * 21px + var(--offset-x, 0px));
-  top:calc(var(--y) * 21px + var(--offset-y, 0px));
-  border-radius:11px;
-  font-size:22px;
+  width:52px;
+  height:52px;
+  left:calc(var(--x) * 26px + var(--offset-x, 0px));
+  top:calc(var(--y) * 26px + var(--offset-y, 0px));
+  border-radius:13px;
+  font-size:27px;
 }
 
 .stack-tile.selectable{
@@ -3420,20 +3420,20 @@ textarea.text-input{
 }
 
 .stack-tile-queue{
-  grid-template-columns:repeat(7,42px);
+  grid-template-columns:repeat(7,52px);
 }
 
 .stack-tile-storage{
-  grid-template-columns:repeat(3,42px);
+  grid-template-columns:repeat(3,52px);
 }
 
 .stack-tile-slot,
 .stack-tile-queue-tile,
 .stack-tile-storage-tile{
-  width:42px;
-  height:42px;
-  border-radius:11px;
-  font-size:22px;
+  width:52px;
+  height:52px;
+  border-radius:13px;
+  font-size:27px;
 }
 
 .stack-tile-queue-tile.added-pop,
@@ -3464,29 +3464,29 @@ textarea.text-input{
   }
 
   .stack-tile{
-    width:36px;
-    height:36px;
-    left:calc(var(--x) * 18px + var(--offset-x, 0px));
-    top:calc(var(--y) * 18px + var(--offset-y, 0px));
-    border-radius:10px;
-    font-size:19px;
+    width:44px;
+    height:44px;
+    left:calc(var(--x) * 22px + var(--offset-x, 0px));
+    top:calc(var(--y) * 22px + var(--offset-y, 0px));
+    border-radius:11px;
+    font-size:23px;
   }
-
+  
   .stack-tile-queue{
-    grid-template-columns:repeat(7,36px);
+    grid-template-columns:repeat(7,44px);
   }
 
   .stack-tile-storage{
-    grid-template-columns:repeat(3,36px);
+    grid-template-columns:repeat(3,44px);
   }
 
   .stack-tile-slot,
   .stack-tile-queue-tile,
   .stack-tile-storage-tile{
-    width:36px;
-    height:36px;
-    border-radius:10px;
-    font-size:19px;
+    width:44px;
+    height:44px;
+    border-radius:11px;
+    font-size:23px;
   }
 
   .stack-tile-item-row button{
