@@ -3268,7 +3268,7 @@ textarea.text-input{
 }
 
 .stack-tile-queue{
-  grid-template-columns:repeat(8,52px);
+  grid-template-columns:repeat(7,52px);
   overflow-x:auto;
   padding-bottom:2px;
 }
@@ -3369,7 +3369,7 @@ textarea.text-input{
   }
 
   .stack-tile-queue{
-    grid-template-columns:repeat(8,44px);
+    grid-template-columns:repeat(7,44px);
   }
 
   .stack-tile-slot,
