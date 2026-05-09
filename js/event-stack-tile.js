@@ -1,8 +1,11 @@
 const STACK_TILE_QUEUE_LIMIT=7;
 
 const STACK_TILE_ICONS=[
-  "🦁","🐻","🐺","🦊","🐯","🐼","🐸","🐵",
-  "🐰","🐨","🐹","🐧","🦉","🐢","🦄","🐲"
+  "🦁","🐻","🐸","🐢",
+  "🍎","🍋","🍇","🍔",
+  "⭐","💎","🔥","⚡",
+  "🎲","🎯","🎁","🧩",
+  "🌙","☀️","🌈","❄️"
 ];
 
 const STACK_TILE_DIFFICULTIES={
@@ -10,47 +13,56 @@ const STACK_TILE_DIFFICULTIES={
     label:"쉬움",
     types:8,
     total:48,
-    layers:2,
-    undo:3,
+    layers:3,
     shuffle:2,
     store:1,
-    multiplier:1
+    multiplier:1,
+    templates:["smallDiamond","multiPile"],
+    selectableMin:12,
+    selectableMax:20
   },
   normal:{
     label:"보통",
     types:10,
     total:60,
-    layers:3,
-    undo:2,
+    layers:4,
     shuffle:1,
     store:1,
-    multiplier:1.2
+    multiplier:1.2,
+    templates:["diamond","multiPile","bridge"],
+    selectableMin:9,
+    selectableMax:16
   },
   hard:{
     label:"어려움",
     types:12,
-    total:72,
-    layers:4,
-    undo:1,
+    total:84,
+    layers:6,
     shuffle:1,
     store:1,
-    multiplier:1.5
+    multiplier:1.5,
+    templates:["bridge","compactCore","multiPile"],
+    selectableMin:6,
+    selectableMax:13
   },
   hell:{
     label:"지옥",
     types:14,
-    total:84,
-    layers:5,
-    undo:1,
+    total:105,
+    layers:7,
     shuffle:0,
     store:1,
-    multiplier:2
+    multiplier:2,
+    templates:["compactCore","bridge","diamondCore"],
+    selectableMin:5,
+    selectableMax:10
   }
 };
 
 const stackTileState={
   difficulty:"normal",
   tiles:[],
+  initialTiles:[],
   queue:[],
   history:[],
   startedAt:0,
@@ -66,19 +78,22 @@ const stackTileState={
     store:0
   },
   itemCounts:{
-    undo:0,
     shuffle:0,
     store:0
   },
-  lastFeedbackTileId:""
+  lastFeedbackTileId:"",
+  lastAddedTileId:"",
+  lastStoredTileIds:[],
+  matchingIds:[],
+  isAnimating:false
 };
 
 function getStackTileConfig(){
   return STACK_TILE_DIFFICULTIES[stackTileState.difficulty]||STACK_TILE_DIFFICULTIES.normal;
 }
 
-function cloneStackTileTiles(){
-  return stackTileState.tiles.map(tile=>({...tile}));
+function cloneStackTileTiles(tiles=stackTileState.tiles){
+  return tiles.map(tile=>({...tile}));
 }
 
 function saveStackTileHistory(){
@@ -94,7 +109,7 @@ function saveStackTileHistory(){
     endedAt:stackTileState.endedAt
   });
 
-  if(stackTileState.history.length>30){
+  if(stackTileState.history.length>80){
     stackTileState.history.shift();
   }
 }
@@ -109,6 +124,10 @@ function restoreStackTileSnapshot(snapshot){
   stackTileState.status=snapshot.status;
   stackTileState.message=snapshot.message;
   stackTileState.endedAt=snapshot.endedAt;
+  stackTileState.lastAddedTileId="";
+  stackTileState.lastStoredTileIds=[];
+  stackTileState.matchingIds=[];
+  stackTileState.isAnimating=false;
 }
 
 function shuffleArray(arr){
@@ -122,93 +141,216 @@ function shuffleArray(arr){
   return copy;
 }
 
+function randomPick(arr){
+  return arr[Math.floor(Math.random()*arr.length)];
+}
+
 function generateStackTileTypes(config){
+  const groups=Math.floor(config.total/3);
   const types=[];
 
-  for(let i=0;i<config.types;i++){
-    const icon=STACK_TILE_ICONS[i%STACK_TILE_ICONS.length];
-    const repeatCount=config.total/config.types;
-
-    for(let j=0;j<repeatCount;j++){
-      types.push(icon);
-    }
+  for(let i=0;i<groups;i++){
+    const icon=STACK_TILE_ICONS[i%config.types];
+    types.push(icon,icon,icon);
   }
 
   return shuffleArray(types);
 }
 
-function generateStackTileSlots(config){
-  const anchors=[];
-  const cols=5;
-  const rows=5;
+function addAnchor(list,x,y,weight=1){
+  if(x<0||y<0||x>18||y>15)return;
+  list.push({x,y,weight});
+}
 
-  for(let r=0;r<rows;r++){
-    for(let c=0;c<cols;c++){
-      anchors.push({
-        x:1+c*3,
-        y:1+r*3
-      });
+function buildStackTileAnchors(template){
+  const anchors=[];
+
+  if(template==="smallDiamond"){
+    const cx=8;
+    const cy=6;
+    const radius=3;
+
+    for(let dy=-radius;dy<=radius;dy++){
+      for(let dx=-radius;dx<=radius;dx++){
+        const dist=Math.abs(dx)+Math.abs(dy);
+        if(dist>radius)continue;
+        addAnchor(anchors,cx+dx*2,cy+dy*2,Math.max(1,radius-dist+1));
+      }
     }
   }
 
-  const anchorCount=Math.min(
-    anchors.length,
-    Math.max(
-      Math.ceil(config.total/3),
-      Math.ceil(config.total/config.layers)
-    )
-  );
+  if(template==="diamond"||template==="diamondCore"){
+    const cx=8;
+    const cy=6;
+    const radius=template==="diamondCore"?5:4;
 
-  const selectedAnchors=shuffleArray(anchors).slice(0,anchorCount);
-  const heights=selectedAnchors.map(()=>1);
-  let remaining=config.total-anchorCount;
+    for(let dy=-radius;dy<=radius;dy++){
+      for(let dx=-radius;dx<=radius;dx++){
+        const dist=Math.abs(dx)+Math.abs(dy);
+        if(dist>radius)continue;
 
-  while(remaining>0){
-    const idx=Math.floor(Math.random()*heights.length);
-    if(heights[idx]>=config.layers)continue;
-    heights[idx]++;
-    remaining--;
+        const step=dist<=2?1:2;
+        addAnchor(anchors,cx+dx*step,cy+dy*step,Math.max(1,radius-dist+1));
+      }
+    }
   }
 
-  const offsetPatterns=[
+  if(template==="multiPile"){
+    const centers=[
+      {x:5,y:4},
+      {x:11,y:4},
+      {x:8,y:8},
+      {x:4,y:10},
+      {x:12,y:10}
+    ];
+
+    centers.forEach((center,idx)=>{
+      const radius=idx===2?3:2;
+
+      for(let dy=-radius;dy<=radius;dy++){
+        for(let dx=-radius;dx<=radius;dx++){
+          const dist=Math.abs(dx)+Math.abs(dy);
+          if(dist>radius)continue;
+          addAnchor(anchors,center.x+dx,center.y+dy,Math.max(1,radius-dist+1));
+        }
+      }
+    });
+  }
+
+  if(template==="bridge"){
+    const left={x:5,y:6};
+    const right={x:12,y:6};
+
+    [left,right].forEach(center=>{
+      for(let dy=-3;dy<=3;dy++){
+        for(let dx=-3;dx<=3;dx++){
+          const dist=Math.abs(dx)+Math.abs(dy);
+          if(dist>3)continue;
+          addAnchor(anchors,center.x+dx,center.y+dy,Math.max(1,4-dist));
+        }
+      }
+    });
+
+    for(let i=0;i<8;i++){
+      addAnchor(anchors,5+i,6+(i%2),3);
+    }
+
+    for(let i=0;i<6;i++){
+      addAnchor(anchors,6+i,8-(i%2),2);
+    }
+  }
+
+  if(template==="compactCore"){
+    const cx=8;
+    const cy=7;
+
+    for(let dy=-5;dy<=5;dy++){
+      for(let dx=-5;dx<=5;dx++){
+        const dist=Math.abs(dx)+Math.abs(dy);
+        if(dist>6)continue;
+
+        const dense=dist<=3;
+        addAnchor(
+          anchors,
+          cx+dx,
+          cy+dy,
+          dense?6-dist:2
+        );
+      }
+    }
+  }
+
+  return shuffleArray(anchors);
+}
+
+function getStackTileOffsetPattern(){
+  const patterns=[
     [
       {dx:0,dy:0},
       {dx:0,dy:0},
       {dx:1,dy:0},
       {dx:1,dy:1},
-      {dx:0,dy:1}
+      {dx:0,dy:1},
+      {dx:0,dy:0},
+      {dx:1,dy:1}
     ],
     [
       {dx:0,dy:0},
       {dx:1,dy:0},
       {dx:0,dy:0},
       {dx:0,dy:1},
-      {dx:1,dy:1}
+      {dx:1,dy:1},
+      {dx:0,dy:0},
+      {dx:1,dy:0}
     ],
     [
       {dx:0,dy:0},
       {dx:0,dy:1},
       {dx:0,dy:0},
       {dx:1,dy:0},
-      {dx:1,dy:1}
+      {dx:1,dy:1},
+      {dx:0,dy:1},
+      {dx:0,dy:0}
     ],
     [
       {dx:0,dy:0},
       {dx:1,dy:1},
       {dx:0,dy:0},
       {dx:1,dy:0},
-      {dx:0,dy:1}
+      {dx:0,dy:1},
+      {dx:1,dy:1},
+      {dx:0,dy:0}
     ]
   ];
 
+  return randomPick(patterns);
+}
+
+function generateStackTileSlotsByTemplate(config,template){
+  const anchors=buildStackTileAnchors(template);
+  const weighted=[];
+
+  anchors.forEach((anchor,idx)=>{
+    const weight=Math.max(1,Number(anchor.weight||1));
+    for(let i=0;i<weight;i++){
+      weighted.push(idx);
+    }
+  });
+
+  const heights=new Map();
+  let total=0;
+
+  while(total<config.total&&weighted.length){
+    const anchorIdx=randomPick(weighted);
+    const current=heights.get(anchorIdx)||0;
+
+    if(current>=config.layers)continue;
+
+    heights.set(anchorIdx,current+1);
+    total++;
+  }
+
+  let safety=0;
+
+  while(total<config.total&&safety<5000){
+    safety++;
+    const anchorIdx=Math.floor(Math.random()*anchors.length);
+    const current=heights.get(anchorIdx)||0;
+
+    if(current>=config.layers)continue;
+
+    heights.set(anchorIdx,current+1);
+    total++;
+  }
+
   const slots=[];
 
-  selectedAnchors.forEach((anchor,idx)=>{
-    const pattern=offsetPatterns[Math.floor(Math.random()*offsetPatterns.length)];
-    const height=heights[idx];
+  [...heights.entries()].forEach(([anchorIdx,height])=>{
+    const anchor=anchors[anchorIdx];
+    const pattern=getStackTileOffsetPattern();
 
     for(let z=0;z<height;z++){
-      const offset=pattern[Math.min(z,pattern.length-1)];
+      const offset=pattern[z%pattern.length];
 
       slots.push({
         x:anchor.x+offset.dx,
@@ -218,24 +360,142 @@ function generateStackTileSlots(config){
     }
   });
 
-  return shuffleArray(slots);
+  return shuffleArray(slots).slice(0,config.total);
+}
+
+function isStackTileOverlapping(a,b){
+  return !(
+    a.x+2<=b.x||
+    b.x+2<=a.x||
+    a.y+2<=b.y||
+    b.y+2<=a.y
+  );
+}
+
+function isStackTileSelectableFromList(tile,tiles){
+  if(!tile||tile.removed)return false;
+
+  if(tile.area==="storage")return true;
+  if(tile.area!=="board")return false;
+
+  return !tiles.some(other=>{
+    if(!other||other.removed)return false;
+    if(other.area!=="board")return false;
+    if(other.id===tile.id)return false;
+    if(other.z<=tile.z)return false;
+
+    return isStackTileOverlapping(tile,other);
+  });
+}
+
+function isStackTileSelectable(tile){
+  return isStackTileSelectableFromList(tile,stackTileState.tiles);
+}
+
+function countStackTileSelectable(tiles){
+  return tiles.filter(tile=>isStackTileSelectableFromList(tile,tiles)).length;
 }
 
 function createStackTileTiles(){
   const config=getStackTileConfig();
-  const types=generateStackTileTypes(config);
-  const slots=generateStackTileSlots(config);
+  let bestTiles=null;
+  let bestScore=Infinity;
 
-  return types.map((type,idx)=>({
-    id:`stackTile_${Date.now()}_${idx}`,
-    type,
-    x:slots[idx]?.x||0,
-    y:slots[idx]?.y||0,
-    z:slots[idx]?.z||0,
-    area:"board",
-    removed:false
-  }));
+  for(let attempt=0;attempt<40;attempt++){
+    const template=randomPick(config.templates);
+    const slots=generateStackTileSlotsByTemplate(config,template);
+    const types=generateStackTileTypes(config);
+
+    const tiles=types.map((type,idx)=>({
+      id:`stackTile_${Date.now()}_${attempt}_${idx}`,
+      type,
+      x:slots[idx]?.x||0,
+      y:slots[idx]?.y||0,
+      z:slots[idx]?.z||0,
+      area:"board",
+      removed:false,
+      storageIndex:null
+    }));
+
+    const selectable=countStackTileSelectable(tiles);
+    const inRange=selectable>=config.selectableMin&&selectable<=config.selectableMax;
+    const score=inRange?0:Math.min(
+      Math.abs(selectable-config.selectableMin),
+      Math.abs(selectable-config.selectableMax)
+    );
+
+    if(score<bestScore){
+      bestScore=score;
+      bestTiles=tiles;
+    }
+
+    if(inRange)return tiles;
+  }
+
+  return bestTiles||[];
 }
+
+function resetStackTileRunWithTiles(tiles,message){
+  const config=getStackTileConfig();
+
+  stackTileState.tiles=tiles.map(tile=>({
+    ...tile,
+    area:"board",
+    removed:false,
+    storageIndex:null
+  }));
+
+  stackTileState.queue=[];
+  stackTileState.history=[];
+  stackTileState.startedAt=Date.now();
+  stackTileState.endedAt=null;
+  stackTileState.status="playing";
+  stackTileState.message=message||"완전히 드러난 타일만 선택할 수 있습니다.";
+  stackTileState.moveCount=0;
+  stackTileState.maxQueueLength=0;
+  stackTileState.usedItems={undo:0,shuffle:0,store:0};
+  stackTileState.itemCounts={
+    shuffle:config.shuffle,
+    store:config.store
+  };
+  stackTileState.lastFeedbackTileId="";
+  stackTileState.lastAddedTileId="";
+  stackTileState.lastStoredTileIds=[];
+  stackTileState.matchingIds=[];
+  stackTileState.isAnimating=false;
+
+  startStackTileTimer();
+  renderStackTileGame();
+}
+
+function restartStackTileGame(){
+  const tiles=createStackTileTiles();
+
+  stackTileState.initialTiles=cloneStackTileTiles(tiles);
+  resetStackTileRunWithTiles(tiles,"새 게임을 시작했습니다.");
+}
+
+window.restartStackTileGame=restartStackTileGame;
+
+function retryStackTileGame(){
+  if(!stackTileState.initialTiles.length){
+    restartStackTileGame();
+    return;
+  }
+
+  resetStackTileRunWithTiles(stackTileState.initialTiles,"같은 배치로 다시 시작했습니다.");
+}
+
+window.retryStackTileGame=retryStackTileGame;
+
+function setStackTileDifficulty(level){
+  if(!STACK_TILE_DIFFICULTIES[level])return;
+
+  stackTileState.difficulty=level;
+  restartStackTileGame();
+}
+
+window.setStackTileDifficulty=setStackTileDifficulty;
 
 function startStackTileTimer(){
   if(stackTileState.timerId){
@@ -255,66 +515,6 @@ function stopStackTileTimer(){
     clearInterval(stackTileState.timerId);
     stackTileState.timerId=null;
   }
-}
-
-function restartStackTileGame(){
-  const config=getStackTileConfig();
-
-  stackTileState.tiles=createStackTileTiles();
-  stackTileState.queue=[];
-  stackTileState.history=[];
-  stackTileState.startedAt=Date.now();
-  stackTileState.endedAt=null;
-  stackTileState.status="playing";
-  stackTileState.message="완전히 드러난 타일만 선택할 수 있습니다.";
-  stackTileState.moveCount=0;
-  stackTileState.maxQueueLength=0;
-  stackTileState.usedItems={undo:0,shuffle:0,store:0};
-  stackTileState.itemCounts={
-    undo:config.undo,
-    shuffle:config.shuffle,
-    store:config.store
-  };
-  stackTileState.lastFeedbackTileId="";
-
-  startStackTileTimer();
-  renderStackTileGame();
-}
-
-window.restartStackTileGame=restartStackTileGame;
-
-function setStackTileDifficulty(level){
-  if(!STACK_TILE_DIFFICULTIES[level])return;
-
-  stackTileState.difficulty=level;
-  restartStackTileGame();
-}
-
-window.setStackTileDifficulty=setStackTileDifficulty;
-
-function isStackTileOverlapping(a,b){
-  return !(
-    a.x+2<=b.x||
-    b.x+2<=a.x||
-    a.y+2<=b.y||
-    b.y+2<=a.y
-  );
-}
-
-function isStackTileSelectable(tile){
-  if(!tile||tile.removed)return false;
-
-  if(tile.area==="storage")return true;
-  if(tile.area!=="board")return false;
-
-  return !stackTileState.tiles.some(other=>{
-    if(!other||other.removed)return false;
-    if(other.area!=="board")return false;
-    if(other.id===tile.id)return false;
-    if(other.z<=tile.z)return false;
-
-    return isStackTileOverlapping(tile,other);
-  });
 }
 
 function getStackTileElapsedMs(){
@@ -364,28 +564,6 @@ function getStackTileRemainingCount(){
   return stackTileState.tiles.filter(tile=>!tile.removed).length;
 }
 
-function removeStackTileTriples(type){
-  const sameIds=stackTileState.queue.filter(tileId=>{
-    const tile=stackTileState.tiles.find(v=>v.id===tileId);
-    return tile&&tile.type===type;
-  });
-
-  if(sameIds.length<3)return 0;
-
-  const removeIds=new Set(sameIds.slice(0,3));
-
-  stackTileState.queue=stackTileState.queue.filter(tileId=>!removeIds.has(tileId));
-
-  stackTileState.tiles.forEach(tile=>{
-    if(removeIds.has(tile.id)){
-      tile.removed=true;
-      tile.area="removed";
-    }
-  });
-
-  return removeIds.size;
-}
-
 function insertStackTileIntoQueue(tile){
   const sameIndexes=[];
 
@@ -405,7 +583,27 @@ function insertStackTileIntoQueue(tile){
   }
 }
 
-function checkStackTileEnd(removedCount){
+function getStackTileTripleIds(type){
+  return stackTileState.queue.filter(tileId=>{
+    const tile=stackTileState.tiles.find(v=>v.id===tileId);
+    return tile&&tile.type===type;
+  }).slice(0,3);
+}
+
+function removeStackTileIds(ids){
+  const removeIds=new Set(ids);
+
+  stackTileState.queue=stackTileState.queue.filter(tileId=>!removeIds.has(tileId));
+
+  stackTileState.tiles.forEach(tile=>{
+    if(removeIds.has(tile.id)){
+      tile.removed=true;
+      tile.area="removed";
+    }
+  });
+}
+
+function finishStackTileMove(removedCount){
   const remaining=getStackTileRemainingCount();
 
   if(remaining===0){
@@ -431,6 +629,7 @@ function checkStackTileEnd(removedCount){
 
 function handleStackTileClick(tileId){
   if(stackTileState.status!=="playing")return;
+  if(stackTileState.isAnimating)return;
 
   const tile=stackTileState.tiles.find(v=>v.id===tileId);
 
@@ -453,26 +652,54 @@ function handleStackTileClick(tileId){
   saveStackTileHistory();
 
   tile.area="queue";
+  tile.storageIndex=null;
   stackTileState.moveCount++;
+  stackTileState.lastAddedTileId=tile.id;
+  stackTileState.lastStoredTileIds=[];
+
   insertStackTileIntoQueue(tile);
   stackTileState.maxQueueLength=Math.max(stackTileState.maxQueueLength,stackTileState.queue.length);
 
-  const removedCount=removeStackTileTriples(tile.type);
+  const tripleIds=getStackTileTripleIds(tile.type);
 
-  checkStackTileEnd(removedCount);
+  if(tripleIds.length>=3){
+    stackTileState.matchingIds=tripleIds;
+    stackTileState.isAnimating=true;
+    stackTileState.message="같은 타일 3개가 맞춰졌습니다.";
+    renderStackTileGame();
+
+    setTimeout(()=>{
+      removeStackTileIds(tripleIds);
+      stackTileState.matchingIds=[];
+      stackTileState.isAnimating=false;
+      stackTileState.lastAddedTileId="";
+      finishStackTileMove(3);
+      renderStackTileGame();
+    },260);
+
+    return;
+  }
+
+  finishStackTileMove(0);
   renderStackTileGame();
+
+  setTimeout(()=>{
+    if(stackTileState.lastAddedTileId===tile.id){
+      stackTileState.lastAddedTileId="";
+      renderStackTileGame();
+    }
+  },260);
 }
 
 window.handleStackTileClick=handleStackTileClick;
 
 function useStackTileUndo(){
   if(stackTileState.status!=="playing")return;
-  if(stackTileState.itemCounts.undo<=0)return;
+  if(stackTileState.isAnimating)return;
   if(!stackTileState.history.length)return;
 
   const snapshot=stackTileState.history.pop();
 
-  stackTileState.itemCounts.undo--;
   stackTileState.usedItems.undo++;
 
   restoreStackTileSnapshot(snapshot);
@@ -486,7 +713,9 @@ window.useStackTileUndo=useStackTileUndo;
 
 function useStackTileStore(){
   if(stackTileState.status!=="playing")return;
+  if(stackTileState.isAnimating)return;
   if(stackTileState.itemCounts.store<=0)return;
+
   if(stackTileState.queue.length<3){
     stackTileState.message="대기열에 타일이 3개 이상 있어야 합니다.";
     renderStackTileGame();
@@ -506,17 +735,24 @@ function useStackTileStore(){
     tile.storageIndex=idx;
   });
 
+  stackTileState.lastStoredTileIds=[...targets];
   stackTileState.itemCounts.store--;
   stackTileState.usedItems.store++;
   stackTileState.message="대기열 앞 3칸을 보관 영역에 내려놓았습니다.";
 
   renderStackTileGame();
+
+  setTimeout(()=>{
+    stackTileState.lastStoredTileIds=[];
+    renderStackTileGame();
+  },300);
 }
 
 window.useStackTileStore=useStackTileStore;
 
 function useStackTileShuffle(){
   if(stackTileState.status!=="playing")return;
+  if(stackTileState.isAnimating)return;
   if(stackTileState.itemCounts.shuffle<=0)return;
 
   const boardTiles=stackTileState.tiles.filter(tile=>tile.area==="board"&&!tile.removed);
@@ -590,7 +826,7 @@ function renderStackTileBoard(){
           const selectable=isStackTileSelectable(tile);
           const feedback=stackTileState.lastFeedbackTileId===tile.id?"blocked-feedback":"";
           const cls=selectable?"selectable":"blocked";
-          const zIndex=10+tile.z*100+idx;
+          const zIndex=10+tile.z*120+idx;
 
           return`
             <button
@@ -614,10 +850,14 @@ function renderStackTileQueue(){
   for(let i=0;i<STACK_TILE_QUEUE_LIMIT;i++){
     const tile=tiles[i];
 
-    slots.push(tile
-      ? `<div class="stack-tile-queue-tile">${tile.type}</div>`
-      : `<div class="stack-tile-slot">${i+1}</div>`
-    );
+    if(tile){
+      const matching=stackTileState.matchingIds.includes(tile.id)?"matching":"";
+      const added=stackTileState.lastAddedTileId===tile.id?"added-pop":"";
+
+      slots.push(`<div class="stack-tile-queue-tile ${matching} ${added}">${tile.type}</div>`);
+    }else{
+      slots.push(`<div class="stack-tile-slot">${i+1}</div>`);
+    }
   }
 
   return`
@@ -638,10 +878,17 @@ function renderStackTileStorage(){
   for(let i=0;i<3;i++){
     const tile=storageTiles[i];
 
-    slots.push(tile
-      ? `<button type="button" class="stack-tile-storage-tile" onclick="handleStackTileClick('${tile.id}')">${tile.type}</button>`
-      : `<div class="stack-tile-slot">보관</div>`
-    );
+    if(tile){
+      const pop=stackTileState.lastStoredTileIds.includes(tile.id)?"stored-pop":"";
+
+      slots.push(`
+        <button type="button" class="stack-tile-storage-tile ${pop}" onclick="handleStackTileClick('${tile.id}')">
+          ${tile.type}
+        </button>
+      `);
+    }else{
+      slots.push(`<div class="stack-tile-slot">보관</div>`);
+    }
   }
 
   return`
@@ -655,14 +902,17 @@ function renderStackTileStorage(){
 function renderStackTileItems(){
   return`
     <div class="stack-tile-item-row">
-      <button type="button" onclick="useStackTileUndo()" ${stackTileState.itemCounts.undo<=0||!stackTileState.history.length?"disabled":""}>
-        실행취소 ${stackTileState.itemCounts.undo}
+      <button type="button" onclick="useStackTileUndo()" ${!stackTileState.history.length||stackTileState.isAnimating?"disabled":""}>
+        실행취소 ∞
       </button>
-      <button type="button" onclick="useStackTileShuffle()" ${stackTileState.itemCounts.shuffle<=0?"disabled":""}>
+      <button type="button" onclick="useStackTileShuffle()" ${stackTileState.itemCounts.shuffle<=0||stackTileState.isAnimating?"disabled":""}>
         재배치 ${stackTileState.itemCounts.shuffle}
       </button>
-      <button type="button" onclick="useStackTileStore()" ${stackTileState.itemCounts.store<=0?"disabled":""}>
+      <button type="button" onclick="useStackTileStore()" ${stackTileState.itemCounts.store<=0||stackTileState.isAnimating?"disabled":""}>
         보관 ${stackTileState.itemCounts.store}
+      </button>
+      <button type="button" onclick="retryStackTileGame()">
+        다시하기
       </button>
       <button type="button" onclick="restartStackTileGame()">
         새 게임
