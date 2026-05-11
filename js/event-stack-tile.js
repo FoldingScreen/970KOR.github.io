@@ -1057,14 +1057,6 @@ function renderStackTileDifficultyButtons(){
   `;
 }
 
-function renderStackTileStorageSlots(){
-  const storageTiles=getStackTileStorageTiles();
-  const byIndex={};
-
-  storageTiles.forEach(tile=>{
-    byIndex[Number(tile.storageIndex||0)]=tile;
-  });
-
   const slots=[];
 
   for(let i=0;i<STACK_TILE_STORAGE_LIMIT;i++){
@@ -1085,6 +1077,55 @@ function renderStackTileStorageSlots(){
   return`<div class="stack-tile-storage-board">${slots.join("")}</div>`;
 }
 
+function getStackTilePreviewIds(boardTiles){
+  const ids=new Set();
+  const selectableTiles=boardTiles.filter(tile=>isStackTileSelectable(tile));
+
+  selectableTiles.forEach(topTile=>{
+    boardTiles.forEach(other=>{
+      if(!other||other.removed)return;
+      if(other.id===topTile.id)return;
+      if(other.z>=topTile.z)return;
+      if(topTile.z-other.z!==1)return;
+      if(!isStackTileOverlapping(topTile,other))return;
+
+      ids.add(other.id);
+    });
+  });
+
+  return ids;
+}
+
+function renderStackTileStorageOnBoard(){
+  const storageTiles=stackTileState.tiles
+    .filter(tile=>tile.area==="storage"&&!tile.removed)
+    .sort((a,b)=>(a.storageIndex||0)-(b.storageIndex||0));
+
+  const slots=[];
+
+  for(let i=0;i<3;i++){
+    const tile=storageTiles.find(v=>Number(v.storageIndex)===i);
+
+    if(tile){
+      const pop=stackTileState.lastStoredTileIds.includes(tile.id)?"stored-pop":"";
+
+      slots.push(`
+        <button type="button" class="stack-tile-storage-tile ${pop}" onclick="handleStackTileClick('${tile.id}')">
+          ${tile.type}
+        </button>
+      `);
+    }else{
+      slots.push(`<div class="stack-tile-slot"></div>`);
+    }
+  }
+
+  return`
+    <div class="stack-tile-storage-on-board">
+      ${slots.join("")}
+    </div>
+  `;
+}
+
 function renderStackTileBoard(){
   const boardTiles=stackTileState.tiles
     .filter(tile=>tile.area==="board"&&!tile.removed)
@@ -1093,28 +1134,41 @@ function renderStackTileBoard(){
       return a.y-b.y||a.x-b.x;
     });
 
+  const visiblePreviewIds=getStackTilePreviewIds(boardTiles);
+
   return`
     <div class="stack-tile-board-card">
       <div class="stack-tile-board">
         ${boardTiles.map((tile,idx)=>{
           const selectable=isStackTileSelectable(tile);
-          const face=getStackTileFace(tile);
+          const isPreview=visiblePreviewIds.has(tile.id);
           const feedback=stackTileState.lastFeedbackTileId===tile.id?"blocked-feedback":"";
-          const cls=selectable?"selectable":"blocked";
+
+          let faceClass="back";
+          let label="가려진 타일";
+
+          if(selectable){
+            faceClass="selectable";
+            label="선택 가능";
+          }else if(isPreview){
+            faceClass="preview";
+            label="곧 열릴 수 있는 타일";
+          }
+
           const zIndex=10+tile.z*120+idx;
-          const display=face==="back"?"◆":tile.type;
 
           return`
             <button
               type="button"
-              class="stack-tile ${cls} face-${face} ${feedback}"
+              class="stack-tile ${faceClass} ${feedback}"
               style="--x:${tile.x};--y:${tile.y};z-index:${zIndex};"
               onclick="handleStackTileClick('${tile.id}')"
-              title="${selectable?"선택 가능":"가려져 있어 선택 불가"}"
-            >${display}</button>
+              title="${label}"
+            ><span>${tile.type}</span></button>
           `;
         }).join("")}
-        ${renderStackTileStorageSlots()}
+
+        ${renderStackTileStorageOnBoard()}
       </div>
     </div>
   `;
