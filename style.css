@@ -3909,3 +3909,393 @@ textarea.text-input{
     font-size:10px!important;
   }
 }
+
+
+/* ===== 겹겹타일 최종 응급 복구 ===== */
+
+/* 겹겹타일 화면 전체 */
+#stackTilePanel .stack-tile-section{
+  max-width:980px;
+  margin:0 auto;
+  padding:14px;
+  border-radius:18px;
+}
+
+/* 제목 줄은 최소화 */
+#stackTilePanel .section-header-row{
+  display:none;
+}
+
+/* 게임 전체 레이아웃 */
+#stackTilePanel .stack-tile-wrap{
+  display:grid;
+  grid-template-columns:minmax(0,640px) 300px;
+  gap:14px;
+  align-items:start;
+  justify-content:center;
+}
+
+/* 상단 상태바 */
+#stackTilePanel .stack-tile-top{
+  grid-column:1 / -1;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  min-height:34px;
+  margin-bottom:2px;
+}
+
+#stackTilePanel .stack-tile-stats{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  flex-wrap:wrap;
+}
+
+#stackTilePanel .stack-tile-stat{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:26px;
+  padding:4px 8px;
+  border:1px solid #28476e;
+  border-radius:999px;
+  background:#0b1a2d;
+  color:#dbeafe;
+  font-size:11px;
+  font-weight:900;
+  line-height:1;
+}
+
+/* 난이도 버튼 덕지덕지 방지 */
+#stackTilePanel .stack-tile-difficulty-row{
+  display:flex;
+  align-items:center;
+  gap:4px;
+}
+
+#stackTilePanel .stack-tile-difficulty-row button{
+  min-height:26px;
+  padding:4px 8px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:900;
+}
+
+/* 보드 카드 */
+#stackTilePanel .stack-tile-board-card{
+  width:100%;
+  max-width:640px;
+  padding:10px;
+  border:1px solid #28476e;
+  border-radius:18px;
+  background:linear-gradient(180deg,rgba(9,22,38,.98),rgba(5,13,24,.98));
+}
+
+/* 실제 타일 보드 */
+#stackTilePanel .stack-tile-board{
+  position:relative;
+  width:100%;
+  height:430px;
+  border:1px solid #14233a;
+  border-radius:16px;
+  background:
+    radial-gradient(circle at 50% 40%,rgba(96,165,250,.08),transparent 45%),
+    #06101d;
+  overflow:hidden;
+}
+
+/* 타일 공통 */
+#stackTilePanel .stack-tile{
+  position:absolute;
+  width:52px;
+  height:52px;
+  left:calc(var(--x) * 26px);
+  top:calc(var(--y) * 26px);
+  border-radius:13px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:27px;
+  font-weight:1000;
+  line-height:1;
+  user-select:none;
+  touch-action:manipulation;
+  transition:filter .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+
+/* 선택 가능 타일 */
+#stackTilePanel .stack-tile.selectable{
+  border:1px solid #6ea8ff;
+  background:linear-gradient(180deg,#f4f9ff,#bfdcff);
+  color:#0b1220;
+  box-shadow:0 0 0 2px rgba(96,165,250,.55),0 8px 16px rgba(0,0,0,.34);
+  cursor:pointer;
+  opacity:1;
+  filter:none;
+}
+
+/* 바로 아래층 미리보기 타일 */
+#stackTilePanel .stack-tile.preview{
+  border:1px solid #5d789f;
+  background:linear-gradient(180deg,#d7e4f4,#8fa8c9);
+  color:#172235;
+  box-shadow:0 6px 12px rgba(0,0,0,.28);
+  cursor:not-allowed;
+  opacity:1;
+  filter:brightness(.9) saturate(.85);
+}
+
+/* 깊은 층 뒷면 타일 */
+#stackTilePanel .stack-tile.back{
+  border:1px solid #5f7fb0;
+  background:
+    radial-gradient(circle at 50% 45%,rgba(147,197,253,.22),transparent 34%),
+    linear-gradient(180deg,#263b62,#13233f);
+  color:#b8d6ff;
+  box-shadow:0 6px 12px rgba(0,0,0,.32);
+  cursor:not-allowed;
+  opacity:1;
+  filter:none;
+}
+
+/* 뒷면 문양 */
+#stackTilePanel .stack-tile.back::before{
+  content:"◆";
+  font-size:24px;
+  color:#9fc5ff;
+  opacity:.95;
+}
+
+/* 기존 아이콘 숨김용 */
+#stackTilePanel .stack-tile.back span{
+  display:none;
+}
+
+/* 선택 불가 피드백 */
+#stackTilePanel .stack-tile.blocked-feedback{
+  animation:stackTileBlockedShake .18s ease;
+  box-shadow:0 0 0 2px #ef4444,0 8px 16px rgba(0,0,0,.38);
+}
+
+@keyframes stackTileBlockedShake{
+  0%{transform:translateX(0)}
+  25%{transform:translateX(-4px)}
+  50%{transform:translateX(4px)}
+  75%{transform:translateX(-2px)}
+  100%{transform:translateX(0)}
+}
+
+/* 보드 안 보관 슬롯 */
+#stackTilePanel .stack-tile-storage-on-board{
+  position:absolute;
+  left:50%;
+  bottom:8px;
+  transform:translateX(-50%);
+  display:grid;
+  grid-template-columns:repeat(3,52px);
+  gap:8px;
+  z-index:9999;
+}
+
+#stackTilePanel .stack-tile-storage-on-board .stack-tile-slot,
+#stackTilePanel .stack-tile-storage-on-board .stack-tile-storage-tile{
+  width:52px;
+  height:52px;
+  border-radius:13px;
+}
+
+/* 하단 영역 */
+#stackTilePanel .stack-tile-bottom{
+  grid-column:1;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+/* 랭킹 */
+#stackTilePanel .stack-tile-ranking-panel{
+  grid-column:2;
+  grid-row:2 / span 2;
+  min-height:190px;
+  border:1px solid #28476e;
+  border-radius:18px;
+  background:#07111e;
+  padding:14px;
+}
+
+/* 대기열 카드 */
+#stackTilePanel .stack-tile-lane-card{
+  padding:0;
+  border:none;
+  background:transparent;
+}
+
+#stackTilePanel .stack-tile-lane-title{
+  margin:0 0 5px;
+  color:#bfdbfe;
+  font-size:11px;
+  font-weight:1000;
+}
+
+/* 대기열 7칸 */
+#stackTilePanel .stack-tile-queue{
+  display:grid;
+  grid-template-columns:repeat(7,52px);
+  gap:6px;
+  align-items:center;
+  justify-content:start;
+  overflow:visible;
+}
+
+#stackTilePanel .stack-tile-slot,
+#stackTilePanel .stack-tile-queue-tile,
+#stackTilePanel .stack-tile-storage-tile{
+  width:52px;
+  height:52px;
+  border-radius:13px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  line-height:1;
+}
+
+#stackTilePanel .stack-tile-slot{
+  border:1px dashed #3d5d89;
+  background:#08172a;
+  color:#7da5da;
+  font-size:11px;
+  font-weight:900;
+}
+
+#stackTilePanel .stack-tile-queue-tile,
+#stackTilePanel .stack-tile-storage-tile{
+  border:1px solid #315a93;
+  background:linear-gradient(180deg,#eef6ff,#bcd7ff);
+  color:#0b1220;
+  font-size:27px;
+  font-weight:1000;
+  box-shadow:0 6px 12px rgba(0,0,0,.26);
+}
+
+/* 아이템 버튼 */
+#stackTilePanel .stack-tile-item-row{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+}
+
+#stackTilePanel .stack-tile-item-row button{
+  min-height:30px;
+  padding:5px 9px;
+  border:1px solid #315a93;
+  border-radius:999px;
+  background:#102545;
+  color:#e7f1ff;
+  font-size:11px;
+  font-weight:900;
+}
+
+/* 메시지 */
+#stackTilePanel .stack-tile-message{
+  padding:7px 9px;
+  border:1px solid #28476e;
+  border-radius:12px;
+  background:rgba(16,37,69,.35);
+  color:#dbeafe;
+  font-size:12px;
+  font-weight:900;
+}
+
+/* 모바일 */
+@media(max-width:720px){
+  #stackTilePanel .stack-tile-section{
+    max-width:none;
+    padding:8px;
+  }
+
+  #stackTilePanel .stack-tile-wrap{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+
+  #stackTilePanel .stack-tile-top{
+    min-height:30px;
+    gap:5px;
+  }
+
+  #stackTilePanel .stack-tile-stat{
+    min-height:24px;
+    padding:3px 6px;
+    font-size:10px;
+  }
+
+  #stackTilePanel .stack-tile-board-card{
+    max-width:none;
+    padding:6px;
+    border-radius:15px;
+  }
+
+  #stackTilePanel .stack-tile-board{
+    height:360px;
+    border-radius:13px;
+  }
+
+  #stackTilePanel .stack-tile{
+    width:44px;
+    height:44px;
+    left:calc(var(--x) * 22px);
+    top:calc(var(--y) * 22px);
+    border-radius:11px;
+    font-size:23px;
+  }
+
+  #stackTilePanel .stack-tile.back::before{
+    font-size:20px;
+  }
+
+  #stackTilePanel .stack-tile-storage-on-board{
+    grid-template-columns:repeat(3,44px);
+    gap:6px;
+    bottom:6px;
+  }
+
+  #stackTilePanel .stack-tile-storage-on-board .stack-tile-slot,
+  #stackTilePanel .stack-tile-storage-on-board .stack-tile-storage-tile{
+    width:44px;
+    height:44px;
+    border-radius:11px;
+  }
+
+  #stackTilePanel .stack-tile-queue{
+    grid-template-columns:repeat(7,44px);
+    gap:5px;
+  }
+
+  #stackTilePanel .stack-tile-slot,
+  #stackTilePanel .stack-tile-queue-tile,
+  #stackTilePanel .stack-tile-storage-tile{
+    width:44px;
+    height:44px;
+    border-radius:11px;
+    font-size:23px;
+  }
+
+  #stackTilePanel .stack-tile-slot{
+    font-size:10px;
+  }
+
+  #stackTilePanel .stack-tile-ranking-panel{
+    display:none;
+  }
+
+  #stackTilePanel .stack-tile-item-row button{
+    flex:1 1 calc(33.333% - 6px);
+    min-width:78px;
+    min-height:28px;
+    padding:4px 6px;
+    font-size:10px;
+  }
+}
