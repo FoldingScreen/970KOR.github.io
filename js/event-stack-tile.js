@@ -201,7 +201,7 @@ function generateStackTileTypes(config){
 }
 
 function addAnchor(list,x,y,weight=1){
-  if(x<0||y<0||x>12||y>9)return;
+  if(x<0||y<0||x>13||y>9)return;
   list.push({x,y,weight});
 }
 
@@ -1019,11 +1019,13 @@ function renderStackTileStats(){
   const finalScore=calculateStackTileScore();
 
   return`
-    <div class="stack-tile-stats">
-      <span class="stack-tile-stat">난이도 ${config.label}</span>
-      <span class="stack-tile-stat">남은 타일 ${remaining}</span>
-      <span class="stack-tile-stat">시간 ${elapsed}</span>
-      <span class="stack-tile-stat stack-tile-score-stat">점수 ${finalScore.toLocaleString()}${renderStackTileScoreFloaters()}</span>
+    <div class="stack-tile-statusbar">
+      <div class="stack-tile-status-main">
+        <span class="stack-tile-status-difficulty">${escapeHtml(config.label)}</span>
+        <span>타일 ${remaining}</span>
+        <span>${elapsed}</span>
+        <span class="stack-tile-score-stat">${finalScore.toLocaleString()}점${renderStackTileScoreFloaters()}</span>
+      </div>
     </div>
   `;
 }
@@ -1044,12 +1046,13 @@ function renderStackTileScoreFloaters(){
 
 function renderStackTileDifficultyButtons(){
   return`
-    <div class="stack-tile-difficulty-row">
-      ${Object.entries(STACK_TILE_DIFFICULTIES).map(([key,cfg])=>`
-        <button type="button" class="${stackTileState.difficulty===key?"active":""}" onclick="setStackTileDifficulty('${key}')">
-          ${cfg.label}
-        </button>
-      `).join("")}
+    <div class="stack-tile-difficulty-select-wrap">
+      <label for="stackTileDifficultySelect">난이도</label>
+      <select id="stackTileDifficultySelect" class="stack-tile-difficulty-select" onchange="setStackTileDifficulty(this.value)">
+        ${Object.entries(STACK_TILE_DIFFICULTIES).map(([key,cfg])=>`
+          <option value="${key}" ${stackTileState.difficulty===key?"selected":""}>${cfg.label}</option>
+        `).join("")}
+      </select>
     </div>
   `;
 }
