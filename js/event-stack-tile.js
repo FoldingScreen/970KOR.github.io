@@ -1060,18 +1060,22 @@ function renderStackTileDifficultyButtons(){
 
 function getStackTilePreviewIds(boardTiles){
   const ids=new Set();
-  const selectableTiles=boardTiles.filter(tile=>isStackTileSelectable(tile));
 
-  selectableTiles.forEach(topTile=>{
-    boardTiles.forEach(other=>{
-      if(!other||other.removed)return;
-      if(other.id===topTile.id)return;
-      if(other.z>=topTile.z)return;
-      if(topTile.z-other.z!==1)return;
-      if(!isStackTileOverlapping(topTile,other))return;
+  boardTiles.forEach(tile=>{
+    if(!tile||tile.removed||tile.area!=="board")return;
+    if(isStackTileSelectableFromList(tile,boardTiles))return;
 
-      ids.add(other.id);
-    });
+    const blockers=getStackTileBlockers(tile,boardTiles);
+
+    if(!blockers.length)return;
+
+    const canOpenSoon=blockers.every(blocker=>
+      isStackTileSelectableFromList(blocker,boardTiles)
+    );
+
+    if(canOpenSoon){
+      ids.add(tile.id);
+    }
   });
 
   return ids;
