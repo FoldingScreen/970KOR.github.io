@@ -2783,563 +2783,10 @@ textarea.text-input{
     flex-direction:column;
   }
 }
-/* ===== 겹겹타일 최종 통합 패치 ===== */
-#eventScreen:has(#stackTilePanel:not(.hidden)) .event-top-row{
-  display:none!important;
-}
 
-#eventScreen:has(#stackTilePanel:not(.hidden)){
-  padding-top:0;
-}
+/* ===== 상단 메뉴 / 웹게임 카드 / 겹겹타일 최종 단일 블록 ===== */
 
-#stackTilePanel .stack-tile-section{
-  width:100%;
-  max-width:980px;
-  margin:0 auto;
-  padding:12px;
-  border-radius:22px;
-}
-
-#stackTilePanel .section-header-row{
-  margin-bottom:8px;
-}
-
-#stackTilePanel .section-title{
-  font-size:20px;
-  line-height:1.1;
-}
-
-.stack-tile-layout{
-  display:grid;
-  grid-template-columns:minmax(0,620px) minmax(240px,300px);
-  gap:12px;
-  align-items:start;
-  justify-content:center;
-}
-
-.stack-tile-game-card{
-  min-width:0;
-}
-
-#stackTilePanel .stack-tile-wrap{
-  gap:8px;
-}
-
-#stackTilePanel .stack-tile-top{
-  gap:6px;
-}
-
-#stackTilePanel .stack-tile-stats{
-  gap:5px;
-}
-
-#stackTilePanel .stack-tile-stat{
-  position:relative;
-  padding:5px 9px;
-  font-size:11px;
-}
-
-.stack-tile-score-stat{
-  overflow:visible;
-}
-
-.stack-tile-score-float-wrap{
-  position:absolute;
-  left:50%;
-  top:-8px;
-  pointer-events:none;
-}
-
-.stack-tile-score-floater{
-  position:absolute;
-  left:0;
-  top:0;
-  transform:translateX(-50%);
-  white-space:nowrap;
-  font-size:13px;
-  font-weight:1000;
-  text-shadow:0 2px 6px rgba(0,0,0,.65);
-  animation:stackTileScoreFloat .9s ease forwards;
-}
-
-.stack-tile-score-floater.plus{
-  color:#86efac;
-}
-
-.stack-tile-score-floater.minus{
-  color:#fca5a5;
-}
-
-@keyframes stackTileScoreFloat{
-  0%{opacity:0; transform:translate(-50%,6px) scale(.9)}
-  20%{opacity:1; transform:translate(-50%,0) scale(1)}
-  100%{opacity:0; transform:translate(-50%,-26px) scale(1.05)}
-}
-
-#stackTilePanel .stack-tile-difficulty-row{
-  gap:5px;
-}
-
-#stackTilePanel .stack-tile-difficulty-row button{
-  min-height:29px;
-  padding:5px 9px;
-  font-size:11px;
-}
-
-#stackTilePanel .stack-tile-board-card{
-  padding:8px;
-  border-radius:18px;
-}
-
-#stackTilePanel .stack-tile-board{
-  height:330px;
-  max-width:100%;
-  min-height:0;
-  border-radius:16px;
-}
-
-#stackTilePanel .stack-tile{
-  width:52px;
-  height:52px;
-  left:calc(var(--x) * 26px + var(--offset-x, 0px));
-  top:calc(var(--y) * 26px + var(--offset-y, 0px));
-  border-radius:13px;
-  font-size:27px;
-}
-
-#stackTilePanel .stack-tile.selectable{
-  filter:none;
-  opacity:1;
-  cursor:pointer;
-  box-shadow:0 0 0 2px rgba(96,165,250,.52),0 8px 16px rgba(0,0,0,.38);
-}
-
-#stackTilePanel .stack-tile.selectable:hover{
-  transform:none;
-  box-shadow:0 0 0 2px rgba(147,197,253,.88),0 8px 16px rgba(0,0,0,.38);
-}
-
-#stackTilePanel .stack-tile.blocked{
-  filter:grayscale(.3) brightness(.72);
-  opacity:1;
-  cursor:not-allowed;
-}
-
-#stackTilePanel .stack-tile.face-preview{
-  filter:grayscale(.18) brightness(.86);
-  opacity:1;
-}
-
-#stackTilePanel .stack-tile.face-back{
-  background:linear-gradient(135deg,#182235,#0b1220 58%,#111827);
-  color:#41516c;
-  border-color:#24324d;
-  filter:none;
-  opacity:1;
-  font-size:20px;
-}
-
-.stack-tile-storage-board{
-  position:absolute;
-  left:50%;
-  bottom:10px;
-  transform:translateX(-50%);
-  z-index:3000;
-  display:grid;
-  grid-template-columns:repeat(3,52px);
-  gap:6px;
-  pointer-events:auto;
-}
-
-.stack-tile-storage-board-slot,
-.stack-tile-storage-board-tile{
-  width:52px;
-  height:52px;
-  border-radius:13px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-
-.stack-tile-storage-board-slot{
-  border:1px dashed rgba(43,71,112,.74);
-  background:rgba(5,13,24,.55);
-}
-
-.stack-tile-storage-board-tile{
-  border:1px solid #315a93;
-  background:linear-gradient(180deg,#eef6ff,#bcd7ff);
-  color:#0b1220;
-  font-size:27px;
-  font-weight:1000;
-  box-shadow:0 6px 12px rgba(0,0,0,.26);
-  cursor:pointer;
-}
-
-.stack-tile-storage-board-tile:hover{
-  transform:none;
-  box-shadow:0 0 0 2px rgba(147,197,253,.82),0 6px 12px rgba(0,0,0,.26);
-}
-
-.stack-tile-storage-board-tile.stored-pop,
-.stack-tile-queue-tile.added-pop{
-  animation:stackTilePop .24s ease;
-}
-
-#stackTilePanel .stack-tile-bottom{
-  gap:6px;
-}
-
-#stackTilePanel .stack-tile-lane-card{
-  padding:7px 8px;
-  border-radius:14px;
-}
-
-#stackTilePanel .stack-tile-lane-title{
-  margin-bottom:5px;
-  font-size:11px;
-}
-
-#stackTilePanel .stack-tile-queue{
-  grid-template-columns:repeat(7,52px);
-}
-
-#stackTilePanel .stack-tile-slot,
-#stackTilePanel .stack-tile-queue-tile{
-  width:52px;
-  height:52px;
-  border-radius:13px;
-  font-size:27px;
-}
-
-#stackTilePanel .stack-tile-item-row{
-  gap:5px;
-}
-
-#stackTilePanel .stack-tile-item-row button{
-  min-height:30px;
-  padding:5px 9px;
-  font-size:11px;
-}
-
-#stackTilePanel .stack-tile-message{
-  padding:7px 9px;
-  font-size:12px;
-  border-radius:12px;
-}
-
-.stack-tile-ranking-card{
-  border:1px solid #28476e;
-  border-radius:18px;
-  background:linear-gradient(180deg,rgba(9,22,38,.98),rgba(5,13,24,.98));
-  padding:12px;
-  min-height:220px;
-}
-
-.stack-tile-ranking-title{
-  color:#dbeafe;
-  font-size:14px;
-  font-weight:1000;
-  margin-bottom:10px;
-}
-
-.stack-tile-ranking-list{
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-}
-
-.stack-tile-rank-row{
-  display:grid;
-  grid-template-columns:24px minmax(0,1fr) auto auto;
-  gap:6px;
-  align-items:center;
-  border:1px solid #172a45;
-  background:#081522;
-  border-radius:11px;
-  padding:7px 8px;
-  font-size:11px;
-  font-weight:900;
-}
-
-.stack-tile-rank-row.me{
-  border-color:#60a5fa;
-  background:rgba(96,165,250,.12);
-}
-
-.stack-tile-rank-no{
-  color:#93c5fd;
-}
-
-.stack-tile-rank-name{
-  min-width:0;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-  color:#e7f1ff;
-}
-
-.stack-tile-rank-score{
-  color:#fde68a;
-  white-space:nowrap;
-}
-
-.stack-tile-rank-time{
-  color:#9fb3d3;
-  white-space:nowrap;
-}
-
-.stack-tile-rank-empty{
-  border:1px dashed #28405f;
-  border-radius:12px;
-  padding:16px;
-  color:#9fb3d3;
-  text-align:center;
-  font-size:12px;
-  font-weight:900;
-}
-
-.stack-tile-result-overlay{
-  position:fixed;
-  inset:0;
-  z-index:9999;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:18px;
-  background:rgba(0,0,0,.58);
-  backdrop-filter:blur(3px);
-}
-
-.stack-tile-result-box{
-  width:min(380px,100%);
-  border:1px solid #315a93;
-  border-radius:22px;
-  background:linear-gradient(180deg,#102545,#07111e);
-  box-shadow:0 18px 45px rgba(0,0,0,.55);
-  padding:22px 18px;
-  text-align:center;
-  color:#e7f1ff;
-}
-
-.stack-tile-result-title{
-  font-size:26px;
-  font-weight:1000;
-  color:#fecaca;
-  margin-bottom:8px;
-}
-
-.stack-tile-result-title.pause{
-  color:#bfdbfe;
-}
-
-.stack-tile-result-title.clear{
-  color:#bbf7d0;
-}
-
-.stack-tile-result-desc{
-  font-size:14px;
-  line-height:1.55;
-  color:#dbeafe;
-}
-
-.stack-tile-result-meta{
-  margin-top:10px;
-  font-size:12px;
-  color:#93c5fd;
-  font-weight:900;
-}
-
-.stack-tile-result-actions{
-  display:flex;
-  gap:8px;
-  justify-content:center;
-  margin-top:16px;
-}
-
-.stack-tile-result-actions.three{
-  flex-wrap:wrap;
-}
-
-.stack-tile-result-actions button{
-  flex:1;
-  border:1px solid #60a5fa;
-  background:#102545;
-  color:#e7f1ff;
-  border-radius:999px;
-  min-height:38px;
-  padding:8px 12px;
-  font-size:13px;
-  font-weight:1000;
-}
-
-.stack-tile-result-actions button:hover{
-  background:#183965;
-}
-
-.stack-tile-result-actions button:first-child{
-  border-color:#fbbf24;
-  color:#fde68a;
-}
-
-.stack-tile-score-detail{
-  display:flex;
-  flex-direction:column;
-  gap:7px;
-  margin:12px 0;
-  border:1px solid #28476e;
-  border-radius:14px;
-  padding:10px;
-  background:rgba(5,13,24,.45);
-}
-
-.stack-tile-score-detail div{
-  display:flex;
-  justify-content:space-between;
-  gap:10px;
-  color:#dbeafe;
-  font-size:13px;
-  font-weight:900;
-}
-
-.stack-tile-score-detail .total{
-  border-top:1px solid rgba(255,255,255,.08);
-  padding-top:7px;
-  color:#fde68a;
-}
-
-@media(max-width:980px){
-  .stack-tile-layout{
-    grid-template-columns:1fr;
-  }
-
-  .stack-tile-ranking-card{
-    display:none;
-  }
-}
-
-@media(max-width:720px){
-  #stackTilePanel .stack-tile-section{
-    margin-top:0;
-    padding:8px;
-    border-radius:15px;
-  }
-
-  #stackTilePanel .section-header-row{
-    margin-bottom:5px;
-  }
-
-  #stackTilePanel .section-title{
-    font-size:17px;
-  }
-
-  #stackTilePanel .section-header-row .inline-btn{
-    min-height:28px;
-    padding:4px 8px;
-    font-size:10px;
-  }
-
-  #stackTilePanel .stack-tile-top{
-    gap:4px;
-  }
-
-  #stackTilePanel .stack-tile-stats{
-    gap:4px;
-  }
-
-  #stackTilePanel .stack-tile-stat{
-    padding:4px 7px;
-    font-size:10px;
-  }
-
-  #stackTilePanel .stack-tile-difficulty-row button{
-    min-height:27px;
-    padding:4px 7px;
-    font-size:10px;
-  }
-
-  #stackTilePanel .stack-tile-board-card{
-    padding:6px;
-    border-radius:15px;
-  }
-
-  #stackTilePanel .stack-tile-board{
-    height:315px;
-  }
-
-  #stackTilePanel .stack-tile{
-    width:44px;
-    height:44px;
-    left:calc(var(--x) * 22px + var(--offset-x, 0px));
-    top:calc(var(--y) * 22px + var(--offset-y, 0px));
-    border-radius:11px;
-    font-size:23px;
-  }
-
-  .stack-tile-storage-board{
-    bottom:8px;
-    grid-template-columns:repeat(3,44px);
-    gap:5px;
-  }
-
-  .stack-tile-storage-board-slot,
-  .stack-tile-storage-board-tile{
-    width:44px;
-    height:44px;
-    border-radius:11px;
-  }
-
-  .stack-tile-storage-board-tile{
-    font-size:23px;
-  }
-
-  #stackTilePanel .stack-tile-queue{
-    grid-template-columns:repeat(7,38px);
-  }
-
-  #stackTilePanel .stack-tile-slot,
-  #stackTilePanel .stack-tile-queue-tile{
-    width:38px;
-    height:38px;
-    border-radius:10px;
-    font-size:20px;
-  }
-
-  #stackTilePanel .stack-tile-bottom{
-    gap:5px;
-  }
-
-  #stackTilePanel .stack-tile-lane-card{
-    padding:6px;
-    border-radius:12px;
-  }
-
-  #stackTilePanel .stack-tile-lane-title{
-    margin-bottom:4px;
-    font-size:10px;
-  }
-
-  #stackTilePanel .stack-tile-item-row{
-    gap:4px;
-  }
-
-  #stackTilePanel .stack-tile-item-row button{
-    flex:1 1 calc(33.333% - 4px);
-    min-width:70px;
-    min-height:27px;
-    padding:4px 6px;
-    font-size:10px;
-  }
-
-  #stackTilePanel .stack-tile-message{
-    padding:6px 8px;
-    font-size:11px;
-    line-height:1.35;
-  }
-}
-
-
-/* ===== 긴급 복구: 상단 메뉴는 사이드 드로어 구조로 고정 ===== */
+/* 상단 메뉴: 사이드 드로어 고정 */
 .topbar{
   display:flex!important;
   align-items:center!important;
@@ -3354,6 +2801,10 @@ textarea.text-input{
   right:0!important;
   z-index:120!important;
   min-height:58px!important;
+}
+
+.container{
+  padding-top:78px!important;
 }
 
 .top-left{
@@ -3451,6 +2902,7 @@ textarea.text-input{
   z-index:110!important;
 }
 
+/* 웹게임 선택 카드 */
 #labyrinthMenuPanel.hidden,
 #labyrinthRealHome.hidden,
 #turtleMenuPanel.hidden,
@@ -3495,33 +2947,13 @@ textarea.text-input{
   font-weight:700!important;
 }
 
-@media(max-width:720px){
-  .topbar{
-    flex-wrap:nowrap!important;
-  }
-
-  .top-tabs{
-    order:initial!important;
-    width:min(290px,86vw)!important;
-    display:flex!important;
-    grid-template-columns:none!important;
-  }
-
-  .top-right{
-    width:auto!important;
-    justify-content:flex-end!important;
-    flex-wrap:nowrap!important;
-  }
-
-  .top-right .pill{
-    font-size:12px!important;
-    padding:8px 9px!important;
-  }
-}
-
-/* ===== 겹겹타일 최종 교정: 보드/대기열/상단UI/뒷면 ===== */
+/* 겹겹타일: 외부 이벤트 제목 제거 */
 #eventScreen:has(#stackTilePanel:not(.hidden)) .event-top-row{
   display:none!important;
+}
+
+#eventScreen:has(#stackTilePanel:not(.hidden)){
+  padding-top:0!important;
 }
 
 #stackTilePanel .stack-tile-section{
@@ -3536,6 +2968,7 @@ textarea.text-input{
   display:none!important;
 }
 
+/* 겹겹타일 전체 레이아웃 */
 .stack-tile-layout{
   display:grid!important;
   grid-template-columns:minmax(0,590px) minmax(250px,300px)!important;
@@ -3564,6 +2997,7 @@ textarea.text-input{
   min-height:34px!important;
 }
 
+/* 상태바 */
 .stack-tile-statusbar{
   min-width:0!important;
   display:flex!important;
@@ -3603,6 +3037,41 @@ textarea.text-input{
   overflow:visible!important;
 }
 
+/* 점수 플로팅 */
+.stack-tile-score-float-wrap{
+  position:absolute;
+  left:50%;
+  top:-8px;
+  pointer-events:none;
+}
+
+.stack-tile-score-floater{
+  position:absolute;
+  left:0;
+  top:0;
+  transform:translateX(-50%);
+  white-space:nowrap;
+  font-size:13px;
+  font-weight:1000;
+  text-shadow:0 2px 6px rgba(0,0,0,.65);
+  animation:stackTileScoreFloat .9s ease forwards;
+}
+
+.stack-tile-score-floater.plus{
+  color:#86efac;
+}
+
+.stack-tile-score-floater.minus{
+  color:#fca5a5;
+}
+
+@keyframes stackTileScoreFloat{
+  0%{opacity:0; transform:translate(-50%,6px) scale(.9)}
+  20%{opacity:1; transform:translate(-50%,0) scale(1)}
+  100%{opacity:0; transform:translate(-50%,-26px) scale(1.05)}
+}
+
+/* 난이도 선택 */
 .stack-tile-difficulty-select-wrap{
   display:flex!important;
   align-items:center!important;
@@ -3626,6 +3095,7 @@ textarea.text-input{
   font-weight:1000!important;
 }
 
+/* 보드 */
 #stackTilePanel .stack-tile-board-card{
   padding:8px!important;
   border-radius:18px!important;
@@ -3637,26 +3107,39 @@ textarea.text-input{
   position:relative!important;
   width:100%!important;
   max-width:430px!important;
-  height:370px!important;
+  height:410px!important;
   margin:0 auto!important;
   border:1px solid #14233a!important;
   border-radius:16px!important;
-  background:radial-gradient(circle at 50% 34%,rgba(96,165,250,.10),transparent 45%),rgba(5,13,24,.72)!important;
+  background:
+    radial-gradient(circle at 50% 34%,rgba(96,165,250,.10),transparent 45%),
+    rgba(5,13,24,.72)!important;
   overflow:hidden!important;
 }
 
+/* 타일 */
 #stackTilePanel .stack-tile{
+  position:absolute!important;
   width:52px!important;
   height:52px!important;
   left:calc(var(--x) * 26px + var(--offset-x, 0px))!important;
   top:calc(var(--y) * 26px + var(--offset-y, 0px))!important;
   border-radius:13px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
   font-size:27px!important;
+  font-weight:1000!important;
   line-height:1!important;
-  transition:filter .15s ease,box-shadow .12s ease,transform .12s ease!important;
+  user-select:none!important;
+  touch-action:manipulation!important;
+  transition:filter .15s ease,box-shadow .12s ease,border-color .12s ease!important;
 }
 
 #stackTilePanel .stack-tile.selectable{
+  border:1px solid #6ea8ff!important;
+  background:linear-gradient(180deg,#f4f9ff,#bfdcff)!important;
+  color:#0b1220!important;
   filter:none!important;
   opacity:1!important;
   cursor:pointer!important;
@@ -3668,30 +3151,54 @@ textarea.text-input{
   box-shadow:0 0 0 2px rgba(191,219,254,.95),0 8px 16px rgba(0,0,0,.38)!important;
 }
 
-#stackTilePanel .stack-tile.blocked{
-  filter:grayscale(.24) brightness(.82)!important;
-  opacity:1!important;
+#stackTilePanel .stack-tile.preview{
+  border:1px solid #5d789f!important;
+  background:linear-gradient(180deg,#d7e4f4,#8fa8c9)!important;
+  color:#172235!important;
+  box-shadow:0 6px 12px rgba(0,0,0,.28)!important;
   cursor:not-allowed!important;
-}
-
-#stackTilePanel .stack-tile.face-preview{
-  background:linear-gradient(180deg,#dcecff,#9fc1ef)!important;
-  border-color:#5377aa!important;
-  color:#0b1220!important;
-  filter:grayscale(.10) brightness(.92)!important;
-}
-
-#stackTilePanel .stack-tile.face-back{
-  background:linear-gradient(135deg,#344968,#17243a 60%,#263b5d)!important;
-  color:#b9d5ff!important;
-  border-color:#6686b8!important;
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.06),0 7px 13px rgba(0,0,0,.34)!important;
-  filter:none!important;
   opacity:1!important;
-  font-size:22px!important;
+  filter:brightness(.9) saturate(.85)!important;
 }
 
-.stack-tile-storage-board{
+#stackTilePanel .stack-tile.back{
+  border:1px solid #6686b8!important;
+  background:
+    radial-gradient(circle at 50% 45%,rgba(147,197,253,.22),transparent 34%),
+    linear-gradient(180deg,#344968,#17243a 60%,#263b5d)!important;
+  color:#b9d5ff!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.06),0 7px 13px rgba(0,0,0,.34)!important;
+  cursor:not-allowed!important;
+  opacity:1!important;
+  filter:none!important;
+}
+
+#stackTilePanel .stack-tile.back::before{
+  content:"◆";
+  font-size:24px;
+  color:#b9d5ff;
+  opacity:.95;
+}
+
+#stackTilePanel .stack-tile.back span{
+  display:none!important;
+}
+
+#stackTilePanel .stack-tile.blocked-feedback{
+  animation:stackTileBlockedShake .18s ease;
+  box-shadow:0 0 0 2px #ef4444,0 8px 16px rgba(0,0,0,.38)!important;
+}
+
+@keyframes stackTileBlockedShake{
+  0%{transform:translateX(0)}
+  25%{transform:translateX(-4px)}
+  50%{transform:translateX(4px)}
+  75%{transform:translateX(-2px)}
+  100%{transform:translateX(0)}
+}
+
+/* 보드 안 보관 슬롯 */
+#stackTilePanel .stack-tile-storage-on-board{
   position:absolute!important;
   left:50%!important;
   bottom:10px!important;
@@ -3703,22 +3210,25 @@ textarea.text-input{
   pointer-events:auto!important;
 }
 
-.stack-tile-storage-board-slot,
-.stack-tile-storage-board-tile{
+#stackTilePanel .stack-tile-storage-on-board .stack-tile-slot,
+#stackTilePanel .stack-tile-storage-on-board .stack-tile-storage-tile{
   width:52px!important;
   height:52px!important;
+  min-width:52px!important;
+  min-height:52px!important;
   border-radius:13px!important;
   display:flex!important;
   align-items:center!important;
   justify-content:center!important;
 }
 
-.stack-tile-storage-board-slot{
+#stackTilePanel .stack-tile-storage-on-board .stack-tile-slot{
   border:1px dashed rgba(96,165,250,.55)!important;
   background:rgba(16,37,69,.22)!important;
+  color:transparent!important;
 }
 
-.stack-tile-storage-board-tile{
+#stackTilePanel .stack-tile-storage-on-board .stack-tile-storage-tile{
   border:1px solid #315a93!important;
   background:linear-gradient(180deg,#eef6ff,#bcd7ff)!important;
   color:#0b1220!important;
@@ -3728,6 +3238,7 @@ textarea.text-input{
   cursor:pointer!important;
 }
 
+/* 하단 */
 #stackTilePanel .stack-tile-bottom{
   display:flex!important;
   flex-direction:column!important;
@@ -3783,6 +3294,29 @@ textarea.text-input{
   box-shadow:0 6px 12px rgba(0,0,0,.26)!important;
 }
 
+#stackTilePanel .stack-tile-queue-tile.added-pop,
+#stackTilePanel .stack-tile-storage-tile.stored-pop{
+  animation:stackTilePop .24s ease;
+}
+
+#stackTilePanel .stack-tile-queue-tile.matching{
+  animation:stackTileMatchedPop .26s ease forwards;
+  box-shadow:0 0 0 2px rgba(251,191,36,.9),0 0 18px rgba(251,191,36,.45)!important;
+}
+
+@keyframes stackTilePop{
+  0%{transform:scale(.86)}
+  55%{transform:scale(1.12)}
+  100%{transform:scale(1)}
+}
+
+@keyframes stackTileMatchedPop{
+  0%{transform:scale(1); opacity:1}
+  45%{transform:scale(1.18); opacity:1}
+  100%{transform:scale(.2); opacity:0}
+}
+
+/* 버튼 */
 #stackTilePanel .stack-tile-item-row{
   display:flex!important;
   gap:5px!important;
@@ -3792,29 +3326,245 @@ textarea.text-input{
 #stackTilePanel .stack-tile-item-row button{
   min-height:30px!important;
   padding:5px 9px!important;
+  border:1px solid #315a93!important;
+  border-radius:999px!important;
+  background:#102545!important;
+  color:#e7f1ff!important;
   font-size:11px!important;
+  font-weight:900!important;
 }
 
 #stackTilePanel .stack-tile-message{
   padding:7px 9px!important;
-  font-size:12px!important;
+  border:1px solid #28476e!important;
   border-radius:12px!important;
+  background:rgba(16,37,69,.35)!important;
+  color:#dbeafe!important;
+  font-size:12px!important;
+  font-weight:900!important;
 }
 
+/* 랭킹 */
+.stack-tile-ranking-card{
+  border:1px solid #28476e!important;
+  border-radius:18px!important;
+  background:linear-gradient(180deg,rgba(9,22,38,.98),rgba(5,13,24,.98))!important;
+  padding:12px!important;
+  min-height:220px!important;
+}
+
+.stack-tile-ranking-title{
+  color:#dbeafe!important;
+  font-size:14px!important;
+  font-weight:1000!important;
+  margin-bottom:10px!important;
+}
+
+.stack-tile-ranking-list{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:6px!important;
+}
+
+.stack-tile-rank-row{
+  display:grid!important;
+  grid-template-columns:24px minmax(0,1fr) auto auto!important;
+  gap:6px!important;
+  align-items:center!important;
+  border:1px solid #172a45!important;
+  background:#081522!important;
+  border-radius:11px!important;
+  padding:7px 8px!important;
+  font-size:11px!important;
+  font-weight:900!important;
+}
+
+.stack-tile-rank-row.me{
+  border-color:#60a5fa!important;
+  background:rgba(96,165,250,.12)!important;
+}
+
+.stack-tile-rank-no{
+  color:#93c5fd!important;
+}
+
+.stack-tile-rank-name{
+  min-width:0!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  color:#e7f1ff!important;
+}
+
+.stack-tile-rank-score{
+  color:#fde68a!important;
+  white-space:nowrap!important;
+}
+
+.stack-tile-rank-time{
+  color:#9fb3d3!important;
+  white-space:nowrap!important;
+}
+
+.stack-tile-rank-empty{
+  border:1px dashed #28405f!important;
+  border-radius:12px!important;
+  padding:16px!important;
+  color:#9fb3d3!important;
+  text-align:center!important;
+  font-size:12px!important;
+  font-weight:900!important;
+}
+
+/* 결과 오버레이 */
+.stack-tile-result-overlay{
+  position:fixed!important;
+  inset:0!important;
+  z-index:9999!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:18px!important;
+  background:rgba(0,0,0,.58)!important;
+  backdrop-filter:blur(3px)!important;
+}
+
+.stack-tile-result-box{
+  width:min(380px,100%)!important;
+  border:1px solid #315a93!important;
+  border-radius:22px!important;
+  background:linear-gradient(180deg,#102545,#07111e)!important;
+  box-shadow:0 18px 45px rgba(0,0,0,.55)!important;
+  padding:22px 18px!important;
+  text-align:center!important;
+  color:#e7f1ff!important;
+}
+
+.stack-tile-result-title{
+  font-size:26px!important;
+  font-weight:1000!important;
+  color:#fecaca!important;
+  margin-bottom:8px!important;
+}
+
+.stack-tile-result-title.pause{
+  color:#bfdbfe!important;
+}
+
+.stack-tile-result-title.clear{
+  color:#bbf7d0!important;
+}
+
+.stack-tile-result-desc{
+  font-size:14px!important;
+  line-height:1.55!important;
+  color:#dbeafe!important;
+}
+
+.stack-tile-result-meta{
+  margin-top:10px!important;
+  font-size:12px!important;
+  color:#93c5fd!important;
+  font-weight:900!important;
+}
+
+.stack-tile-result-actions{
+  display:flex!important;
+  gap:8px!important;
+  justify-content:center!important;
+  margin-top:16px!important;
+}
+
+.stack-tile-result-actions.three{
+  flex-wrap:wrap!important;
+}
+
+.stack-tile-result-actions button{
+  flex:1!important;
+  border:1px solid #60a5fa!important;
+  background:#102545!important;
+  color:#e7f1ff!important;
+  border-radius:999px!important;
+  min-height:38px!important;
+  padding:8px 12px!important;
+  font-size:13px!important;
+  font-weight:1000!important;
+}
+
+.stack-tile-result-actions button:first-child{
+  border-color:#fbbf24!important;
+  color:#fde68a!important;
+}
+
+.stack-tile-score-detail{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:7px!important;
+  margin:12px 0!important;
+  border:1px solid #28476e!important;
+  border-radius:14px!important;
+  padding:10px!important;
+  background:rgba(5,13,24,.45)!important;
+}
+
+.stack-tile-score-detail div{
+  display:flex!important;
+  justify-content:space-between!important;
+  gap:10px!important;
+  color:#dbeafe!important;
+  font-size:13px!important;
+  font-weight:900!important;
+}
+
+.stack-tile-score-detail .total{
+  border-top:1px solid rgba(255,255,255,.08)!important;
+  padding-top:7px!important;
+  color:#fde68a!important;
+}
+
+/* 반응형 */
 @media(max-width:980px){
   .stack-tile-layout{
     grid-template-columns:1fr!important;
   }
+
   .stack-tile-game-card{
     max-width:590px!important;
     margin:0 auto!important;
   }
+
   .stack-tile-ranking-card{
     display:none!important;
   }
 }
 
 @media(max-width:720px){
+  .container{
+    padding-top:72px!important;
+  }
+
+  .topbar{
+    flex-wrap:nowrap!important;
+  }
+
+  .top-tabs{
+    order:initial!important;
+    width:min(290px,86vw)!important;
+    display:flex!important;
+    grid-template-columns:none!important;
+  }
+
+  .top-right{
+    width:auto!important;
+    justify-content:flex-end!important;
+    flex-wrap:nowrap!important;
+  }
+
+  .top-right .pill{
+    font-size:12px!important;
+    padding:8px 9px!important;
+  }
+
   #stackTilePanel .stack-tile-section{
     padding:7px!important;
   }
@@ -3846,7 +3596,7 @@ textarea.text-input{
 
   #stackTilePanel .stack-tile-board{
     max-width:360px!important;
-    height:320px!important;
+    height:340px!important;
   }
 
   #stackTilePanel .stack-tile{
@@ -3858,24 +3608,26 @@ textarea.text-input{
     font-size:23px!important;
   }
 
-  #stackTilePanel .stack-tile.face-back{
-    font-size:19px!important;
+  #stackTilePanel .stack-tile.back::before{
+    font-size:20px!important;
   }
 
-  .stack-tile-storage-board{
+  #stackTilePanel .stack-tile-storage-on-board{
     grid-template-columns:repeat(3,44px)!important;
     gap:6px!important;
     bottom:8px!important;
   }
 
-  .stack-tile-storage-board-slot,
-  .stack-tile-storage-board-tile{
+  #stackTilePanel .stack-tile-storage-on-board .stack-tile-slot,
+  #stackTilePanel .stack-tile-storage-on-board .stack-tile-storage-tile{
     width:44px!important;
     height:44px!important;
+    min-width:44px!important;
+    min-height:44px!important;
     border-radius:11px!important;
   }
 
-  .stack-tile-storage-board-tile{
+  #stackTilePanel .stack-tile-storage-on-board .stack-tile-storage-tile{
     font-size:23px!important;
   }
 
@@ -3907,395 +3659,5 @@ textarea.text-input{
     min-height:27px!important;
     padding:4px 6px!important;
     font-size:10px!important;
-  }
-}
-
-
-/* ===== 겹겹타일 최종 응급 복구 ===== */
-
-/* 겹겹타일 화면 전체 */
-#stackTilePanel .stack-tile-section{
-  max-width:980px;
-  margin:0 auto;
-  padding:14px;
-  border-radius:18px;
-}
-
-/* 제목 줄은 최소화 */
-#stackTilePanel .section-header-row{
-  display:none;
-}
-
-/* 게임 전체 레이아웃 */
-#stackTilePanel .stack-tile-wrap{
-  display:grid;
-  grid-template-columns:minmax(0,640px) 300px;
-  gap:14px;
-  align-items:start;
-  justify-content:center;
-}
-
-/* 상단 상태바 */
-#stackTilePanel .stack-tile-top{
-  grid-column:1 / -1;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:8px;
-  min-height:34px;
-  margin-bottom:2px;
-}
-
-#stackTilePanel .stack-tile-stats{
-  display:flex;
-  align-items:center;
-  gap:6px;
-  flex-wrap:wrap;
-}
-
-#stackTilePanel .stack-tile-stat{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  min-height:26px;
-  padding:4px 8px;
-  border:1px solid #28476e;
-  border-radius:999px;
-  background:#0b1a2d;
-  color:#dbeafe;
-  font-size:11px;
-  font-weight:900;
-  line-height:1;
-}
-
-/* 난이도 버튼 덕지덕지 방지 */
-#stackTilePanel .stack-tile-difficulty-row{
-  display:flex;
-  align-items:center;
-  gap:4px;
-}
-
-#stackTilePanel .stack-tile-difficulty-row button{
-  min-height:26px;
-  padding:4px 8px;
-  border-radius:999px;
-  font-size:11px;
-  font-weight:900;
-}
-
-/* 보드 카드 */
-#stackTilePanel .stack-tile-board-card{
-  width:100%;
-  max-width:640px;
-  padding:10px;
-  border:1px solid #28476e;
-  border-radius:18px;
-  background:linear-gradient(180deg,rgba(9,22,38,.98),rgba(5,13,24,.98));
-}
-
-/* 실제 타일 보드 */
-#stackTilePanel .stack-tile-board{
-  position:relative;
-  width:100%;
-  height:430px;
-  border:1px solid #14233a;
-  border-radius:16px;
-  background:
-    radial-gradient(circle at 50% 40%,rgba(96,165,250,.08),transparent 45%),
-    #06101d;
-  overflow:hidden;
-}
-
-/* 타일 공통 */
-#stackTilePanel .stack-tile{
-  position:absolute;
-  width:52px;
-  height:52px;
-  left:calc(var(--x) * 26px);
-  top:calc(var(--y) * 26px);
-  border-radius:13px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:27px;
-  font-weight:1000;
-  line-height:1;
-  user-select:none;
-  touch-action:manipulation;
-  transition:filter .12s ease, box-shadow .12s ease, border-color .12s ease;
-}
-
-/* 선택 가능 타일 */
-#stackTilePanel .stack-tile.selectable{
-  border:1px solid #6ea8ff;
-  background:linear-gradient(180deg,#f4f9ff,#bfdcff);
-  color:#0b1220;
-  box-shadow:0 0 0 2px rgba(96,165,250,.55),0 8px 16px rgba(0,0,0,.34);
-  cursor:pointer;
-  opacity:1;
-  filter:none;
-}
-
-/* 바로 아래층 미리보기 타일 */
-#stackTilePanel .stack-tile.preview{
-  border:1px solid #5d789f;
-  background:linear-gradient(180deg,#d7e4f4,#8fa8c9);
-  color:#172235;
-  box-shadow:0 6px 12px rgba(0,0,0,.28);
-  cursor:not-allowed;
-  opacity:1;
-  filter:brightness(.9) saturate(.85);
-}
-
-/* 깊은 층 뒷면 타일 */
-#stackTilePanel .stack-tile.back{
-  border:1px solid #5f7fb0;
-  background:
-    radial-gradient(circle at 50% 45%,rgba(147,197,253,.22),transparent 34%),
-    linear-gradient(180deg,#263b62,#13233f);
-  color:#b8d6ff;
-  box-shadow:0 6px 12px rgba(0,0,0,.32);
-  cursor:not-allowed;
-  opacity:1;
-  filter:none;
-}
-
-/* 뒷면 문양 */
-#stackTilePanel .stack-tile.back::before{
-  content:"◆";
-  font-size:24px;
-  color:#9fc5ff;
-  opacity:.95;
-}
-
-/* 기존 아이콘 숨김용 */
-#stackTilePanel .stack-tile.back span{
-  display:none;
-}
-
-/* 선택 불가 피드백 */
-#stackTilePanel .stack-tile.blocked-feedback{
-  animation:stackTileBlockedShake .18s ease;
-  box-shadow:0 0 0 2px #ef4444,0 8px 16px rgba(0,0,0,.38);
-}
-
-@keyframes stackTileBlockedShake{
-  0%{transform:translateX(0)}
-  25%{transform:translateX(-4px)}
-  50%{transform:translateX(4px)}
-  75%{transform:translateX(-2px)}
-  100%{transform:translateX(0)}
-}
-
-/* 보드 안 보관 슬롯 */
-#stackTilePanel .stack-tile-storage-on-board{
-  position:absolute;
-  left:50%;
-  bottom:8px;
-  transform:translateX(-50%);
-  display:grid;
-  grid-template-columns:repeat(3,52px);
-  gap:8px;
-  z-index:9999;
-}
-
-#stackTilePanel .stack-tile-storage-on-board .stack-tile-slot,
-#stackTilePanel .stack-tile-storage-on-board .stack-tile-storage-tile{
-  width:52px;
-  height:52px;
-  border-radius:13px;
-}
-
-/* 하단 영역 */
-#stackTilePanel .stack-tile-bottom{
-  grid-column:1;
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-}
-
-/* 랭킹 */
-#stackTilePanel .stack-tile-ranking-panel{
-  grid-column:2;
-  grid-row:2 / span 2;
-  min-height:190px;
-  border:1px solid #28476e;
-  border-radius:18px;
-  background:#07111e;
-  padding:14px;
-}
-
-/* 대기열 카드 */
-#stackTilePanel .stack-tile-lane-card{
-  padding:0;
-  border:none;
-  background:transparent;
-}
-
-#stackTilePanel .stack-tile-lane-title{
-  margin:0 0 5px;
-  color:#bfdbfe;
-  font-size:11px;
-  font-weight:1000;
-}
-
-/* 대기열 7칸 */
-#stackTilePanel .stack-tile-queue{
-  display:grid;
-  grid-template-columns:repeat(7,52px);
-  gap:6px;
-  align-items:center;
-  justify-content:start;
-  overflow:visible;
-}
-
-#stackTilePanel .stack-tile-slot,
-#stackTilePanel .stack-tile-queue-tile,
-#stackTilePanel .stack-tile-storage-tile{
-  width:52px;
-  height:52px;
-  border-radius:13px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  line-height:1;
-}
-
-#stackTilePanel .stack-tile-slot{
-  border:1px dashed #3d5d89;
-  background:#08172a;
-  color:#7da5da;
-  font-size:11px;
-  font-weight:900;
-}
-
-#stackTilePanel .stack-tile-queue-tile,
-#stackTilePanel .stack-tile-storage-tile{
-  border:1px solid #315a93;
-  background:linear-gradient(180deg,#eef6ff,#bcd7ff);
-  color:#0b1220;
-  font-size:27px;
-  font-weight:1000;
-  box-shadow:0 6px 12px rgba(0,0,0,.26);
-}
-
-/* 아이템 버튼 */
-#stackTilePanel .stack-tile-item-row{
-  display:flex;
-  gap:6px;
-  flex-wrap:wrap;
-}
-
-#stackTilePanel .stack-tile-item-row button{
-  min-height:30px;
-  padding:5px 9px;
-  border:1px solid #315a93;
-  border-radius:999px;
-  background:#102545;
-  color:#e7f1ff;
-  font-size:11px;
-  font-weight:900;
-}
-
-/* 메시지 */
-#stackTilePanel .stack-tile-message{
-  padding:7px 9px;
-  border:1px solid #28476e;
-  border-radius:12px;
-  background:rgba(16,37,69,.35);
-  color:#dbeafe;
-  font-size:12px;
-  font-weight:900;
-}
-
-/* 모바일 */
-@media(max-width:720px){
-  #stackTilePanel .stack-tile-section{
-    max-width:none;
-    padding:8px;
-  }
-
-  #stackTilePanel .stack-tile-wrap{
-    display:flex;
-    flex-direction:column;
-    gap:8px;
-  }
-
-  #stackTilePanel .stack-tile-top{
-    min-height:30px;
-    gap:5px;
-  }
-
-  #stackTilePanel .stack-tile-stat{
-    min-height:24px;
-    padding:3px 6px;
-    font-size:10px;
-  }
-
-  #stackTilePanel .stack-tile-board-card{
-    max-width:none;
-    padding:6px;
-    border-radius:15px;
-  }
-
-  #stackTilePanel .stack-tile-board{
-    height:360px;
-    border-radius:13px;
-  }
-
-  #stackTilePanel .stack-tile{
-    width:44px;
-    height:44px;
-    left:calc(var(--x) * 22px);
-    top:calc(var(--y) * 22px);
-    border-radius:11px;
-    font-size:23px;
-  }
-
-  #stackTilePanel .stack-tile.back::before{
-    font-size:20px;
-  }
-
-  #stackTilePanel .stack-tile-storage-on-board{
-    grid-template-columns:repeat(3,44px);
-    gap:6px;
-    bottom:6px;
-  }
-
-  #stackTilePanel .stack-tile-storage-on-board .stack-tile-slot,
-  #stackTilePanel .stack-tile-storage-on-board .stack-tile-storage-tile{
-    width:44px;
-    height:44px;
-    border-radius:11px;
-  }
-
-  #stackTilePanel .stack-tile-queue{
-    grid-template-columns:repeat(7,44px);
-    gap:5px;
-  }
-
-  #stackTilePanel .stack-tile-slot,
-  #stackTilePanel .stack-tile-queue-tile,
-  #stackTilePanel .stack-tile-storage-tile{
-    width:44px;
-    height:44px;
-    border-radius:11px;
-    font-size:23px;
-  }
-
-  #stackTilePanel .stack-tile-slot{
-    font-size:10px;
-  }
-
-  #stackTilePanel .stack-tile-ranking-panel{
-    display:none;
-  }
-
-  #stackTilePanel .stack-tile-item-row button{
-    flex:1 1 calc(33.333% - 6px);
-    min-width:78px;
-    min-height:28px;
-    padding:4px 6px;
-    font-size:10px;
   }
 }
