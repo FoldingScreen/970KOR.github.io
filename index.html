@@ -1,1019 +1,759 @@
-function getTurtleSoupStatus(item){
-  const player=item.player||null;
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>970KOR</title>
+  <link rel="stylesheet" href="style.css?v=split-29" />
 
-  if(player?.isCleared)return{
-    text:"완료",
-    className:"public"
-  };
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div class="top-left">
+        <button class="menu-btn" type="button" onclick="toggleEventMenu()">☰</button>
+        <button class="brand brand-home-btn" type="button" onclick="goHome()">970KOR</button>
+      </div>
 
-  if(player?.startedAt)return{
-    text:"진행중",
-    className:"private"
-  };
+      <nav class="top-tabs" id="topTabs" onclick="event.stopPropagation()">
+        <div class="drawer-header">
+          <strong>이벤트 메뉴</strong>
+          <button class="close-btn" type="button" onclick="closeEventMenu()">닫기</button>
+        </div>
+        <button class="tab-btn active" onclick="goHome()">홈</button>
+        <button class="tab-btn" onclick="openEvent('viking')">바이킹</button>
+        <button class="tab-btn" onclick="openEvent('ruins')">유적쟁탈</button>
+        <button class="tab-btn" onclick="openEvent('holy_sword')">성검쟁탈</button>
+        <button class="tab-btn" onclick="openEvent('triple_alliance')">삼대연맹전</button>
+        <button class="tab-btn" onclick="openEvent('castle_battle')">캐슬전투</button>
+        <button class="tab-btn" onclick="openEvent('rearrange')">자리재배치</button>
+        <button class="tab-btn" onclick="state.escapeLabyrinthTab='home';openEvent('escape_labyrinth')">웹게임</button>
+      </nav>
 
-  return{
-    text:"미완료",
-    className:"closed"
-  };
-}
+      <div class="top-right">
+        <button id="notificationBtn" class="pill notification-pill" type="button" onclick="openNotificationModal()">
+          🔔
+          <span id="notificationCount" class="notification-count hidden">0</span>
+        </button>
+        <button id="adminMenuBtn" class="pill hidden" onclick="toggleAdminMenu()">운영진 메뉴</button>
+        <button class="pill" id="myNameBtn" disabled>로그인 안 됨</button>
+        <button class="pill" onclick="logout()">로그아웃</button>
+      </div>
+    </header>
 
-function getTurtleDifficulty(value){
-  const raw=value===0||value==="0"?0:Number(value||3);
-  const n=Math.min(5,Math.max(0,raw));
-  return Number.isFinite(n)?n:3;
-}
+    <div id="eventMenuBackdrop" class="event-menu-backdrop hidden" onclick="closeEventMenu()"></div>
 
-function renderTurtleDifficulty(value){
-  const n=getTurtleDifficulty(value);
-  return `<span class="turtle-difficulty" title="난이도 ${n}">${"★".repeat(n)}${"☆".repeat(5-n)}</span>`;
-}
+    <div id="adminMenu" class="admin-menu hidden">
+      <button id="adminShowAllUsersBtn" onclick="showAllUsers()">전체 사용자</button>
+      <button onclick="showAdminLogs()">운영 로그</button>
+      <button onclick="closeAdminMenu()">닫기</button>
+    </div>
 
-function renderTurtleSoupList(){
-  const list=document.getElementById("turtleSoupList");
-  if(!list)return;
+    <main class="container">
+      <section id="loginScreen" class="screen hidden">
+        <div class="card narrow">
+          <h1>970KOR 입장</h1>
+          <p class="muted">닉네임으로 입장합니다.</p>
+          <input id="nicknameInput" class="text-input" placeholder="닉네임 입력" />
+          <div class="actions single"><button onclick="login()">입장</button></div>
+        </div>
+      </section>
 
-  const visibleItems=(state.turtleSoups||[])
-    .filter(item=>item.isPublic||item.creator===state.currentUser)
-    .sort((a,b)=>{
-  const da=getTurtleDifficulty(a.difficulty);
-  const db=getTurtleDifficulty(b.difficulty);
+      <section id="homeScreen" class="screen hidden">
+        <div class="hero card">
+          <h1>970KOR 이벤트 로비</h1>
+          <p class="muted">사바나가 보고있다</p>
+        </div>
+        <h2 class="section-title">이벤트 바로가기</h2>
+        <div id="homeEventCards" class="home-event-grid"></div>
+        <h2 class="section-title">전체 현황</h2>
+        <div id="homeSummary" class="summary-grid"></div>
+      </section>
 
-  if(da!==db)return da-db;
-
-  return getTimeValue(a.createdAt)-getTimeValue(b.createdAt);
-});
-
-  if(!visibleItems.length){
-    list.innerHTML=`<div class="labyrinth-empty">등록된 바다거북스프 문제가 없습니다.</div>`;
-    return;
-  }
-
-  list.innerHTML=visibleItems.map(item=>{
-    const status=getTurtleSoupStatus(item);
-    const questionCount=Number(item.questionCount||0);
-
-    return`
-      <div class="turtle-soup-card" onclick="openTurtleSoupDetail('${escapeJs(item.id)}')">
-        <div class="turtle-card-main">
-          <div class="turtle-card-title">${escapeHtml(item.title||"제목 없음")}</div>
-          <div class="turtle-card-meta">
-            출제자: ${escapeHtml(item.creator||"-")}
-· 난이도 ${renderTurtleDifficulty(item.difficulty)}
-· 질문 ${questionCount}개
-· 클리어 ${(state.currentTurtlePlayersMap?.[item.id]||0)}명
+      <section id="eventScreen" class="screen hidden">
+        <div class="event-top-row">
+          <div>
+            <h1 id="eventTitle">이벤트</h1>
+            <div id="eventDesc" class="muted"></div>
+          </div>
+          <div class="actions right-wrap">
+            <button id="createPartyBtn" onclick="createParty()">파티 생성</button>
+            <button id="rearrangeEditBtn" class="hidden" onclick="openMyRearrangeModal()">내 진척도 입력</button>
+            <button id="rearrangeManageBtn" class="hidden" onclick="openRearrangeRankEditModal()">순위표 행 추가</button>
+            <button id="rearrangePublicBtn" class="hidden" onclick="toggleRearrangePublic()">순위 공개</button>
+            <button id="createLabyrinthBtn" class="hidden" onclick="openCreateLabyrinthModal()">미궁 제작하기</button>
+            <button id="backToLabyrinthListBtn" class="hidden" onclick="openEscapeLabyrinthHome()">목록으로</button>
+            <button id="eventShowAllUsersBtn" onclick="showAllUsers()">전체 사용자</button>
           </div>
         </div>
-        <div class="labyrinth-inline-status">
-          <span class="labyrinth-status-badge ${status.className}">${status.text}</span>
-          ${item.creator===state.currentUser?`<span class="labyrinth-status-badge private">내 문제</span>`:""}
+
+        <div id="partyList" class="party-grid"></div>
+
+<section id="escapeLabyrinthScreen" class="hidden">
+  <div id="labyrinthHomeView" class="hidden">
+
+    <div id="labyrinthMenuPanel">
+      <div class="webgame-select-grid">
+        <div class="webgame-select-card" onclick="openEscapeLabyrinthMenu('labyrinth')">
+          <div class="webgame-select-title">미궁</div>
+          <div class="webgame-select-desc">
+            단계형으로 이뤄진 문제를 풀이합니다.<br>
+            문제 유형은 제작자에 따라 다양하며,<br>
+            누구든지 문제를 내거나 맞힐 수 있습니다.
+          </div>
+        </div>
+
+        <div class="webgame-select-card" onclick="openEscapeLabyrinthMenu('turtle')">
+          <div class="webgame-select-title">바다거북스프</div>
+          <div class="webgame-select-desc">
+            질문으로 사건의 전말을 추리합니다.<br>
+            스무고개처럼 예/아니오로 답변이 가능한 질문으로<br>
+            전체 스토리를 맞히는 게임이며,<br>
+            누구든지 문제를 내거나 맞힐 수 있습니다.
+          </div>
+        </div>
+
+        <div class="webgame-select-card" onclick="openEscapeLabyrinthMenu('stackTile')">
+          <div class="webgame-select-title">겹겹타일</div>
+          <div class="webgame-select-desc">
+            겹쳐진 타일 중 완전히 드러난 타일만 선택합니다.<br>
+            선택한 타일은 7칸 대기열로 이동하며,<br>
+            같은 타일 3개가 모이면 사라지는 퍼즐입니다.
+          </div>
         </div>
       </div>
-    `;
-  }).join("");
-}
-
-async function subscribeTurtleSoups(){
-  if(state.unsubscribeTurtleSoups){
-    state.unsubscribeTurtleSoups();
-    state.unsubscribeTurtleSoups=null;
-  }
-
-  state.unsubscribeTurtleSoups=turtleSoupsRef().onSnapshot(async snap=>{
-    const items=await Promise.all(snap.docs.map(async doc=>{
-      const d=doc.data()||{};
-      let player=null;
-
-      try{
-        const playerSnap=await turtleSoupPlayerRef(doc.id,state.currentUser).get();
-        player=playerSnap.exists?(playerSnap.data()||null):null;
-      }catch(err){
-        console.error(err);
-      }
-
-      return{
-        id:doc.id,
-        title:d.title||"",
-        contentText:d.contentText||d.contentHtml||"",
-        solutionText:d.solutionText||"",
-        difficulty:getTurtleDifficulty(d.difficulty),
-        creator:d.creator||"",
-        isPublic:!!d.isPublic,
-        questionCount:Number(d.questionCount||0),
-        createdAt:d.createdAt||null,
-        updatedAt:d.updatedAt||null,
-        player
-      };
-    }));
-
-    state.turtleSoups=items;
-    renderTurtleSoupList();
-
-    if(state.currentTurtleSoupId){
-      const found=items.find(v=>v.id===state.currentTurtleSoupId)||null;
-      state.currentTurtleSoupData=found;
-      renderTurtleSoupDetail();
-    }
-  },err=>{
-    console.error(err);
-    alert("바다거북스프 목록을 불러오는 중 오류가 발생했습니다.");
-  });
-}
-
-function openCreateTurtleSoupModal(id=""){
-  state.editingTurtleSoupId=id||"";
-
-  const titleInput=document.getElementById("turtleSoupTitleInput");
-  const contentInput=document.getElementById("turtleSoupContentInput");
-  const difficultySelect=document.getElementById("turtleSoupDifficultySelect");
-  const solutionInput=document.getElementById("turtleSoupSolutionInput");
-  const publicCheckbox=document.getElementById("turtleSoupPublicCheckbox");
-  const deleteBtn=document.getElementById("deleteTurtleSoupBtn");
-  const modalTitle=document.getElementById("turtleSoupModalTitle");
-
-  const item=id?state.turtleSoups.find(v=>v.id===id):null;
-
-  if(id&&!item){
-    alert("문제를 찾을 수 없습니다.");
-    return;
-  }
-
-  if(item&&item.creator!==state.currentUser){
-    alert("수정 권한이 없습니다.");
-    return;
-  }
-
-  if(modalTitle)modalTitle.textContent=item?"바다거북스프 수정":"바다거북스프 만들기";
-  if(titleInput)titleInput.value=item?.title||"";
-  if(contentInput)contentInput.value=item?.contentText||"";
-  if(difficultySelect)difficultySelect.value=String(getTurtleDifficulty(item?.difficulty));
-  if(solutionInput)solutionInput.value=item?.solutionText||"";
-  if(publicCheckbox)publicCheckbox.checked=item?!!item.isPublic:true;
-  if(deleteBtn)deleteBtn.classList.toggle("hidden",!item);
-
-  document.getElementById("createTurtleSoupModal")?.classList.remove("hidden");
-  syncOverlay();
-}
-
-function closeCreateTurtleSoupModal(){
-  state.editingTurtleSoupId="";
-  document.getElementById("createTurtleSoupModal")?.classList.add("hidden");
-  syncOverlay();
-}
-
-window.openCreateTurtleSoupModal=openCreateTurtleSoupModal;
-window.closeCreateTurtleSoupModal=closeCreateTurtleSoupModal;
-
-async function submitTurtleSoup(){
-  const title=normalizeLabyrinthText(document.getElementById("turtleSoupTitleInput")?.value||"");
-  const difficulty=getTurtleDifficulty(document.getElementById("turtleSoupDifficultySelect")?.value||3);
-  const contentText=normalizeLabyrinthText(document.getElementById("turtleSoupContentInput")?.value||"");
-  const solutionText=normalizeLabyrinthText(document.getElementById("turtleSoupSolutionInput")?.value||"");
-  const isPublic=!!document.getElementById("turtleSoupPublicCheckbox")?.checked;
-
-  if(!title){
-    alert("문제 제목을 입력하세요.");
-    return;
-  }
-
-  if(!contentText){
-    alert("문제 본문을 입력하세요.");
-    return;
-  }
-
-  const now=firebase.firestore.FieldValue.serverTimestamp();
-
-  const payload={
-    title,
-    difficulty,
-    contentText,
-    solutionText,
-    isPublic,
-    updatedAt:now
-  };
-
-  if(state.editingTurtleSoupId){
-    const item=state.turtleSoups.find(v=>v.id===state.editingTurtleSoupId);
-
-    if(!item||item.creator!==state.currentUser){
-      alert("수정 권한이 없습니다.");
-      return;
-    }
-
-    await turtleSoupRef(state.editingTurtleSoupId).set(payload,{merge:true});
-  }else{
-    payload.creator=state.currentUser;
-    payload.questionCount=0;
-    payload.createdAt=now;
-
-    await turtleSoupsRef().add(payload);
-  }
-
-  closeCreateTurtleSoupModal();
-}
-
-window.submitTurtleSoup=submitTurtleSoup;
-
-async function deleteTurtleSoup(){
-  const id=state.editingTurtleSoupId;
-  const item=state.turtleSoups.find(v=>v.id===id);
-
-  if(!id||!item){
-    alert("삭제할 문제를 찾을 수 없습니다.");
-    return;
-  }
-
-  if(item.creator!==state.currentUser){
-    alert("삭제 권한이 없습니다.");
-    return;
-  }
-
-  if(!confirm("이 바다거북스프 문제를 삭제하시겠습니까?"))return;
-
-  await turtleSoupRef(id).delete();
-  closeCreateTurtleSoupModal();
-
-  if(state.currentTurtleSoupId===id){
-    closeTurtleSoupDetail();
-  }
-}
-
-window.deleteTurtleSoup=deleteTurtleSoup;
-
-async function openTurtleSoupDetail(id){
-  const item=state.turtleSoups.find(v=>v.id===id);
-
-  if(!item){
-    alert("문제를 찾을 수 없습니다.");
-    return;
-  }
-
-  if(!item.isPublic&&item.creator!==state.currentUser){
-    alert("비공개 문제입니다.");
-    return;
-  }
-
-  state.currentTurtleSoupId=id;
-  updateEventActionButtons();
-  state.currentTurtleSoupData=item;
-  updateEventActionButtons();
-  state.currentTurtleComments=[];
-  state.currentTurtlePlayer=null;
-  state.currentTurtleSubmissions=[];
-  state.currentTurtlePlayers=[];
-  state.answeringTurtleCommentId="";
-  state.isTurtleSubmitPanelOpen=false;
-  state.shouldScrollTurtleChatTop=true;  
-
-  if(state.unsubscribeTurtleComments){
-    state.unsubscribeTurtleComments();
-    state.unsubscribeTurtleComments=null;
-  }
-
-  if(state.unsubscribeTurtlePlayer){
-    state.unsubscribeTurtlePlayer();
-    state.unsubscribeTurtlePlayer=null;
-  }
-
-  if(state.unsubscribeTurtleSubmissions){
-    state.unsubscribeTurtleSubmissions();
-    state.unsubscribeTurtleSubmissions=null;
-  }
-
-  if(state.unsubscribeTurtlePlayers){
-    state.unsubscribeTurtlePlayers();
-    state.unsubscribeTurtlePlayers=null;
-  }
-  
-  await turtleSoupPlayerRef(id,state.currentUser).set({
-    nickname:state.currentUser,
-    startedAt:firebase.firestore.FieldValue.serverTimestamp(),
-    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
-  },{merge:true});
-
-  state.unsubscribeTurtleComments=turtleSoupCommentsRef(id)
-    .orderBy("createdAt","asc")
-    .onSnapshot(snap=>{
-      state.currentTurtleComments=snap.docs.map(doc=>{
-        const d=doc.data()||{};
-
-        return{
-          id:doc.id,
-          asker:d.asker||"",
-          question:d.question||"",
-          answer:d.answer||"",
-          isSpoiler:!!d.isSpoiler,
-          answeredBy:d.answeredBy||"",
-          createdAt:d.createdAt||null,
-          answeredAt:d.answeredAt||null
-        };
-      });
-
-      renderTurtleSoupDetail();
-      if(state.shouldScrollTurtleChatTop){
-        state.shouldScrollTurtleChatTop=false;
-        setTimeout(scrollTurtleChatToTop,0);
-      }else{
-        setTimeout(scrollTurtleChatToBottom,0);
-      }
-    },err=>{
-      console.error(err);
-      alert("질문 목록을 불러오는 중 오류가 발생했습니다.");
-    });
-
-  state.unsubscribeTurtlePlayer=turtleSoupPlayerRef(id,state.currentUser).onSnapshot(doc=>{
-    state.currentTurtlePlayer=doc.exists?(doc.data()||null):null;
-    renderTurtleSoupDetail();
-  },err=>{
-    console.error(err);
-  });
-
-  state.unsubscribeTurtleSubmissions=turtleSoupSubmissionsRef(id)
-    .orderBy("submittedAt","asc")
-    .onSnapshot(snap=>{
-      state.currentTurtleSubmissions=snap.docs.map(doc=>{
-        const d=doc.data()||{};
-
-        return{
-          id:doc.id,
-          user:d.user||"",
-          answerText:d.answerText||"",
-          status:d.status||"pending",
-          judgedBy:d.judgedBy||"",
-          submittedAt:d.submittedAt||null,
-          judgedAt:d.judgedAt||null
-        };
-      }).filter(v=>{
-        if(item.creator===state.currentUser)return true;
-        return v.user===state.currentUser;
-      });
-
-      renderTurtleSoupDetail();
-    },err=>{
-      console.error(err);
-      alert("정답 제출 목록을 불러오는 중 오류가 발생했습니다.");
-    });
-
-    state.unsubscribeTurtlePlayers=turtleSoupPlayersRef(id)
-    .onSnapshot(snap=>{
-      state.currentTurtlePlayers=snap.docs.map(doc=>{
-        const d=doc.data()||{};
-
-        return{
-          id:doc.id,
-          nickname:d.nickname||doc.id,
-          isCleared:!!d.isCleared,
-          clearedAt:d.clearedAt||null
-        };
-      }).filter(v=>v.isCleared&&!isHiddenTestNickname(v.nickname));
-
-      renderTurtleSoupDetail();
-      state.currentTurtlePlayersMap=state.currentTurtlePlayersMap||{};
-      state.currentTurtlePlayersMap[item.id]=state.currentTurtlePlayers.length;
-
-      renderTurtleSoupList();
-      
-    },err=>{
-      console.error(err);
-      alert("정답자 목록을 불러오는 중 오류가 발생했습니다.");
-    });
-  
-  document.getElementById("labyrinthHomeView")?.classList.add("hidden");
-  document.getElementById("turtleSoupDetailView")?.classList.remove("hidden");
-
-  renderTurtleSoupDetail();
-}
-
-window.openTurtleSoupDetail=openTurtleSoupDetail;
-
-function closeTurtleSoupDetail(){
-  state.currentTurtleSoupId="";
-  updateEventActionButtons();
-  state.currentTurtleSoupData=null;
-  state.currentTurtleComments=[];
-  state.currentTurtlePlayer=null;
-  state.currentTurtleSubmissions=[];
-  state.currentTurtlePlayers=[];
-  state.answeringTurtleCommentId="";
-  state.isTurtleSubmitPanelOpen=false;
-
-  if(state.unsubscribeTurtleComments){
-    state.unsubscribeTurtleComments();
-    state.unsubscribeTurtleComments=null;
-  }
-
-  if(state.unsubscribeTurtlePlayer){
-    state.unsubscribeTurtlePlayer();
-    state.unsubscribeTurtlePlayer=null;
-  }
-
-  if(state.unsubscribeTurtleSubmissions){
-    state.unsubscribeTurtleSubmissions();
-    state.unsubscribeTurtleSubmissions=null;
-  }
-
-    if(state.unsubscribeTurtlePlayers){
-    state.unsubscribeTurtlePlayers();
-    state.unsubscribeTurtlePlayers=null;
-  }
-
-  document.getElementById("turtleSoupDetailView")?.classList.add("hidden");
-  document.getElementById("labyrinthHomeView")?.classList.remove("hidden");
-  renderTurtleSoupList();
-}
-
-window.closeTurtleSoupDetail=closeTurtleSoupDetail;
-
-function renderTurtleSoupDetail(){
-  const root=document.getElementById("turtleSoupDetailView");
-  const item=state.currentTurtleSoupData;
-
-  if(!root||!item)return;
-
-  const isCreator=item.creator===state.currentUser;
-  const isCleared=!!state.currentTurtlePlayer?.isCleared;
-  const comments=state.currentTurtleComments||[];
-  const submissions=state.currentTurtleSubmissions||[];
-  const clearers=(state.currentTurtlePlayers||[])
-  .filter(v=>v.isCleared&&!isHiddenTestNickname(v.nickname))
-  .sort((a,b)=>getTimeValue(a.clearedAt)-getTimeValue(b.clearedAt));
-  const answeringComment=comments.find(v=>v.id===state.answeringTurtleCommentId)||null;
-  const answeringAnswer=answeringComment?.answer||"";
-
-  root.innerHTML=`
-    <div class="turtle-detail-view turtle-detail-layout">
-      <div class="turtle-detail-header">
-        <div>
-          <button type="button" class="inline-btn" onclick="closeTurtleSoupDetail()">← 목록</button>
-          ${isCreator?`<button type="button" class="inline-btn" onclick="openCreateTurtleSoupModal('${escapeJs(item.id)}')">문제 수정</button>`:""}
-        </div>
-        ${!isCreator&&isCleared?`
-  <span class="labyrinth-status-badge public">완료</span>
-`:""}
-      </div>
-
-      <div class="turtle-detail-left">
-  <div class="turtle-problem-card">
-    <div class="turtle-problem-title">${escapeHtml(item.title||"제목 없음")}</div>
-    <div class="turtle-problem-meta">
-      출제자: ${escapeHtml(item.creator||"-")}
-      · 난이도 ${renderTurtleDifficulty(item.difficulty)}
-      · 클리어: ${clearers.length}명${clearers.length?` (${clearers.map(v=>escapeHtml(v.nickname)).join(", ")})`:""}
     </div>
-    <details class="turtle-problem-body" open>
-      <summary>문제 보기 / 접기</summary>
-      <div class="turtle-problem-content">${escapeHtml(item.contentText||"").replace(/\n/g,"<br>")}</div>
-    </details>
+
+    <div id="labyrinthRealHome" class="hidden">
+      <div class="labyrinth-home-grid">
+        <div class="labyrinth-section">
+          <div class="section-header-row">
+            <h3 class="section-title">공개 미궁</h3>
+          </div>
+          <div id="publicLabyrinthList" class="labyrinth-card-grid"></div>
+        </div>
+
+        <div class="labyrinth-section">
+          <div class="section-header-row">
+            <h3 class="section-title">내 미궁</h3>
+          </div>
+          <div id="myLabyrinthList" class="labyrinth-card-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="turtleMenuPanel" class="hidden">
+      <div class="labyrinth-section turtle-section">
+        <div class="section-header-row">
+          <h3 class="section-title">바다거북스프</h3>
+          <button type="button" class="inline-btn" onclick="openCreateTurtleSoupModal()">문제 만들기</button>
+        </div>
+        <div id="turtleSoupList" class="turtle-soup-list"></div>
+      </div>
+    </div>
+
+    <div id="stackTilePanel" class="hidden">
+      <div class="labyrinth-section stack-tile-section">
+        <div class="section-header-row">
+          <h3 class="section-title">겹겹타일</h3>
+          <button type="button" class="inline-btn" onclick="restartStackTileGame()">새 게임</button>
+        </div>
+        <div id="stackTileRoot"></div>
+      </div>
+    </div>
+
   </div>
 
-  ${renderTurtleSolutionPanel(isCreator,isCleared,item)}
-  ${renderTurtleSubmissionPanel(isCreator,submissions,isCleared)}
-</div>
+  <div id="turtleSoupDetailView" class="hidden"></div>
 
-<div class="turtle-detail-right">
-  <div id="turtleChatList" class="turtle-chat-list">
-    ${comments.length?comments.map(comment=>renderTurtleComment(comment,isCreator)).join(""):`<div class="turtle-empty-chat">아직 질문이 없습니다.</div>`}
+  <div id="labyrinthDetailView" class="hidden">
+    <div class="labyrinth-detail-top card">
+      <h2 id="labyrinthDetailTitle">미궁 제목</h2>
+      <div id="labyrinthDetailMeta" class="muted"></div>
+      <p id="labyrinthDetailDescription" class="labyrinth-detail-description"></p>
+    </div>
+    <div id="labyrinthProgressSummary" class="summary-grid labyrinth-progress-summary hidden"></div>
+    <div id="labyrinthStageList" class="party-grid"></div>
   </div>
-  
-      <div class="turtle-composer">
-        <div id="turtleAnsweringLabel" class="turtle-answering-label ${state.answeringTurtleCommentId?"":"hidden"}">
-          답변 작성 중
-          <button type="button" onclick="cancelTurtleAnswerMode()">취소</button>
+</section>
+      </section>
+    </main>
+  </div>
+
+  <div id="modalOverlay" class="modal-overlay hidden"></div>
+
+  <div id="userModal" class="modal hidden">
+    <div class="modal-header">
+      <h3>전체 사용자</h3>
+      <button class="close-btn" onclick="closeUserModal()">닫기</button>
+    </div>
+    <div class="user-modal-grid">
+      <div>
+        <h4>참여</h4>
+        <div id="joinedUsers" class="name-columns"></div>
+      </div>
+      <div>
+        <h4>미참여</h4>
+        <div id="notJoinedUsers" class="name-columns"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="notificationModal" class="modal hidden">
+    <div class="modal-header">
+      <h3>알림</h3>
+      <div class="actions right-wrap">
+        <button type="button" class="inline-btn" onclick="markAllNotificationsRead()">전체 읽음</button>
+        <button class="close-btn" type="button" onclick="closeNotificationModal()">닫기</button>
+      </div>
+    </div>
+    <div id="notificationList" class="notification-list"></div>
+  </div>
+
+  <div id="logModal" class="modal hidden">
+    <div class="modal-header">
+      <h3>운영 로그</h3>
+      <button class="close-btn" onclick="closeLogModal()">닫기</button>
+    </div>
+    <div id="logList" class="log-list"></div>
+  </div>
+
+  <div id="ruinsCreateModal" class="modal hidden">
+    <div class="modal-header">
+      <h3 id="ruinsModalTitle">유적 파티 생성</h3>
+      <button class="close-btn" onclick="closeRuinsCreateModal()">닫기</button>
+    </div>
+    <div class="form-group" id="ruinNameWrap">
+      <label>이름</label>
+      <input id="ruinNameInput" class="text-input" placeholder="예: 4번 성채" />
+    </div>
+    <div class="form-group hidden" id="holySwordSideWrap">
+      <label>소속</label>
+      <select id="holySwordSideSelect">
+        <option value="KOR">본연맹(KOR)</option>
+        <option value="KR1">아카데미(KR1)</option>
+      </select>
+    </div>
+    <div class="form-group hidden" id="firstGroupWrap">
+      <label class="checkbox-label"><input type="checkbox" id="firstGroupCheckbox" />1군</label>
+    </div>
+    <div class="form-group">
+      <label>UTC 월/일/시간</label>
+      <div class="triple-grid">
+        <select id="utcMonth"></select>
+        <select id="utcDay"></select>
+        <select id="utcHour"></select>
+      </div>
+    </div>
+    <div class="actions right-wrap">
+      <button id="ruinsSubmitBtn" onclick="submitRuinsParty()">생성</button>
+    </div>
+  </div>
+
+  <div id="rearrangeModal" class="modal hidden">
+    <div class="modal-header">
+      <h3 id="rearrangeModalTitle">내 진척도 입력</h3>
+      <button class="close-btn" onclick="closeRearrangeModal()">닫기</button>
+    </div>
+    <div class="rearrange-modal-body">
+      <div class="form-group">
+        <label>'빛나는 첨탑' 도달한 최고 스테이지</label>
+        <input id="rearrangeStageInput" class="text-input" type="text" inputmode="text" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="예: 15-4" />
+        <p class="muted form-help">입력 형식: 큰 스테이지-세부 스테이지 (예: 15-4)</p>
+      </div>
+      <div class="form-group rearrange-example-wrap">
+        <label>입력 예시</label>
+        <img src="빛나는첨탑순위.png" alt="빛나는 첨탑 순위 예시" class="example-image" onclick="openExampleImageModal('tower')" />
+      </div>
+    </div>
+    <div class="actions right-wrap">
+      <button id="rearrangeSubmitBtn" onclick="submitRearrangeProgress()">저장</button>
+    </div>
+  </div>
+
+  <div id="exampleImageModal" class="modal hidden image-modal">
+    <div class="modal-header">
+      <h3 id="exampleImageModalTitle">예시 보기</h3>
+      <button class="close-btn" onclick="closeExampleImageModal()">닫기</button>
+    </div>
+    <div class="image-modal-body">
+      <img id="exampleImageModalImg" src="" alt="예시 이미지" class="example-image-large" />
+    </div>
+  </div>
+
+  <div id="rearrangeRankEditModal" class="modal hidden">
+    <div class="modal-header">
+      <h3 id="rearrangeRankEditTitle">순위표 관리</h3>
+      <button class="close-btn" onclick="closeRearrangeRankEditModal()">닫기</button>
+    </div>
+    <div class="form-group">
+      <label>닉네임</label>
+      <input id="rankEditNicknameInput" class="text-input" type="text" placeholder="닉네임 입력" />
+    </div>
+    <div class="form-group">
+      <label>스테이지</label>
+      <input id="rankEditStageInput" class="text-input" type="text" placeholder="예: 15-4" />
+    </div>
+    <div class="form-group">
+      <label>전투력</label>
+      <input id="rankEditPowerInput" class="text-input" type="number" min="0" step="1" placeholder="예: 123456789" />
+    </div>
+    <div class="form-group">
+      <label>비고</label>
+      <input id="rankEditNoteInput" class="text-input" type="text" placeholder="비고 입력" />
+    </div>
+    <div class="actions right-wrap">
+      <button id="rankEditDeleteBtn" class="hidden" onclick="deleteRearrangeRankRow()">삭제</button>
+      <button id="rankEditSubmitBtn" onclick="submitRearrangeRankEdit()">저장</button>
+    </div>
+  </div>
+
+  <div id="holySwordAreaModal" class="modal hidden">
+    <div class="modal-header">
+      <h3 id="holySwordAreaModalTitle">구역장 지정</h3>
+      <button class="close-btn" type="button" onclick="closeHolySwordAreaModal()">닫기</button>
+    </div>
+    <div class="form-group">
+      <label for="holySwordAreaUserSelect">파티원</label>
+      <select id="holySwordAreaUserSelect"></select>
+    </div>
+    <div class="form-group">
+      <label for="holySwordAreaSelect">구역</label>
+      <select id="holySwordAreaSelect">
+        <option value="마구간">마구간</option>
+        <option value="시계탑">시계탑</option>
+        <option value="수도원 1">수도원 1</option>
+        <option value="수도원 2">수도원 2</option>
+        <option value="수도원 3">수도원 3</option>
+        <option value="수도원 4">수도원 4</option>
+        <option value="성소 1">성소 1</option>
+        <option value="성소 2">성소 2</option>
+      </select>
+    </div>
+    <div class="actions">
+      <button type="button" onclick="addHolySwordAreaAssignment()">추가</button>
+    </div>
+    <div class="form-group">
+      <div id="holySwordAreaAssignmentList"></div>
+    </div>
+  </div>
+
+  <div id="castleBattleModal" class="modal hidden castle-battle-modal">
+    <div class="modal-header">
+      <h3>캐슬 전투 신청</h3>
+      <button class="close-btn" type="button" onclick="closeCastleBattleModal()">닫기</button>
+    </div>
+
+    <div class="castle-form-section">
+      <div class="castle-form-title">TG</div>
+      <div class="castle-form-grid castle-tg-grid">
+        <div class="form-group">
+          <label>보병 TG</label>
+          <select id="castleInfantrySelect" class="text-input">
+            <option value="5">5</option>
+            <option value="4">4</option>
+            <option value="3">3</option>
+            <option value="2">2</option>
+            <option value="1">1</option>
+            <option value="순금X">순금X</option>
+          </select>
         </div>
-        <div class="turtle-quick-row ${state.answeringTurtleCommentId?"":"hidden"}">
-          <button type="button" onclick="submitTurtleQuickAnswer('예')">예</button>
-          <button type="button" onclick="submitTurtleQuickAnswer('아니오')">아니오</button>
-          <button type="button" onclick="submitTurtleQuickAnswer('상관없음')">상관없음</button>
-          <button type="button" onclick="submitTurtleQuickAnswer('애매함')">애매함</button>
+        <div class="form-group">
+          <label>기병 TG</label>
+          <select id="castleCavalrySelect" class="text-input">
+            <option value="5">5</option>
+            <option value="4">4</option>
+            <option value="3">3</option>
+            <option value="2">2</option>
+            <option value="1">1</option>
+            <option value="순금X">순금X</option>
+          </select>
         </div>
-        <div class="turtle-input-row">
-          <input id="turtleChatInput" class="text-input" type="text" maxlength="200" value="${escapeHtml(answeringAnswer)}" placeholder="${state.answeringTurtleCommentId?"답변 입력...":"'예/아니오'로 답변 가능토록 질문 입력."}">
-          <div class="turtle-input-actions">
-            <button type="button" onclick="${state.answeringTurtleCommentId?"submitTurtleCustomAnswer()":"submitTurtleQuestion()"}">➤</button>
-            ${isCreator?"":`<button type="button" onclick="openTurtleSubmitPanel()" ${isCleared?"disabled":""}>정답제출</button>`}
+        <div class="form-group">
+          <label>궁병 TG</label>
+          <select id="castleArcherSelect" class="text-input">
+            <option value="5">5</option>
+            <option value="4">4</option>
+            <option value="3">3</option>
+            <option value="2">2</option>
+            <option value="1">1</option>
+            <option value="순금X">순금X</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="castle-form-section">
+      <div class="castle-form-title">영웅 스킬 레벨</div>
+      <div class="castle-hero-grid">
+        <div class="castle-hero-card">
+          <input type="hidden" class="castle-hero-level-input" data-hero="amadeus" value="0" />
+          <div class="castle-hero-name">아마데우스</div>
+          <div class="castle-hero-levels">
+            <button type="button" class="castle-hero-level-btn" data-hero="amadeus" data-level="0" onclick="setCastleHeroLevel('amadeus',0)">0</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="amadeus" data-level="1" onclick="setCastleHeroLevel('amadeus',1)">1</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="amadeus" data-level="2" onclick="setCastleHeroLevel('amadeus',2)">2</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="amadeus" data-level="3" onclick="setCastleHeroLevel('amadeus',3)">3</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="amadeus" data-level="4" onclick="setCastleHeroLevel('amadeus',4)">4</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="amadeus" data-level="5" onclick="setCastleHeroLevel('amadeus',5)">5</button>
           </div>
         </div>
-        ${isCreator?"":`
-          <div class="turtle-answer-row ${state.isTurtleSubmitPanelOpen?"":"hidden"}">
-            <input id="turtleFinalAnswerInput" class="text-input" type="text" placeholder="${isCleared?"이미 완료했습니다.":"추리한 전체 스토리 입력."}" ${isCleared?"disabled":""}>
-            <div class="turtle-answer-actions">
-              <button type="button" onclick="submitTurtleFinalAnswer()" ${isCleared?"disabled":""}>제출</button>
-              <button type="button" onclick="closeTurtleSubmitPanel()">닫기</button>
-            </div>
-          </div>
-        `}
-      </div>
-    </div>
-  `;
-}
 
-function renderTurtleClearersPanel(clearers){
-  if(!clearers.length){
-    return`
-      <div class="turtle-clearers-panel">
-        <div class="turtle-submission-title">정답자</div>
-        <div class="turtle-submission-empty">아직 정답자가 없습니다.</div>
-      </div>
-    `;
-  }
-
-  return`
-    <div class="turtle-clearers-panel">
-      <div class="turtle-submission-title">정답자 ${clearers.length}명</div>
-      <div class="turtle-clearer-list">
-        ${clearers.map((item,idx)=>`
-          <div class="turtle-clearer-item">
-            <span>${idx+1}. ${escapeHtml(item.nickname)}</span>
-            <span class="muted">${escapeHtml(formatDateTime(item.clearedAt))}</span>
-          </div>
-        `).join("")}
-      </div>
-    </div>
-  `;
-}
-
-function renderTurtleSolutionPanel(isCreator,isCleared,item){
-  if(!item)return"";
-
-  if(!isCreator&&!isCleared)return"";
-
-  const solution=normalizeLabyrinthText(item.solutionText||"");
-
-  if(!solution){
-    return isCreator
-      ? `<div class="turtle-solution-panel"><div class="turtle-submission-title">해설</div><div class="turtle-submission-empty">등록된 해설이 없습니다.</div></div>`
-      : "";
-  }
-
-  return`
-    <div class="turtle-solution-panel">
-      <div class="turtle-submission-title">${isCreator?"출제자용 해설":"해설"}</div>
-      <div class="turtle-solution-text">${escapeHtml(solution).replace(/\n/g,"<br>")}</div>
-    </div>
-  `;
-}
-
-function renderTurtleSubmissionPanel(isCreator,submissions,isCleared){
-  if(isCreator){
-    const pending=submissions.filter(v=>v.status==="pending");
-    const judged=submissions.filter(v=>v.status!=="pending");
-
-    return`
-      <div class="turtle-submission-panel">
-        <div class="turtle-submission-title">정답 제출 검토 ${pending.length?`· 대기 ${pending.length}건`:""}</div>
-        ${pending.length?pending.map(renderTurtlePendingSubmission).join(""):`<div class="turtle-submission-empty">검토 대기 중인 정답이 없습니다.</div>`}
-        ${judged.length?`
-          <details class="turtle-submission-history">
-            <summary>처리한 제출 ${judged.length}건</summary>
-            ${judged.map(renderTurtleJudgedSubmission).join("")}
-          </details>
-        `:""}
-      </div>
-    `;
-  }
-
-  if(!submissions.length){
-    return"";
-  }
-
-  return`
-    <div class="turtle-submission-panel">
-      <div class="turtle-submission-title">내 정답 제출 상태 ${isCleared?"· 완료":""}</div>
-      ${submissions.map(renderMyTurtleSubmission).join("")}
-    </div>
-  `;
-}
-
-function renderTurtlePendingSubmission(item){
-  return`
-    <div class="turtle-submission-item">
-      <div class="turtle-submission-meta">
-        ${escapeHtml(item.user)} · ${escapeHtml(formatDateTime(item.submittedAt))}
-      </div>
-      <div class="turtle-submission-text">${escapeHtml(item.answerText).replace(/\n/g,"<br>")}</div>
-      <div class="turtle-submission-actions">
-        <button type="button" onclick="judgeTurtleSubmission('${escapeJs(item.id)}','correct','${escapeJs(item.user)}')">정답</button>
-        <button type="button" onclick="judgeTurtleSubmission('${escapeJs(item.id)}','wrong','${escapeJs(item.user)}')">오답</button>
-      </div>
-    </div>
-  `;
-}
-
-function renderTurtleJudgedSubmission(item){
-  const label=item.status==="correct"?"정답":"오답";
-  const cls=item.status==="correct"?"public":"closed";
-
-  return`
-    <div class="turtle-submission-item judged">
-      <div class="turtle-submission-meta">
-        ${escapeHtml(item.user)} · ${escapeHtml(formatDateTime(item.submittedAt))}
-        <span class="labyrinth-status-badge ${cls}">${label}</span>
-      </div>
-      <div class="turtle-submission-text">${escapeHtml(item.answerText).replace(/\n/g,"<br>")}</div>
-    </div>
-  `;
-}
-
-function renderMyTurtleSubmission(item){
-  const statusMap={
-    pending:["검토 대기","private"],
-    correct:["정답","public"],
-    wrong:["오답","closed"]
-  };
-  const pair=statusMap[item.status]||statusMap.pending;
-
-  return`
-    <div class="turtle-submission-item judged">
-      <div class="turtle-submission-meta">
-        제출: ${escapeHtml(formatDateTime(item.submittedAt))}
-        <span class="labyrinth-status-badge ${pair[1]}">${pair[0]}</span>
-      </div>
-      <div class="turtle-submission-text">${escapeHtml(item.answerText).replace(/\n/g,"<br>")}</div>
-    </div>
-  `;
-}
-
-function toggleTurtleCommentOptions(commentId){
-  const target=document.getElementById(`turtleCommentOptions_${commentId}`);
-  if(!target)return;
-
-  document.querySelectorAll(".turtle-comment-options").forEach(el=>{
-    if(el!==target)el.classList.add("hidden");
-  });
-
-  target.classList.toggle("hidden");
-}
-
-window.toggleTurtleCommentOptions=toggleTurtleCommentOptions;
-
-function renderTurtleComment(comment,isCreator){
-  const hasAnswer=!!comment.answer;
-  const optionId=`turtleCommentOptions_${comment.id}`;
-
-  const questionClick=isCreator
-    ? `onclick="toggleTurtleCommentOptions('${escapeJs(comment.id)}')"`
-    : comment.isSpoiler
-      ? `onclick="this.classList.toggle('revealed')"`
-      : "";
-
-  const questionContent=comment.isSpoiler&&!isCreator
-    ? `<span class="spoiler-placeholder">스포일러 질문입니다. 눌러서 보기</span><span class="spoiler-real">${escapeHtml(comment.question||"")}</span>`
-    : escapeHtml(comment.question||"");
-
-  return`
-    <div class="turtle-thread">
-      <div class="turtle-bubble-row left">
-        <div class="turtle-bubble-wrap">
-          <div class="turtle-bubble-meta">${escapeHtml(comment.asker||"-")} · ${escapeHtml(formatDateTime(comment.createdAt))}</div>
-
-          <div class="turtle-bubble question ${comment.isSpoiler?"spoiler":""} ${comment.isSpoiler&&isCreator?"creator-spoiler":""}" ${questionClick}>
-            ${questionContent}
-          </div>
-
-          ${isCreator?`
-            <div id="${optionId}" class="turtle-comment-options hidden">
-              <button type="button" onclick="startTurtleAnswerMode('${escapeJs(comment.id)}')">
-                ${hasAnswer?"답변 수정":"답변"}
-              </button>
-              <button type="button" onclick="toggleTurtleQuestionSpoiler('${escapeJs(comment.id)}',${comment.isSpoiler?"false":"true"})">
-                ${comment.isSpoiler?"가리기 해제":"가리기(스포)"}
-              </button>
-              <button type="button" class="danger-mini-btn" onclick="deleteTurtleComment('${escapeJs(comment.id)}')">
-                삭제
-              </button>
-            </div>
-          `:""}
-        </div>
-      </div>
-
-      ${hasAnswer?`
-        <div class="turtle-bubble-row right">
-          <div class="turtle-bubble-wrap">
-            <div class="turtle-bubble-meta right">
-              ${escapeHtml(comment.answeredBy||"출제자")} · ${escapeHtml(formatDateTime(comment.answeredAt))}
-            </div>
-            <div class="turtle-bubble answer">${escapeHtml(comment.answer)}</div>
+        <div class="castle-hero-card">
+          <input type="hidden" class="castle-hero-level-input" data-hero="chenko" value="0" />
+          <div class="castle-hero-name">첸코</div>
+          <div class="castle-hero-levels">
+            <button type="button" class="castle-hero-level-btn" data-hero="chenko" data-level="0" onclick="setCastleHeroLevel('chenko',0)">0</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="chenko" data-level="1" onclick="setCastleHeroLevel('chenko',1)">1</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="chenko" data-level="2" onclick="setCastleHeroLevel('chenko',2)">2</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="chenko" data-level="3" onclick="setCastleHeroLevel('chenko',3)">3</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="chenko" data-level="4" onclick="setCastleHeroLevel('chenko',4)">4</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="chenko" data-level="5" onclick="setCastleHeroLevel('chenko',5)">5</button>
           </div>
         </div>
-      `:`
-        <div class="turtle-pending-row">
-          <span>답변 대기중</span>
+
+        <div class="castle-hero-card">
+          <input type="hidden" class="castle-hero-level-input" data-hero="yeonwoo" value="0" />
+          <div class="castle-hero-name">연우</div>
+          <div class="castle-hero-levels">
+            <button type="button" class="castle-hero-level-btn" data-hero="yeonwoo" data-level="0" onclick="setCastleHeroLevel('yeonwoo',0)">0</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="yeonwoo" data-level="1" onclick="setCastleHeroLevel('yeonwoo',1)">1</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="yeonwoo" data-level="2" onclick="setCastleHeroLevel('yeonwoo',2)">2</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="yeonwoo" data-level="3" onclick="setCastleHeroLevel('yeonwoo',3)">3</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="yeonwoo" data-level="4" onclick="setCastleHeroLevel('yeonwoo',4)">4</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="yeonwoo" data-level="5" onclick="setCastleHeroLevel('yeonwoo',5)">5</button>
+          </div>
         </div>
-      `}
+
+        <div class="castle-hero-card">
+          <input type="hidden" class="castle-hero-level-input" data-hero="margo" value="0" />
+          <div class="castle-hero-name">마르고</div>
+          <div class="castle-hero-levels">
+            <button type="button" class="castle-hero-level-btn" data-hero="margo" data-level="0" onclick="setCastleHeroLevel('margo',0)">0</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="margo" data-level="1" onclick="setCastleHeroLevel('margo',1)">1</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="margo" data-level="2" onclick="setCastleHeroLevel('margo',2)">2</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="margo" data-level="3" onclick="setCastleHeroLevel('margo',3)">3</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="margo" data-level="4" onclick="setCastleHeroLevel('margo',4)">4</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="margo" data-level="5" onclick="setCastleHeroLevel('margo',5)">5</button>
+          </div>
+        </div>
+
+        <div class="castle-hero-card">
+          <input type="hidden" class="castle-hero-level-input" data-hero="amane" value="0" />
+          <div class="castle-hero-name">아마네</div>
+          <div class="castle-hero-levels">
+            <button type="button" class="castle-hero-level-btn" data-hero="amane" data-level="0" onclick="setCastleHeroLevel('amane',0)">0</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="amane" data-level="1" onclick="setCastleHeroLevel('amane',1)">1</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="amane" data-level="2" onclick="setCastleHeroLevel('amane',2)">2</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="amane" data-level="3" onclick="setCastleHeroLevel('amane',3)">3</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="amane" data-level="4" onclick="setCastleHeroLevel('amane',4)">4</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="amane" data-level="5" onclick="setCastleHeroLevel('amane',5)">5</button>
+          </div>
+        </div>
+
+        <div class="castle-hero-card">
+          <input type="hidden" class="castle-hero-level-input" data-hero="eric" value="0" />
+          <div class="castle-hero-name">에릭</div>
+          <div class="castle-hero-levels">
+            <button type="button" class="castle-hero-level-btn" data-hero="eric" data-level="0" onclick="setCastleHeroLevel('eric',0)">0</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="eric" data-level="1" onclick="setCastleHeroLevel('eric',1)">1</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="eric" data-level="2" onclick="setCastleHeroLevel('eric',2)">2</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="eric" data-level="3" onclick="setCastleHeroLevel('eric',3)">3</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="eric" data-level="4" onclick="setCastleHeroLevel('eric',4)">4</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="eric" data-level="5" onclick="setCastleHeroLevel('eric',5)">5</button>
+          </div>
+        </div>
+
+        <div class="castle-hero-card">
+          <input type="hidden" class="castle-hero-level-input" data-hero="salo" value="0" />
+          <div class="castle-hero-name">살로</div>
+          <div class="castle-hero-levels">
+            <button type="button" class="castle-hero-level-btn" data-hero="salo" data-level="0" onclick="setCastleHeroLevel('salo',0)">0</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="salo" data-level="1" onclick="setCastleHeroLevel('salo',1)">1</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="salo" data-level="2" onclick="setCastleHeroLevel('salo',2)">2</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="salo" data-level="3" onclick="setCastleHeroLevel('salo',3)">3</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="salo" data-level="4" onclick="setCastleHeroLevel('salo',4)">4</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="salo" data-level="5" onclick="setCastleHeroLevel('salo',5)">5</button>
+          </div>
+        </div>
+
+        <div class="castle-hero-card">
+          <input type="hidden" class="castle-hero-level-input" data-hero="littlefera" value="0" />
+          <div class="castle-hero-name">리틀페라</div>
+          <div class="castle-hero-levels">
+            <button type="button" class="castle-hero-level-btn" data-hero="littlefera" data-level="0" onclick="setCastleHeroLevel('littlefera',0)">0</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="littlefera" data-level="1" onclick="setCastleHeroLevel('littlefera',1)">1</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="littlefera" data-level="2" onclick="setCastleHeroLevel('littlefera',2)">2</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="littlefera" data-level="3" onclick="setCastleHeroLevel('littlefera',3)">3</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="littlefera" data-level="4" onclick="setCastleHeroLevel('littlefera',4)">4</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="littlefera" data-level="5" onclick="setCastleHeroLevel('littlefera',5)">5</button>
+          </div>
+        </div>
+
+        <div class="castle-hero-card">
+          <input type="hidden" class="castle-hero-level-input" data-hero="marine" value="0" />
+          <div class="castle-hero-name">마린</div>
+          <div class="castle-hero-levels">
+            <button type="button" class="castle-hero-level-btn" data-hero="marine" data-level="0" onclick="setCastleHeroLevel('marine',0)">0</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="marine" data-level="1" onclick="setCastleHeroLevel('marine',1)">1</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="marine" data-level="2" onclick="setCastleHeroLevel('marine',2)">2</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="marine" data-level="3" onclick="setCastleHeroLevel('marine',3)">3</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="marine" data-level="4" onclick="setCastleHeroLevel('marine',4)">4</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="marine" data-level="5" onclick="setCastleHeroLevel('marine',5)">5</button>
+          </div>
+        </div>
+
+        <div class="castle-hero-card">
+          <input type="hidden" class="castle-hero-level-input" data-hero="rosa" value="0" />
+          <div class="castle-hero-name">로사</div>
+          <div class="castle-hero-levels">
+            <button type="button" class="castle-hero-level-btn" data-hero="rosa" data-level="0" onclick="setCastleHeroLevel('rosa',0)">0</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="rosa" data-level="1" onclick="setCastleHeroLevel('rosa',1)">1</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="rosa" data-level="2" onclick="setCastleHeroLevel('rosa',2)">2</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="rosa" data-level="3" onclick="setCastleHeroLevel('rosa',3)">3</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="rosa" data-level="4" onclick="setCastleHeroLevel('rosa',4)">4</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="rosa" data-level="5" onclick="setCastleHeroLevel('rosa',5)">5</button>
+          </div>
+        </div>
+
+        <div class="castle-hero-card">
+          <input type="hidden" class="castle-hero-level-input" data-hero="alka" value="0" />
+          <div class="castle-hero-name">알카</div>
+          <div class="castle-hero-levels">
+            <button type="button" class="castle-hero-level-btn" data-hero="alka" data-level="0" onclick="setCastleHeroLevel('alka',0)">0</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="alka" data-level="1" onclick="setCastleHeroLevel('alka',1)">1</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="alka" data-level="2" onclick="setCastleHeroLevel('alka',2)">2</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="alka" data-level="3" onclick="setCastleHeroLevel('alka',3)">3</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="alka" data-level="4" onclick="setCastleHeroLevel('alka',4)">4</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="alka" data-level="5" onclick="setCastleHeroLevel('alka',5)">5</button>
+          </div>
+        </div>
+
+        <div class="castle-hero-card">
+          <input type="hidden" class="castle-hero-level-input" data-hero="fad" value="0" />
+          <div class="castle-hero-name">파드</div>
+          <div class="castle-hero-levels">
+            <button type="button" class="castle-hero-level-btn" data-hero="fad" data-level="0" onclick="setCastleHeroLevel('fad',0)">0</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="fad" data-level="1" onclick="setCastleHeroLevel('fad',1)">1</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="fad" data-level="2" onclick="setCastleHeroLevel('fad',2)">2</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="fad" data-level="3" onclick="setCastleHeroLevel('fad',3)">3</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="fad" data-level="4" onclick="setCastleHeroLevel('fad',4)">4</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="fad" data-level="5" onclick="setCastleHeroLevel('fad',5)">5</button>
+          </div>
+        </div>
+
+        <div class="castle-hero-card">
+          <input type="hidden" class="castle-hero-level-input" data-hero="queen" value="0" />
+          <div class="castle-hero-name">퀸</div>
+          <div class="castle-hero-levels">
+            <button type="button" class="castle-hero-level-btn" data-hero="queen" data-level="0" onclick="setCastleHeroLevel('queen',0)">0</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="queen" data-level="1" onclick="setCastleHeroLevel('queen',1)">1</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="queen" data-level="2" onclick="setCastleHeroLevel('queen',2)">2</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="queen" data-level="3" onclick="setCastleHeroLevel('queen',3)">3</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="queen" data-level="4" onclick="setCastleHeroLevel('queen',4)">4</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="queen" data-level="5" onclick="setCastleHeroLevel('queen',5)">5</button>
+          </div>
+        </div>
+
+        <div class="castle-hero-card">
+          <input type="hidden" class="castle-hero-level-input" data-hero="howard" value="0" />
+          <div class="castle-hero-name">하워드</div>
+          <div class="castle-hero-levels">
+            <button type="button" class="castle-hero-level-btn" data-hero="howard" data-level="0" onclick="setCastleHeroLevel('howard',0)">0</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="howard" data-level="1" onclick="setCastleHeroLevel('howard',1)">1</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="howard" data-level="2" onclick="setCastleHeroLevel('howard',2)">2</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="howard" data-level="3" onclick="setCastleHeroLevel('howard',3)">3</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="howard" data-level="4" onclick="setCastleHeroLevel('howard',4)">4</button>
+            <button type="button" class="castle-hero-level-btn" data-hero="howard" data-level="5" onclick="setCastleHeroLevel('howard',5)">5</button>
+          </div>
+        </div>
+      </div>
     </div>
-  `;
-}
-
-function scrollTurtleChatToTop(){
-  const list=document.getElementById("turtleChatList");
-  if(!list)return;
-  list.scrollTop=0;
-}
-
-function scrollTurtleChatToBottom(){
-  const list=document.getElementById("turtleChatList");
-  if(!list)return;
-
-  list.scrollTop=list.scrollHeight;
-}
-
-async function submitTurtleQuestion(){
-  const item=state.currentTurtleSoupData;
-  const input=document.getElementById("turtleChatInput");
-  const question=String(input?.value||"").trim();
 
-  if(!item)return;
-
-  if(!question){
-    input?.focus();
-    return;
-  }
-
-  if(question.length>200){
-    alert("질문은 200자 이하로 입력하세요.");
-    return;
-  }
-
-  input.value="";
-
-  await turtleSoupCommentsRef(item.id).add({
-    asker:state.currentUser,
-    question,
-    answer:"",
-    answeredBy:"",
-    isSpoiler:false,
-    createdAt:firebase.firestore.FieldValue.serverTimestamp(),
-    answeredAt:null
-  });
-
-  await turtleSoupRef(item.id).set({
-    questionCount:firebase.firestore.FieldValue.increment(1),
-    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
-  },{merge:true});
-
-  await createAppNotification(item.creator,{
-    type:"turtle_question",
-    title:"새 질문",
-    message:`${state.currentUser}님이 질문을 남겼습니다: ${question}`,
-    soupId:item.id,
-    soupTitle:item.title||""
-  });
-}
-
-window.submitTurtleQuestion=submitTurtleQuestion;
-
-function startTurtleAnswerMode(commentId){
-  state.answeringTurtleCommentId=commentId;
-  renderTurtleSoupDetail();
-
-  setTimeout(()=>{
-    document.getElementById("turtleChatInput")?.focus();
-  },0);
-}
-
-window.startTurtleAnswerMode=startTurtleAnswerMode;
-
-function cancelTurtleAnswerMode(){
-  state.answeringTurtleCommentId="";
-  renderTurtleSoupDetail();
-}
-
-window.cancelTurtleAnswerMode=cancelTurtleAnswerMode;
-
-function openTurtleSubmitPanel(){
-  state.isTurtleSubmitPanelOpen=true;
-  renderTurtleSoupDetail();
-
-  setTimeout(()=>{
-    document.getElementById("turtleFinalAnswerInput")?.focus();
-  },0);
-}
-
-window.openTurtleSubmitPanel=openTurtleSubmitPanel;
-
-function closeTurtleSubmitPanel(){
-  state.isTurtleSubmitPanelOpen=false;
-  renderTurtleSoupDetail();
-}
-
-window.closeTurtleSubmitPanel=closeTurtleSubmitPanel;
-
-async function submitTurtleQuickAnswer(answer){
-  await saveTurtleAnswer(answer);
-}
-
-window.submitTurtleQuickAnswer=submitTurtleQuickAnswer;
-
-async function submitTurtleCustomAnswer(){
-  const input=document.getElementById("turtleChatInput");
-  const answer=String(input?.value||"").trim();
-
-  if(!answer){
-    input?.focus();
-    return;
-  }
-
-  await saveTurtleAnswer(answer);
-}
-
-window.submitTurtleCustomAnswer=submitTurtleCustomAnswer;
-
-async function toggleTurtleQuestionSpoiler(commentId,nextValue){
-  const item=state.currentTurtleSoupData;
-
-  if(!item||!commentId)return;
-
-  if(item.creator!==state.currentUser){
-    alert("출제자만 가리기 처리할 수 있습니다.");
-    return;
-  }
-  
-  await turtleSoupCommentsRef(item.id).doc(commentId).set({
-    isSpoiler:!!nextValue
-  },{merge:true});
-}
-
-window.toggleTurtleQuestionSpoiler=toggleTurtleQuestionSpoiler;
-
-async function deleteTurtleComment(commentId){
-  const item=state.currentTurtleSoupData;
-
-  if(!item||!commentId)return;
-
-  if(item.creator!==state.currentUser){
-    alert("출제자만 질문을 삭제할 수 있습니다.");
-    return;
-  }
-
-  if(!confirm("이 질문과 답변을 삭제하시겠습니까?"))return;
-
-  const batch=db.batch();
-
-await turtleSoupCommentsRef(item.id).doc(commentId).delete();
-
-const snap=await turtleSoupCommentsRef(item.id).get();
-
-await turtleSoupRef(item.id).set({
-  questionCount:snap.size,
-  updatedAt:firebase.firestore.FieldValue.serverTimestamp()
-},{merge:true});
-
-  await batch.commit();
-
-  if(state.answeringTurtleCommentId===commentId){
-    state.answeringTurtleCommentId="";
-  }
-}
-
-window.deleteTurtleComment=deleteTurtleComment;
-
-async function saveTurtleAnswer(answer){
-  const item=state.currentTurtleSoupData;
-  const commentId=state.answeringTurtleCommentId;
-  const comment=state.currentTurtleComments.find(v=>v.id===commentId)||null;
-
-  if(!item||!commentId)return;
-
-  if(item.creator!==state.currentUser){
-    alert("출제자만 답변할 수 있습니다.");
-    return;
-  }
-
-  await turtleSoupCommentsRef(item.id).doc(commentId).set({
-    answer,
-    answeredBy:state.currentUser,
-    answeredAt:firebase.firestore.FieldValue.serverTimestamp()
-  },{merge:true});
-
-  if(comment?.asker){
-    await createAppNotification(comment.asker,{
-      type:"turtle_answer",
-      title:"질문 답변 도착",
-      message:`${item.title||"바다거북스프"}에 남긴 질문에 답변이 달렸습니다.`,
-      soupId:item.id,
-      soupTitle:item.title||""
-    });
-  }
-  
-  state.answeringTurtleCommentId="";
-  renderTurtleSoupDetail();
-}
-
-async function submitTurtleFinalAnswer(){
-  const item=state.currentTurtleSoupData;
-  const input=document.getElementById("turtleFinalAnswerInput");
-  const value=normalizeLabyrinthText(input?.value||"");
-
-  if(!item)return;
-
-  if(item.creator===state.currentUser){
-    alert("출제자는 정답을 제출할 수 없습니다.");
-    return;
-  }
-
-  if(state.currentTurtlePlayer?.isCleared){
-    alert("이미 완료한 문제입니다.");
-    return;
-  }
-
-  if(!value){
-    input?.focus();
-    return;
-  }
-
-  await turtleSoupSubmissionsRef(item.id).add({
-    user:state.currentUser,
-    answerText:value,
-    status:"pending",
-    judgedBy:"",
-    submittedAt:firebase.firestore.FieldValue.serverTimestamp(),
-    judgedAt:null
-  });
-
-  await turtleSoupPlayerRef(item.id,state.currentUser).set({
-    nickname:state.currentUser,
-    startedAt:state.currentTurtlePlayer?.startedAt||firebase.firestore.FieldValue.serverTimestamp(),
-    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
-  },{merge:true});
-
-  await createAppNotification(item.creator,{
-    type:"turtle_submission",
-    title:"정답 제출",
-    message:`${state.currentUser}님이 정답을 제출했습니다.`,
-    soupId:item.id,
-    soupTitle:item.title||""
-  });
-  
-  input.value="";
-  state.isTurtleSubmitPanelOpen=false;
-  renderTurtleSoupDetail();
-  alert("정답이 제출되었습니다. 출제자 판정을 기다려 주세요.");
-}
-
-window.submitTurtleFinalAnswer=submitTurtleFinalAnswer;
-
-async function judgeTurtleSubmission(submissionId,status,user){
-  const item=state.currentTurtleSoupData;
-
-  if(!item||!submissionId||!user)return;
-
-  if(item.creator!==state.currentUser){
-    alert("출제자만 판정할 수 있습니다.");
-    return;
-  }
-
-  if(status!=="correct"&&status!=="wrong"){
-    alert("판정 값이 올바르지 않습니다.");
-    return;
-  }
-
-  const now=firebase.firestore.FieldValue.serverTimestamp();
-  const batch=db.batch();
-
-  batch.set(turtleSoupSubmissionsRef(item.id).doc(submissionId),{
-    status,
-    judgedBy:state.currentUser,
-    judgedAt:now
-  },{merge:true});
-
-  if(status==="correct"){
-    batch.set(turtleSoupPlayerRef(item.id,user),{
-      nickname:user,
-      isCleared:true,
-      clearedAt:now,
-      updatedAt:now
-    },{merge:true});
-  }
-
-  await batch.commit();
-
-  await createAppNotification(user,{
-    type:"turtle_judged",
-    title:status==="correct"?"정답 처리됨":"오답 처리됨",
-    message:`${item.title||"바다거북스프"} 제출 답안이 ${status==="correct"?"정답":"오답"} 처리되었습니다.`,
-    soupId:item.id,
-    soupTitle:item.title||""
-  });
-}
-
-window.judgeTurtleSubmission=judgeTurtleSubmission;
-
-(function patchEscapeLabyrinthForTurtleSoup(){
-  const original=window.subscribeEscapeLabyrinthHome;
-
-  if(typeof original==="function"){
-    window.subscribeEscapeLabyrinthHome=function(){
-      original();
-      subscribeTurtleSoups();
-    };
-  }
-
-  const originalHome=window.openEscapeLabyrinthHome;
-
-  if(typeof originalHome==="function"){
-    window.openEscapeLabyrinthHome=function(skipResubscribe){
-      closeTurtleSoupDetail();
-      originalHome(skipResubscribe);
-      renderTurtleSoupList();
-    };
-  }
-})();
+    <div class="actions right-wrap castle-submit-actions">
+      <button type="button" onclick="submitCastleBattle()">신청</button>
+    </div>
+  </div>
+
+  <div id="createLabyrinthModal" class="modal hidden">
+    <div class="modal-header">
+      <h3>미궁 제작하기</h3>
+      <button class="close-btn" type="button" onclick="closeCreateLabyrinthModal()">닫기</button>
+    </div>
+    <div class="form-group">
+      <label for="labyrinthTitleInput">미궁 제목</label>
+      <input id="labyrinthTitleInput" class="text-input" type="text" placeholder="예: 사바나의 첨탑" />
+    </div>
+    <div class="form-group">
+      <label for="labyrinthDescriptionInput">미궁 설명</label>
+      <textarea id="labyrinthDescriptionInput" class="text-input labyrinth-textarea" placeholder="미궁 소개를 입력하세요."></textarea>
+    </div>
+    <div class="form-group">
+      <label for="labyrinthThumbnailTextInput">카드 한줄 문구</label>
+      <input id="labyrinthThumbnailTextInput" class="text-input" type="text" placeholder="예: 사바나가 지켜보는 탑" />
+    </div>
+    <div class="form-group">
+      <label class="checkbox-label"><input type="checkbox" id="labyrinthPublicCheckbox" />공개 미궁으로 설정</label>
+    </div>
+    <div class="form-group">
+      <label class="checkbox-label"><input type="checkbox" id="labyrinthOpenCheckbox" checked />플레이 가능 상태로 설정</label>
+    </div>
+    <div class="actions right-wrap">
+      <button type="button" onclick="submitCreateLabyrinth()">생성</button>
+    </div>
+  </div>
+
+  <div id="editLabyrinthModal" class="modal hidden">
+    <div class="modal-header">
+      <h3>미궁 정보 수정</h3>
+      <button class="close-btn" type="button" onclick="closeEditLabyrinthModal()">닫기</button>
+    </div>
+    <div class="form-group">
+      <label for="editLabyrinthTitleInput">미궁 제목</label>
+      <input id="editLabyrinthTitleInput" class="text-input" type="text" />
+    </div>
+    <div class="form-group">
+      <label for="editLabyrinthDescriptionInput">미궁 설명</label>
+      <textarea id="editLabyrinthDescriptionInput" class="text-input labyrinth-textarea"></textarea>
+    </div>
+    <div class="form-group">
+      <label for="editLabyrinthThumbnailTextInput">카드 한줄 문구</label>
+      <input id="editLabyrinthThumbnailTextInput" class="text-input" type="text" />
+    </div>
+    <div class="form-group">
+      <label class="checkbox-label"><input type="checkbox" id="editLabyrinthPublicCheckbox" />공개 미궁으로 설정</label>
+    </div>
+    <div class="form-group">
+      <label class="checkbox-label"><input type="checkbox" id="editLabyrinthOpenCheckbox" />플레이 가능 상태로 설정</label>
+    </div>
+    <div class="actions right-wrap">
+      <button type="button" onclick="submitEditLabyrinth()">저장</button>
+    </div>
+  </div>
+
+  <div id="createTurtleSoupModal" class="modal hidden">
+    <div class="modal-header">
+      <h3 id="turtleSoupModalTitle">바다거북스프 만들기</h3>
+      <button class="close-btn" type="button" onclick="closeCreateTurtleSoupModal()">닫기</button>
+    </div>
+
+    <div class="form-group">
+      <label for="turtleSoupTitleInput">문제 제목</label>
+      <input id="turtleSoupTitleInput" class="text-input" type="text" placeholder="예: 잠긴 방의 물컵" />
+    </div>
+
+    <div class="form-group">
+      <label for="turtleSoupDifficultySelect">난이도</label>
+      <select id="turtleSoupDifficultySelect" class="text-input">
+        <option value="0">☆☆☆☆☆ 0</option>
+        <option value="1">★☆☆☆☆ 1</option>
+        <option value="2">★★☆☆☆ 2</option>
+        <option value="3" selected>★★★☆☆ 3</option>
+        <option value="4">★★★★☆ 4</option>
+        <option value="5">★★★★★ 5</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="turtleSoupContentInput">문제 본문</label>
+      <textarea id="turtleSoupContentInput" class="text-input labyrinth-textarea" placeholder="사건 설명을 작성하세요."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="turtleSoupSolutionInput">문제 해설</label>
+      <textarea id="turtleSoupSolutionInput" class="text-input labyrinth-textarea" placeholder="정답 처리된 사람에게만 보여줄 해설을 작성하세요."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="checkbox-label"><input type="checkbox" id="turtleSoupPublicCheckbox" checked />공개</label>
+    </div>
+
+    <div class="actions right-wrap">
+      <button id="deleteTurtleSoupBtn" type="button" class="danger-btn hidden" onclick="deleteTurtleSoup()">삭제</button>
+      <button type="button" onclick="submitTurtleSoup()">저장</button>
+    </div>
+  </div>
+
+  <div id="editStageModal" class="modal hidden">
+    <div class="modal-header">
+      <h3 id="editStageModalTitle">단계 편집</h3>
+      <button class="close-btn" type="button" onclick="closeEditStageModal()">닫기</button>
+    </div>
+
+    <div class="form-group">
+      <label for="stageOrderInput">순서</label>
+      <input id="stageOrderInput" class="text-input" type="number" min="0" step="1" placeholder="예: 0" />
+    </div>
+
+    <div class="form-group">
+      <label for="stageTitleInput">단계 제목</label>
+      <input id="stageTitleInput" class="text-input" type="text" placeholder="예: 첨탑 입구 / 1층" />
+    </div>
+
+    <div class="form-group">
+      <label for="stageTypeSelect">단계 유형</label>
+      <select id="stageTypeSelect">
+        <option value="entry">입장형</option>
+        <option value="question">문제형</option>
+        <option value="final">최종형</option>
+      </select>
+    </div>
+
+    <input id="stageStoryInput" type="hidden" />
+    <input id="stageQuestionInput" type="hidden" />
+
+    <div class="form-group">
+      <label>단계 내용</label>
+      <div class="labyrinth-editor-toolbar">
+        <label class="labyrinth-editor-upload">
+          사진 삽입
+          <input id="stageContentImageInput" type="file" accept="image/*" hidden>
+        </label>
+        <button type="button" onclick="clearLabyrinthEditorContent()">본문 초기화</button>
+      </div>
+      <div id="stageContentEditor" class="labyrinth-content-editor" contenteditable="true" data-placeholder="스토리, 문제, 안내문, 사진을 자유롭게 작성하세요."></div>
+      <p class="muted form-help">기존 스토리/문제 내용은 이 편집기 안으로 합쳐서 불러옵니다.</p>
+    </div>
+
+    <div class="form-group" id="stageAnswerWrap">
+      <label for="stageAnswerInput">정답</label>
+      <input id="stageAnswerInput" class="text-input" type="text" placeholder="정답 입력" />
+    </div>
+
+    <div class="form-group" id="stagePlaceholderWrap">
+      <label for="stagePlaceholderInput">입력창 안내문</label>
+      <input id="stagePlaceholderInput" class="text-input" type="text" placeholder="예: 비밀번호를 입력하세요." />
+    </div>
+
+    <div class="form-group">
+      <label for="stageSuccessMessageInput">성공 메시지</label>
+      <textarea id="stageSuccessMessageInput" class="text-input labyrinth-textarea" placeholder="통과 시 보여줄 문구"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="checkbox-label"><input type="checkbox" id="stageActiveCheckbox" checked />활성 단계</label>
+    </div>
+
+    <div class="actions right-wrap">
+      <button id="deleteStageBtn" type="button" class="hidden" onclick="deleteStage()">삭제</button>
+      <button type="button" onclick="submitStage()">저장</button>
+    </div>
+  </div>
+
+  <script src="js/app-core.js?v=split-10"></script>
+  <script src="js/events-common.js?v=split-1"></script>
+  <script src="js/event-viking.js?v=split-1"></script>
+  <script src="js/event-ruins.js?v=split-1"></script>
+  <script src="js/event-holy-sword.js?v=split-1"></script>
+  <script src="js/event-triple.js?v=split-1"></script>
+  <script src="js/event-castle.js?v=split-1"></script>
+  <script src="js/event-rearrange.js?v=split-1"></script>
+  <script src="js/event-labyrinth.js?v=split-2"></script>
+  <script src="js/event-turtle.js?v=split-6"></script>
+  <script src="js/event-stack-tile.js?v=split-7"></script>
+  <script src="js/script.js?v=split-1"></script>
+</body>
+</html>
