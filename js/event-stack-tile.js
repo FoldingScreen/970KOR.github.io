@@ -1057,25 +1057,6 @@ function renderStackTileDifficultyButtons(){
   `;
 }
 
-  const slots=[];
-
-  for(let i=0;i<STACK_TILE_STORAGE_LIMIT;i++){
-    const tile=byIndex[i];
-
-    if(tile){
-      const pop=stackTileState.lastStoredTileIds.includes(tile.id)?"stored-pop":"";
-      slots.push(`
-        <button type="button" class="stack-tile-storage-board-tile ${pop}" onclick="handleStackTileClick('${tile.id}')">
-          ${tile.type}
-        </button>
-      `);
-    }else{
-      slots.push(`<div class="stack-tile-storage-board-slot"></div>`);
-    }
-  }
-
-  return`<div class="stack-tile-storage-board">${slots.join("")}</div>`;
-}
 
 function getStackTilePreviewIds(boardTiles){
   const ids=new Set();
