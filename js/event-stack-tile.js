@@ -463,40 +463,109 @@ function countStackTileSelectable(tiles){
   return tiles.filter(tile=>isStackTileSelectableFromList(tile,tiles)).length;
 }
 
+function getStackTileSelectableBoardTiles(tiles){
+  return tiles.filter(tile=>
+    tile &&
+    !tile.removed &&
+    tile.area==="board" &&
+    isStackTileSelectableFromList(tile,tiles)
+  );
+}
+
+function hasVisibleStackTileTriple(tiles){
+  const counts={};
+
+  getStackTileSelectableBoardTiles(tiles).forEach(tile=>{
+    counts[tile.type]=(counts[tile.type]||0)+1;
+  });
+
+  return Object.values(counts).some(count=>count>=3);
+}
+
+function assignStackTileTypesWithVisibleTriple(slots,config,attempt){
+  const baseTiles=slots.map((slot,idx)=>({
+    id:`stackTile_${Date.now()}_${attempt}_${idx}`,
+    type:"",
+    x:slot?.x||0,
+    y:slot?.y||0,
+    z:slot?.z||0,
+    area:"board",
+    removed:false,
+    storageIndex:null
+  }));
+
+  const selectable=getStackTileSelectableBoardTiles(baseTiles);
+
+  if(selectable.length<3){
+    const fallbackTypes=generateStackTileTypes(config);
+
+    return baseTiles.map((tile,idx)=>({
+      ...tile,
+      type:fallbackTypes[idx]||STACK_TILE_ICONS[0]
+    }));
+  }
+
+  const typePool=generateStackTileTypes(config);
+  const chosenType=randomPick(typePool);
+  const chosenSelectable=shuffleArray(selectable).slice(0,3);
+  const chosenIds=new Set(chosenSelectable.map(tile=>tile.id));
+
+  let removed=0;
+  const remainingTypes=[];
+
+  typePool.forEach(type=>{
+    if(type===chosenType&&removed<3){
+      removed++;
+      return;
+    }
+
+    remainingTypes.push(type);
+  });
+
+  const shuffledRemaining=shuffleArray(remainingTypes);
+
+  return baseTiles.map(tile=>{
+    if(chosenIds.has(tile.id)){
+      return{
+        ...tile,
+        type:chosenType
+      };
+    }
+
+    return{
+      ...tile,
+      type:shuffledRemaining.pop()||STACK_TILE_ICONS[0]
+    };
+  });
+}
+
 function createStackTileTiles(){
   const config=getStackTileConfig();
   let bestTiles=null;
   let bestScore=Infinity;
 
-  for(let attempt=0;attempt<60;attempt++){
+  for(let attempt=0;attempt<80;attempt++){
     const template=randomPick(config.templates);
     const slots=generateStackTileSlotsByTemplate(config,template);
-    const types=generateStackTileTypes(config);
-
-    const tiles=types.map((type,idx)=>({
-      id:`stackTile_${Date.now()}_${attempt}_${idx}`,
-      type,
-      x:slots[idx]?.x||0,
-      y:slots[idx]?.y||0,
-      z:slots[idx]?.z||0,
-      area:"board",
-      removed:false,
-      storageIndex:null
-    }));
+    const tiles=assignStackTileTypesWithVisibleTriple(slots,config,attempt);
 
     const selectable=countStackTileSelectable(tiles);
     const inRange=selectable>=config.selectableMin&&selectable<=config.selectableMax;
-    const score=inRange?0:Math.min(
-      Math.abs(selectable-config.selectableMin),
-      Math.abs(selectable-config.selectableMax)
-    );
+    const hasTriple=hasVisibleStackTileTriple(tiles);
+
+    const score=
+      (inRange?0:Math.min(
+        Math.abs(selectable-config.selectableMin),
+        Math.abs(selectable-config.selectableMax)
+      ))+
+      (hasTriple?0:100);
 
     if(score<bestScore){
       bestScore=score;
       bestTiles=tiles;
     }
 
-    if(inRange)return tiles;
+    if(inRange&&hasTriple)return tiles;
   }
 
   return bestTiles||[];
@@ -901,6 +970,53 @@ function useStackTileStore(){
 
 window.useStackTileStore=useStackTileStore;
 
+function ensureStackTileVisibleTripleAfterShuffle(){
+  const boardTiles=stackTileState.tiles.filter(tile=>tile.area==="board"&&!tile.removed);
+
+  if(boardTiles.length<3)return;
+  if(hasVisibleStackTileTriple(stackTileState.tiles))return;
+
+  const selectable=getStackTileSelectableBoardTiles(stackTileState.tiles);
+
+  if(selectable.length<3)return;
+
+  const typeMap={};
+
+  boardTiles.forEach(tile=>{
+    typeMap[tile.type]=typeMap[tile.type]||[];
+    typeMap[tile.type].push(tile);
+  });
+
+  const candidateTypes=Object.keys(typeMap).filter(type=>typeMap[type].length>=3);
+
+  if(!candidateTypes.length)return;
+
+  const chosenType=randomPick(candidateTypes);
+  const chosenTiles=shuffleArray(typeMap[chosenType]).slice(0,3);
+  const targetTiles=shuffleArray(selectable).slice(0,3);
+
+  chosenTiles.forEach((chosenTile,idx)=>{
+    const targetTile=targetTiles[idx];
+
+    if(!chosenTile||!targetTile)return;
+    if(chosenTile.id===targetTile.id)return;
+
+    const oldPos={
+      x:chosenTile.x,
+      y:chosenTile.y,
+      z:chosenTile.z
+    };
+
+    chosenTile.x=targetTile.x;
+    chosenTile.y=targetTile.y;
+    chosenTile.z=targetTile.z;
+
+    targetTile.x=oldPos.x;
+    targetTile.y=oldPos.y;
+    targetTile.z=oldPos.z;
+  });
+}
+
 function useStackTileShuffle(){
   if(stackTileState.status!=="playing")return;
   if(stackTileState.isAnimating)return;
@@ -908,27 +1024,29 @@ function useStackTileShuffle(){
 
   const boardTiles=stackTileState.tiles.filter(tile=>tile.area==="board"&&!tile.removed);
 
-  if(boardTiles.length<2)return;
+  if(boardTiles.length<3)return;
 
   saveStackTileHistory();
 
-  const positions=shuffleArray(boardTiles.map(tile=>({
+  const boardPositions=shuffleArray(boardTiles.map(tile=>({
     x:tile.x,
     y:tile.y,
     z:tile.z
   })));
 
   boardTiles.forEach((tile,idx)=>{
-    tile.x=positions[idx].x;
-    tile.y=positions[idx].y;
-    tile.z=positions[idx].z;
+    tile.x=boardPositions[idx].x;
+    tile.y=boardPositions[idx].y;
+    tile.z=boardPositions[idx].z;
   });
+
+  ensureStackTileVisibleTripleAfterShuffle();
 
   stackTileState.itemCounts.shuffle--;
   stackTileState.usedItems.shuffle++;
   stackTileState.itemPenalty+=STACK_TILE_SHUFFLE_PENALTY;
   addStackTileScore(-STACK_TILE_SHUFFLE_PENALTY,"SHUFFLE");
-  stackTileState.message=`보드에 남은 타일을 재배치했습니다. -${STACK_TILE_SHUFFLE_PENALTY}`;
+  stackTileState.message=`보드에 남은 타일을 재배치했습니다. 바로 맞출 수 있는 3개가 보입니다. -${STACK_TILE_SHUFFLE_PENALTY}`;
 
   renderStackTileGame();
 }
