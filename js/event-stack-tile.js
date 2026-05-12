@@ -651,7 +651,7 @@ function startStackTileTimer(){
 
   stackTileState.timerId=setInterval(()=>{
     if(stackTileState.status==="playing"||stackTileState.status==="paused"){
-      renderStackTileGame();
+      updateStackTileStatusTexts();
     }
   },1000);
 }
@@ -1140,12 +1140,32 @@ function renderStackTileStats(){
     <div class="stack-tile-statusbar">
       <div class="stack-tile-status-main">
         <span class="stack-tile-status-difficulty">${escapeHtml(config.label)}</span>
-        <span>타일 ${remaining}</span>
-        <span>${elapsed}</span>
-        <span class="stack-tile-score-stat">${finalScore.toLocaleString()}점${renderStackTileScoreFloaters()}</span>
+        <span>타일 <b id="stackTileRemainingText">${remaining}</b></span>
+        <span id="stackTileElapsedText">${elapsed}</span>
+        <span class="stack-tile-score-stat">
+          <b id="stackTileScoreText">${finalScore.toLocaleString()}</b>점${renderStackTileScoreFloaters()}
+        </span>
       </div>
     </div>
   `;
+}
+
+function updateStackTileStatusTexts(){
+  const elapsedEl=document.getElementById("stackTileElapsedText");
+  const remainingEl=document.getElementById("stackTileRemainingText");
+  const scoreEl=document.getElementById("stackTileScoreText");
+
+  if(elapsedEl){
+    elapsedEl.textContent=formatStackTileTime(getStackTileElapsedMs());
+  }
+
+  if(remainingEl){
+    remainingEl.textContent=String(getStackTileRemainingCount());
+  }
+
+  if(scoreEl){
+    scoreEl.textContent=calculateStackTileScore().toLocaleString();
+  }
 }
 
 function renderStackTileScoreFloaters(){
