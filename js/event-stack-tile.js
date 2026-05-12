@@ -1099,8 +1099,6 @@ async function saveStackTileRecord(){
 
   const finalScore=calculateStackTileScore();
   const clearTimeMs=getStackTileElapsedMs();
-  const docId=`${stackTileState.difficulty}_${state.currentUser}`;
-  const ref=getStackTileRecordsRef().doc(docId);
 
   const payload={
     nickname:state.currentUser,
@@ -1115,23 +1113,14 @@ async function saveStackTileRecord(){
     itemPenalty:stackTileState.itemPenalty,
     timeBonus:stackTileState.timeBonus,
     usedItems:{...stackTileState.usedItems},
+    createdAt:firebase.firestore.FieldValue.serverTimestamp(),
     updatedAt:firebase.firestore.FieldValue.serverTimestamp()
   };
 
   try{
-    const snap=await ref.get();
-    const prev=snap.exists?(snap.data()||{}):null;
-    const shouldSave=!prev||
-      finalScore>Number(prev.score||0)||
-      (finalScore===Number(prev.score||0)&&clearTimeMs<Number(prev.clearTimeMs||999999999));
+    await getStackTileRecordsRef().add(payload);
 
-    if(shouldSave){
-      await ref.set(payload,{merge:true});
-      stackTileState.message="신기록이 저장되었습니다.";
-    }else{
-      stackTileState.message="클리어! 기존 기록이 더 높습니다.";
-    }
-
+    stackTileState.message="클리어 기록이 저장되었습니다.";
     renderStackTileGame();
   }catch(err){
     console.error("겹겹타일 기록 저장 실패",err);
