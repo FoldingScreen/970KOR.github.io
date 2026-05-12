@@ -22,8 +22,6 @@ const STACK_TILE_DIFFICULTIES={
     types:8,
     total:48,
     layers:3,
-    shuffle:3,
-    store:3,
     multiplier:1,
     templates:["smallDiamond","multiPile"],
     selectableMin:10,
@@ -71,6 +69,16 @@ const STACK_TILE_MATCH_BASE=300;
 const STACK_TILE_SHUFFLE_PENALTY=250;
 const STACK_TILE_STORE_PENALTY=180;
 const STACK_TILE_TIME_BONUS_PER_SEC=5;
+
+function getStackTileShufflePenalty(){
+  const used=Number(stackTileState.usedItems.shuffle||0);
+  return 250 + used * 150;
+}
+
+function getStackTileStorePenalty(){
+  const used=Number(stackTileState.usedItems.store||0);
+  return 180 + used * 100;
+}
 
 const stackTileState={
   difficulty:"normal",
@@ -599,8 +607,8 @@ function resetStackTileRunWithTiles(tiles,message){
   stackTileState.scoreFloaters=[];
   stackTileState.usedItems={undo:0,shuffle:0,store:0};
   stackTileState.itemCounts={
-    shuffle:config.shuffle,
-    store:config.store
+    shuffle:Infinity,
+    store:Infinity
   };
   stackTileState.lastFeedbackTileId="";
   stackTileState.lastAddedTileId="";
@@ -922,7 +930,6 @@ function getStackTileEmptyStorageIndexes(){
 function useStackTileStore(){
   if(stackTileState.status!=="playing")return;
   if(stackTileState.isAnimating)return;
-  if(stackTileState.itemCounts.store<=0)return;
 
   const emptyIndexes=getStackTileEmptyStorageIndexes();
 
@@ -954,11 +961,12 @@ function useStackTileStore(){
   });
 
   stackTileState.lastStoredTileIds=[...targets];
-  stackTileState.itemCounts.store--;
-  stackTileState.usedItems.store++;
-  stackTileState.itemPenalty+=STACK_TILE_STORE_PENALTY;
-  addStackTileScore(-STACK_TILE_STORE_PENALTY,"STORE");
-  stackTileState.message=`대기열 앞 ${count}개를 보관했습니다. -${STACK_TILE_STORE_PENALTY}`;
+const penalty=getStackTileStorePenalty();
+
+stackTileState.usedItems.store++;
+stackTileState.itemPenalty+=penalty;
+addStackTileScore(-penalty,"STORE");
+stackTileState.message=`대기열 앞 ${count}개를 보관했습니다. -${penalty}`;
 
   renderStackTileGame();
 
@@ -1020,7 +1028,6 @@ function ensureStackTileVisibleTripleAfterShuffle(){
 function useStackTileShuffle(){
   if(stackTileState.status!=="playing")return;
   if(stackTileState.isAnimating)return;
-  if(stackTileState.itemCounts.shuffle<=0)return;
 
   const boardTiles=stackTileState.tiles.filter(tile=>tile.area==="board"&&!tile.removed);
 
@@ -1042,11 +1049,12 @@ function useStackTileShuffle(){
 
   ensureStackTileVisibleTripleAfterShuffle();
 
-  stackTileState.itemCounts.shuffle--;
-  stackTileState.usedItems.shuffle++;
-  stackTileState.itemPenalty+=STACK_TILE_SHUFFLE_PENALTY;
-  addStackTileScore(-STACK_TILE_SHUFFLE_PENALTY,"SHUFFLE");
-  stackTileState.message=`보드에 남은 타일을 재배치했습니다. 바로 맞출 수 있는 3개가 보입니다. -${STACK_TILE_SHUFFLE_PENALTY}`;
+const penalty=getStackTileShufflePenalty();
+
+stackTileState.usedItems.shuffle++;
+stackTileState.itemPenalty+=penalty;
+addStackTileScore(-penalty,"SHUFFLE");
+stackTileState.message=`보드에 남은 타일을 재배치했습니다. 바로 맞출 수 있는 3개가 보입니다. -${penalty}`;
 
   renderStackTileGame();
 }
@@ -1330,12 +1338,12 @@ function renderStackTileItems(){
       <button type="button" onclick="useStackTileUndo()" ${!stackTileState.history.length||disabled?"disabled":""}>
         실행취소 ∞
       </button>
-      <button type="button" onclick="useStackTileShuffle()" ${stackTileState.itemCounts.shuffle<=0||disabled?"disabled":""}>
-        재배치 ${stackTileState.itemCounts.shuffle}
-      </button>
-      <button type="button" onclick="useStackTileStore()" ${stackTileState.itemCounts.store<=0||disabled?"disabled":""}>
-        보관 ${stackTileState.itemCounts.store}
-      </button>
+<button type="button" onclick="useStackTileShuffle()" ${disabled?"disabled":""}>
+  재배치 -${getStackTileShufflePenalty()}
+</button>
+<button type="button" onclick="useStackTileStore()" ${disabled?"disabled":""}>
+  보관 -${getStackTileStorePenalty()}
+</button>
       <button type="button" onclick="pauseStackTileGame()" ${disabled?"disabled":""}>
         일시정지
       </button>
