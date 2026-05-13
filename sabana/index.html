@@ -927,9 +927,14 @@ function resizeCanvasForDevice() {
     canvas.height = 540;
   }
 }
-    let currentChoiceMode = "growth";
-    let pendingAugmentAfterGrowth = false;
-    let rerollsLeft = 0;
+
+let state = null;
+let lastTs = 0;
+let loopId = null;
+let currentChoices = [];
+let currentChoiceMode = "growth";
+let pendingAugmentAfterGrowth = false;
+let rerollsLeft = 0;
 
     function makeState(weapon) {
       const u = meta.upgrades;
@@ -3011,6 +3016,8 @@ window.addEventListener("resize", () => {
   resizeCanvasForDevice();
   updateUi();
 });
+
+updateUi();
   </script>
 </body>
 </html>
