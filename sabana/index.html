@@ -1,1 +1,1594 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JSON Survivors MVP</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #0f172a;
+      color: #f8fafc;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 16px;
+    }
+
+    .app {
+      width: min(1200px, 100%);
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 14px;
+    }
+
+    .panel {
+      background: #111827;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .topbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: #020617;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 13px;
+    }
+
+    .topbar strong {
+      color: #fff;
+      font-size: 15px;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #020617;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background:
+        radial-gradient(circle at 20% 30%, rgba(37, 99, 235, 0.16), transparent 28%),
+        radial-gradient(circle at 80% 70%, rgba(168, 85, 247, 0.12), transparent 30%),
+        #020617;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.82);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 20;
+    }
+
+    .overlay.show {
+      display: flex;
+    }
+
+    .modal {
+      width: min(720px, 94%);
+      max-height: 90%;
+      overflow-y: auto;
+      background: #111827;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .modal h1,
+    .modal h2 {
+      margin: 0 0 10px;
+    }
+
+    .modal p {
+      color: #cbd5e1;
+      line-height: 1.5;
+      margin: 8px 0 14px;
+      font-size: 14px;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .card {
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 14px;
+      background: #1f2937;
+      padding: 12px;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: #60a5fa;
+      background: #263244;
+    }
+
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+    }
+
+    .card .desc {
+      font-size: 13px;
+      color: #cbd5e1;
+      line-height: 1.4;
+    }
+
+    .badge-row {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .badge {
+      padding: 3px 7px;
+      border-radius: 999px;
+      background: rgba(59, 130, 246, 0.16);
+      color: #bfdbfe;
+      font-size: 11px;
+    }
+
+    .grade-basic { color: #d1d5db; }
+    .grade-normal { color: #93c5fd; }
+    .grade-advanced { color: #86efac; }
+    .grade-rare { color: #c4b5fd; }
+    .grade-legendary { color: #facc15; }
+
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 14px;
+      color: #fff;
+      background: #2563eb;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    .side {
+      padding: 14px;
+    }
+
+    .side h2 {
+      margin: 0 0 10px;
+      font-size: 18px;
+    }
+
+    .side-section {
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .side-section:last-child {
+      border-bottom: 0;
+    }
+
+    .small {
+      color: #cbd5e1;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 13px;
+    }
+
+    .list-item {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 8px;
+      border-radius: 10px;
+    }
+
+    .toast {
+      position: absolute;
+      left: 50%;
+      top: 80px;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.94);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      padding: 10px 14px;
+      border-radius: 999px;
+      color: #fef3c7;
+      font-weight: 800;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 30;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-6px);
+    }
+
+    @media (max-width: 1000px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="panel">
+      <div class="topbar">
+        <div>시간 <strong id="uiTime">00:00</strong></div>
+        <div>HP <strong id="uiHp">100/100</strong></div>
+        <div>Lv <strong id="uiLevel">1</strong></div>
+        <div>EXP <strong id="uiExp">0/100</strong></div>
+        <div>증강 <strong id="uiAugmentCount">0/6</strong></div>
+        <div>처치 <strong id="uiKills">0</strong></div>
+        <div>코인 <strong id="uiCoins">0</strong></div>
+      </div>
+
+      <div class="canvas-wrap">
+        <canvas id="gameCanvas" width="960" height="540"></canvas>
+        <div id="toast" class="toast"></div>
+
+        <div id="startOverlay" class="overlay show">
+          <div class="modal">
+            <h1>JSON Survivors MVP</h1>
+            <p>
+              기본 무기를 하나 고른 뒤, 시작 증강 1개를 선택합니다.
+              전투 중 Lv.5 / 10 / 15 / 20 / 25에서 신규 증강을 추가로 선택합니다.
+            </p>
+            <h2>기본 무기 선택</h2>
+            <div id="weaponCards" class="cards"></div>
+          </div>
+        </div>
+
+        <div id="choiceOverlay" class="overlay">
+          <div class="modal">
+            <h2 id="choiceTitle">선택</h2>
+            <p id="choiceDesc"></p>
+            <div id="choiceCards" class="cards"></div>
+          </div>
+        </div>
+
+        <div id="resultOverlay" class="overlay">
+          <div class="modal">
+            <h2 id="resultTitle">결과</h2>
+            <p id="resultDesc"></p>
+            <button onclick="restartToTitle()">처음으로</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="panel side">
+      <div class="side-section">
+        <h2>현재 무기</h2>
+        <div id="sideWeapon" class="small">선택 전</div>
+      </div>
+
+      <div class="side-section">
+        <h2>보유 증강</h2>
+        <div id="sideAugments" class="list"></div>
+      </div>
+
+      <div class="side-section">
+        <h2>시너지</h2>
+        <div id="sideSynergies" class="list"></div>
+      </div>
+
+      <div class="side-section">
+        <h2>발현</h2>
+        <div id="sideAwakenings" class="list"></div>
+      </div>
+
+      <div class="side-section small">
+        <strong>조작</strong><br />
+        WASD / 방향키 이동<br />
+        공격은 자동<br /><br />
+        Lv.30 이후 초과 EXP 1000마다 회복/보호막/코인/연구포인트 보너스가 랜덤 지급됩니다.
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const ui = {
+      time: document.getElementById("uiTime"),
+      hp: document.getElementById("uiHp"),
+      level: document.getElementById("uiLevel"),
+      exp: document.getElementById("uiExp"),
+      augCount: document.getElementById("uiAugmentCount"),
+      kills: document.getElementById("uiKills"),
+      coins: document.getElementById("uiCoins"),
+      sideWeapon: document.getElementById("sideWeapon"),
+      sideAugments: document.getElementById("sideAugments"),
+      sideSynergies: document.getElementById("sideSynergies"),
+      sideAwakenings: document.getElementById("sideAwakenings"),
+      toast: document.getElementById("toast")
+    };
+
+    const startOverlay = document.getElementById("startOverlay");
+    const choiceOverlay = document.getElementById("choiceOverlay");
+    const resultOverlay = document.getElementById("resultOverlay");
+    const weaponCards = document.getElementById("weaponCards");
+    const choiceCards = document.getElementById("choiceCards");
+    const choiceTitle = document.getElementById("choiceTitle");
+    const choiceDesc = document.getElementById("choiceDesc");
+    const resultTitle = document.getElementById("resultTitle");
+    const resultDesc = document.getElementById("resultDesc");
+
+    const keys = new Set();
+
+    const EXP_TO_NEXT = [
+      0,
+      100, 100, 100, 200, 200,
+      200, 300, 300, 300, 400,
+      400, 400, 500, 500, 600,
+      600, 700, 700, 800, 900,
+      900, 1000, 1000, 1100, 1200,
+      1300, 1400, 1500, 1600
+    ];
+
+    const AUGMENT_LEVELS = new Set([5, 10, 15, 20, 25]);
+    const MAX_LEVEL = 30;
+    const GAME_LIMIT_MS = 15 * 60 * 1000;
+    const OVER_EXP_REWARD = 1000;
+
+    const GRADE_LABEL = {
+      basic: "초급",
+      normal: "일반",
+      advanced: "고급",
+      rare: "희귀",
+      legendary: "전설"
+    };
+
+    const GRADE_CLASS = {
+      basic: "grade-basic",
+      normal: "grade-normal",
+      advanced: "grade-advanced",
+      rare: "grade-rare",
+      legendary: "grade-legendary"
+    };
+
+    const WEAPONS = [
+      {
+        id: "magic_staff",
+        name: "마력탄 지팡이",
+        desc: "가장 가까운 적에게 마력탄을 자동 발사합니다.",
+        tags: ["magic", "projectile"],
+        color: "#93c5fd",
+        base: { damage: 20, intervalMs: 900, projectileSpeed: 520, pierce: 0, projectileCount: 1, radius: 5 }
+      },
+      {
+        id: "flame_heart",
+        name: "화염 심장",
+        desc: "플레이어 주변에 지속 피해를 주는 화염 오라를 생성합니다.",
+        tags: ["fire", "aura", "area"],
+        color: "#fb7185",
+        base: { damage: 8, intervalMs: 450, auraRadius: 82 }
+      },
+      {
+        id: "orbit_axe",
+        name: "회전 도끼",
+        desc: "주변을 회전하는 도끼가 적에게 접촉 피해를 줍니다.",
+        tags: ["orbit", "physical"],
+        color: "#fbbf24",
+        base: { damage: 18, orbitRadius: 72, orbitSpeed: 2.6, axeCount: 1, axeRadius: 9 }
+      }
+    ];
+
+    const AUGMENTS = [
+      {
+        id: "damage_amp",
+        name: "피해 증폭",
+        grade: "basic",
+        desc: "무기 피해가 15% 증가합니다.",
+        synergies: [],
+        apply(state) { state.mods.damageMul *= 1.15; }
+      },
+      {
+        id: "fast_cast",
+        name: "빠른 시전",
+        grade: "basic",
+        desc: "무기 발동 간격이 8% 감소합니다.",
+        synergies: [],
+        apply(state) { state.mods.cooldownMul *= 0.92; }
+      },
+      {
+        id: "wide_hit",
+        name: "넓은 타격",
+        grade: "basic",
+        desc: "범위와 오라 반경이 10% 증가합니다.",
+        synergies: [],
+        apply(state) { state.mods.areaMul *= 1.1; }
+      },
+      {
+        id: "move_training",
+        name: "빠른 발걸음",
+        grade: "basic",
+        desc: "이동속도가 8% 증가합니다.",
+        synergies: [],
+        apply(state) { state.player.speed *= 1.08; }
+      },
+      {
+        id: "magnet_sense",
+        name: "자석 감각",
+        grade: "basic",
+        desc: "경험치 흡수 범위가 증가합니다.",
+        synergies: [],
+        apply(state) { state.player.magnetRange += 35; }
+      },
+
+      {
+        id: "mana_amp",
+        name: "마나 증폭",
+        grade: "normal",
+        desc: "magic 피해가 증가합니다. 마법 폭주 +1",
+        synergies: [{ setId: "magic_overload", value: 1 }],
+        apply(state) { state.tagMods.magic = (state.tagMods.magic || 1) * 1.16; }
+      },
+      {
+        id: "flame_heat",
+        name: "불꽃 가열",
+        grade: "normal",
+        desc: "fire 피해가 증가합니다. 화염 재앙 +1",
+        synergies: [{ setId: "fire_disaster", value: 1 }],
+        apply(state) { state.tagMods.fire = (state.tagMods.fire || 1) * 1.16; }
+      },
+      {
+        id: "orbit_tune",
+        name: "궤도 조율",
+        grade: "normal",
+        desc: "orbit 피해와 회전 속도가 증가합니다. 회전 병기 +1",
+        synergies: [{ setId: "orbit_weaponry", value: 1 }],
+        apply(state) {
+          state.tagMods.orbit = (state.tagMods.orbit || 1) * 1.15;
+          state.mods.orbitSpeedMul *= 1.12;
+        }
+      },
+      {
+        id: "guard_pose",
+        name: "방어 자세",
+        grade: "normal",
+        desc: "받는 피해가 감소합니다. 수호 방벽 +1",
+        synergies: [{ setId: "guardian_wall", value: 1 }],
+        apply(state) { state.player.damageReduction += 0.07; }
+      },
+      {
+        id: "execution_training",
+        name: "처형 연마",
+        grade: "normal",
+        desc: "체력이 낮은 적에게 추가 피해를 줍니다. 처형자 +1",
+        synergies: [{ setId: "executioner", value: 1 }],
+        apply(state) { state.mods.executeBonus += 0.2; }
+      },
+
+      {
+        id: "chain_reaction",
+        name: "연쇄 반응",
+        grade: "advanced",
+        desc: "투사체 적중 시 확률적으로 추가 탄환이 생성됩니다.",
+        synergies: [
+          { setId: "magic_overload", value: 1 },
+          { setId: "chain_amp", value: 1 }
+        ],
+        apply(state) { state.reactions.chainProjectile = true; }
+      },
+      {
+        id: "black_flame",
+        name: "검은 불씨",
+        grade: "advanced",
+        desc: "fire 피해가 dark 추가 피해를 일으킵니다.",
+        synergies: [
+          { setId: "fire_disaster", value: 1 },
+          { setId: "dark_ritual", value: 1 }
+        ],
+        apply(state) { state.reactions.blackFlame = true; }
+      },
+      {
+        id: "shield_overload",
+        name: "보호막 과부하",
+        grade: "advanced",
+        desc: "보호막 획득 시 주변 폭발을 일으킵니다.",
+        synergies: [
+          { setId: "guardian_wall", value: 1 },
+          { setId: "area_destruction", value: 1 }
+        ],
+        apply(state) { state.reactions.shieldOverload = true; }
+      },
+      {
+        id: "orbit_growth",
+        name: "회전 증식",
+        grade: "advanced",
+        desc: "회전 무기 수가 증가합니다.",
+        synergies: [
+          { setId: "orbit_weaponry", value: 1 },
+          { setId: "area_destruction", value: 1 }
+        ],
+        apply(state) { state.mods.extraOrbit += 1; }
+      },
+      {
+        id: "blood_chain",
+        name: "피의 연쇄",
+        grade: "advanced",
+        desc: "처치 시 회복하고 다음 공격이 강해집니다.",
+        synergies: [
+          { setId: "executioner", value: 1 },
+          { setId: "blood_pact", value: 1 }
+        ],
+        apply(state) { state.reactions.bloodChain = true; }
+      },
+
+      {
+        id: "holy_echo",
+        name: "심판의 메아리",
+        grade: "rare",
+        desc: "광역 피해 후 추가 빛줄기를 발생시킵니다.",
+        synergies: [
+          { setId: "holy_judgement", value: 1 },
+          { setId: "area_destruction", value: 1 },
+          { setId: "magic_overload", value: 1 }
+        ],
+        apply(state) { state.reactions.holyEcho = true; }
+      },
+      {
+        id: "berserk_reactor",
+        name: "광전사 반응로",
+        grade: "rare",
+        desc: "저체력 상태에서 피해와 쿨타임이 크게 강화됩니다.",
+        synergies: [
+          { setId: "berserker", value: 1 },
+          { setId: "blood_pact", value: 1 },
+          { setId: "executioner", value: 1 }
+        ],
+        apply(state) { state.reactions.berserk = true; }
+      },
+      {
+        id: "star_tuning",
+        name: "별의 조율",
+        grade: "rare",
+        desc: "투사체 계열이 별빛 탄환을 추가 생성합니다.",
+        synergies: [
+          { setId: "star_tuning", value: 1 },
+          { setId: "magic_overload", value: 1 },
+          { setId: "chain_amp", value: 1 }
+        ],
+        apply(state) { state.reactions.starShots = true; }
+      },
+
+      {
+        id: "eclipse_core",
+        name: "일식 핵",
+        grade: "legendary",
+        desc: "fire/dark/area/광전사 계열을 동시에 연결합니다.",
+        synergies: [
+          { setId: "fire_disaster", value: 1 },
+          { setId: "dark_ritual", value: 1 },
+          { setId: "area_destruction", value: 1 },
+          { setId: "berserker", value: 1 }
+        ],
+        apply(state) { state.reactions.eclipseCore = true; }
+      },
+      {
+        id: "infinite_engine",
+        name: "무한 동력",
+        grade: "legendary",
+        desc: "처치, 회복, 보호막, 광역을 연결하는 전설 증강입니다.",
+        synergies: [
+          { setId: "executioner", value: 1 },
+          { setId: "blood_pact", value: 1 },
+          { setId: "guardian_wall", value: 1 },
+          { setId: "area_destruction", value: 1 }
+        ],
+        apply(state) { state.reactions.infiniteEngine = true; }
+      }
+    ];
+
+    const SYNERGY_LABELS = {
+      magic_overload: "마법 폭주",
+      fire_disaster: "화염 재앙",
+      orbit_weaponry: "회전 병기",
+      guardian_wall: "수호 방벽",
+      executioner: "처형자",
+      blood_pact: "피의 계약",
+      area_destruction: "광역 파괴",
+      chain_amp: "연쇄 증폭",
+      dark_ritual: "암흑 의식",
+      berserker: "광전사",
+      holy_judgement: "신성 심판",
+      star_tuning: "별의 조율"
+    };
+
+    let state = null;
+    let lastTs = 0;
+    let loopId = null;
+    let selectedWeapon = null;
+
+    function makeState(weapon) {
+      return {
+        running: false,
+        paused: true,
+        timeMs: 0,
+        spawnMs: 0,
+        attackMs: 0,
+        orbitAngle: 0,
+        level: 1,
+        exp: 0,
+        overExp: 0,
+        kills: 0,
+        coins: 0,
+        bonusResearch: 0,
+        augmentSlots: 0,
+        awakened: [],
+        selectedAugments: [],
+        augmentLevels: {},
+        weapon: JSON.parse(JSON.stringify(weapon)),
+        weaponLevel: 1,
+        player: {
+          x: canvas.width / 2,
+          y: canvas.height / 2,
+          r: 14,
+          hp: 100,
+          maxHp: 100,
+          shield: 0,
+          speed: 220,
+          magnetRange: 90,
+          damageReduction: 0
+        },
+        mods: {
+          damageMul: 1,
+          cooldownMul: 1,
+          areaMul: 1,
+          orbitSpeedMul: 1,
+          extraOrbit: 0,
+          executeBonus: 0
+        },
+        tagMods: {},
+        reactions: {},
+        synergies: {},
+        enemies: [],
+        projectiles: [],
+        gems: [],
+        effects: [],
+        floating: []
+      };
+    }
+
+    function formatTime(ms) {
+      const s = Math.floor(ms / 1000);
+      const m = Math.floor(s / 60);
+      const sec = s % 60;
+      return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+    }
+
+    function showToast(text) {
+      ui.toast.textContent = text;
+      ui.toast.classList.add("show");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => ui.toast.classList.remove("show"), 1500);
+    }
+
+    function renderWeapons() {
+      weaponCards.innerHTML = "";
+      WEAPONS.forEach(weapon => {
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `
+          <h3>${weapon.name}</h3>
+          <div class="desc">${weapon.desc}</div>
+          <div class="badge-row">
+            ${weapon.tags.map(t => `<span class="badge">${t}</span>`).join("")}
+          </div>
+        `;
+        div.onclick = () => {
+          selectedWeapon = weapon;
+          state = makeState(weapon);
+          startOverlay.classList.remove("show");
+          openStartAugmentChoice();
+        };
+        weaponCards.appendChild(div);
+      });
+    }
+
+    function openStartAugmentChoice() {
+      state.paused = true;
+      choiceOverlay.classList.add("show");
+      choiceTitle.textContent = "시작 증강 선택";
+      choiceDesc.textContent = "시작 증강 1개를 선택하세요. 무기 관련 후보 1개와 전체 랜덤 후보 2개가 등장합니다.";
+      const choices = getAugmentChoices("start");
+      renderChoiceCards(choices, augment => {
+        takeNewAugment(augment);
+        choiceOverlay.classList.remove("show");
+        state.running = true;
+        state.paused = false;
+        lastTs = performance.now();
+        loopId = requestAnimationFrame(loop);
+      });
+    }
+
+    function getGradeRoll(stage) {
+      const tables = {
+        start: [["basic", 60], ["normal", 35], ["advanced", 5]],
+        5: [["basic", 50], ["normal", 38], ["advanced", 10], ["rare", 2]],
+        10: [["basic", 35], ["normal", 40], ["advanced", 20], ["rare", 5]],
+        15: [["basic", 22], ["normal", 34], ["advanced", 30], ["rare", 12], ["legendary", 2]],
+        20: [["basic", 12], ["normal", 28], ["advanced", 35], ["rare", 20], ["legendary", 5]],
+        25: [["basic", 5], ["normal", 20], ["advanced", 35], ["rare", 30], ["legendary", 10]]
+      };
+
+      const table = tables[stage] || tables.start;
+      const total = table.reduce((sum, [, v]) => sum + v, 0);
+      let r = Math.random() * total;
+      for (const [grade, weight] of table) {
+        r -= weight;
+        if (r <= 0) return grade;
+      }
+      return table[0][0];
+    }
+
+    function getAugmentChoices(stage) {
+      const picked = new Set(state.selectedAugments.map(a => a.id));
+      const result = [];
+
+      function pickOne(preferWeapon) {
+        for (let attempt = 0; attempt < 60; attempt++) {
+          const grade = getGradeRoll(stage);
+          let pool = AUGMENTS.filter(a => a.grade === grade && !picked.has(a.id) && !result.some(x => x.id === a.id));
+
+          if (preferWeapon) {
+            const weaponTags = state.weapon.tags;
+            const related = pool.filter(a => {
+              const text = `${a.desc} ${a.synergies.map(s => s.setId).join(" ")}`;
+              return weaponTags.some(t => text.includes(t));
+            });
+            if (related.length > 0) pool = related;
+          }
+
+          if (pool.length > 0) {
+            const selected = pool[Math.floor(Math.random() * pool.length)];
+            result.push(selected);
+            return;
+          }
+        }
+
+        const fallback = AUGMENTS.find(a => !picked.has(a.id) && !result.some(x => x.id === a.id));
+        if (fallback) result.push(fallback);
+      }
+
+      if (stage === "start") pickOne(true);
+      while (result.length < 3) pickOne(false);
+
+      return result;
+    }
+
+    function renderChoiceCards(choices, onPick) {
+      choiceCards.innerHTML = "";
+      choices.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `
+          <h3 class="${GRADE_CLASS[item.grade] || ""}">${item.name}</h3>
+          <div class="desc">${GRADE_LABEL[item.grade]} · ${item.desc}</div>
+          <div class="badge-row">
+            ${(item.synergies || []).map(s => `<span class="badge">${SYNERGY_LABELS[s.setId] || s.setId} +${s.value}</span>`).join("")}
+          </div>
+        `;
+        div.onclick = () => onPick(item);
+        choiceCards.appendChild(div);
+      });
+    }
+
+    function takeNewAugment(augment) {
+      state.selectedAugments.push(augment);
+      state.augmentLevels[augment.id] = 1;
+      state.augmentSlots += 1;
+
+      for (const s of augment.synergies || []) {
+        state.synergies[s.setId] = (state.synergies[s.setId] || 0) + s.value;
+      }
+
+      augment.apply(state);
+      showToast(`증강 획득: ${augment.name}`);
+      checkAwakenings();
+      renderSide();
+    }
+
+    function openLevelChoice(isAugmentLevel) {
+      state.paused = true;
+      choiceOverlay.classList.add("show");
+
+      if (isAugmentLevel && state.augmentSlots < 6) {
+        choiceTitle.textContent = `Lv.${state.level} 신규 증강 선택`;
+        choiceDesc.textContent = "새로운 증강 1개를 선택하세요.";
+        const choices = getAugmentChoices(String(state.level));
+        renderChoiceCards(choices, augment => {
+          takeNewAugment(augment);
+          choiceOverlay.classList.remove("show");
+          state.paused = false;
+        });
+        return;
+      }
+
+      choiceTitle.textContent = `Lv.${state.level} 성장 선택`;
+      choiceDesc.textContent = "기본 무기, 보유 증강, 스탯 중 하나를 강화하세요.";
+
+      const choices = getUpgradeChoices();
+      renderChoiceCards(choices, choice => {
+        choice.apply();
+        showToast(choice.name);
+        choiceOverlay.classList.remove("show");
+        state.paused = false;
+        renderSide();
+      });
+    }
+
+    function getUpgradeChoices() {
+      const choices = [
+        {
+          name: `${state.weapon.name} Lv.+1`,
+          grade: "basic",
+          desc: "기본 무기 레벨을 올립니다.",
+          synergies: [],
+          apply() {
+            state.weaponLevel += 1;
+            state.mods.damageMul *= 1.07;
+            state.mods.cooldownMul *= 0.985;
+          }
+        },
+        {
+          name: "최대 HP 증가",
+          grade: "basic",
+          desc: "최대 HP +15, HP 15 회복",
+          synergies: [],
+          apply() {
+            state.player.maxHp += 15;
+            healPlayer(15);
+          }
+        },
+        {
+          name: "자석 범위 증가",
+          grade: "basic",
+          desc: "경험치 흡수 범위 +25",
+          synergies: [],
+          apply() {
+            state.player.magnetRange += 25;
+          }
+        },
+        {
+          name: "이동속도 증가",
+          grade: "basic",
+          desc: "이동속도 +5%",
+          synergies: [],
+          apply() {
+            state.player.speed *= 1.05;
+          }
+        }
+      ];
+
+      const upgradable = state.selectedAugments.filter(a => (state.augmentLevels[a.id] || 1) < 3);
+      if (upgradable.length > 0) {
+        const aug = upgradable[Math.floor(Math.random() * upgradable.length)];
+        choices.push({
+          name: `${aug.name} Lv.+1`,
+          grade: aug.grade,
+          desc: "보유 증강 효과를 소폭 강화합니다.",
+          synergies: [],
+          apply() {
+            state.augmentLevels[aug.id] += 1;
+            state.mods.damageMul *= 1.04;
+          }
+        });
+      }
+
+      return shuffle(choices).slice(0, 3);
+    }
+
+    function gainExp(amount) {
+      if (state.level >= MAX_LEVEL) {
+        state.overExp += amount;
+        while (state.overExp >= OVER_EXP_REWARD) {
+          state.overExp -= OVER_EXP_REWARD;
+          grantOverExpReward();
+        }
+        return;
+      }
+
+      state.exp += amount;
+
+      while (state.level < MAX_LEVEL && state.exp >= EXP_TO_NEXT[state.level]) {
+        state.exp -= EXP_TO_NEXT[state.level];
+        state.level += 1;
+
+        if (state.level >= MAX_LEVEL) {
+          state.level = MAX_LEVEL;
+          state.overExp += state.exp;
+          state.exp = 0;
+          showToast("Lv.MAX 달성!");
+          break;
+        }
+
+        const isAugmentLevel = AUGMENT_LEVELS.has(state.level);
+        openLevelChoice(isAugmentLevel);
+        break;
+      }
+    }
+
+    function grantOverExpReward() {
+      const rewards = [
+        { weight: 35, text: "HP 10% 회복", run: () => healPlayer(state.player.maxHp * 0.1) },
+        { weight: 10, text: "HP 25% 회복", run: () => healPlayer(state.player.maxHp * 0.25) },
+        { weight: 20, text: "보호막 획득", run: () => addShield(state.player.maxHp * 0.15) },
+        { weight: 25, text: "코인 +30", run: () => state.coins += 30 },
+        { weight: 7, text: "코인 +100", run: () => state.coins += 100 },
+        { weight: 3, text: "연구 포인트 조각 +50", run: () => state.bonusResearch += 50 }
+      ];
+
+      const reward = weightedPick(rewards);
+      reward.run();
+      showToast(`초과 경험 보상: ${reward.text}`);
+    }
+
+    function weightedPick(list) {
+      const total = list.reduce((sum, item) => sum + item.weight, 0);
+      let r = Math.random() * total;
+      for (const item of list) {
+        r -= item.weight;
+        if (r <= 0) return item;
+      }
+      return list[0];
+    }
+
+    function healPlayer(amount) {
+      state.player.hp = Math.min(state.player.maxHp, state.player.hp + amount);
+    }
+
+    function addShield(amount) {
+      state.player.shield += amount;
+      if (state.reactions.shieldOverload) {
+        createAreaDamage(state.player.x, state.player.y, 90, 30, "#60a5fa");
+      }
+    }
+
+    function loop(ts) {
+      const dt = Math.min(0.04, (ts - lastTs) / 1000);
+      lastTs = ts;
+
+      if (state.running && !state.paused) {
+        update(dt);
+      }
+
+      draw();
+      updateUi();
+
+      if (state.running) {
+        loopId = requestAnimationFrame(loop);
+      }
+    }
+
+    function update(dt) {
+      state.timeMs += dt * 1000;
+
+      if (state.timeMs >= GAME_LIMIT_MS) {
+        endGame(true);
+        return;
+      }
+
+      updatePlayer(dt);
+      updateWeapon(dt);
+      updateSpawns(dt);
+      updateEnemies(dt);
+      updateProjectiles(dt);
+      updateGems(dt);
+      updateEffects(dt);
+      updateFloating(dt);
+    }
+
+    function updatePlayer(dt) {
+      let dx = 0;
+      let dy = 0;
+
+      if (keys.has("KeyW") || keys.has("ArrowUp")) dy -= 1;
+      if (keys.has("KeyS") || keys.has("ArrowDown")) dy += 1;
+      if (keys.has("KeyA") || keys.has("ArrowLeft")) dx -= 1;
+      if (keys.has("KeyD") || keys.has("ArrowRight")) dx += 1;
+
+      const len = Math.hypot(dx, dy) || 1;
+      state.player.x += (dx / len) * state.player.speed * dt;
+      state.player.y += (dy / len) * state.player.speed * dt;
+
+      state.player.x = clamp(state.player.x, 20, canvas.width - 20);
+      state.player.y = clamp(state.player.y, 20, canvas.height - 20);
+    }
+
+    function updateWeapon(dt) {
+      const weapon = state.weapon;
+
+      if (weapon.id === "magic_staff") {
+        state.attackMs -= dt * 1000;
+        const interval = weapon.base.intervalMs * state.mods.cooldownMul;
+        if (state.attackMs <= 0) {
+          state.attackMs = interval;
+          fireMagicProjectiles();
+        }
+      }
+
+      if (weapon.id === "flame_heart") {
+        state.attackMs -= dt * 1000;
+        const interval = weapon.base.intervalMs * state.mods.cooldownMul;
+        if (state.attackMs <= 0) {
+          state.attackMs = interval;
+          const radius = weapon.base.auraRadius * state.mods.areaMul;
+          createAreaDamage(state.player.x, state.player.y, radius, weapon.base.damage, "#fb7185", ["fire", "aura", "area"]);
+        }
+      }
+
+      if (weapon.id === "orbit_axe") {
+        state.orbitAngle += weapon.base.orbitSpeed * state.mods.orbitSpeedMul * dt;
+        const axeCount = weapon.base.axeCount + state.mods.extraOrbit;
+        for (let i = 0; i < axeCount; i++) {
+          const a = state.orbitAngle + (Math.PI * 2 * i) / axeCount;
+          const ox = state.player.x + Math.cos(a) * weapon.base.orbitRadius;
+          const oy = state.player.y + Math.sin(a) * weapon.base.orbitRadius;
+
+          for (const enemy of state.enemies) {
+            if (enemy.hitCd > 0) continue;
+            const dist = Math.hypot(enemy.x - ox, enemy.y - oy);
+            if (dist < enemy.r + weapon.base.axeRadius) {
+              enemy.hitCd = 0.35;
+              damageEnemy(enemy, calcDamage(weapon.base.damage, ["orbit", "physical"]), ["orbit", "physical"]);
+            }
+          }
+        }
+      }
+    }
+
+    function fireMagicProjectiles() {
+      const nearest = getNearestEnemy();
+      if (!nearest) return;
+
+      const count = state.weapon.base.projectileCount;
+      for (let i = 0; i < count; i++) {
+        const angle = Math.atan2(nearest.y - state.player.y, nearest.x - state.player.x) + (i - (count - 1) / 2) * 0.15;
+        state.projectiles.push({
+          x: state.player.x,
+          y: state.player.y,
+          vx: Math.cos(angle) * state.weapon.base.projectileSpeed,
+          vy: Math.sin(angle) * state.weapon.base.projectileSpeed,
+          r: state.weapon.base.radius,
+          damage: calcDamage(state.weapon.base.damage, ["magic", "projectile"]),
+          pierce: state.weapon.base.pierce,
+          tags: ["magic", "projectile"],
+          life: 2.2
+        });
+      }
+    }
+
+    function calcDamage(base, tags) {
+      let damage = base * state.mods.damageMul;
+
+      for (const tag of tags || []) {
+        if (state.tagMods[tag]) damage *= state.tagMods[tag];
+      }
+
+      if (state.reactions.berserk && state.player.hp / state.player.maxHp <= 0.35) {
+        damage *= 1.25;
+      }
+
+      return damage;
+    }
+
+    function updateSpawns(dt) {
+      state.spawnMs -= dt * 1000;
+      const t = state.timeMs / 1000;
+      const interval = Math.max(250, 900 - t * 2.8);
+
+      if (state.spawnMs <= 0) {
+        state.spawnMs = interval;
+        spawnEnemy();
+      }
+    }
+
+    function spawnEnemy() {
+      const t = state.timeMs / 1000;
+      const types = [
+        { id: "slime", color: "#22c55e", hp: 28, speed: 70, damage: 8, exp: 20, r: 13, from: 0, weight: 50 },
+        { id: "wolf", color: "#94a3b8", hp: 24, speed: 125, damage: 7, exp: 30, r: 11, from: 60, weight: 30 },
+        { id: "bat", color: "#a78bfa", hp: 18, speed: 155, damage: 5, exp: 30, r: 9, from: 120, weight: 24 },
+        { id: "golem", color: "#78716c", hp: 120, speed: 48, damage: 14, exp: 80, r: 18, from: 240, weight: 13 },
+        { id: "bomb", color: "#f97316", hp: 50, speed: 65, damage: 9, exp: 60, r: 14, from: 360, weight: 16 }
+      ].filter(m => t >= m.from);
+
+      const picked = weightedPick(types.map(m => ({ ...m, weight: m.weight })));
+      const side = Math.floor(Math.random() * 4);
+      let x, y;
+
+      if (side === 0) { x = -20; y = Math.random() * canvas.height; }
+      if (side === 1) { x = canvas.width + 20; y = Math.random() * canvas.height; }
+      if (side === 2) { x = Math.random() * canvas.width; y = -20; }
+      if (side === 3) { x = Math.random() * canvas.width; y = canvas.height + 20; }
+
+      const diff = 1 + t / 500;
+
+      state.enemies.push({
+        ...picked,
+        x,
+        y,
+        hp: picked.hp * diff,
+        maxHp: picked.hp * diff,
+        speed: picked.speed * Math.min(1.35, 1 + t / 900),
+        hitCd: 0
+      });
+    }
+
+    function updateEnemies(dt) {
+      for (const enemy of state.enemies) {
+        enemy.hitCd = Math.max(0, enemy.hitCd - dt);
+        const dx = state.player.x - enemy.x;
+        const dy = state.player.y - enemy.y;
+        const len = Math.hypot(dx, dy) || 1;
+
+        enemy.x += (dx / len) * enemy.speed * dt;
+        enemy.y += (dy / len) * enemy.speed * dt;
+
+        const dist = Math.hypot(enemy.x - state.player.x, enemy.y - state.player.y);
+        if (dist < enemy.r + state.player.r) {
+          damagePlayer(enemy.damage * dt);
+        }
+      }
+
+      state.enemies = state.enemies.filter(e => e.hp > 0);
+    }
+
+    function updateProjectiles(dt) {
+      for (const p of state.projectiles) {
+        p.life -= dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+
+        for (const enemy of state.enemies) {
+          if (enemy.hp <= 0) continue;
+          const dist = Math.hypot(enemy.x - p.x, enemy.y - p.y);
+          if (dist < enemy.r + p.r) {
+            damageEnemy(enemy, p.damage, p.tags);
+            triggerProjectileHit(enemy, p);
+            p.pierce -= 1;
+            if (p.pierce < 0) {
+              p.life = 0;
+              break;
+            }
+          }
+        }
+      }
+
+      state.projectiles = state.projectiles.filter(p => p.life > 0 && p.x > -40 && p.x < canvas.width + 40 && p.y > -40 && p.y < canvas.height + 40);
+    }
+
+    function triggerProjectileHit(enemy, p) {
+      if (state.reactions.chainProjectile && Math.random() < 0.22) {
+        const target = getNearestEnemy(enemy.x, enemy.y, enemy);
+        if (target) {
+          const angle = Math.atan2(target.y - enemy.y, target.x - enemy.x);
+          state.projectiles.push({
+            x: enemy.x,
+            y: enemy.y,
+            vx: Math.cos(angle) * 500,
+            vy: Math.sin(angle) * 500,
+            r: 4,
+            damage: p.damage * 0.45,
+            pierce: 0,
+            tags: ["magic", "projectile"],
+            life: 1.5
+          });
+        }
+      }
+
+      if (state.reactions.starShots && Math.random() < 0.18) {
+        createAreaDamage(enemy.x, enemy.y, 38, p.damage * 0.35, "#c4b5fd", ["magic", "star", "area"]);
+      }
+    }
+
+    function damageEnemy(enemy, amount, tags = []) {
+      if (enemy.hp / enemy.maxHp <= 0.35) {
+        amount *= 1 + state.mods.executeBonus;
+      }
+
+      if (state.reactions.blackFlame && tags.includes("fire")) {
+        amount *= 1.22;
+      }
+
+      enemy.hp -= amount;
+      addFloating(enemy.x, enemy.y, Math.round(amount), "#fef3c7");
+
+      if (enemy.hp <= 0) {
+        killEnemy(enemy, tags);
+      }
+    }
+
+    function killEnemy(enemy, tags) {
+      state.kills += 1;
+      state.gems.push({ x: enemy.x, y: enemy.y, exp: enemy.exp, r: 5 });
+
+      if (state.reactions.bloodChain) {
+        healPlayer(2);
+        state.mods.damageMul *= 1.004;
+      }
+
+      if (state.reactions.infiniteEngine) {
+        if (Math.random() < 0.25) addShield(8);
+      }
+
+      if (enemy.id === "bomb") {
+        createAreaDamage(enemy.x, enemy.y, 60, 25, "#fdba74", ["fire", "area"]);
+      }
+
+      checkAwakenings();
+    }
+
+    function createAreaDamage(x, y, radius, damage, color = "#facc15", tags = ["area"]) {
+      state.effects.push({ x, y, radius, life: 0.35, maxLife: 0.35, color });
+
+      for (const enemy of state.enemies) {
+        const dist = Math.hypot(enemy.x - x, enemy.y - y);
+        if (dist < radius + enemy.r) {
+          damageEnemy(enemy, calcDamage(damage, tags), tags);
+        }
+      }
+    }
+
+    function damagePlayer(amount) {
+      const reduced = amount * Math.max(0.2, 1 - state.player.damageReduction);
+
+      if (state.player.shield > 0) {
+        const used = Math.min(state.player.shield, reduced);
+        state.player.shield -= used;
+        const rest = reduced - used;
+        state.player.hp -= rest;
+      } else {
+        state.player.hp -= reduced;
+      }
+
+      if (state.player.hp <= 0) {
+        endGame(false);
+      }
+    }
+
+    function updateGems(dt) {
+      for (const gem of state.gems) {
+        const dx = state.player.x - gem.x;
+        const dy = state.player.y - gem.y;
+        const dist = Math.hypot(dx, dy) || 1;
+
+        if (dist < state.player.magnetRange) {
+          gem.x += (dx / dist) * 260 * dt;
+          gem.y += (dy / dist) * 260 * dt;
+        }
+
+        if (dist < state.player.r + gem.r + 4) {
+          gem.collected = true;
+          gainExp(gem.exp);
+        }
+      }
+
+      state.gems = state.gems.filter(g => !g.collected);
+    }
+
+    function updateEffects(dt) {
+      state.effects.forEach(e => e.life -= dt);
+      state.effects = state.effects.filter(e => e.life > 0);
+    }
+
+    function updateFloating(dt) {
+      state.floating.forEach(f => {
+        f.life -= dt;
+        f.y -= 25 * dt;
+      });
+      state.floating = state.floating.filter(f => f.life > 0);
+    }
+
+    function addFloating(x, y, text, color) {
+      state.floating.push({ x, y, text, color, life: 0.6 });
+    }
+
+    function getNearestEnemy(x = state.player.x, y = state.player.y, exclude = null) {
+      let best = null;
+      let bestD = Infinity;
+
+      for (const e of state.enemies) {
+        if (e === exclude || e.hp <= 0) continue;
+        const d = Math.hypot(e.x - x, e.y - y);
+        if (d < bestD) {
+          bestD = d;
+          best = e;
+        }
+      }
+
+      return best;
+    }
+
+    function checkAwakenings() {
+      if (!state.awakened.includes("chain_magic_bolt")) {
+        if (
+          state.weapon.id === "magic_staff" &&
+          state.weaponLevel >= 8 &&
+          (state.synergies.magic_overload || 0) >= 3 &&
+          (state.synergies.chain_amp || 0) >= 2
+        ) {
+          state.awakened.push("chain_magic_bolt");
+          state.weapon.base.projectileCount += 2;
+          state.weapon.base.pierce += 1;
+          state.mods.cooldownMul *= 0.85;
+          showToast("각성 발현: 연쇄 마력탄!");
+        }
+      }
+
+      if (!state.awakened.includes("hellfire_aura")) {
+        if (
+          state.weapon.id === "flame_heart" &&
+          state.weaponLevel >= 8 &&
+          (state.synergies.fire_disaster || 0) >= 3 &&
+          (state.synergies.area_destruction || 0) >= 2
+        ) {
+          state.awakened.push("hellfire_aura");
+          state.weapon.base.auraRadius *= 1.35;
+          state.weapon.base.damage *= 1.4;
+          showToast("각성 발현: 지옥불 오라!");
+        }
+      }
+
+      if (!state.awakened.includes("storm_axe")) {
+        if (
+          state.weapon.id === "orbit_axe" &&
+          state.weaponLevel >= 8 &&
+          (state.synergies.orbit_weaponry || 0) >= 3 &&
+          (state.synergies.executioner || 0) >= 2
+        ) {
+          state.awakened.push("storm_axe");
+          state.mods.extraOrbit += 2;
+          state.mods.orbitSpeedMul *= 1.25;
+          showToast("각성 발현: 폭풍 도끼!");
+        }
+      }
+
+      if (!state.awakened.includes("black_sun")) {
+        if (
+          (state.synergies.fire_disaster || 0) >= 3 &&
+          (state.synergies.dark_ritual || 0) >= 3
+        ) {
+          state.awakened.push("black_sun");
+          state.reactions.blackSun = true;
+          state.mods.damageMul *= 1.2;
+          showToast("히든 각성 발현: 검은 태양!");
+        }
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      drawGrid();
+
+      for (const gem of state?.gems || []) {
+        ctx.beginPath();
+        ctx.fillStyle = "#22d3ee";
+        ctx.arc(gem.x, gem.y, gem.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      for (const effect of state?.effects || []) {
+        const alpha = Math.max(0, effect.life / effect.maxLife);
+        ctx.beginPath();
+        ctx.fillStyle = effect.color;
+        ctx.globalAlpha = alpha * 0.55;
+        ctx.arc(effect.x, effect.y, effect.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+
+      for (const p of state?.projectiles || []) {
+        ctx.beginPath();
+        ctx.fillStyle = "#bfdbfe";
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      for (const enemy of state?.enemies || []) {
+        ctx.beginPath();
+        ctx.fillStyle = enemy.color;
+        ctx.arc(enemy.x, enemy.y, enemy.r, 0, Math.PI * 2);
+        ctx.fill();
+
+        const w = enemy.r * 2;
+        ctx.fillStyle = "rgba(0,0,0,0.5)";
+        ctx.fillRect(enemy.x - enemy.r, enemy.y - enemy.r - 8, w, 3);
+        ctx.fillStyle = "#ef4444";
+        ctx.fillRect(enemy.x - enemy.r, enemy.y - enemy.r - 8, w * Math.max(0, enemy.hp / enemy.maxHp), 3);
+      }
+
+      if (state) {
+        drawOrbitPreview();
+
+        ctx.beginPath();
+        ctx.fillStyle = state.weapon.color;
+        ctx.arc(state.player.x, state.player.y, state.player.r, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (state.player.shield > 0) {
+          ctx.beginPath();
+          ctx.strokeStyle = "#60a5fa";
+          ctx.lineWidth = 3;
+          ctx.arc(state.player.x, state.player.y, state.player.r + 6, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        for (const f of state.floating) {
+          ctx.globalAlpha = Math.max(0, f.life / 0.6);
+          ctx.fillStyle = f.color;
+          ctx.font = "bold 13px sans-serif";
+          ctx.fillText(f.text, f.x, f.y);
+          ctx.globalAlpha = 1;
+        }
+      }
+    }
+
+    function drawGrid() {
+      ctx.strokeStyle = "rgba(255,255,255,0.04)";
+      ctx.lineWidth = 1;
+
+      for (let x = 0; x < canvas.width; x += 40) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+
+      for (let y = 0; y < canvas.height; y += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+    }
+
+    function drawOrbitPreview() {
+      if (!state || state.weapon.id !== "orbit_axe") return;
+
+      const axeCount = state.weapon.base.axeCount + state.mods.extraOrbit;
+      for (let i = 0; i < axeCount; i++) {
+        const a = state.orbitAngle + (Math.PI * 2 * i) / axeCount;
+        const ox = state.player.x + Math.cos(a) * state.weapon.base.orbitRadius;
+        const oy = state.player.y + Math.sin(a) * state.weapon.base.orbitRadius;
+
+        ctx.beginPath();
+        ctx.fillStyle = "#fbbf24";
+        ctx.arc(ox, oy, state.weapon.base.axeRadius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function updateUi() {
+      if (!state) return;
+
+      ui.time.textContent = formatTime(state.timeMs);
+      ui.hp.textContent = `${Math.max(0, Math.ceil(state.player.hp))}/${Math.ceil(state.player.maxHp)}${state.player.shield > 0 ? ` +${Math.ceil(state.player.shield)}` : ""}`;
+      ui.level.textContent = state.level >= MAX_LEVEL ? "MAX" : state.level;
+
+      if (state.level >= MAX_LEVEL) {
+        ui.exp.textContent = `${Math.floor(state.overExp)}/${OVER_EXP_REWARD}`;
+      } else {
+        ui.exp.textContent = `${Math.floor(state.exp)}/${EXP_TO_NEXT[state.level]}`;
+      }
+
+      ui.augCount.textContent = `${state.augmentSlots}/6`;
+      ui.kills.textContent = state.kills;
+      ui.coins.textContent = state.coins;
+
+      renderSide();
+    }
+
+    function renderSide() {
+      if (!state) return;
+
+      ui.sideWeapon.innerHTML = `
+        <strong>${state.weapon.name}</strong> Lv.${state.weaponLevel}<br />
+        <span class="small">${state.weapon.desc}</span>
+      `;
+
+      ui.sideAugments.innerHTML = state.selectedAugments.length
+        ? state.selectedAugments.map(a => `
+          <div class="list-item">
+            <strong class="${GRADE_CLASS[a.grade]}">${a.name}</strong> Lv.${state.augmentLevels[a.id] || 1}<br />
+            <span class="small">${GRADE_LABEL[a.grade]} · ${a.desc}</span>
+          </div>
+        `).join("")
+        : `<div class="small">없음</div>`;
+
+      const synergyEntries = Object.entries(state.synergies).filter(([, v]) => v > 0);
+      ui.sideSynergies.innerHTML = synergyEntries.length
+        ? synergyEntries.map(([id, v]) => `<div class="list-item">${SYNERGY_LABELS[id] || id}: <strong>${v}</strong></div>`).join("")
+        : `<div class="small">없음</div>`;
+
+      ui.sideAwakenings.innerHTML = state.awakened.length
+        ? state.awakened.map(id => `<div class="list-item">${id}</div>`).join("")
+        : `<div class="small">아직 발현 없음</div>`;
+    }
+
+    function endGame(success) {
+      state.running = false;
+      cancelAnimationFrame(loopId);
+
+      const basePoint =
+        Math.floor(state.timeMs / 1000) +
+        state.kills * 2 +
+        state.augmentSlots * 80 +
+        state.awakened.length * 180 +
+        state.bonusResearch;
+
+      resultTitle.textContent = success ? "15분 생존 성공!" : "사망";
+      resultDesc.innerHTML = `
+        생존 시간: <strong>${formatTime(state.timeMs)}</strong><br />
+        레벨: <strong>${state.level >= MAX_LEVEL ? "MAX" : state.level}</strong><br />
+        처치 수: <strong>${state.kills}</strong><br />
+        증강 수: <strong>${state.augmentSlots}</strong><br />
+        각성 수: <strong>${state.awakened.length}</strong><br />
+        코인: <strong>${state.coins}</strong><br />
+        예상 연구 포인트: <strong>${basePoint}</strong>
+      `;
+      resultOverlay.classList.add("show");
+    }
+
+    function restartToTitle() {
+      resultOverlay.classList.remove("show");
+      choiceOverlay.classList.remove("show");
+      startOverlay.classList.add("show");
+      cancelAnimationFrame(loopId);
+      state = null;
+      selectedWeapon = null;
+      renderWeapons();
+    }
+
+    function clamp(v, min, max) {
+      return Math.max(min, Math.min(max, v));
+    }
+
+    function shuffle(arr) {
+      return [...arr].sort(() => Math.random() - 0.5);
+    }
+
+    window.addEventListener("keydown", e => keys.add(e.code));
+    window.addEventListener("keyup", e => keys.delete(e.code));
+
+    renderWeapons();
+  </script>
+</body>
+</html>
