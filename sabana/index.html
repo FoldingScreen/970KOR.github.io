@@ -2,16 +2,18 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>SABANA Survivors</title>
   <style>
     * { box-sizing: border-box; }
-    body {
+    html, body {
       margin: 0;
-      min-height: 100vh;
+      min-height: 100%;
       background: #0f172a;
       color: #f8fafc;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    body {
       display: flex;
       justify-content: center;
       align-items: flex-start;
@@ -49,16 +51,40 @@
     .topbar {
       display: flex;
       gap: 10px;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       align-items: center;
       justify-content: space-between;
       padding: 10px 12px;
       background: #020617;
       border-bottom: 1px solid rgba(255,255,255,.08);
       font-size: 13px;
+      overflow: hidden;
     }
-    .topbar strong { color: #fff; font-size: 15px; }
-    .mini-btn { padding: 7px 10px; border-radius: 10px; font-size: 12px; background: #334155; }
+    .topbar > div {
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+    .topbar strong {
+      color: #fff;
+      font-size: 15px;
+      display: inline-block;
+      text-align: right;
+    }
+    .mini-btn {
+      padding: 7px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      background: #334155;
+      flex: 0 0 auto;
+    }
+
+    #uiTime { min-width: 42px; }
+    #uiHp { min-width: 82px; }
+    #uiLevel { min-width: 34px; }
+    #uiExp { min-width: 88px; }
+    #uiAugmentCount { min-width: 38px; }
+    #uiKills { min-width: 36px; }
+    #uiRunCoins { min-width: 58px; }
 
     .canvas-wrap {
       position: relative;
@@ -99,12 +125,35 @@
       padding: 18px;
     }
     .modal.center { text-align: center; }
-    .modal h1, .modal h2 { margin: 0 0 10px; }
-    .modal p { color: #cbd5e1; line-height: 1.5; margin: 8px 0 14px; font-size: 14px; }
+    .modal h1,
+    .modal h2 {
+      margin: 0 0 10px;
+    }
+    .modal p {
+      color: #cbd5e1;
+      line-height: 1.5;
+      margin: 8px 0 14px;
+      font-size: 14px;
+    }
 
-    .title-logo { font-size: 42px; font-weight: 900; letter-spacing: -1px; margin-bottom: 8px; }
-    .title-sub { color: #cbd5e1; margin-bottom: 20px; line-height: 1.5; }
-    .menu-row { display: flex; flex-direction: column; gap: 10px; max-width: 380px; margin: 0 auto; }
+    .title-logo {
+      font-size: 42px;
+      font-weight: 900;
+      letter-spacing: -1px;
+      margin-bottom: 8px;
+    }
+    .title-sub {
+      color: #cbd5e1;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    .menu-row {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 380px;
+      margin: 0 auto;
+    }
 
     .cards {
       display: grid;
@@ -122,9 +171,21 @@
       text-align: left;
       min-height: 160px;
     }
-    .card:hover { transform: translateY(-2px); border-color: #60a5fa; background: #263244; }
-    .card h3 { margin: 0 0 8px; font-size: 17px; }
-    .card .desc { font-size: 13px; color: #cbd5e1; line-height: 1.45; white-space: pre-line; }
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: #60a5fa;
+      background: #263244;
+    }
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 17px;
+    }
+    .card .desc {
+      font-size: 13px;
+      color: #cbd5e1;
+      line-height: 1.45;
+      white-space: pre-line;
+    }
 
     .type-label {
       display: inline-block;
@@ -136,7 +197,12 @@
       font-size: 11px;
       font-weight: 900;
     }
-    .badge-row { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+    .badge-row {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
     .badge {
       padding: 3px 7px;
       border-radius: 999px;
@@ -152,14 +218,39 @@
     .grade-epic { color: #c4b5fd; }
     .grade-legendary { color: #facc15; }
 
-    .side { padding: 14px; }
-    .side h2 { margin: 0 0 10px; font-size: 18px; }
-    .side-section { padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.08); }
-    .side-section:last-child { border-bottom: 0; }
-    .small { color: #cbd5e1; font-size: 13px; line-height: 1.45; }
-    .list { display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
-    .list-item { background: rgba(255,255,255,.05); padding: 8px; border-radius: 10px; }
-    .list-item strong { color: #fff; }
+    .side {
+      padding: 14px;
+    }
+    .side h2 {
+      margin: 0 0 10px;
+      font-size: 18px;
+    }
+    .side-section {
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .side-section:last-child {
+      border-bottom: 0;
+    }
+    .small {
+      color: #cbd5e1;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 13px;
+    }
+    .list-item {
+      background: rgba(255,255,255,.05);
+      padding: 8px;
+      border-radius: 10px;
+    }
+    .list-item strong {
+      color: #fff;
+    }
 
     .toast {
       position: absolute;
@@ -178,7 +269,10 @@
       z-index: 40;
       white-space: nowrap;
     }
-    .toast.show { opacity: 1; transform: translateX(-50%) translateY(-6px); }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-6px);
+    }
 
     .big-alert {
       position: absolute;
@@ -193,259 +287,256 @@
       transition: .25s;
       text-shadow: 0 0 24px rgba(250,204,21,.9);
     }
-    .big-alert.show { opacity: 1; transform: translate(-50%, -55%) scale(1.04); }
-    .big-alert .main { font-size: 42px; color: #facc15; }
-    .big-alert .sub { font-size: 18px; color: #fff; margin-top: 8px; }
+    .big-alert.show {
+      opacity: 1;
+      transform: translate(-50%, -55%) scale(1.04);
+    }
+    .big-alert .main {
+      font-size: 42px;
+      color: #facc15;
+    }
+    .big-alert .sub {
+      font-size: 18px;
+      color: #fff;
+      margin-top: 8px;
+    }
 
-    .lab-top { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
-    .point-box { padding: 10px 12px; border-radius: 12px; background: rgba(250,204,21,.12); color: #fde68a; font-weight: 900; }
-    .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 12px; }
-    .tab.active { background: #2563eb; }
-    .lab-list, .codex-list {
+    .lab-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .point-box {
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(250,204,21,.12);
+      color: #fde68a;
+      font-weight: 900;
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 8px 0 12px;
+    }
+    .tab.active {
+      background: #2563eb;
+    }
+    .lab-list,
+    .codex-list {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
       gap: 10px;
       margin-top: 12px;
     }
-    .lab-item, .codex-item {
+    .lab-item,
+    .codex-item {
       background: #1f2937;
       border: 1px solid rgba(255,255,255,.12);
       border-radius: 14px;
       padding: 12px;
     }
-    .lab-item h3, .codex-item h3 { margin: 0 0 8px; font-size: 16px; }
-    .lab-item .level { color: #93c5fd; font-weight: 800; margin-bottom: 6px; }
-    .lab-item .effect, .codex-item .effect { color: #cbd5e1; font-size: 13px; line-height: 1.45; white-space: pre-line; }
-    .lab-item .cost { margin: 10px 0; color: #fde68a; font-weight: 900; }
-    .lab-actions, .choice-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; justify-content: center; }
+    .lab-item h3,
+    .codex-item h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+    }
+    .lab-item .level {
+      color: #93c5fd;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+    .lab-item .effect,
+    .codex-item .effect {
+      color: #cbd5e1;
+      font-size: 13px;
+      line-height: 1.45;
+      white-space: pre-line;
+    }
+    .lab-item .cost {
+      margin: 10px 0;
+      color: #fde68a;
+      font-weight: 900;
+    }
+    .lab-actions,
+    .choice-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
 
-    @media (max-width: 1000px) { .app { grid-template-columns: 1fr; } }
-/* 모바일 전투 UI */
-.mobile-stick {
-  position: absolute;
-  left: 22px;
-  bottom: 22px;
-  width: 118px;
-  height: 118px;
-  border-radius: 999px;
-  background: rgba(15, 23, 42, 0.45);
-  border: 2px solid rgba(255, 255, 255, 0.18);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 15;
-  touch-action: none;
-  user-select: none;
-}
+    .mobile-stick {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 116px;
+      height: 116px;
+      margin-left: -58px;
+      margin-top: -58px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.48);
+      border: 2px solid rgba(255, 255, 255, 0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 15;
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-9999px, -9999px);
+      transition: opacity 0.08s;
+      touch-action: none;
+      user-select: none;
+    }
+    .mobile-stick.active {
+      opacity: 1;
+    }
+    .mobile-stick-knob {
+      width: 46px;
+      height: 46px;
+      border-radius: 999px;
+      background: rgba(96, 165, 250, 0.75);
+      border: 2px solid rgba(255, 255, 255, 0.55);
+      transform: translate(0, 0);
+      pointer-events: none;
+    }
 
-.mobile-stick-knob {
-  width: 46px;
-  height: 46px;
-  border-radius: 999px;
-  background: rgba(96, 165, 250, 0.72);
-  border: 2px solid rgba(255, 255, 255, 0.55);
-  transform: translate(0, 0);
-  pointer-events: none;
-}
+    .pause-details {
+      margin-top: 16px;
+      text-align: left;
+      display: none;
+      max-height: 46vh;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .pause-details h3 {
+      margin: 14px 0 8px;
+      font-size: 15px;
+    }
+    .pause-details .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+    .pause-details .detail-card {
+      background: rgba(255,255,255,.06);
+      border-radius: 10px;
+      padding: 8px;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .pause-details .detail-card strong {
+      color: #fff;
+    }
 
-.pause-details {
-  margin-top: 16px;
-  text-align: left;
-  display: none;
-  max-height: 46vh;
-  overflow-y: auto;
-  padding-right: 4px;
-}
+    @media (max-width: 1000px) {
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        overscroll-behavior: none;
+        touch-action: none;
+      }
 
-.pause-details h3 {
-  margin: 14px 0 8px;
-  font-size: 15px;
-}
+      body {
+        padding: 8px;
+      }
 
-.pause-details .detail-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 6px;
-}
+      .app {
+        grid-template-columns: 1fr;
+      }
 
-.pause-details .detail-card {
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
-  padding: 8px;
-  font-size: 13px;
-  line-height: 1.45;
-}
+      .side {
+        display: none;
+      }
 
-.pause-details .detail-card strong {
-  color: #fff;
-}
+      .panel {
+        border-radius: 14px;
+      }
 
-@media (max-width: 1000px) {
-  body {
-    padding: 8px;
-  }
+      .topbar {
+        gap: 6px;
+        font-size: 11px;
+        padding: 8px;
+        flex-wrap: nowrap;
+        overflow: hidden;
+      }
 
-  .app {
-    grid-template-columns: 1fr;
-  }
+      .topbar div {
+        white-space: nowrap;
+      }
 
-  .side {
-    display: none;
-  }
+      .topbar div:nth-child(4),
+      .topbar div:nth-child(5),
+      .topbar div:nth-child(6) {
+        display: none;
+      }
 
-  .panel {
-    border-radius: 14px;
-  }
+      .topbar strong {
+        font-size: 13px;
+      }
 
-  .topbar {
-    gap: 6px;
-    font-size: 11px;
-    padding: 8px;
-  }
+      .mini-btn {
+        padding: 7px 9px;
+        font-size: 11px;
+      }
 
-  .topbar div:nth-child(5),
-  .topbar div:nth-child(6) {
-    display: none;
-  }
+      #uiHp {
+        min-width: 64px;
+      }
 
-  .topbar strong {
-    font-size: 13px;
-  }
+      #uiRunCoins {
+        min-width: 42px;
+      }
 
-  .mini-btn {
-    padding: 7px 9px;
-    font-size: 11px;
-  }
+      .canvas-wrap {
+        aspect-ratio: 9 / 14;
+        max-height: calc(100vh - 74px);
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
+      }
 
-.canvas-wrap {
-  aspect-ratio: 9 / 14;
-  max-height: calc(100vh - 74px);
-}
+      canvas {
+        height: 100%;
+        object-fit: contain;
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
+      }
 
-canvas {
-  height: 100%;
-  object-fit: contain;
-}
+      .overlay.show,
+      .modal,
+      .card,
+      button {
+        touch-action: auto;
+      }
 
-.mobile-stick {
-  left: 18px;
-  bottom: 18px;
-  width: 112px;
-  height: 112px;
-}
+      .modal {
+        width: 96%;
+        max-height: 94%;
+        padding: 14px;
+      }
 
-  .mobile-stick {
-    display: flex;
-  }
+      .cards {
+        grid-template-columns: 1fr;
+      }
 
-  .modal {
-    width: 96%;
-    max-height: 94%;
-    padding: 14px;
-  }
+      .card {
+        min-height: auto;
+      }
 
-  .cards {
-    grid-template-columns: 1fr;
-  }
-
-  .card {
-    min-height: auto;
-  }
-
-  .pause-details {
-    display: block;
-  }
-}
-
-@media (max-width: 1000px) {
-  html,
-  body {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    overscroll-behavior: none;
-    touch-action: none;
-  }
-
-  .canvas-wrap,
-  canvas,
-  .mobile-stick {
-    touch-action: none;
-    user-select: none;
-    -webkit-user-select: none;
-    -webkit-touch-callout: none;
-  }
-
-  .overlay.show,
-  .modal {
-    touch-action: auto;
-  }
-}
-    /* 플로팅 모바일 조이스틱 */
-@media (max-width: 1000px) {
-  html,
-  body {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    overscroll-behavior: none;
-    touch-action: none;
-  }
-
-  .canvas-wrap,
-  canvas {
-    touch-action: none;
-    user-select: none;
-    -webkit-user-select: none;
-    -webkit-touch-callout: none;
-  }
-
-  .overlay.show,
-  .modal,
-  .card,
-  button {
-    touch-action: auto;
-  }
-
-  .mobile-stick {
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: auto;
-    width: 116px;
-    height: 116px;
-    margin-left: -58px;
-    margin-top: -58px;
-    border-radius: 999px;
-    background: rgba(15, 23, 42, 0.48);
-    border: 2px solid rgba(255, 255, 255, 0.18);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 15;
-    opacity: 0;
-    pointer-events: none;
-    transform: translate(-9999px, -9999px);
-    transition: opacity 0.08s;
-    touch-action: none;
-    user-select: none;
-  }
-
-  .mobile-stick.active {
-    opacity: 1;
-  }
-
-  .mobile-stick-knob {
-    width: 46px;
-    height: 46px;
-    border-radius: 999px;
-    background: rgba(96, 165, 250, 0.75);
-    border: 2px solid rgba(255, 255, 255, 0.55);
-    transform: translate(0, 0);
-    pointer-events: none;
-  }
-}
-    
+      .pause-details {
+        display: block;
+      }
+    }
   </style>
 </head>
 
@@ -471,8 +562,8 @@ canvas {
           <div id="bigAlertSub" class="sub"></div>
         </div>
         <div id="mobileStick" class="mobile-stick">
-  <div id="mobileStickKnob" class="mobile-stick-knob"></div>
-</div>
+          <div id="mobileStickKnob" class="mobile-stick-knob"></div>
+        </div>
 
         <div id="titleOverlay" class="overlay show">
           <div class="modal center">
@@ -611,7 +702,7 @@ canvas {
         <strong>조작</strong><br />
         WASD / 방향키 이동<br />
         ESC / P 일시정지<br />
-        피격 후 기본 1초 무적<br /><br />
+        모바일: 화면 터치 위치에 조이스틱 생성<br /><br />
         모든 레벨업: 일반 성장 카드<br />
         5레벨 단위: 일반 성장 + 증강 선택
       </div>
@@ -657,25 +748,23 @@ canvas {
     const choiceDesc = document.getElementById("choiceDesc");
     const rerollBtn = document.getElementById("rerollBtn");
     const pauseInfo = document.getElementById("pauseInfo");
+    const pauseDetails = document.getElementById("pauseDetails");
     const resultTitle = document.getElementById("resultTitle");
     const resultDesc = document.getElementById("resultDesc");
     const pauseBtn = document.getElementById("pauseBtn");
-    const pauseDetails = document.getElementById("pauseDetails");
-const mobileStick = document.getElementById("mobileStick");
-const mobileStickKnob = document.getElementById("mobileStickKnob");
-
-const touchMove = {
-  active: false,
-  id: null,
-  dx: 0,
-  dy: 0
-};
-
+    const mobileStick = document.getElementById("mobileStick");
+    const mobileStickKnob = document.getElementById("mobileStickKnob");
     const bigAlert = document.getElementById("bigAlert");
     const bigAlertMain = document.getElementById("bigAlertMain");
     const bigAlertSub = document.getElementById("bigAlertSub");
 
     const keys = new Set();
+    const touchMove = {
+      active: false,
+      id: null,
+      dx: 0,
+      dy: 0
+    };
 
     const MAX_LEVEL = 30;
     const MAX_AUGMENTS = 6;
@@ -712,15 +801,15 @@ const touchMove = {
       legendary: "grade-legendary"
     };
 
-const EXP_TO_NEXT = [
-  0,
-  80, 150, 230, 320, 420,
-  540, 670, 810, 960, 1120,
-  1300, 1480, 1670, 1870, 2080,
-  2300, 2530, 2770, 3020, 3280,
-  3550, 3830, 4120, 4420, 4730,
-  5050, 5380, 5720, 6100
-];
+    const EXP_TO_NEXT = [
+      0,
+      80, 150, 230, 320, 420,
+      540, 670, 810, 960, 1120,
+      1300, 1480, 1670, 1870, 2080,
+      2300, 2530, 2770, 3020, 3280,
+      3550, 3830, 4120, 4420, 4730,
+      5050, 5380, 5720, 6100
+    ];
 
     const SYNERGY_INFO = {
       ice2: { name: "氷 2 냉기 개방", cond: "氷 2", short: "공격 시 적을 둔화시킵니다.", detail: "공격 적중 시 25% 확률로 적을 2초 둔화\n둔화 강도: 30%" },
@@ -765,24 +854,24 @@ const EXP_TO_NEXT = [
       evildemon: { name: "악귀포식", cond: "惡 2 + 鬼 2", short: "회복이 鬼 중첩으로 이어집니다.", detail: "회복 발생 시 鬼 중첩 획득\n초과 회복 시 추가 중첩" }
     };
 
-    const META_KEY = "json_survivors_coin_meta_v5";
+    const META_KEY = "sabana_survivors_coin_meta_v6";
 
     const LABS = {
       basic: [
-        ["hp", "기초 체력 연구", 10, 200, 1.35, l => `시작 최대 HP +${l * 10}`],
-        ["damage", "기초 공격 연구", 10, 300, 1.4, l => `모든 피해 +${l * 4}%`],
-        ["speed", "이동 훈련", 5, 300, 1.45, l => `이동속도 +${l * 3}%`],
-        ["magnet", "자석 범위 연구", 10, 250, 1.35, l => `흡수 범위 +${l * 15}`],
-        ["defense", "방어 훈련", 5, 400, 1.45, l => `받는 피해 -${l * 2}%`],
-        ["shield", "시작 보호막 연구", 5, 350, 1.5, l => `시작 보호막 +${l * 10}`],
-        ["heal_eff", "회복 효율 연구", 5, 400, 1.45, l => `회복량 +${l * 6}%`],
-        ["exp", "경험 흡수 연구", 10, 450, 1.4, l => `경험치 획득량 +${l * 3}%`]
+        ["hp", "기초 체력 연구", 10, 160, 1.30, l => `시작 최대 HP +${l * 25}`],
+        ["damage", "기초 공격 연구", 10, 220, 1.32, l => `모든 피해 +${l * 10}%`],
+        ["speed", "이동 훈련", 5, 180, 1.32, l => `이동속도 +${l * 8}%`],
+        ["magnet", "자석 범위 연구", 10, 150, 1.28, l => `흡수 범위 +${l * 40}`],
+        ["defense", "방어 훈련", 5, 230, 1.34, l => `받는 피해 -${l * 6}%`],
+        ["shield", "시작 보호막 연구", 5, 220, 1.34, l => `시작 보호막 +${l * 30}`],
+        ["heal_eff", "회복 효율 연구", 5, 240, 1.34, l => `회복량 +${l * 15}%`],
+        ["exp", "경험 흡수 연구", 10, 260, 1.32, l => `경험치 획득량 +${l * 8}%`]
       ],
       combat: [
         ["invuln", "피격 무적 연구", 5, 600, 1.5, l => `피격 무적 +${(l * 0.08).toFixed(2)}초`],
         ["emergency", "응급 회복 연구", 5, 900, 1.55, l => `HP 25% 이하 시 ${10 + l * 5} 회복, 전투당 1회`],
         ["deathsave", "사망 유예 연구", 1, 6000, 1, l => l ? "치명 피해 1회 생존" : "미해금"],
-        ["knockback", "넉백 강화 연구", 5, 500, 1.4, l => `적 타격 넉백 +${l * 6}%`],
+        ["knockback", "넉백 강화 연구", 5, 500, 1.4, l => `적 타격 넉백 +${l * 8}%`],
         ["syn_amp", "속성 증폭 연구", 5, 1000, 1.55, l => `속성 시너지 효과 +${l * 3}%`],
         ["reroll", "증강 재추첨 연구", 3, 1200, 1.75, l => `증강 선택마다 새로고침 ${l}회`],
         ["high_grade", "고위 증강 연구", 5, 1500, 1.65, l => `에픽 +${l * 2}%, 전설 +${l}%`],
@@ -964,7 +1053,6 @@ const EXP_TO_NEXT = [
         detail: "처형 성공 시 회복 연계\n초과 회복량 일부가 공격력 버프로 전환\n속성: 暗 +1, 惡 +1",
         apply(s) { s.perks.voidFeast = true; }
       },
-
       {
         id: "demon_gate", name: "귀문개방", grade: "legendary", attrs: { "鬼": 2 },
         ghost: true,
@@ -1002,32 +1090,32 @@ const EXP_TO_NEXT = [
       }
     ];
 
-function resizeCanvasForDevice() {
-  const isMobile = window.innerWidth <= 1000;
+    function resizeCanvasForDevice() {
+      const isMobile = window.innerWidth <= 1000;
 
-  // 전투 중에는 좌표 꼬임 방지를 위해 크기 변경 금지
-  if (state && state.running) return;
+      if (state && state.running) return;
 
-  if (isMobile) {
-    canvas.width = 540;
-    canvas.height = 840;
-  } else {
-    canvas.width = 960;
-    canvas.height = 540;
-  }
-}
+      if (isMobile) {
+        canvas.width = 540;
+        canvas.height = 840;
+      } else {
+        canvas.width = 960;
+        canvas.height = 540;
+      }
+    }
 
-let state = null;
-let lastTs = 0;
-let loopId = null;
-let currentChoices = [];
-let currentChoiceMode = "growth";
-let pendingAugmentAfterGrowth = false;
-let rerollsLeft = 0;
+    let state = null;
+    let lastTs = 0;
+    let loopId = null;
+    let currentChoices = [];
+    let currentChoiceMode = "growth";
+    let pendingAugmentAfterGrowth = false;
+    let rerollsLeft = 0;
 
     function makeState(weapon) {
       const u = meta.upgrades;
-      const hp = 100 + u.hp * 10;
+      const hp = 100 + u.hp * 25;
+
       return {
         running: false,
         paused: true,
@@ -1071,7 +1159,7 @@ let rerollsLeft = 0;
           r: 14,
           hp,
           maxHp: hp,
-          shield: u.shield * 10,
+          shield: u.shield * 30,
           speed: 220,
           magnetRange: 90,
           invuln: 0,
@@ -1097,20 +1185,21 @@ let rerollsLeft = 0;
 
     function rebuildStats() {
       if (!state) return;
+
       const u = meta.upgrades;
       const lv = state.level;
       const g = state.growth;
 
       state.base = {
-        damageMul: (1 + (lv - 1) * 0.01 + g.damage) * (1 + u.damage * 0.04),
+        damageMul: (1 + (lv - 1) * 0.01 + g.damage) * (1 + u.damage * 0.10),
         attackSpeedMul: 1 + g.attackSpeed,
-        speedMul: 1 + (lv - 1) * 0.002 + g.move + u.speed * 0.03,
+        speedMul: 1 + (lv - 1) * 0.002 + g.move + u.speed * 0.08,
         areaMul: 1 + g.area,
-        expMul: 1 + g.exp + u.exp * 0.03,
-        healMul: 1 + u.heal_eff * 0.06,
-        defense: Math.min(0.70, g.defense + u.defense * 0.02),
-        magnetBonus: (lv - 1) + g.magnet + u.magnet * 15,
-        knockbackMul: 1 + g.knockback + u.knockback * 0.06,
+        expMul: 1 + g.exp + u.exp * 0.08,
+        healMul: 1 + u.heal_eff * 0.15,
+        defense: Math.min(0.70, g.defense + u.defense * 0.06),
+        magnetBonus: (lv - 1) + g.magnet + u.magnet * 40,
+        knockbackMul: 1 + g.knockback + u.knockback * 0.08,
         synergyAmp: 1 + u.syn_amp * 0.03
       };
 
@@ -1131,12 +1220,13 @@ let rerollsLeft = 0;
       };
 
       state.attrsFromAugments = {};
+
       for (const aug of state.augments) {
         addAttrs(state.attrsFromAugments, aug.attrs || {});
         aug.apply?.(state);
       }
 
-      const maxHp = 100 + u.hp * 10 + (lv - 1) + g.hp;
+      const maxHp = 100 + u.hp * 25 + (lv - 1) + g.hp;
       state.player.maxHp = state.perks.cursedCrown ? Math.max(60, maxHp - 30) : maxHp;
       state.player.speed = 220 * state.base.speedMul;
       state.player.magnetRange = 90 + state.base.magnetBonus;
@@ -1161,6 +1251,7 @@ let rerollsLeft = 0;
 
     function recalcSynergies() {
       const a = getAttrCounts();
+
       const s = {
         slowChance: 0,
         slowPower: 0,
@@ -1240,30 +1331,39 @@ let rerollsLeft = 0;
 
     function onSynergyFirstActivated(key) {
       const info = SYNERGY_INFO[key] || { name: key };
-      let burst = key.endsWith("6") || key === "demon4";
+      const burst = key.endsWith("6") || key === "demon4";
 
       if (key === "ice6") {
         for (const e of state.enemies) e.freezeTime = Math.max(e.freezeTime || 0, 2);
       }
+
       if (key === "fire6") {
         for (const e of state.enemies) applyBurn(e, 18, 4);
       }
+
       if (key === "wind6") addTimedBuff("attackSpeed", 2.0, 10);
-      if (key === "light6") damageArea(state.player.x, state.player.y, 999, 180, 40, ["light", "area"], true, "#fde68a");
+
+      if (key === "light6") {
+        damageArea(state.player.x, state.player.y, 999, 180, 40, ["light", "area"], true, "#fde68a");
+      }
+
       if (key === "dark6") {
         for (const e of state.enemies) {
           if (e.hp / e.maxHp <= .35 && !e.elite) e.hp = 0;
           else e.hp -= e.maxHp * .12;
         }
       }
+
       if (key === "holy6") {
         addShield(state.player.maxHp * .4);
         damageArea(state.player.x, state.player.y, 160, 120, 45, ["holy", "area"], true, "#bfdbfe");
       }
+
       if (key === "evil6") {
         healPlayer(state.player.maxHp);
         addTimedBuff("damage", 1.5, 8);
       }
+
       if (key === "demon4") {
         state.stacks.demon = Math.min(200, state.stacks.demon + 50);
         state.stacks.demonNoLossMs = 10000;
@@ -1329,7 +1429,10 @@ let rerollsLeft = 0;
         let pulse = lv >= 20;
 
         if (lv >= 10) damage *= 1.15;
-        if (lv >= 30) { radius += 20; damage *= 1.15; }
+        if (lv >= 30) {
+          radius += 20;
+          damage *= 1.15;
+        }
 
         tickMs *= Math.max(.35, 1 - g.auraTick);
         radius *= 1 + g.weaponSize;
@@ -1357,7 +1460,7 @@ let rerollsLeft = 0;
         count += g.orbitCount;
         orbitSpeed *= 1 + g.orbitSpeed;
         axeRadius *= 1 + g.weaponSize;
-        orbitRadius *= 1 + g.area;
+        orbitRadius *= 1 + g.area * 1.3;
 
         return {
           damage: damage * damageMul,
@@ -1372,9 +1475,8 @@ let rerollsLeft = 0;
     }
 
     function openWeaponSelect() {
-
       resizeCanvasForDevice();
-      
+
       titleOverlay.classList.remove("show");
       labOverlay.classList.remove("show");
       codexOverlay.classList.remove("show");
@@ -1382,11 +1484,13 @@ let rerollsLeft = 0;
       pauseOverlay.classList.remove("show");
       choiceOverlay.classList.remove("show");
       weaponOverlay.classList.add("show");
+
       renderWeapons();
     }
 
     function renderWeapons() {
       weaponCards.innerHTML = "";
+
       WEAPONS.forEach(w => {
         const div = document.createElement("div");
         div.className = "card";
@@ -1395,12 +1499,14 @@ let rerollsLeft = 0;
           <div class="desc">${w.desc}</div>
           <div class="badge-row">${w.tags.map(t => `<span class="badge">${t}</span>`).join("")}</div>
         `;
+
         div.onclick = () => {
           state = makeState(w);
           rebuildStats();
           weaponOverlay.classList.remove("show");
           startCombat();
         };
+
         weaponCards.appendChild(div);
       });
     }
@@ -1419,10 +1525,12 @@ let rerollsLeft = 0;
       currentChoiceMode = "growth";
       currentChoices = rollGrowthChoices();
       rerollBtn.style.display = "none";
+
       choiceTitle.textContent = `Lv.${state.level} 성장 선택`;
       choiceDesc.textContent = SPECIAL_LEVELS.has(state.level)
         ? "기본 성장 카드를 선택하세요. 선택 후 증강 선택이 추가로 열립니다."
         : "기본 전투 능력을 강화하세요.";
+
       renderChoiceCards();
       choiceOverlay.classList.add("show");
     }
@@ -1430,60 +1538,107 @@ let rerollsLeft = 0;
     function rollGrowthChoices() {
       const pool = [
         {
-          type: "growth", label: "전투 성장", name: "공격력 증가", desc: "모든 피해 +7%",
-          apply() { state.growth.damage += .07; }
+          type: "growth",
+          label: "전투 성장",
+          name: "공격력 증가",
+          desc: "모든 피해 +12%",
+          apply() { state.growth.damage += .12; }
         },
         {
-          type: "growth", label: "전투 성장", name: "공격속도 증가", desc: "공격속도 +6%",
-          apply() { state.growth.attackSpeed += .06; }
+          type: "growth",
+          label: "전투 성장",
+          name: "공격속도 증가",
+          desc: "공격속도 +10%",
+          apply() { state.growth.attackSpeed += .10; }
         },
         {
-          type: "growth", label: "전투 성장", name: "공격범위 증가", desc: "공격 범위 +8%",
-          apply() { state.growth.area += .08; }
+          type: "growth",
+          label: "전투 성장",
+          name: "공격범위 증가",
+          desc: "공격 범위 +25%",
+          apply() { state.growth.area += .25; }
         },
         {
-          type: "growth", label: "생존 성장", name: "이동속도 증가", desc: "이동속도 +5%",
-          apply() { state.growth.move += .05; }
+          type: "growth",
+          label: "생존 성장",
+          name: "이동속도 증가",
+          desc: "이동속도 +8%",
+          apply() { state.growth.move += .08; }
         },
         {
-          type: "growth", label: "생존 성장", name: "최대 HP 증가", desc: "최대 HP +15\nHP 15 회복",
-          apply() { state.growth.hp += 15; rebuildStats(); healPlayer(15); }
+          type: "growth",
+          label: "생존 성장",
+          name: "최대 HP 증가",
+          desc: "최대 HP +25\nHP 25 회복",
+          apply() {
+            state.growth.hp += 25;
+            rebuildStats();
+            healPlayer(25);
+          }
         },
         {
-          type: "growth", label: "생존 성장", name: "방어력 증가", desc: "받는 피해 -2%",
-          apply() { state.growth.defense += .02; }
+          type: "growth",
+          label: "생존 성장",
+          name: "방어력 증가",
+          desc: "받는 피해 -4%",
+          apply() { state.growth.defense += .04; }
         },
         {
-          type: "growth", label: "유틸 성장", name: "자석 범위 증가", desc: "경험치 흡수 범위 +20",
-          apply() { state.growth.magnet += 20; }
+          type: "growth",
+          label: "유틸 성장",
+          name: "자석 범위 증가",
+          desc: "경험치 흡수 범위 +35",
+          apply() { state.growth.magnet += 35; }
         },
         {
-          type: "growth", label: "유틸 성장", name: "경험치 획득 증가", desc: "경험치 획득량 +5%",
-          apply() { state.growth.exp += .05; }
+          type: "growth",
+          label: "유틸 성장",
+          name: "경험치 획득 증가",
+          desc: "경험치 획득량 +8%",
+          apply() { state.growth.exp += .08; }
         },
         {
-          type: "growth", label: "전투 성장", name: "넉백 증가", desc: "타격 넉백 +10%",
-          apply() { state.growth.knockback += .10; }
+          type: "growth",
+          label: "전투 성장",
+          name: "넉백 증가",
+          desc: "타격 넉백 +18%",
+          apply() { state.growth.knockback += .18; }
         }
       ];
 
       if (state.weapon.id === "magic_staff") {
         pool.push(
           {
-            type: "growth", label: "무기 성장", name: "투사체 수 증가", desc: "마력탄 발사체 +1",
-            weight: 4, apply() { state.growth.projectile += 1; }
+            type: "growth",
+            label: "무기 성장",
+            name: "투사체 수 증가",
+            desc: "마력탄 발사체 +1",
+            weight: 4,
+            apply() { state.growth.projectile += 1; }
           },
           {
-            type: "growth", label: "무기 성장", name: "관통 증가", desc: "마력탄 관통 +1",
-            weight: 5, apply() { state.growth.pierce += 1; }
+            type: "growth",
+            label: "무기 성장",
+            name: "관통 증가",
+            desc: "마력탄 관통 +1",
+            weight: 5,
+            apply() { state.growth.pierce += 1; }
           },
           {
-            type: "growth", label: "무기 성장", name: "투사체 속도 증가", desc: "마력탄 속도 +15%",
-            weight: 8, apply() { state.growth.projectileSpeed += .15; }
+            type: "growth",
+            label: "무기 성장",
+            name: "투사체 속도 증가",
+            desc: "마력탄 속도 +15%",
+            weight: 8,
+            apply() { state.growth.projectileSpeed += .15; }
           },
           {
-            type: "growth", label: "무기 성장", name: "투사체 크기 증가", desc: "마력탄 크기 +12%",
-            weight: 8, apply() { state.growth.weaponSize += .12; }
+            type: "growth",
+            label: "무기 성장",
+            name: "마력탄 크기 증가",
+            desc: "마력탄 크기 +50%",
+            weight: 8,
+            apply() { state.growth.weaponSize += .50; }
           }
         );
       }
@@ -1491,12 +1646,20 @@ let rerollsLeft = 0;
       if (state.weapon.id === "flame_heart") {
         pool.push(
           {
-            type: "growth", label: "무기 성장", name: "오라 범위 증가", desc: "화염 오라 범위 +12%",
-            weight: 8, apply() { state.growth.weaponSize += .12; }
+            type: "growth",
+            label: "무기 성장",
+            name: "오라 범위 증가",
+            desc: "화염 오라 범위 +35%",
+            weight: 8,
+            apply() { state.growth.weaponSize += .35; }
           },
           {
-            type: "growth", label: "무기 성장", name: "피해 주기 감소", desc: "화염 오라 피해 주기 -8%",
-            weight: 8, apply() { state.growth.auraTick += .08; }
+            type: "growth",
+            label: "무기 성장",
+            name: "피해 주기 감소",
+            desc: "화염 오라 피해 주기 -8%",
+            weight: 8,
+            apply() { state.growth.auraTick += .08; }
           }
         );
       }
@@ -1504,26 +1667,40 @@ let rerollsLeft = 0;
       if (state.weapon.id === "orbit_axe") {
         pool.push(
           {
-            type: "growth", label: "무기 성장", name: "도끼 수 증가", desc: "회전 도끼 +1",
-            weight: 4, apply() { state.growth.orbitCount += 1; }
+            type: "growth",
+            label: "무기 성장",
+            name: "도끼 수 증가",
+            desc: "회전 도끼 +1",
+            weight: 4,
+            apply() { state.growth.orbitCount += 1; }
           },
           {
-            type: "growth", label: "무기 성장", name: "회전속도 증가", desc: "도끼 회전속도 +12%",
-            weight: 8, apply() { state.growth.orbitSpeed += .12; }
+            type: "growth",
+            label: "무기 성장",
+            name: "회전속도 증가",
+            desc: "도끼 회전속도 +12%",
+            weight: 8,
+            apply() { state.growth.orbitSpeed += .12; }
           },
           {
-            type: "growth", label: "무기 성장", name: "도끼 크기 증가", desc: "도끼 크기 +12%",
-            weight: 8, apply() { state.growth.weaponSize += .12; }
+            type: "growth",
+            label: "무기 성장",
+            name: "도끼 크기 증가",
+            desc: "도끼 크기 +35%",
+            weight: 8,
+            apply() { state.growth.weaponSize += .35; }
           }
         );
       }
 
       const weighted = pool.map(x => ({ item: x, weight: x.weight || 12 }));
       const result = [];
+
       while (result.length < 3) {
         const picked = weightedPick(weighted).item;
         if (!result.some(x => x.name === picked.name)) result.push(picked);
       }
+
       return result;
     }
 
@@ -1534,8 +1711,10 @@ let rerollsLeft = 0;
       currentChoices = rollAugmentChoices();
       rerollsLeft = meta.upgrades.reroll || 0;
       rerollBtn.style.display = "inline-block";
+
       choiceTitle.textContent = `Lv.${state.level} 증강 선택`;
       choiceDesc.textContent = "추가 보너스 증강입니다. 속성을 선택하고 시너지를 폭발시키세요.";
+
       renderChoiceCards();
       choiceOverlay.classList.add("show");
     }
@@ -1588,6 +1767,7 @@ let rerollsLeft = 0;
 
       if (currentChoiceMode === "augment") {
         if (state.augments.length >= MAX_AUGMENTS) return;
+
         state.augments.push(item);
         rebuildStats();
         choiceOverlay.classList.remove("show");
@@ -1598,6 +1778,7 @@ let rerollsLeft = 0;
 
     function rerollAugments() {
       if (currentChoiceMode !== "augment" || rerollsLeft <= 0) return;
+
       rerollsLeft -= 1;
       currentChoices = rollAugmentChoices();
       renderChoiceCards();
@@ -1616,9 +1797,9 @@ let rerollsLeft = 0;
       }
 
       const ghostChance = getGhostChance();
+
       if (ghostPool.length && Math.random() < ghostChance) {
-        const index = Math.floor(Math.random() * choices.length);
-        choices[index] = randomItem(ghostPool);
+        choices[Math.floor(Math.random() * choices.length)] = randomItem(ghostPool);
       }
 
       return choices;
@@ -1627,12 +1808,15 @@ let rerollsLeft = 0;
     function getGhostChance() {
       let chance = state.level >= 30 ? .20 : state.level >= 20 ? .15 : .10;
       const attrs = getAttrCounts();
+
       if ((attrs["鬼"] || 0) > 0) chance += .05;
+
       return chance;
     }
 
     function pickByGrade(pool) {
       const high = meta.upgrades.high_grade || 0;
+
       const table = {
         basic: Math.max(3, 15 - high * 2),
         normal: Math.max(5, 20 - high),
@@ -1653,8 +1837,10 @@ let rerollsLeft = 0;
       if (!candidates.length) candidates = pool;
 
       const focus = meta.upgrades.attr_focus || 0;
+
       if (focus > 0 && state.augments.length > 0) {
         const current = getAttrCounts();
+
         const weighted = candidates.map(a => {
           let weight = 1;
           for (const k of Object.keys(a.attrs || {})) {
@@ -1662,6 +1848,7 @@ let rerollsLeft = 0;
           }
           return { item: a, weight };
         });
+
         return weightedPick(weighted).item;
       }
 
@@ -1703,20 +1890,22 @@ let rerollsLeft = 0;
     function updatePlayer(dt) {
       state.player.invuln = Math.max(0, state.player.invuln - dt);
 
-let dx = 0, dy = 0;
+      let dx = 0;
+      let dy = 0;
 
-if (keys.has("KeyW") || keys.has("ArrowUp")) dy -= 1;
-if (keys.has("KeyS") || keys.has("ArrowDown")) dy += 1;
-if (keys.has("KeyA") || keys.has("ArrowLeft")) dx -= 1;
-if (keys.has("KeyD") || keys.has("ArrowRight")) dx += 1;
+      if (keys.has("KeyW") || keys.has("ArrowUp")) dy -= 1;
+      if (keys.has("KeyS") || keys.has("ArrowDown")) dy += 1;
+      if (keys.has("KeyA") || keys.has("ArrowLeft")) dx -= 1;
+      if (keys.has("KeyD") || keys.has("ArrowRight")) dx += 1;
 
-if (touchMove.active) {
-  dx += touchMove.dx;
-  dy += touchMove.dy;
-}
+      if (touchMove.active) {
+        dx += touchMove.dx;
+        dy += touchMove.dy;
+      }
 
       const len = Math.hypot(dx, dy) || 1;
       const speed = state.player.speed * getBuffMul("speed") * (state.synergy.moveMul || 1);
+
       state.player.x += (dx / len) * speed * dt;
       state.player.y += (dy / len) * speed * dt;
 
@@ -1735,6 +1924,7 @@ if (touchMove.active) {
       if (state.weapon.id === "magic_staff") {
         state.attackMs -= dt * 1000;
         const w = getWeaponStats();
+
         if (state.attackMs <= 0) {
           state.attackMs = w.intervalMs;
           if (state.perks.overheat) damagePlayerRaw(0.2);
@@ -1745,11 +1935,13 @@ if (touchMove.active) {
       if (state.weapon.id === "flame_heart") {
         state.auraMs -= dt * 1000;
         const w = getWeaponStats();
+
         if (state.auraMs <= 0) {
           state.auraMs = w.tickMs;
           damageArea(state.player.x, state.player.y, w.radius, w.damage, w.knockback, w.tags, false);
           if (state.perks.overheat) damagePlayerRaw(0.2);
         }
+
         if (w.pulse) {
           state.attackMs -= dt * 1000;
           if (state.attackMs <= 0) {
@@ -1762,12 +1954,15 @@ if (touchMove.active) {
       if (state.weapon.id === "orbit_axe") {
         const w = getWeaponStats();
         state.orbitAngle = (state.orbitAngle || 0) + w.orbitSpeed * dt;
+
         for (let i = 0; i < w.count; i++) {
           const a = state.orbitAngle + Math.PI * 2 * i / w.count;
           const ox = state.player.x + Math.cos(a) * w.orbitRadius;
           const oy = state.player.y + Math.sin(a) * w.orbitRadius;
+
           for (const e of state.enemies) {
             if (e.hitCd > 0) continue;
+
             if (Math.hypot(e.x - ox, e.y - oy) < e.r + w.axeRadius) {
               e.hitCd = 0.25;
               hitEnemy(e, w.damage, w.tags, w.knockback, ox, oy, 0);
@@ -1816,18 +2011,22 @@ if (touchMove.active) {
 
     function spawnEnemy() {
       const t = state.timeMs / 1000;
+
       const types = [
         { id: "slime", color: "#22c55e", hp: 28, speed: 72, damage: 7, exp: 12, r: 13, from: 0, weight: 52, kb: 0 },
-{ id: "wolf", color: "#94a3b8", hp: 28, speed: 128, damage: 8, exp: 17, r: 11, from: 60, weight: 30, kb: .1 },
-{ id: "bat", color: "#a78bfa", hp: 22, speed: 158, damage: 6, exp: 18, r: 9, from: 120, weight: 24, kb: 0 },
-{ id: "golem", color: "#78716c", hp: 130, speed: 50, damage: 14, exp: 50, r: 18, from: 240, weight: 13, kb: .6 },
-{ id: "bomb", color: "#f97316", hp: 60, speed: 68, damage: 11, exp: 38, r: 14, from: 360, weight: 16, kb: .3 }
+        { id: "wolf", color: "#94a3b8", hp: 28, speed: 128, damage: 8, exp: 17, r: 11, from: 60, weight: 30, kb: .1 },
+        { id: "bat", color: "#a78bfa", hp: 22, speed: 158, damage: 6, exp: 18, r: 9, from: 120, weight: 24, kb: 0 },
+        { id: "golem", color: "#78716c", hp: 130, speed: 50, damage: 14, exp: 50, r: 18, from: 240, weight: 13, kb: .6 },
+        { id: "bomb", color: "#f97316", hp: 60, speed: 68, damage: 11, exp: 38, r: 14, from: 360, weight: 16, kb: .3 }
       ].filter(m => t >= m.from);
 
       const picked = weightedPick(types.map(m => ({ ...m, weight: m.weight })));
       const elite = t > 240 && Math.random() < 0.05;
       const side = Math.floor(Math.random() * 4);
-      let x, y;
+
+      let x;
+      let y;
+
       if (side === 0) { x = -25; y = Math.random() * canvas.height; }
       if (side === 1) { x = canvas.width + 25; y = Math.random() * canvas.height; }
       if (side === 2) { x = Math.random() * canvas.width; y = -25; }
@@ -1838,7 +2037,8 @@ if (touchMove.active) {
 
       state.enemies.push({
         ...picked,
-        x, y,
+        x,
+        y,
         hp,
         maxHp: hp,
         speed: picked.speed * Math.min(1.45, 1 + t / 850) * (elite ? .9 : 1),
@@ -1878,6 +2078,7 @@ if (touchMove.active) {
           const dy = state.player.y - e.y;
           const len = Math.hypot(dx, dy) || 1;
           const slowMul = e.slowTime > 0 ? (1 - e.slowPower) : 1;
+
           e.x += (dx / len) * e.speed * slowMul * dt;
           e.y += (dy / len) * e.speed * slowMul * dt;
         }
@@ -1888,6 +2089,7 @@ if (touchMove.active) {
         e.vy *= Math.pow(0.005, dt);
 
         const dist = Math.hypot(e.x - state.player.x, e.y - state.player.y);
+
         if (dist < e.r + state.player.r && e.contactCd <= 0) {
           e.contactCd = 0.9;
           damagePlayer(e.damage, e.x, e.y);
@@ -1905,9 +2107,11 @@ if (touchMove.active) {
 
         for (const e of state.enemies) {
           if (e.hp <= 0) continue;
+
           if (Math.hypot(e.x - p.x, e.y - p.y) < e.r + p.r) {
             hitEnemy(e, p.damage, p.tags, p.knockback, p.x, p.y, p.depth, p);
             p.pierce -= 1;
+
             if (p.pierce < 0) {
               p.life = 0;
               break;
@@ -1917,7 +2121,11 @@ if (touchMove.active) {
       }
 
       state.projectiles = state.projectiles.filter(p =>
-        p.life > 0 && p.x > -60 && p.x < canvas.width + 60 && p.y > -60 && p.y < canvas.height + 60
+        p.life > 0 &&
+        p.x > -60 &&
+        p.x < canvas.width + 60 &&
+        p.y > -60 &&
+        p.y < canvas.height + 60
       );
     }
 
@@ -1935,7 +2143,9 @@ if (touchMove.active) {
       if (Math.random() < (state.synergy.executeChance || 0) && e.hp / e.maxHp <= (state.synergy.executeThreshold || 0)) {
         if (!e.elite) {
           dmg = e.hp + 9999;
-          if (state.activeSynergies.has("dark4")) damageArea(e.x, e.y, 55, amount * .7, 12, ["dark", "area"], true, "#6d28d9");
+          if (state.activeSynergies.has("dark4")) {
+            damageArea(e.x, e.y, 55, amount * .7, 12, ["dark", "area"], true, "#6d28d9");
+          }
         } else {
           dmg += e.maxHp * .08;
         }
@@ -1955,12 +2165,14 @@ if (touchMove.active) {
       const s = state.synergy;
 
       const slowChance = state.perks.slowChance + (s.slowChance || 0);
+
       if (Math.random() < slowChance) {
         e.slowTime = Math.max(e.slowTime, 2);
         e.slowPower = Math.max(e.slowPower, .25 + (s.slowPower || 0));
       }
 
       const burnChance = state.perks.burnChance + (s.burnChance || 0);
+
       if (Math.random() < burnChance) {
         applyBurn(e, baseDamage * (s.burnDpsRatio || .20), s.burnDuration || 2.5);
       }
@@ -1975,6 +2187,7 @@ if (touchMove.active) {
 
       if (state.synergy.extraHitEvery) {
         state._hitCounter = (state._hitCounter || 0) + 1;
+
         if (state._hitCounter >= state.synergy.extraHitEvery) {
           state._hitCounter = 0;
           e.hp -= baseDamage * .5;
@@ -1985,10 +2198,13 @@ if (touchMove.active) {
       if (projectile && projectile.tags.includes("projectile")) {
         if (state.perks.chainChance && projectile.allowChain && Math.random() < state.perks.chainChance) {
           const target = getNearestEnemy(e.x, e.y, e);
+
           if (target) {
             const a = Math.atan2(target.y - e.y, target.x - e.x);
+
             state.projectiles.push({
-              x: e.x, y: e.y,
+              x: e.x,
+              y: e.y,
               vx: Math.cos(a) * 560,
               vy: Math.sin(a) * 560,
               r: 4,
@@ -2012,6 +2228,7 @@ if (touchMove.active) {
     function applyBurn(e, dps, duration) {
       e.burnTime = Math.max(e.burnTime, duration);
       e.burnDps = Math.max(e.burnDps, dps);
+
       if (state.activeSynergies.has("frostfire") && e.slowTime > 0) {
         e.hp -= dps;
         addFloating(e.x, e.y - 12, "서리불꽃", "#fb923c");
@@ -2020,8 +2237,10 @@ if (touchMove.active) {
 
     function spreadBurn(source, dps) {
       let count = 0;
+
       for (const e of state.enemies) {
         if (e === source || count >= 2) continue;
+
         if (Math.hypot(e.x - source.x, e.y - source.y) < 80) {
           applyBurn(e, dps, 2.5);
           count++;
@@ -2031,6 +2250,7 @@ if (touchMove.active) {
 
     function killEnemy(e, tags = []) {
       if (e.dead) return;
+
       e.dead = true;
       e.hp = 0;
       state.kills += 1;
@@ -2076,9 +2296,11 @@ if (touchMove.active) {
 
       const grade = rollItemGrade(e.elite);
       const item = createDropItem(grade);
+
       item.x = e.x;
       item.y = e.y;
       item.r = grade === "legendary" ? 9 : grade === "epic" ? 8 : 7;
+
       state.drops.push(item);
     }
 
@@ -2095,28 +2317,37 @@ if (touchMove.active) {
 
     function createDropItem(grade) {
       if (grade === "basic") {
-        return { grade, ...randomItem([
-          { name: "체력회복(소)", kind: "heal_small", color: "#bfdbfe" },
-          { name: "자석", kind: "magnet", color: "#22d3ee" },
-          { name: "코인(소)", kind: "coin_small", color: "#fde68a" }
-        ]) };
+        return {
+          grade,
+          ...randomItem([
+            { name: "체력회복(소)", kind: "heal_small", color: "#bfdbfe" },
+            { name: "자석", kind: "magnet", color: "#22d3ee" },
+            { name: "코인(소)", kind: "coin_small", color: "#fde68a" }
+          ])
+        };
       }
 
       if (grade === "normal") {
-        return { grade, ...randomItem([
-          { name: "체력회복(대)", kind: "heal_big", color: "#60a5fa" },
-          { name: "전체 몹 킬", kind: "nuke", color: "#f87171" },
-          { name: "코인(대)", kind: "coin_big", color: "#facc15" }
-        ]) };
+        return {
+          grade,
+          ...randomItem([
+            { name: "체력회복(대)", kind: "heal_big", color: "#60a5fa" },
+            { name: "전체 몹 킬", kind: "nuke", color: "#f87171" },
+            { name: "코인(대)", kind: "coin_big", color: "#facc15" }
+          ])
+        };
       }
 
       if (grade === "advanced") {
-        return { grade, ...randomItem([
-          { name: "공격력 증가", kind: "buff_damage", color: "#86efac" },
-          { name: "이속 증가", kind: "buff_speed", color: "#86efac" },
-          { name: "공속 증가", kind: "buff_as", color: "#86efac" },
-          { name: "공격범위 증가", kind: "buff_area", color: "#86efac" }
-        ]) };
+        return {
+          grade,
+          ...randomItem([
+            { name: "공격력 증가", kind: "buff_damage", color: "#86efac" },
+            { name: "이속 증가", kind: "buff_speed", color: "#86efac" },
+            { name: "공속 증가", kind: "buff_as", color: "#86efac" },
+            { name: "공격범위 증가", kind: "buff_area", color: "#86efac" }
+          ])
+        };
       }
 
       if (grade === "epic") {
@@ -2126,9 +2357,11 @@ if (touchMove.active) {
       }
 
       const roll = Math.random();
+
       if (roll < .40) return { grade, kind: "gem", name: "특정 속성 +3 보석", attr: randomItem(NORMAL_ATTRS), value: 3, color: "#facc15" };
       if (roll < .60) return { grade, kind: "all_gem", name: "모든 속성 +1 보석", value: 1, color: "#facc15" };
       if (roll < .80) return { grade, kind: "gem", name: "특정 속성 +4 보석", attr: randomItem(NORMAL_ATTRS), value: 4, color: "#facc15" };
+
       return { grade, kind: "gem", name: "鬼 +2 귀속 보석", attr: "鬼", value: 2, color: "#facc15" };
     }
 
@@ -2137,18 +2370,23 @@ if (touchMove.active) {
 
       if (item.kind === "heal_small") healPlayer(state.player.maxHp * .15);
       if (item.kind === "heal_big") healPlayer(state.player.maxHp * .40);
+
       if (item.kind === "magnet") {
         for (const g of state.gems) g.forceMagnet = true;
       }
+
       if (item.kind === "coin_small") addRunCoins(30);
       if (item.kind === "coin_big") addRunCoins(120);
+
       if (item.kind === "nuke") {
         for (const e of [...state.enemies]) {
           if (e.elite) e.hp -= e.maxHp * .25;
           else e.hp = 0;
+
           if (e.hp <= 0) killEnemy(e, ["nuke"]);
         }
       }
+
       if (item.kind === "buff_damage") addTimedBuff("damage", 1.4, 15);
       if (item.kind === "buff_speed") addTimedBuff("speed", 1.35, 15);
       if (item.kind === "buff_as") addTimedBuff("attackSpeed", 1.35, 15);
@@ -2163,7 +2401,10 @@ if (touchMove.active) {
       }
 
       if (item.kind === "all_gem") {
-        for (const a of NORMAL_ATTRS) state.attrsFromGems[a] = (state.attrsFromGems[a] || 0) + 1;
+        for (const a of NORMAL_ATTRS) {
+          state.attrsFromGems[a] = (state.attrsFromGems[a] || 0) + 1;
+        }
+
         state.itemStats.gems += 1;
         state.itemStats.legendary += 1;
         showBigAlert("모든 속성 +1 보석", "鬼 제외 모든 일반 속성 강화");
@@ -2174,7 +2415,9 @@ if (touchMove.active) {
     }
 
     function damageArea(x, y, radius, damage, knockback, tags = ["area"], showEffect = true, color = "#facc15") {
-      if (showEffect) state.effects.push({ x, y, radius, life: .25, maxLife: .25, color });
+      if (showEffect) {
+        state.effects.push({ x, y, radius, life: .25, maxLife: .25, color });
+      }
 
       for (const e of state.enemies) {
         if (Math.hypot(e.x - x, e.y - y) < radius + e.r) {
@@ -2197,6 +2440,7 @@ if (touchMove.active) {
       const dx = state.player.x - sourceX;
       const dy = state.player.y - sourceY;
       const len = Math.hypot(dx, dy) || 1;
+
       state.player.kbX += (dx / len) * 560;
       state.player.kbY += (dy / len) * 560;
 
@@ -2237,6 +2481,7 @@ if (touchMove.active) {
           showBigAlert("사망 유예", "치명 피해를 버텼습니다");
           return;
         }
+
         endGame(false);
       }
     }
@@ -2268,6 +2513,7 @@ if (touchMove.active) {
       const dy = e.y - sy;
       const len = Math.hypot(dx, dy) || 1;
       const finalPower = power * (1 - (e.kb || 0));
+
       e.vx += (dx / len) * finalPower * 18;
       e.vy += (dy / len) * finalPower * 18;
     }
@@ -2277,54 +2523,59 @@ if (touchMove.active) {
         const dx = state.player.x - g.x;
         const dy = state.player.y - g.y;
         const dist = Math.hypot(dx, dy) || 1;
+
         if (dist < state.player.magnetRange || g.forceMagnet) {
           g.x += (dx / dist) * 330 * dt;
           g.y += (dy / dist) * 330 * dt;
         }
+
         if (dist < state.player.r + g.r + 4) {
           g.collected = true;
           gainExp(g.exp);
         }
       }
+
       state.gems = state.gems.filter(g => !g.collected);
 
       for (const d of state.drops) {
         const dx = state.player.x - d.x;
         const dy = state.player.y - d.y;
         const dist = Math.hypot(dx, dy) || 1;
+
         if (dist < state.player.magnetRange) {
           d.x += (dx / dist) * 230 * dt;
           d.y += (dy / dist) * 230 * dt;
         }
+
         if (dist < state.player.r + d.r + 6) {
           d.collected = true;
           applyDrop(d);
         }
       }
+
       state.drops = state.drops.filter(d => !d.collected);
     }
 
     function gainExp(amount) {
       if (state.level >= MAX_LEVEL) {
         state.overExp += amount;
+
         while (state.overExp >= OVER_EXP_REWARD) {
           state.overExp -= OVER_EXP_REWARD;
           grantOverExpReward();
         }
+
         return;
       }
 
       state.exp += amount;
+
       while (state.level < MAX_LEVEL && state.exp >= EXP_TO_NEXT[state.level]) {
         state.exp -= EXP_TO_NEXT[state.level];
         state.level += 1;
         rebuildStats();
 
-        if (SPECIAL_LEVELS.has(state.level) && state.augments.length < MAX_AUGMENTS) {
-          pendingAugmentAfterGrowth = true;
-        } else {
-          pendingAugmentAfterGrowth = false;
-        }
+        pendingAugmentAfterGrowth = SPECIAL_LEVELS.has(state.level) && state.augments.length < MAX_AUGMENTS;
 
         openGrowthChoice();
 
@@ -2333,26 +2584,28 @@ if (touchMove.active) {
           state.overExp += state.exp;
           state.exp = 0;
         }
+
         break;
       }
     }
 
     function grantOverExpReward() {
       const bonus = 1 + meta.upgrades.over_exp * .1;
+
       const list = [
         { weight: 35, run: () => healPlayer(state.player.maxHp * .1), text: "HP 10% 회복" },
         { weight: 20, run: () => addShield(state.player.maxHp * .15), text: "보호막" },
         { weight: 35, run: () => addRunCoins(Math.round(40 * bonus)), text: `코인 +${Math.round(40 * bonus)}` },
         { weight: 10, run: () => addRunCoins(Math.round(120 * bonus)), text: `코인 +${Math.round(120 * bonus)}` }
       ];
+
       const r = weightedPick(list);
       r.run();
       showToast(`초과 경험 보상: ${r.text}`);
     }
 
     function addRunCoins(amount) {
-      const mul = 1 + meta.upgrades.coin_gain * .05;
-      state.runCoins += Math.round(amount * mul);
+      state.runCoins += Math.round(amount * (1 + meta.upgrades.coin_gain * .05));
     }
 
     function addTimedBuff(type, mul, sec) {
@@ -2374,7 +2627,11 @@ if (touchMove.active) {
     }
 
     function updateFloating(dt) {
-      state.floating.forEach(f => { f.life -= dt; f.y -= 25 * dt; });
+      state.floating.forEach(f => {
+        f.life -= dt;
+        f.y -= 25 * dt;
+      });
+
       state.floating = state.floating.filter(f => f.life > 0);
     }
 
@@ -2429,8 +2686,10 @@ if (touchMove.active) {
         ctx.fill();
 
         const w = e.r * 2;
+
         ctx.fillStyle = "rgba(0,0,0,.5)";
         ctx.fillRect(e.x - e.r, e.y - e.r - 8, w, 3);
+
         ctx.fillStyle = "#ef4444";
         ctx.fillRect(e.x - e.r, e.y - e.r - 8, w * Math.max(0, e.hp / e.maxHp), 3);
       }
@@ -2439,6 +2698,7 @@ if (touchMove.active) {
         drawOrbitWeapons();
 
         const inv = state.player.invuln > 0;
+
         ctx.save();
         ctx.globalAlpha = inv ? .55 : 1;
         ctx.beginPath();
@@ -2476,21 +2736,31 @@ if (touchMove.active) {
     function drawGrid() {
       ctx.strokeStyle = "rgba(255,255,255,.04)";
       ctx.lineWidth = 1;
+
       for (let x = 0; x < canvas.width; x += 40) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
       }
+
       for (let y = 0; y < canvas.height; y += 40) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
       }
     }
 
     function drawWeaponAuras() {
       if (state.weapon.id === "flame_heart") {
         const w = getWeaponStats();
+
         ctx.beginPath();
         ctx.fillStyle = "rgba(251,113,133,.08)";
         ctx.arc(state.player.x, state.player.y, w.radius, 0, Math.PI * 2);
         ctx.fill();
+
         ctx.beginPath();
         ctx.strokeStyle = "rgba(251,113,133,.38)";
         ctx.lineWidth = 2;
@@ -2501,11 +2771,14 @@ if (touchMove.active) {
 
     function drawOrbitWeapons() {
       if (state.weapon.id !== "orbit_axe") return;
+
       const w = getWeaponStats();
+
       for (let i = 0; i < w.count; i++) {
         const a = (state.orbitAngle || 0) + Math.PI * 2 * i / w.count;
         const x = state.player.x + Math.cos(a) * w.orbitRadius;
         const y = state.player.y + Math.sin(a) * w.orbitRadius;
+
         ctx.beginPath();
         ctx.fillStyle = "#fbbf24";
         ctx.arc(x, y, w.axeRadius, 0, Math.PI * 2);
@@ -2537,6 +2810,7 @@ if (touchMove.active) {
       ui.augCount.textContent = `${state.augments.length}/${MAX_AUGMENTS}`;
       ui.kills.textContent = state.kills;
       ui.runCoins.textContent = state.runCoins;
+
       renderSide();
     }
 
@@ -2565,12 +2839,14 @@ if (touchMove.active) {
       `;
 
       const attrs = getAttrCounts();
+
       ui.sideAttributes.innerHTML = ALL_ATTRS
         .filter(a => (attrs[a] || 0) > 0)
         .map(a => `<div class="list-item">${a} ${ATTR_NAMES[a]} <strong>${attrs[a]}</strong></div>`)
         .join("") || `<div class="small">없음</div>`;
 
       const active = Array.from(state.activeSynergies);
+
       ui.sideSynergies.innerHTML = active.length
         ? active.map(key => {
           const info = SYNERGY_INFO[key] || { name: key, short: "" };
@@ -2597,13 +2873,16 @@ if (touchMove.active) {
 
     function weaponDetailText(w) {
       if (!state) return "";
+
       if (state.weapon.id === "magic_staff") {
-        return `피해 ${Math.round(w.damage)} / 간격 ${(w.intervalMs / 1000).toFixed(2)}초 / 발사체 ${w.count} / 관통 ${w.pierce}`;
+        return `피해 ${Math.round(w.damage)} / 간격 ${(w.intervalMs / 1000).toFixed(2)}초 / 발사체 ${w.count} / 관통 ${w.pierce} / 크기 ${w.radius.toFixed(1)}`;
       }
+
       if (state.weapon.id === "flame_heart") {
         return `피해 ${Math.round(w.damage)} / 주기 ${(w.tickMs / 1000).toFixed(2)}초 / 범위 ${Math.round(w.radius)} / 파동 ${w.pulse ? "활성" : "비활성"}`;
       }
-      return `피해 ${Math.round(w.damage)} / 도끼 ${w.count} / 회전속도 x${w.orbitSpeed.toFixed(2)} / 크기 ${Math.round(w.axeRadius)}`;
+
+      return `피해 ${Math.round(w.damage)} / 도끼 ${w.count} / 회전속도 x${w.orbitSpeed.toFixed(2)} / 크기 ${Math.round(w.axeRadius)} / 궤도 ${Math.round(w.orbitRadius)}`;
     }
 
     function statDamageMul() {
@@ -2625,6 +2904,7 @@ if (touchMove.active) {
 
       state.running = false;
       state.paused = true;
+      resetTouchMove();
       cancelAnimationFrame(loopId);
 
       const survivalBase = Math.floor(state.timeMs / 1000);
@@ -2637,16 +2917,17 @@ if (touchMove.active) {
 
       let earned = state.runCoins + survivalCoins + killCoins + levelCoins + synergyCoins + augmentCoins + successBonus;
 
-      const jackpotChance = meta.upgrades.jackpot * .02;
-      const jackpot = Math.random() < jackpotChance;
+      const jackpot = Math.random() < meta.upgrades.jackpot * .02;
       if (jackpot) earned *= 2;
 
       earned = Math.round(earned);
+
       meta.coins += earned;
       meta.totalCoins += earned;
       meta.bestTimeMs = Math.max(meta.bestTimeMs || 0, state.timeMs);
       meta.bestKills = Math.max(meta.bestKills || 0, state.kills);
       state.rewardClaimed = true;
+
       saveMeta();
 
       resultTitle.textContent = success ? "15분 생존 성공!" : "사망";
@@ -2664,101 +2945,103 @@ if (touchMove.active) {
         총 획득 코인: <strong>${earned}</strong><br>
         보유 코인: <strong>${Math.floor(meta.coins)}</strong>
       `;
+
       resultOverlay.classList.add("show");
     }
 
-   function pauseGame() {
-  if (!state || !state.running || state.paused) return;
+    function pauseGame() {
+      if (!state || !state.running || state.paused) return;
 
-  state.paused = true;
-  resetTouchMove();
+      state.paused = true;
+      resetTouchMove();
 
-  pauseInfo.innerHTML = `
-    현재 시간: <strong>${formatTime(state.timeMs)}</strong><br>
-    레벨: <strong>${state.level}</strong><br>
-    처치 수: <strong>${state.kills}</strong><br>
-    전투 코인: <strong>${state.runCoins}</strong>
-  `;
+      pauseInfo.innerHTML = `
+        현재 시간: <strong>${formatTime(state.timeMs)}</strong><br>
+        레벨: <strong>${state.level}</strong><br>
+        처치 수: <strong>${state.kills}</strong><br>
+        전투 코인: <strong>${state.runCoins}</strong>
+      `;
 
-  pauseDetails.innerHTML = renderPauseDetails();
-  pauseOverlay.classList.add("show");
-}
+      pauseDetails.innerHTML = renderPauseDetails();
+      pauseOverlay.classList.add("show");
+    }
 
-function renderPauseDetails() {
-  if (!state) return "";
+    function renderPauseDetails() {
+      if (!state) return "";
 
-  const attrs = getAttrCounts();
-  const w = getWeaponStats();
+      const attrs = getAttrCounts();
+      const w = getWeaponStats();
 
-  const attrHtml = ALL_ATTRS
-    .filter(a => (attrs[a] || 0) > 0)
-    .map(a => `<div class="detail-card">${a} ${ATTR_NAMES[a]} <strong>${attrs[a]}</strong></div>`)
-    .join("") || `<div class="detail-card">없음</div>`;
+      const attrHtml = ALL_ATTRS
+        .filter(a => (attrs[a] || 0) > 0)
+        .map(a => `<div class="detail-card">${a} ${ATTR_NAMES[a]} <strong>${attrs[a]}</strong></div>`)
+        .join("") || `<div class="detail-card">없음</div>`;
 
-  const synergyHtml = Array.from(state.activeSynergies).length
-    ? Array.from(state.activeSynergies).map(key => {
-      const info = SYNERGY_INFO[key] || { name: key, short: "" };
+      const synergyHtml = Array.from(state.activeSynergies).length
+        ? Array.from(state.activeSynergies).map(key => {
+          const info = SYNERGY_INFO[key] || { name: key, short: "" };
+          return `
+            <div class="detail-card">
+              <strong>${info.name}</strong><br>
+              ${info.short}
+            </div>
+          `;
+        }).join("")
+        : `<div class="detail-card">아직 발현 없음</div>`;
+
+      const augmentHtml = state.augments.length
+        ? state.augments.map(a => `
+          <div class="detail-card">
+            <strong class="${GRADE_CLASS[a.grade]}">${a.name} ${renderAttrInline(a.attrs)}</strong><br>
+            ${a.desc}
+          </div>
+        `).join("")
+        : `<div class="detail-card">없음</div>`;
+
       return `
-        <div class="detail-card">
-          <strong>${info.name}</strong><br>
-          ${info.short}
+        <h3>현재 스탯</h3>
+        <div class="detail-grid">
+          <div class="detail-card">공격력 배율 <strong>x${statDamageMul().toFixed(2)}</strong></div>
+          <div class="detail-card">공격속도 <strong>x${statAttackSpeedMul().toFixed(2)}</strong></div>
+          <div class="detail-card">공격범위 <strong>x${statAreaMul().toFixed(2)}</strong></div>
+          <div class="detail-card">이동속도 <strong>x${(state.player.speed / 220).toFixed(2)}</strong></div>
+          <div class="detail-card">방어율 <strong>${Math.round(state.base.defense * 100)}%</strong></div>
+          <div class="detail-card">자석범위 <strong>${Math.round(state.player.magnetRange)}</strong></div>
+        </div>
+
+        <h3>무기 상세</h3>
+        <div class="detail-grid">
+          <div class="detail-card">${weaponDetailText(w)}</div>
+        </div>
+
+        <h3>현재 속성</h3>
+        <div class="detail-grid">
+          ${attrHtml}
+        </div>
+
+        <h3>활성 시너지</h3>
+        <div class="detail-grid">
+          ${synergyHtml}
+        </div>
+
+        <h3>보유 증강</h3>
+        <div class="detail-grid">
+          ${augmentHtml}
+        </div>
+
+        <h3>중첩 / 버프</h3>
+        <div class="detail-grid">
+          <div class="detail-card">집중 중첩 <strong>${state.stacks.focus}</strong> / 80</div>
+          <div class="detail-card">鬼 중첩 <strong>${state.stacks.demon}</strong> / ${state.synergy.demonMax || 0}</div>
+          <div class="detail-card">보석 획득 <strong>${state.itemStats.gems}</strong>개</div>
+          <div class="detail-card">버프 <strong>${state.buffs.length}</strong>개 활성</div>
         </div>
       `;
-    }).join("")
-    : `<div class="detail-card">아직 발현 없음</div>`;
-
-  const augmentHtml = state.augments.length
-    ? state.augments.map(a => `
-      <div class="detail-card">
-        <strong class="${GRADE_CLASS[a.grade]}">${a.name} ${renderAttrInline(a.attrs)}</strong><br>
-        ${a.desc}
-      </div>
-    `).join("")
-    : `<div class="detail-card">없음</div>`;
-
-  return `
-    <h3>현재 스탯</h3>
-    <div class="detail-grid">
-      <div class="detail-card">공격력 배율 <strong>x${statDamageMul().toFixed(2)}</strong></div>
-      <div class="detail-card">공격속도 <strong>x${statAttackSpeedMul().toFixed(2)}</strong></div>
-      <div class="detail-card">공격범위 <strong>x${statAreaMul().toFixed(2)}</strong></div>
-      <div class="detail-card">이동속도 <strong>x${(state.player.speed / 220).toFixed(2)}</strong></div>
-      <div class="detail-card">방어율 <strong>${Math.round(state.base.defense * 100)}%</strong></div>
-      <div class="detail-card">자석범위 <strong>${Math.round(state.player.magnetRange)}</strong></div>
-    </div>
-
-    <h3>무기 상세</h3>
-    <div class="detail-grid">
-      <div class="detail-card">${weaponDetailText(w)}</div>
-    </div>
-
-    <h3>현재 속성</h3>
-    <div class="detail-grid">
-      ${attrHtml}
-    </div>
-
-    <h3>활성 시너지</h3>
-    <div class="detail-grid">
-      ${synergyHtml}
-    </div>
-
-    <h3>보유 증강</h3>
-    <div class="detail-grid">
-      ${augmentHtml}
-    </div>
-
-    <h3>중첩 / 버프</h3>
-    <div class="detail-grid">
-      <div class="detail-card">집중 중첩 <strong>${state.stacks.focus}</strong> / 80</div>
-      <div class="detail-card">鬼 중첩 <strong>${state.stacks.demon}</strong> / ${state.synergy.demonMax || 0}</div>
-      <div class="detail-card">보석 획득 <strong>${state.itemStats.gems}</strong>개</div>
-      <div class="detail-card">버프 <strong>${state.buffs.length}</strong>개 활성</div>
-    </div>
-  `;
-}
+    }
 
     function resumeGame() {
       if (!state) return;
+
       pauseOverlay.classList.remove("show");
       state.paused = false;
       lastTs = performance.now();
@@ -2774,122 +3057,121 @@ function renderPauseDetails() {
       updateUi();
     }
 
-function getCanvasLocalPoint(clientX, clientY) {
-  const rect = canvas.getBoundingClientRect();
+    function getCanvasLocalPoint(clientX, clientY) {
+      const rect = canvas.getBoundingClientRect();
 
-  return {
-    x: clientX - rect.left,
-    y: clientY - rect.top,
-    inside:
-      clientX >= rect.left &&
-      clientX <= rect.right &&
-      clientY >= rect.top &&
-      clientY <= rect.bottom
-  };
-}
+      return {
+        x: clientX - rect.left,
+        y: clientY - rect.top,
+        inside:
+          clientX >= rect.left &&
+          clientX <= rect.right &&
+          clientY >= rect.top &&
+          clientY <= rect.bottom
+      };
+    }
 
-function placeFloatingStick(clientX, clientY) {
-  if (!mobileStick) return;
+    function placeFloatingStick(clientX, clientY) {
+      if (!mobileStick) return;
 
-  const wrapRect = canvas.parentElement.getBoundingClientRect();
-  const x = clientX - wrapRect.left;
-  const y = clientY - wrapRect.top;
+      const wrapRect = canvas.parentElement.getBoundingClientRect();
+      const x = clientX - wrapRect.left;
+      const y = clientY - wrapRect.top;
 
-  mobileStick.style.transform = `translate(${x}px, ${y}px)`;
-  mobileStick.classList.add("active");
-}
+      mobileStick.style.transform = `translate(${x}px, ${y}px)`;
+      mobileStick.classList.add("active");
+    }
 
-function setTouchMoveFromPoint(clientX, clientY) {
-  if (!mobileStick || !mobileStickKnob) return;
+    function setTouchMoveFromPoint(clientX, clientY) {
+      if (!mobileStick || !mobileStickKnob) return;
 
-  const rect = mobileStick.getBoundingClientRect();
-  const cx = rect.left + rect.width / 2;
-  const cy = rect.top + rect.height / 2;
+      const rect = mobileStick.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
 
-  let dx = clientX - cx;
-  let dy = clientY - cy;
+      let dx = clientX - cx;
+      let dy = clientY - cy;
 
-  const max = rect.width / 2 - 18;
-  const len = Math.hypot(dx, dy);
+      const max = rect.width / 2 - 18;
+      const len = Math.hypot(dx, dy);
 
-  if (len > max) {
-    dx = (dx / len) * max;
-    dy = (dy / len) * max;
-  }
+      if (len > max) {
+        dx = (dx / len) * max;
+        dy = (dy / len) * max;
+      }
 
-  const deadzone = 9;
-  const inputLen = Math.hypot(dx, dy);
+      const deadzone = 9;
+      const inputLen = Math.hypot(dx, dy);
 
-  if (inputLen < deadzone) {
-    touchMove.dx = 0;
-    touchMove.dy = 0;
-    mobileStickKnob.style.transform = "translate(0, 0)";
-    return;
-  }
+      if (inputLen < deadzone) {
+        touchMove.dx = 0;
+        touchMove.dy = 0;
+        mobileStickKnob.style.transform = "translate(0, 0)";
+        return;
+      }
 
-  mobileStickKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+      mobileStickKnob.style.transform = `translate(${dx}px, ${dy}px)`;
 
-  const nextDx = dx / max;
-  const nextDy = dy / max;
+      const nextDx = dx / max;
+      const nextDy = dy / max;
 
-  // 입력 튐 완화
-  touchMove.dx = touchMove.dx * 0.25 + nextDx * 0.75;
-  touchMove.dy = touchMove.dy * 0.25 + nextDy * 0.75;
-}
+      touchMove.dx = touchMove.dx * 0.25 + nextDx * 0.75;
+      touchMove.dy = touchMove.dy * 0.25 + nextDy * 0.75;
+    }
 
-function resetTouchMove() {
-  touchMove.active = false;
-  touchMove.id = null;
-  touchMove.dx = 0;
-  touchMove.dy = 0;
+    function resetTouchMove() {
+      touchMove.active = false;
+      touchMove.id = null;
+      touchMove.dx = 0;
+      touchMove.dy = 0;
 
-  if (mobileStickKnob) {
-    mobileStickKnob.style.transform = "translate(0, 0)";
-  }
+      if (mobileStickKnob) {
+        mobileStickKnob.style.transform = "translate(0, 0)";
+      }
 
-  if (mobileStick) {
-    mobileStick.classList.remove("active");
-    mobileStick.style.transform = "translate(-9999px, -9999px)";
-  }
-}
+      if (mobileStick) {
+        mobileStick.classList.remove("active");
+        mobileStick.style.transform = "translate(-9999px, -9999px)";
+      }
+    }
 
-canvas.addEventListener("pointerdown", e => {
-  if (!state || !state.running || state.paused) return;
-  if (e.pointerType !== "touch" && e.pointerType !== "pen") return;
+    canvas.addEventListener("pointerdown", e => {
+      if (!state || !state.running || state.paused) return;
+      if (e.pointerType !== "touch" && e.pointerType !== "pen") return;
 
-  const point = getCanvasLocalPoint(e.clientX, e.clientY);
-  if (!point.inside) return;
+      const point = getCanvasLocalPoint(e.clientX, e.clientY);
+      if (!point.inside) return;
 
-  touchMove.active = true;
-  touchMove.id = e.pointerId;
+      touchMove.active = true;
+      touchMove.id = e.pointerId;
 
-  canvas.setPointerCapture(e.pointerId);
-  placeFloatingStick(e.clientX, e.clientY);
-  setTouchMoveFromPoint(e.clientX, e.clientY);
+      canvas.setPointerCapture(e.pointerId);
+      placeFloatingStick(e.clientX, e.clientY);
+      setTouchMoveFromPoint(e.clientX, e.clientY);
 
-  e.preventDefault();
-}, { passive: false });
+      e.preventDefault();
+    }, { passive: false });
 
-canvas.addEventListener("pointermove", e => {
-  if (!touchMove.active || e.pointerId !== touchMove.id) return;
+    canvas.addEventListener("pointermove", e => {
+      if (!touchMove.active || e.pointerId !== touchMove.id) return;
 
-  setTouchMoveFromPoint(e.clientX, e.clientY);
-  e.preventDefault();
-}, { passive: false });
+      setTouchMoveFromPoint(e.clientX, e.clientY);
+      e.preventDefault();
+    }, { passive: false });
 
-canvas.addEventListener("pointerup", e => {
-  if (e.pointerId !== touchMove.id) return;
+    canvas.addEventListener("pointerup", e => {
+      if (e.pointerId !== touchMove.id) return;
 
-  resetTouchMove();
-  e.preventDefault();
-}, { passive: false });
+      resetTouchMove();
+      e.preventDefault();
+    }, { passive: false });
 
-canvas.addEventListener("pointercancel", e => {
-  if (e.pointerId !== touchMove.id) return;
+    canvas.addEventListener("pointercancel", e => {
+      if (e.pointerId !== touchMove.id) return;
 
-  resetTouchMove();
-  e.preventDefault();
-}, { passive: false });
+      resetTouchMove();
+      e.preventDefault();
+    }, { passive: false });
 
     function exitToMain() {
       pauseOverlay.classList.remove("show");
@@ -2898,7 +3180,9 @@ canvas.addEventListener("pointercancel", e => {
       weaponOverlay.classList.remove("show");
       labOverlay.classList.remove("show");
       codexOverlay.classList.remove("show");
+
       cancelAnimationFrame(loopId);
+      resetTouchMove();
       state = null;
       titleOverlay.classList.add("show");
       updateUi();
@@ -2906,8 +3190,10 @@ canvas.addEventListener("pointercancel", e => {
 
     function setLabTab(tab) {
       labTab = tab;
+
       document.querySelectorAll("#labOverlay .tab").forEach(b => b.classList.remove("active"));
       document.getElementById(tab === "basic" ? "tabBasic" : tab === "combat" ? "tabCombat" : "tabEconomy").classList.add("active");
+
       renderLab();
     }
 
@@ -2926,8 +3212,11 @@ canvas.addEventListener("pointercancel", e => {
     function getLabCost(item) {
       const [id, , max, base, growth] = item;
       const level = meta.upgrades[id] || 0;
+
       if (level >= max) return null;
+
       const discount = 1 - (meta.upgrades.research_discount || 0) * .03;
+
       return Math.max(1, Math.round((base * Math.pow(growth, level) * discount) / 10) * 10);
     }
 
@@ -2954,6 +3243,7 @@ canvas.addEventListener("pointercancel", e => {
           <div class="cost">${maxed ? "MAX" : `비용: ${cost} 코인`}</div>
           <button ${canBuy ? "" : "disabled"} onclick="buyLab('${id}')">${maxed ? "완료" : "구매"}</button>
         `;
+
         labList.appendChild(div);
       }
     }
@@ -2964,9 +3254,11 @@ canvas.addEventListener("pointercancel", e => {
 
       const level = meta.upgrades[id] || 0;
       const max = item[2];
+
       if (level >= max) return;
 
       const cost = getLabCost(item);
+
       if (meta.coins < cost) {
         showToast("코인이 부족합니다.");
         return;
@@ -2974,6 +3266,7 @@ canvas.addEventListener("pointercancel", e => {
 
       meta.coins -= cost;
       meta.upgrades[id] = level + 1;
+
       saveMeta();
       renderLab();
       updateUi();
@@ -2982,6 +3275,7 @@ canvas.addEventListener("pointercancel", e => {
 
     function resetLabData() {
       if (!confirm("모든 코인과 연구 데이터를 초기화할까요?")) return;
+
       meta = defaultMeta();
       saveMeta();
       renderLab();
@@ -3002,8 +3296,10 @@ canvas.addEventListener("pointercancel", e => {
 
     function setCodexTab(tab) {
       codexTab = tab;
+
       document.querySelectorAll("#codexOverlay .tab").forEach(b => b.classList.remove("active"));
       document.getElementById(tab === "augments" ? "codexAugTab" : tab === "synergies" ? "codexSynTab" : "codexItemTab").classList.add("active");
+
       renderCodex();
     }
 
@@ -3061,12 +3357,20 @@ canvas.addEventListener("pointercancel", e => {
     }
 
     function getNearestEnemy(x = state.player.x, y = state.player.y, exclude = null) {
-      let best = null, bestD = Infinity;
+      let best = null;
+      let bestD = Infinity;
+
       for (const e of state.enemies) {
         if (e === exclude || e.hp <= 0) continue;
+
         const d = Math.hypot(e.x - x, e.y - y);
-        if (d < bestD) { bestD = d; best = e; }
+
+        if (d < bestD) {
+          bestD = d;
+          best = e;
+        }
       }
+
       return best;
     }
 
@@ -3080,12 +3384,18 @@ canvas.addEventListener("pointercancel", e => {
     }
 
     function renderAttrBadges(attrs) {
-      return Object.entries(attrs || {}).map(([k, v]) => `<span class="badge">${k} +${v}</span>`).join("");
+      return Object.entries(attrs || {})
+        .map(([k, v]) => `<span class="badge">${k} +${v}</span>`)
+        .join("");
     }
 
     function renderAttrInline(attrs) {
       let out = "";
-      for (const [k, v] of Object.entries(attrs || {})) out += " " + k.repeat(v);
+
+      for (const [k, v] of Object.entries(attrs || {})) {
+        out += " " + k.repeat(v);
+      }
+
       return out;
     }
 
@@ -3093,6 +3403,7 @@ canvas.addEventListener("pointercancel", e => {
       const s = Math.floor(ms / 1000);
       const m = Math.floor(s / 60);
       const sec = s % 60;
+
       return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
     }
 
@@ -3114,10 +3425,12 @@ canvas.addEventListener("pointercancel", e => {
     function weightedPick(list) {
       const total = list.reduce((sum, item) => sum + item.weight, 0);
       let r = Math.random() * total;
+
       for (const item of list) {
         r -= item.weight;
         if (r <= 0) return item;
       }
+
       return list[0];
     }
 
@@ -3133,6 +3446,7 @@ canvas.addEventListener("pointercancel", e => {
 
     window.addEventListener("keydown", e => {
       keys.add(e.code);
+
       if ((e.code === "Escape" || e.code === "KeyP") && state && state.running) {
         if (state.paused) resumeGame();
         else pauseGame();
@@ -3141,14 +3455,14 @@ canvas.addEventListener("pointercancel", e => {
 
     window.addEventListener("keyup", e => keys.delete(e.code));
 
-resizeCanvasForDevice();
+    resizeCanvasForDevice();
 
-window.addEventListener("resize", () => {
-  resizeCanvasForDevice();
-  updateUi();
-});
+    window.addEventListener("resize", () => {
+      resizeCanvasForDevice();
+      updateUi();
+    });
 
-updateUi();
+    updateUi();
   </script>
 </body>
 </html>
