@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>JSON Survivors</title>
+  <title>SABANA Survivors</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -220,6 +220,130 @@
     .lab-actions, .choice-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; justify-content: center; }
 
     @media (max-width: 1000px) { .app { grid-template-columns: 1fr; } }
+/* 모바일 전투 UI */
+.mobile-stick {
+  position: absolute;
+  left: 22px;
+  bottom: 22px;
+  width: 118px;
+  height: 118px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.45);
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 15;
+  touch-action: none;
+  user-select: none;
+}
+
+.mobile-stick-knob {
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  background: rgba(96, 165, 250, 0.72);
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  transform: translate(0, 0);
+  pointer-events: none;
+}
+
+.pause-details {
+  margin-top: 16px;
+  text-align: left;
+  display: none;
+  max-height: 46vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.pause-details h3 {
+  margin: 14px 0 8px;
+  font-size: 15px;
+}
+
+.pause-details .detail-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.pause-details .detail-card {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 8px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.pause-details .detail-card strong {
+  color: #fff;
+}
+
+@media (max-width: 1000px) {
+  body {
+    padding: 8px;
+  }
+
+  .app {
+    grid-template-columns: 1fr;
+  }
+
+  .side {
+    display: none;
+  }
+
+  .panel {
+    border-radius: 14px;
+  }
+
+  .topbar {
+    gap: 6px;
+    font-size: 11px;
+    padding: 8px;
+  }
+
+  .topbar div:nth-child(5),
+  .topbar div:nth-child(6) {
+    display: none;
+  }
+
+  .topbar strong {
+    font-size: 13px;
+  }
+
+  .mini-btn {
+    padding: 7px 9px;
+    font-size: 11px;
+  }
+
+  .canvas-wrap {
+    aspect-ratio: 16 / 10;
+  }
+
+  .mobile-stick {
+    display: flex;
+  }
+
+  .modal {
+    width: 96%;
+    max-height: 94%;
+    padding: 14px;
+  }
+
+  .cards {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    min-height: auto;
+  }
+
+  .pause-details {
+    display: block;
+  }
+}
+    
   </style>
 </head>
 
@@ -244,6 +368,9 @@
           <div id="bigAlertMain" class="main"></div>
           <div id="bigAlertSub" class="sub"></div>
         </div>
+        <div id="mobileStick" class="mobile-stick">
+  <div id="mobileStickKnob" class="mobile-stick-knob"></div>
+</div>
 
         <div id="titleOverlay" class="overlay show">
           <div class="modal center">
@@ -325,6 +452,7 @@
           <div class="modal center">
             <h2>일시정지</h2>
             <p id="pauseInfo"></p>
+            <div id="pauseDetails" class="pause-details"></div>
             <div class="menu-row">
               <button onclick="resumeGame()">계속하기</button>
               <button class="secondary" onclick="restartRun()">다시하기</button>
@@ -430,6 +558,16 @@
     const resultTitle = document.getElementById("resultTitle");
     const resultDesc = document.getElementById("resultDesc");
     const pauseBtn = document.getElementById("pauseBtn");
+    const pauseDetails = document.getElementById("pauseDetails");
+const mobileStick = document.getElementById("mobileStick");
+const mobileStickKnob = document.getElementById("mobileStickKnob");
+
+const touchMove = {
+  active: false,
+  id: null,
+  dx: 0,
+  dy: 0
+};
 
     const bigAlert = document.getElementById("bigAlert");
     const bigAlertMain = document.getElementById("bigAlertMain");
@@ -472,15 +610,15 @@
       legendary: "grade-legendary"
     };
 
-    const EXP_TO_NEXT = [
-      0,
-      100, 200, 300, 400, 500,
-      650, 800, 950, 1100, 1300,
-      1500, 1700, 1900, 2100, 2350,
-      2600, 2850, 3100, 3350, 3650,
-      3950, 4250, 4550, 4850, 5200,
-      5550, 5900, 6250, 6700
-    ];
+const EXP_TO_NEXT = [
+  0,
+  80, 150, 230, 320, 420,
+  540, 670, 810, 960, 1120,
+  1300, 1480, 1670, 1870, 2080,
+  2300, 2530, 2770, 3020, 3280,
+  3550, 3830, 4120, 4420, 4730,
+  5050, 5380, 5720, 6100
+];
 
     const SYNERGY_INFO = {
       ice2: { name: "氷 2 냉기 개방", cond: "氷 2", short: "공격 시 적을 둔화시킵니다.", detail: "공격 적중 시 25% 확률로 적을 2초 둔화\n둔화 강도: 30%" },
@@ -1443,11 +1581,17 @@
     function updatePlayer(dt) {
       state.player.invuln = Math.max(0, state.player.invuln - dt);
 
-      let dx = 0, dy = 0;
-      if (keys.has("KeyW") || keys.has("ArrowUp")) dy -= 1;
-      if (keys.has("KeyS") || keys.has("ArrowDown")) dy += 1;
-      if (keys.has("KeyA") || keys.has("ArrowLeft")) dx -= 1;
-      if (keys.has("KeyD") || keys.has("ArrowRight")) dx += 1;
+let dx = 0, dy = 0;
+
+if (keys.has("KeyW") || keys.has("ArrowUp")) dy -= 1;
+if (keys.has("KeyS") || keys.has("ArrowDown")) dy += 1;
+if (keys.has("KeyA") || keys.has("ArrowLeft")) dx -= 1;
+if (keys.has("KeyD") || keys.has("ArrowRight")) dx += 1;
+
+if (touchMove.active) {
+  dx += touchMove.dx;
+  dy += touchMove.dy;
+}
 
       const len = Math.hypot(dx, dy) || 1;
       const speed = state.player.speed * getBuffMul("speed") * (state.synergy.moveMul || 1);
@@ -1551,11 +1695,11 @@
     function spawnEnemy() {
       const t = state.timeMs / 1000;
       const types = [
-        { id: "slime", color: "#22c55e", hp: 28, speed: 72, damage: 7, exp: 8, r: 13, from: 0, weight: 52, kb: 0 },
-        { id: "wolf", color: "#94a3b8", hp: 28, speed: 128, damage: 8, exp: 12, r: 11, from: 60, weight: 30, kb: .1 },
-        { id: "bat", color: "#a78bfa", hp: 22, speed: 158, damage: 6, exp: 12, r: 9, from: 120, weight: 24, kb: 0 },
-        { id: "golem", color: "#78716c", hp: 130, speed: 50, damage: 14, exp: 35, r: 18, from: 240, weight: 13, kb: .6 },
-        { id: "bomb", color: "#f97316", hp: 60, speed: 68, damage: 11, exp: 25, r: 14, from: 360, weight: 16, kb: .3 }
+        { id: "slime", color: "#22c55e", hp: 28, speed: 72, damage: 7, exp: 12, r: 13, from: 0, weight: 52, kb: 0 },
+{ id: "wolf", color: "#94a3b8", hp: 28, speed: 128, damage: 8, exp: 17, r: 11, from: 60, weight: 30, kb: .1 },
+{ id: "bat", color: "#a78bfa", hp: 22, speed: 158, damage: 6, exp: 18, r: 9, from: 120, weight: 24, kb: 0 },
+{ id: "golem", color: "#78716c", hp: 130, speed: 50, damage: 14, exp: 50, r: 18, from: 240, weight: 13, kb: .6 },
+{ id: "bomb", color: "#f97316", hp: 60, speed: 68, damage: 11, exp: 38, r: 14, from: 360, weight: 16, kb: .3 }
       ].filter(m => t >= m.from);
 
       const picked = weightedPick(types.map(m => ({ ...m, weight: m.weight })));
@@ -2401,17 +2545,94 @@
       resultOverlay.classList.add("show");
     }
 
-    function pauseGame() {
-      if (!state || !state.running || state.paused) return;
-      state.paused = true;
-      pauseInfo.innerHTML = `
-        현재 시간: <strong>${formatTime(state.timeMs)}</strong><br>
-        레벨: <strong>${state.level}</strong><br>
-        처치 수: <strong>${state.kills}</strong><br>
-        전투 코인: <strong>${state.runCoins}</strong>
+   function pauseGame() {
+  if (!state || !state.running || state.paused) return;
+
+  state.paused = true;
+
+  pauseInfo.innerHTML = `
+    현재 시간: <strong>${formatTime(state.timeMs)}</strong><br>
+    레벨: <strong>${state.level}</strong><br>
+    처치 수: <strong>${state.kills}</strong><br>
+    전투 코인: <strong>${state.runCoins}</strong>
+  `;
+
+  pauseDetails.innerHTML = renderPauseDetails();
+  pauseOverlay.classList.add("show");
+}
+
+function renderPauseDetails() {
+  if (!state) return "";
+
+  const attrs = getAttrCounts();
+  const w = getWeaponStats();
+
+  const attrHtml = ALL_ATTRS
+    .filter(a => (attrs[a] || 0) > 0)
+    .map(a => `<div class="detail-card">${a} ${ATTR_NAMES[a]} <strong>${attrs[a]}</strong></div>`)
+    .join("") || `<div class="detail-card">없음</div>`;
+
+  const synergyHtml = Array.from(state.activeSynergies).length
+    ? Array.from(state.activeSynergies).map(key => {
+      const info = SYNERGY_INFO[key] || { name: key, short: "" };
+      return `
+        <div class="detail-card">
+          <strong>${info.name}</strong><br>
+          ${info.short}
+        </div>
       `;
-      pauseOverlay.classList.add("show");
-    }
+    }).join("")
+    : `<div class="detail-card">아직 발현 없음</div>`;
+
+  const augmentHtml = state.augments.length
+    ? state.augments.map(a => `
+      <div class="detail-card">
+        <strong class="${GRADE_CLASS[a.grade]}">${a.name} ${renderAttrInline(a.attrs)}</strong><br>
+        ${a.desc}
+      </div>
+    `).join("")
+    : `<div class="detail-card">없음</div>`;
+
+  return `
+    <h3>현재 스탯</h3>
+    <div class="detail-grid">
+      <div class="detail-card">공격력 배율 <strong>x${statDamageMul().toFixed(2)}</strong></div>
+      <div class="detail-card">공격속도 <strong>x${statAttackSpeedMul().toFixed(2)}</strong></div>
+      <div class="detail-card">공격범위 <strong>x${statAreaMul().toFixed(2)}</strong></div>
+      <div class="detail-card">이동속도 <strong>x${(state.player.speed / 220).toFixed(2)}</strong></div>
+      <div class="detail-card">방어율 <strong>${Math.round(state.base.defense * 100)}%</strong></div>
+      <div class="detail-card">자석범위 <strong>${Math.round(state.player.magnetRange)}</strong></div>
+    </div>
+
+    <h3>무기 상세</h3>
+    <div class="detail-grid">
+      <div class="detail-card">${weaponDetailText(w)}</div>
+    </div>
+
+    <h3>현재 속성</h3>
+    <div class="detail-grid">
+      ${attrHtml}
+    </div>
+
+    <h3>활성 시너지</h3>
+    <div class="detail-grid">
+      ${synergyHtml}
+    </div>
+
+    <h3>보유 증강</h3>
+    <div class="detail-grid">
+      ${augmentHtml}
+    </div>
+
+    <h3>중첩 / 버프</h3>
+    <div class="detail-grid">
+      <div class="detail-card">집중 중첩 <strong>${state.stacks.focus}</strong> / 80</div>
+      <div class="detail-card">鬼 중첩 <strong>${state.stacks.demon}</strong> / ${state.synergy.demonMax || 0}</div>
+      <div class="detail-card">보석 획득 <strong>${state.itemStats.gems}</strong>개</div>
+      <div class="detail-card">버프 <strong>${state.buffs.length}</strong>개 활성</div>
+    </div>
+  `;
+}
 
     function resumeGame() {
       if (!state) return;
@@ -2429,6 +2650,84 @@
       openWeaponSelect();
       updateUi();
     }
+
+    function setTouchMoveFromEvent(touch) {
+  if (!mobileStick || !mobileStickKnob) return;
+
+  const rect = mobileStick.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+
+  let dx = touch.clientX - cx;
+  let dy = touch.clientY - cy;
+
+  const max = rect.width / 2 - 18;
+  const len = Math.hypot(dx, dy);
+
+  if (len > max) {
+    dx = (dx / len) * max;
+    dy = (dy / len) * max;
+  }
+
+  mobileStickKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+
+  const normalizedLen = Math.hypot(dx, dy) || 1;
+  touchMove.dx = dx / max;
+  touchMove.dy = dy / max;
+
+  if (normalizedLen < 8) {
+    touchMove.dx = 0;
+    touchMove.dy = 0;
+  }
+}
+
+if (mobileStick) {
+  mobileStick.addEventListener("touchstart", e => {
+    if (!state || !state.running || state.paused) return;
+
+    const touch = e.changedTouches[0];
+    touchMove.active = true;
+    touchMove.id = touch.identifier;
+    setTouchMoveFromEvent(touch);
+    e.preventDefault();
+  }, { passive: false });
+
+  mobileStick.addEventListener("touchmove", e => {
+    if (!touchMove.active) return;
+
+    for (const touch of e.changedTouches) {
+      if (touch.identifier === touchMove.id) {
+        setTouchMoveFromEvent(touch);
+        break;
+      }
+    }
+
+    e.preventDefault();
+  }, { passive: false });
+
+  mobileStick.addEventListener("touchend", e => {
+    for (const touch of e.changedTouches) {
+      if (touch.identifier === touchMove.id) {
+        touchMove.active = false;
+        touchMove.id = null;
+        touchMove.dx = 0;
+        touchMove.dy = 0;
+        mobileStickKnob.style.transform = "translate(0, 0)";
+        break;
+      }
+    }
+
+    e.preventDefault();
+  }, { passive: false });
+
+  mobileStick.addEventListener("touchcancel", () => {
+    touchMove.active = false;
+    touchMove.id = null;
+    touchMove.dx = 0;
+    touchMove.dy = 0;
+    mobileStickKnob.style.transform = "translate(0, 0)";
+  });
+}
 
     function exitToMain() {
       pauseOverlay.classList.remove("show");
