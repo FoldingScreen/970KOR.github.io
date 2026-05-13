@@ -356,6 +356,95 @@ canvas {
     display: block;
   }
 }
+
+@media (max-width: 1000px) {
+  html,
+  body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: none;
+  }
+
+  .canvas-wrap,
+  canvas,
+  .mobile-stick {
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  .overlay.show,
+  .modal {
+    touch-action: auto;
+  }
+}
+    /* 플로팅 모바일 조이스틱 */
+@media (max-width: 1000px) {
+  html,
+  body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: none;
+  }
+
+  .canvas-wrap,
+  canvas {
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  .overlay.show,
+  .modal,
+  .card,
+  button {
+    touch-action: auto;
+  }
+
+  .mobile-stick {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: auto;
+    width: 116px;
+    height: 116px;
+    margin-left: -58px;
+    margin-top: -58px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.48);
+    border: 2px solid rgba(255, 255, 255, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 15;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-9999px, -9999px);
+    transition: opacity 0.08s;
+    touch-action: none;
+    user-select: none;
+  }
+
+  .mobile-stick.active {
+    opacity: 1;
+  }
+
+  .mobile-stick-knob {
+    width: 46px;
+    height: 46px;
+    border-radius: 999px;
+    background: rgba(96, 165, 250, 0.75);
+    border: 2px solid rgba(255, 255, 255, 0.55);
+    transform: translate(0, 0);
+    pointer-events: none;
+  }
+}
     
   </style>
 </head>
@@ -1326,6 +1415,7 @@ let rerollsLeft = 0;
 
     function openGrowthChoice() {
       state.paused = true;
+      resetTouchMove();
       currentChoiceMode = "growth";
       currentChoices = rollGrowthChoices();
       rerollBtn.style.display = "none";
@@ -1439,6 +1529,7 @@ let rerollsLeft = 0;
 
     function openAugmentChoice() {
       state.paused = true;
+      resetTouchMove();
       currentChoiceMode = "augment";
       currentChoices = rollAugmentChoices();
       rerollsLeft = meta.upgrades.reroll || 0;
@@ -2580,6 +2671,7 @@ if (touchMove.active) {
   if (!state || !state.running || state.paused) return;
 
   state.paused = true;
+  resetTouchMove();
 
   pauseInfo.innerHTML = `
     현재 시간: <strong>${formatTime(state.timeMs)}</strong><br>
@@ -2682,15 +2774,40 @@ function renderPauseDetails() {
       updateUi();
     }
 
-    function setTouchMoveFromEvent(touch) {
+function getCanvasLocalPoint(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+
+  return {
+    x: clientX - rect.left,
+    y: clientY - rect.top,
+    inside:
+      clientX >= rect.left &&
+      clientX <= rect.right &&
+      clientY >= rect.top &&
+      clientY <= rect.bottom
+  };
+}
+
+function placeFloatingStick(clientX, clientY) {
+  if (!mobileStick) return;
+
+  const wrapRect = canvas.parentElement.getBoundingClientRect();
+  const x = clientX - wrapRect.left;
+  const y = clientY - wrapRect.top;
+
+  mobileStick.style.transform = `translate(${x}px, ${y}px)`;
+  mobileStick.classList.add("active");
+}
+
+function setTouchMoveFromPoint(clientX, clientY) {
   if (!mobileStick || !mobileStickKnob) return;
 
   const rect = mobileStick.getBoundingClientRect();
   const cx = rect.left + rect.width / 2;
   const cy = rect.top + rect.height / 2;
 
-  let dx = touch.clientX - cx;
-  let dy = touch.clientY - cy;
+  let dx = clientX - cx;
+  let dy = clientY - cy;
 
   const max = rect.width / 2 - 18;
   const len = Math.hypot(dx, dy);
@@ -2700,65 +2817,79 @@ function renderPauseDetails() {
     dy = (dy / len) * max;
   }
 
-  mobileStickKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+  const deadzone = 9;
+  const inputLen = Math.hypot(dx, dy);
 
-  const normalizedLen = Math.hypot(dx, dy) || 1;
-  touchMove.dx = dx / max;
-  touchMove.dy = dy / max;
-
-  if (normalizedLen < 8) {
-    touchMove.dx = 0;
-    touchMove.dy = 0;
-  }
-}
-
-if (mobileStick) {
-  mobileStick.addEventListener("touchstart", e => {
-    if (!state || !state.running || state.paused) return;
-
-    const touch = e.changedTouches[0];
-    touchMove.active = true;
-    touchMove.id = touch.identifier;
-    setTouchMoveFromEvent(touch);
-    e.preventDefault();
-  }, { passive: false });
-
-  mobileStick.addEventListener("touchmove", e => {
-    if (!touchMove.active) return;
-
-    for (const touch of e.changedTouches) {
-      if (touch.identifier === touchMove.id) {
-        setTouchMoveFromEvent(touch);
-        break;
-      }
-    }
-
-    e.preventDefault();
-  }, { passive: false });
-
-  mobileStick.addEventListener("touchend", e => {
-    for (const touch of e.changedTouches) {
-      if (touch.identifier === touchMove.id) {
-        touchMove.active = false;
-        touchMove.id = null;
-        touchMove.dx = 0;
-        touchMove.dy = 0;
-        mobileStickKnob.style.transform = "translate(0, 0)";
-        break;
-      }
-    }
-
-    e.preventDefault();
-  }, { passive: false });
-
-  mobileStick.addEventListener("touchcancel", () => {
-    touchMove.active = false;
-    touchMove.id = null;
+  if (inputLen < deadzone) {
     touchMove.dx = 0;
     touchMove.dy = 0;
     mobileStickKnob.style.transform = "translate(0, 0)";
-  });
+    return;
+  }
+
+  mobileStickKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+
+  const nextDx = dx / max;
+  const nextDy = dy / max;
+
+  // 입력 튐 완화
+  touchMove.dx = touchMove.dx * 0.25 + nextDx * 0.75;
+  touchMove.dy = touchMove.dy * 0.25 + nextDy * 0.75;
 }
+
+function resetTouchMove() {
+  touchMove.active = false;
+  touchMove.id = null;
+  touchMove.dx = 0;
+  touchMove.dy = 0;
+
+  if (mobileStickKnob) {
+    mobileStickKnob.style.transform = "translate(0, 0)";
+  }
+
+  if (mobileStick) {
+    mobileStick.classList.remove("active");
+    mobileStick.style.transform = "translate(-9999px, -9999px)";
+  }
+}
+
+canvas.addEventListener("pointerdown", e => {
+  if (!state || !state.running || state.paused) return;
+  if (e.pointerType !== "touch" && e.pointerType !== "pen") return;
+
+  const point = getCanvasLocalPoint(e.clientX, e.clientY);
+  if (!point.inside) return;
+
+  touchMove.active = true;
+  touchMove.id = e.pointerId;
+
+  canvas.setPointerCapture(e.pointerId);
+  placeFloatingStick(e.clientX, e.clientY);
+  setTouchMoveFromPoint(e.clientX, e.clientY);
+
+  e.preventDefault();
+}, { passive: false });
+
+canvas.addEventListener("pointermove", e => {
+  if (!touchMove.active || e.pointerId !== touchMove.id) return;
+
+  setTouchMoveFromPoint(e.clientX, e.clientY);
+  e.preventDefault();
+}, { passive: false });
+
+canvas.addEventListener("pointerup", e => {
+  if (e.pointerId !== touchMove.id) return;
+
+  resetTouchMove();
+  e.preventDefault();
+}, { passive: false });
+
+canvas.addEventListener("pointercancel", e => {
+  if (e.pointerId !== touchMove.id) return;
+
+  resetTouchMove();
+  e.preventDefault();
+}, { passive: false });
 
     function exitToMain() {
       pauseOverlay.classList.remove("show");
