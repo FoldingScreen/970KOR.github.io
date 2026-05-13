@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>JSON Survivors MVP</title>
+  <title>JSON Survivors</title>
   <style>
     * { box-sizing: border-box; }
-
     body {
       margin: 0;
       min-height: 100vh;
@@ -18,7 +17,6 @@
       align-items: flex-start;
       padding: 16px;
     }
-
     button {
       border: 0;
       border-radius: 12px;
@@ -28,34 +26,25 @@
       font-weight: 800;
       cursor: pointer;
     }
-
     button:hover { background: #1d4ed8; }
-    button:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-    }
-
+    button:disabled { opacity: .45; cursor: not-allowed; }
     button.secondary { background: #334155; }
     button.secondary:hover { background: #475569; }
-
     button.danger { background: #dc2626; }
     button.danger:hover { background: #b91c1c; }
-
     .app {
-      width: min(1200px, 100%);
+      width: min(1240px, 100%);
       display: grid;
-      grid-template-columns: 1fr 320px;
+      grid-template-columns: 1fr 340px;
       gap: 14px;
     }
-
     .panel {
       background: #111827;
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255,255,255,.08);
       border-radius: 18px;
       overflow: hidden;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 20px 60px rgba(0,0,0,.3);
     }
-
     .topbar {
       display: flex;
       gap: 10px;
@@ -64,45 +53,25 @@
       justify-content: space-between;
       padding: 10px 12px;
       background: #020617;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      border-bottom: 1px solid rgba(255,255,255,.08);
       font-size: 13px;
     }
-
-    .topbar strong {
-      color: #fff;
-      font-size: 15px;
-    }
-
-    .mini-btn {
-      padding: 7px 10px;
-      border-radius: 10px;
-      font-size: 12px;
-      background: #334155;
-    }
-
-    .mini-btn:hover { background: #475569; }
-
-    .canvas-wrap {
-      position: relative;
-      width: 100%;
-      aspect-ratio: 16 / 9;
-      background: #020617;
-    }
-
+    .topbar strong { color: #fff; font-size: 15px; }
+    .mini-btn { padding: 7px 10px; border-radius: 10px; font-size: 12px; background: #334155; }
+    .canvas-wrap { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #020617; }
     canvas {
       display: block;
       width: 100%;
       height: 100%;
       background:
-        radial-gradient(circle at 20% 30%, rgba(37, 99, 235, 0.16), transparent 28%),
-        radial-gradient(circle at 80% 70%, rgba(168, 85, 247, 0.12), transparent 30%),
+        radial-gradient(circle at 20% 30%, rgba(37,99,235,.16), transparent 28%),
+        radial-gradient(circle at 80% 70%, rgba(168,85,247,.12), transparent 30%),
         #020617;
     }
-
     .overlay {
       position: absolute;
       inset: 0;
-      background: rgba(2, 6, 23, 0.86);
+      background: rgba(2,6,23,.88);
       backdrop-filter: blur(4px);
       display: none;
       align-items: center;
@@ -110,244 +79,134 @@
       padding: 20px;
       z-index: 20;
     }
-
     .overlay.show { display: flex; }
-
     .modal {
-      width: min(780px, 94%);
-      max-height: 90%;
+      width: min(860px, 96%);
+      max-height: 92%;
       overflow-y: auto;
       background: #111827;
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255,255,255,.12);
       border-radius: 18px;
       padding: 18px;
     }
-
     .modal.center { text-align: center; }
-
-    .modal h1,
-    .modal h2 {
-      margin: 0 0 10px;
-    }
-
-    .modal p {
-      color: #cbd5e1;
-      line-height: 1.5;
-      margin: 8px 0 14px;
-      font-size: 14px;
-    }
-
-    .title-logo {
-      font-size: 42px;
-      font-weight: 900;
-      letter-spacing: -1px;
-      margin-bottom: 8px;
-    }
-
-    .title-sub {
-      color: #cbd5e1;
-      margin-bottom: 20px;
-      line-height: 1.5;
-    }
-
-    .menu-row {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      max-width: 360px;
-      margin: 0 auto;
-    }
-
+    .modal h1, .modal h2 { margin: 0 0 10px; }
+    .modal p { color: #cbd5e1; line-height: 1.5; margin: 8px 0 14px; font-size: 14px; }
+    .title-logo { font-size: 42px; font-weight: 900; letter-spacing: -1px; margin-bottom: 8px; }
+    .title-sub { color: #cbd5e1; margin-bottom: 20px; line-height: 1.5; }
+    .menu-row { display: flex; flex-direction: column; gap: 10px; max-width: 380px; margin: 0 auto; }
     .cards {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
       gap: 10px;
       margin-top: 12px;
     }
-
     .card {
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255,255,255,.12);
       border-radius: 14px;
       background: #1f2937;
       padding: 12px;
       cursor: pointer;
-      transition: 0.15s;
+      transition: .15s;
       text-align: left;
-      min-height: 150px;
+      min-height: 165px;
     }
-
-    .card:hover {
-      transform: translateY(-2px);
-      border-color: #60a5fa;
-      background: #263244;
-    }
-
-    .card h3 {
-      margin: 0 0 8px;
-      font-size: 16px;
-    }
-
+    .card:hover { transform: translateY(-2px); border-color: #60a5fa; background: #263244; }
+    .card h3 { margin: 0 0 8px; font-size: 17px; }
     .card .desc {
       font-size: 13px;
       color: #cbd5e1;
       line-height: 1.45;
       white-space: pre-line;
     }
-
     .type-label {
       display: inline-block;
       margin-bottom: 8px;
       padding: 4px 8px;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.08);
+      background: rgba(255,255,255,.08);
       color: #e5e7eb;
       font-size: 11px;
       font-weight: 900;
     }
-
-    .badge-row {
-      display: flex;
-      gap: 5px;
-      flex-wrap: wrap;
-      margin-top: 8px;
-    }
-
+    .badge-row { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
     .badge {
       padding: 3px 7px;
       border-radius: 999px;
-      background: rgba(59, 130, 246, 0.16);
+      background: rgba(59,130,246,.16);
       color: #bfdbfe;
       font-size: 11px;
+      font-weight: 800;
     }
-
     .grade-basic { color: #d1d5db; }
     .grade-normal { color: #93c5fd; }
     .grade-advanced { color: #86efac; }
     .grade-epic { color: #c4b5fd; }
     .grade-legendary { color: #facc15; }
-
-    .side {
-      padding: 14px;
-    }
-
-    .side h2 {
-      margin: 0 0 10px;
-      font-size: 18px;
-    }
-
-    .side-section {
-      padding: 10px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
+    .side { padding: 14px; }
+    .side h2 { margin: 0 0 10px; font-size: 18px; }
+    .side-section { padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.08); }
     .side-section:last-child { border-bottom: 0; }
-
-    .small {
-      color: #cbd5e1;
-      font-size: 13px;
-      line-height: 1.45;
-    }
-
-    .list {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      font-size: 13px;
-    }
-
-    .list-item {
-      background: rgba(255, 255, 255, 0.05);
-      padding: 8px;
-      border-radius: 10px;
-    }
-
+    .small { color: #cbd5e1; font-size: 13px; line-height: 1.45; }
+    .list { display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+    .list-item { background: rgba(255,255,255,.05); padding: 8px; border-radius: 10px; }
     .toast {
       position: absolute;
       left: 50%;
       top: 76px;
       transform: translateX(-50%);
-      background: rgba(15, 23, 42, 0.96);
-      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(15,23,42,.96);
+      border: 1px solid rgba(255,255,255,.14);
       padding: 10px 14px;
       border-radius: 999px;
       color: #fef3c7;
-      font-weight: 800;
+      font-weight: 900;
       pointer-events: none;
       opacity: 0;
-      transition: opacity 0.2s, transform 0.2s;
-      z-index: 30;
+      transition: opacity .2s, transform .2s;
+      z-index: 40;
       white-space: nowrap;
     }
-
-    .toast.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(-6px);
-    }
-
-    .lab-top {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: center;
-      margin-bottom: 12px;
-      flex-wrap: wrap;
-    }
-
-    .point-box {
-      padding: 10px 12px;
-      border-radius: 12px;
-      background: rgba(250, 204, 21, 0.12);
-      color: #fde68a;
-      font-weight: 900;
-    }
-
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(-6px); }
+    .lab-top { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+    .point-box { padding: 10px 12px; border-radius: 12px; background: rgba(250,204,21,.12); color: #fde68a; font-weight: 900; }
+    .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 12px; }
+    .tab.active { background: #2563eb; }
     .lab-list {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 10px;
       margin-top: 12px;
     }
-
     .lab-item {
       background: #1f2937;
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255,255,255,.12);
       border-radius: 14px;
       padding: 12px;
     }
-
-    .lab-item h3 {
-      margin: 0 0 8px;
-      font-size: 16px;
+    .lab-item h3 { margin: 0 0 8px; font-size: 16px; }
+    .lab-item .level { color: #93c5fd; font-weight: 800; margin-bottom: 6px; }
+    .lab-item .effect { color: #cbd5e1; font-size: 13px; line-height: 1.45; min-height: 44px; }
+    .lab-item .cost { margin: 10px 0; color: #fde68a; font-weight: 900; }
+    .lab-actions { display: flex; gap: 8px; margin-top: 12px; }
+    .choice-actions { display: flex; justify-content: center; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+    .big-alert {
+      position: absolute;
+      left: 50%;
+      top: 44%;
+      transform: translate(-50%, -50%);
+      z-index: 35;
+      text-align: center;
+      font-weight: 1000;
+      pointer-events: none;
+      opacity: 0;
+      transition: .25s;
+      text-shadow: 0 0 24px rgba(250,204,21,.9);
     }
-
-    .lab-item .level {
-      color: #93c5fd;
-      font-weight: 800;
-      margin-bottom: 6px;
-    }
-
-    .lab-item .effect {
-      color: #cbd5e1;
-      font-size: 13px;
-      line-height: 1.45;
-      min-height: 42px;
-    }
-
-    .lab-item .cost {
-      margin: 10px 0;
-      color: #fde68a;
-      font-weight: 900;
-    }
-
-    .lab-actions {
-      display: flex;
-      gap: 8px;
-      margin-top: 12px;
-    }
-
-    @media (max-width: 1000px) {
-      .app { grid-template-columns: 1fr; }
-    }
+    .big-alert.show { opacity: 1; transform: translate(-50%, -55%) scale(1.04); }
+    .big-alert .main { font-size: 42px; color: #facc15; }
+    .big-alert .sub { font-size: 18px; color: #fff; margin-top: 8px; }
+    @media (max-width: 1000px) { .app { grid-template-columns: 1fr; } }
   </style>
 </head>
 
@@ -361,20 +220,27 @@
         <div>EXP <strong id="uiExp">0/100</strong></div>
         <div>증강 <strong id="uiAugmentCount">0/6</strong></div>
         <div>처치 <strong id="uiKills">0</strong></div>
-        <div>코인 <strong id="uiCoins">0</strong></div>
+        <div>전투 코인 <strong id="uiRunCoins">0</strong></div>
         <button id="pauseBtn" class="mini-btn">일시정지</button>
       </div>
 
       <div class="canvas-wrap">
         <canvas id="gameCanvas" width="960" height="540"></canvas>
         <div id="toast" class="toast"></div>
+        <div id="bigAlert" class="big-alert">
+          <div id="bigAlertMain" class="main"></div>
+          <div id="bigAlertSub" class="sub"></div>
+        </div>
 
         <div id="titleOverlay" class="overlay show">
           <div class="modal center">
             <div class="title-logo">JSON Survivors</div>
             <div class="title-sub">
-              기본 무기를 고르고, 랜덤 증강으로 15분 동안 살아남으세요.<br />
-              증강은 최대 6개까지 보유 가능하며, 시너지 조건을 만족하면 각성이 자동 발현됩니다.
+              레벨업은 자동 성장, 증강은 5레벨마다 선택.<br />
+              속성 시너지와 보석으로 판을 터뜨리는 뱀서류 MVP.
+            </div>
+            <div class="point-box" style="margin:0 auto 14px; width:max-content;">
+              보유 코인: <span id="titleCoins">0</span>
             </div>
             <div class="menu-row">
               <button onclick="openWeaponSelect()">게임 시작</button>
@@ -390,18 +256,21 @@
             <div class="lab-top">
               <div>
                 <h2>연구소</h2>
-                <p>전투에서 얻은 연구 포인트로 영구 업그레이드를 구매합니다.</p>
+                <p>모든 재화는 코인으로 통일됩니다. 사망해도 획득 코인은 지급됩니다.</p>
               </div>
               <div class="point-box">
-                연구 포인트: <span id="labPoints">0</span>P
+                보유 코인: <span id="labCoins">0</span>
               </div>
             </div>
-
+            <div class="tabs">
+              <button class="tab active" id="tabBasic" onclick="setLabTab('basic')">기초</button>
+              <button class="tab" id="tabCombat" onclick="setLabTab('combat')">전투</button>
+              <button class="tab" id="tabEconomy" onclick="setLabTab('economy')">경제</button>
+            </div>
             <div id="labList" class="lab-list"></div>
-
             <div class="lab-actions">
               <button onclick="closeLab()">메인으로</button>
-              <button class="secondary" onclick="resetLabData()">연구소 초기화</button>
+              <button class="secondary" onclick="resetLabData()">데이터 초기화</button>
             </div>
           </div>
         </div>
@@ -409,16 +278,19 @@
         <div id="weaponOverlay" class="overlay">
           <div class="modal">
             <h2>기본 무기 선택</h2>
-            <p>이번 판의 핵심 공격 방식을 선택하세요.</p>
+            <p>무기는 플레이어 레벨에 따라 자동 성장합니다.</p>
             <div id="weaponCards" class="cards"></div>
           </div>
         </div>
 
         <div id="choiceOverlay" class="overlay">
           <div class="modal">
-            <h2 id="choiceTitle">선택</h2>
+            <h2 id="choiceTitle">증강 선택</h2>
             <p id="choiceDesc"></p>
             <div id="choiceCards" class="cards"></div>
+            <div class="choice-actions">
+              <button id="rerollBtn" class="secondary" onclick="rerollAugments()">새로고침</button>
+            </div>
           </div>
         </div>
 
@@ -454,27 +326,31 @@
       </div>
 
       <div class="side-section">
+        <h2>속성</h2>
+        <div id="sideAttributes" class="list"></div>
+      </div>
+
+      <div class="side-section">
+        <h2>발현 시너지</h2>
+        <div id="sideSynergies" class="list"></div>
+      </div>
+
+      <div class="side-section">
         <h2>보유 증강</h2>
         <div id="sideAugments" class="list"></div>
       </div>
 
       <div class="side-section">
-        <h2>시너지</h2>
-        <div id="sideSynergies" class="list"></div>
-      </div>
-
-      <div class="side-section">
-        <h2>발현</h2>
-        <div id="sideAwakenings" class="list"></div>
+        <h2>중첩 / 버프</h2>
+        <div id="sideStacks" class="list"></div>
       </div>
 
       <div class="side-section small">
         <strong>조작</strong><br />
         WASD / 방향키 이동<br />
         ESC / P 일시정지<br />
-        공격은 자동<br /><br />
-        피격 후 1초 무적.<br />
-        무적 중 접촉 피해 및 적 투사체 피해를 무시합니다.
+        피격 후 기본 1초 무적<br /><br />
+        Lv.5 / 10 / 15 / 20 / 25 / 30에서 증강 선택
       </div>
     </aside>
   </main>
@@ -490,12 +366,14 @@
       exp: document.getElementById("uiExp"),
       augCount: document.getElementById("uiAugmentCount"),
       kills: document.getElementById("uiKills"),
-      coins: document.getElementById("uiCoins"),
+      runCoins: document.getElementById("uiRunCoins"),
       sideWeapon: document.getElementById("sideWeapon"),
-      sideAugments: document.getElementById("sideAugments"),
+      sideAttributes: document.getElementById("sideAttributes"),
       sideSynergies: document.getElementById("sideSynergies"),
-      sideAwakenings: document.getElementById("sideAwakenings"),
-      toast: document.getElementById("toast")
+      sideAugments: document.getElementById("sideAugments"),
+      sideStacks: document.getElementById("sideStacks"),
+      toast: document.getElementById("toast"),
+      titleCoins: document.getElementById("titleCoins")
     };
 
     const titleOverlay = document.getElementById("titleOverlay");
@@ -505,16 +383,21 @@
     const pauseOverlay = document.getElementById("pauseOverlay");
     const resultOverlay = document.getElementById("resultOverlay");
 
-    const labPoints = document.getElementById("labPoints");
+    const labCoins = document.getElementById("labCoins");
     const labList = document.getElementById("labList");
     const weaponCards = document.getElementById("weaponCards");
     const choiceCards = document.getElementById("choiceCards");
     const choiceTitle = document.getElementById("choiceTitle");
     const choiceDesc = document.getElementById("choiceDesc");
+    const rerollBtn = document.getElementById("rerollBtn");
     const pauseInfo = document.getElementById("pauseInfo");
     const resultTitle = document.getElementById("resultTitle");
     const resultDesc = document.getElementById("resultDesc");
     const pauseBtn = document.getElementById("pauseBtn");
+
+    const bigAlert = document.getElementById("bigAlert");
+    const bigAlertMain = document.getElementById("bigAlertMain");
+    const bigAlertSub = document.getElementById("bigAlertSub");
 
     const keys = new Set();
 
@@ -522,18 +405,20 @@
     const MAX_AUGMENTS = 6;
     const GAME_LIMIT_MS = 15 * 60 * 1000;
     const OVER_EXP_REWARD = 1000;
+    const SPECIAL_LEVELS = new Set([5, 10, 15, 20, 25, 30]);
+    const NORMAL_ATTRS = ["氷", "火", "風", "光", "暗", "聖", "惡"];
+    const ALL_ATTRS = ["氷", "火", "風", "光", "暗", "聖", "惡", "鬼"];
 
-    const EXP_TO_NEXT = [
-      0,
-      100, 200, 300, 400, 500,
-      600, 700, 800, 900, 1000,
-      1100, 1200, 1300, 1400, 1500,
-      1600, 1700, 1800, 1900, 2000,
-      2100, 2200, 2300, 2400, 2500,
-      2600, 2700, 2800, 3000
-    ];
-
-    const SPECIAL_LEVELS = new Set([5, 10, 15, 20, 25]);
+    const ATTR_NAMES = {
+      "氷": "빙",
+      "火": "화",
+      "風": "풍",
+      "光": "광",
+      "暗": "암",
+      "聖": "성",
+      "惡": "악",
+      "鬼": "귀"
+    };
 
     const GRADE_LABEL = {
       basic: "초급",
@@ -551,386 +436,237 @@
       legendary: "grade-legendary"
     };
 
-    const SYNERGY_LABELS = {
-      magic_overload: "마법 폭주",
-      fire_disaster: "화염 재앙",
-      orbit_weaponry: "회전 병기",
-      guardian_wall: "수호 방벽",
-      executioner: "처형자",
-      blood_pact: "피의 계약",
-      area_destruction: "광역 파괴",
-      chain_amp: "연쇄 증폭",
-      dark_ritual: "암흑 의식",
-      berserker: "광전사",
-      holy_judgement: "신성 심판",
-      star_tuning: "별의 조율"
-    };
-
-    const META_KEY = "json_survivors_meta_v2";
-
-    const LAB_UPGRADES = [
-      {
-        id: "hp",
-        name: "기초 체력 연구",
-        maxLevel: 10,
-        baseCost: 200,
-        growth: 1.35,
-        effectText(level) { return `시작 최대 HP +${level * 10}`; }
-      },
-      {
-        id: "damage",
-        name: "기초 공격 연구",
-        maxLevel: 10,
-        baseCost: 300,
-        growth: 1.4,
-        effectText(level) { return `전체 피해 +${level * 4}%`; }
-      },
-      {
-        id: "speed",
-        name: "이동 훈련",
-        maxLevel: 5,
-        baseCost: 300,
-        growth: 1.45,
-        effectText(level) { return `이동속도 +${level * 3}%`; }
-      },
-      {
-        id: "magnet",
-        name: "자석 범위 연구",
-        maxLevel: 10,
-        baseCost: 250,
-        growth: 1.35,
-        effectText(level) { return `경험치 흡수 범위 +${level * 15}`; }
-      },
-      {
-        id: "shield",
-        name: "시작 보호막 연구",
-        maxLevel: 5,
-        baseCost: 350,
-        growth: 1.5,
-        effectText(level) { return `전투 시작 보호막 +${level * 10}`; }
-      }
+    const EXP_TO_NEXT = [
+      0,
+      100, 200, 300, 400, 500,
+      650, 800, 950, 1100, 1300,
+      1500, 1700, 1900, 2100, 2350,
+      2600, 2850, 3100, 3350, 3650,
+      3950, 4250, 4550, 4850, 5200,
+      5550, 5900, 6250, 6700
     ];
 
-    function getDefaultMeta() {
-      return {
-        points: 0,
-        totalEarned: 0,
-        bestTimeMs: 0,
-        bestKills: 0,
-        upgrades: {
-          hp: 0,
-          damage: 0,
-          speed: 0,
-          magnet: 0,
-          shield: 0
-        }
-      };
+    const META_KEY = "json_survivors_coin_meta_v4";
+
+    const LABS = {
+      basic: [
+        ["hp", "기초 체력 연구", 10, 200, 1.35, l => `시작 최대 HP +${l * 10}`],
+        ["damage", "기초 공격 연구", 10, 300, 1.4, l => `모든 피해 +${l * 4}%`],
+        ["speed", "이동 훈련", 5, 300, 1.45, l => `이동속도 +${l * 3}%`],
+        ["magnet", "자석 범위 연구", 10, 250, 1.35, l => `흡수 범위 +${l * 15}`],
+        ["defense", "방어 훈련", 5, 400, 1.45, l => `받는 피해 -${l * 2}%`],
+        ["shield", "시작 보호막 연구", 5, 350, 1.5, l => `시작 보호막 +${l * 10}`],
+        ["heal_eff", "회복 효율 연구", 5, 400, 1.45, l => `회복량 +${l * 6}%`],
+        ["exp", "경험 흡수 연구", 10, 450, 1.4, l => `경험치 획득량 +${l * 3}%`]
+      ],
+      combat: [
+        ["invuln", "피격 무적 연구", 5, 600, 1.5, l => `피격 무적 +${(l * 0.08).toFixed(2)}초`],
+        ["emergency", "응급 회복 연구", 5, 900, 1.55, l => `HP 25% 이하 시 ${10 + l * 5} 회복, 전투당 1회`],
+        ["deathsave", "사망 유예 연구", 1, 6000, 1, l => l ? "치명 피해 1회 생존" : "미해금"],
+        ["knockback", "넉백 강화 연구", 5, 500, 1.4, l => `적 타격 넉백 +${l * 6}%`],
+        ["syn_amp", "속성 증폭 연구", 5, 1000, 1.55, l => `속성 시너지 효과 +${l * 3}%`],
+        ["reroll", "증강 재추첨 연구", 3, 1200, 1.75, l => `증강 선택마다 새로고침 ${l}회`],
+        ["high_grade", "고위 증강 연구", 5, 1500, 1.65, l => `에픽 +${l * 2}%, 전설 +${l}%`],
+        ["attr_focus", "속성 집중 연구", 5, 1000, 1.55, l => `보유 속성 관련 증강 가중치 +${l * 8}%`]
+      ],
+      economy: [
+        ["coin_gain", "코인 수집 연구", 10, 500, 1.35, l => `전투 중 코인 획득량 +${l * 5}%`],
+        ["survival_coin", "생존 보상 연구", 10, 600, 1.35, l => `생존 시간 코인 +${l * 5}%`],
+        ["kill_coin", "처치 보상 연구", 10, 600, 1.35, l => `처치 보상 코인 +${l * 5}%`],
+        ["elite_bounty", "정예 현상금 연구", 5, 900, 1.5, l => `정예/보스 보상 +${l * 10}%`],
+        ["over_exp", "초과 경험 연구", 5, 1000, 1.5, l => `만렙 이후 초과 경험 보상 +${l * 10}%`],
+        ["jackpot", "대박 보상 연구", 5, 1200, 1.6, l => `${l * 2}% 확률로 종료 코인 2배`],
+        ["research_discount", "연구 할인", 5, 1400, 1.65, l => `연구소 비용 -${l * 3}%`],
+        ["shop_discount", "상점 할인", 5, 1200, 1.55, l => `상점 비용 -${l * 4}%`]
+      ]
+    };
+
+    function defaultMeta() {
+      const upgrades = {};
+      Object.values(LABS).flat().forEach(([id]) => upgrades[id] = 0);
+      return { coins: 0, bestTimeMs: 0, bestKills: 0, totalCoins: 0, upgrades };
     }
 
     function loadMeta() {
       try {
         const saved = JSON.parse(localStorage.getItem(META_KEY));
-        if (!saved) return getDefaultMeta();
-        const base = getDefaultMeta();
-        return {
-          ...base,
-          ...saved,
-          upgrades: { ...base.upgrades, ...(saved.upgrades || {}) }
-        };
+        if (!saved) return defaultMeta();
+        const base = defaultMeta();
+        return { ...base, ...saved, upgrades: { ...base.upgrades, ...(saved.upgrades || {}) } };
       } catch {
-        return getDefaultMeta();
+        return defaultMeta();
       }
     }
 
     function saveMeta() {
-      localStorage.setItem(META_KEY, JSON.stringify(playerMeta));
+      localStorage.setItem(META_KEY, JSON.stringify(meta));
     }
 
-    let playerMeta = loadMeta();
+    let meta = loadMeta();
+    let labTab = "basic";
 
     const WEAPONS = [
       {
         id: "magic_staff",
         name: "마력탄 지팡이",
         desc: "가장 가까운 적에게 마력탄을 자동 발사합니다.",
-        tags: ["magic", "projectile"],
-        color: "#93c5fd"
+        color: "#93c5fd",
+        tags: ["magic", "projectile"]
       },
       {
         id: "flame_heart",
         name: "화염 심장",
-        desc: "플레이어 주변에 화염 오라를 유지해 지속 피해를 줍니다.",
-        tags: ["fire", "aura", "area"],
-        color: "#fb7185"
+        desc: "주변에 화염 오라를 유지해 지속 피해를 줍니다.",
+        color: "#fb7185",
+        tags: ["fire", "aura", "area"]
       },
       {
         id: "orbit_axe",
         name: "회전 도끼",
         desc: "주변을 도는 도끼가 적에게 접촉 피해를 줍니다.",
-        tags: ["orbit", "physical"],
-        color: "#fbbf24"
+        color: "#fbbf24",
+        tags: ["orbit", "physical"]
       }
     ];
 
     const AUGMENTS = [
       {
-        id: "damage_amp",
-        name: "피해 증폭",
-        grade: "basic",
-        synergies: [],
-        maxLevel: 3,
-        desc(level = 1) { return `무기 피해 증가 ${percent([0, 0.15, 0.28, 0.45][level])}`; },
-        upgradeDesc(from, to) { return `무기 피해 증가 ${percent([0, 0.15, 0.28, 0.45][from])} → ${percent([0, 0.15, 0.28, 0.45][to])}`; },
-        apply(state, level) { state.mods.damageMul *= [0, 1.15, 1.28, 1.45][level]; }
+        id: "cold_edge", name: "차가운 칼끝", grade: "basic", attrs: { "氷": 1 },
+        desc: "공격 적중 시 낮은 확률로 적을 둔화시킵니다.",
+        apply(s) { s.perks.slowChance += 0.08; }
       },
       {
-        id: "fast_cast",
-        name: "빠른 시전",
-        grade: "basic",
-        synergies: [],
-        maxLevel: 3,
-        desc(level = 1) { return `공격 간격 감소 ${percent([0, 0.08, 0.15, 0.24][level])}`; },
-        upgradeDesc(from, to) { return `공격 간격 감소 ${percent([0, 0.08, 0.15, 0.24][from])} → ${percent([0, 0.08, 0.15, 0.24][to])}`; },
-        apply(state, level) { state.mods.cooldownMul *= [0, 0.92, 0.85, 0.76][level]; }
+        id: "small_flame", name: "작은 불씨", grade: "basic", attrs: { "火": 1 },
+        desc: "공격 적중 시 낮은 확률로 화상을 부여합니다.",
+        apply(s) { s.perks.burnChance += 0.08; }
       },
       {
-        id: "wide_hit",
-        name: "넓은 타격",
-        grade: "basic",
-        synergies: [],
-        maxLevel: 3,
-        desc(level = 1) { return `범위 증가 ${percent([0, 0.10, 0.22, 0.36][level])}`; },
-        upgradeDesc(from, to) { return `범위 증가 ${percent([0, 0.10, 0.22, 0.36][from])} → ${percent([0, 0.10, 0.22, 0.36][to])}`; },
-        apply(state, level) { state.mods.areaMul *= [0, 1.10, 1.22, 1.36][level]; }
+        id: "light_breeze", name: "가벼운 순풍", grade: "basic", attrs: { "風": 1 },
+        desc: "공격속도가 조금 증가합니다.",
+        apply(s) { s.perks.attackSpeedMul *= 1.08; }
       },
       {
-        id: "move_training",
-        name: "빠른 발걸음",
-        grade: "basic",
-        synergies: [],
-        maxLevel: 3,
-        desc(level = 1) { return `이동속도 증가 ${percent([0, 0.08, 0.15, 0.25][level])}`; },
-        upgradeDesc(from, to) { return `이동속도 증가 ${percent([0, 0.08, 0.15, 0.25][from])} → ${percent([0, 0.08, 0.15, 0.25][to])}`; },
-        apply(state, level) { state.mods.speedMul *= [0, 1.08, 1.15, 1.25][level]; }
+        id: "shimmer", name: "희미한 광휘", grade: "basic", attrs: { "光": 1 },
+        desc: "공격 범위가 조금 증가합니다.",
+        apply(s) { s.perks.areaMul *= 1.08; }
       },
       {
-        id: "magnet_sense",
-        name: "자석 감각",
-        grade: "basic",
-        synergies: [],
-        maxLevel: 3,
-        desc(level = 1) { return `경험치 흡수 범위 +${[0, 35, 60, 90][level]}`; },
-        upgradeDesc(from, to) { return `흡수 범위 +${[0, 35, 60, 90][from]} → +${[0, 35, 60, 90][to]}`; },
-        apply(state, level) { state.mods.magnetBonus += [0, 35, 60, 90][level]; }
-      },
-
-      {
-        id: "mana_amp",
-        name: "마나 증폭",
-        grade: "normal",
-        synergies: [{ setId: "magic_overload", value: 1 }],
-        maxLevel: 3,
-        desc(level = 1) { return `magic 피해 증가 ${percent([0, 0.16, 0.28, 0.42][level])}`; },
-        upgradeDesc(from, to) { return `magic 피해 증가 ${percent([0, 0.16, 0.28, 0.42][from])} → ${percent([0, 0.16, 0.28, 0.42][to])}`; },
-        apply(state, level) { state.tagMods.magic *= [0, 1.16, 1.28, 1.42][level]; }
+        id: "shadow_cut", name: "그림자 절단", grade: "normal", attrs: { "暗": 1 },
+        desc: "체력이 낮은 적에게 추가 피해를 줍니다.",
+        apply(s) { s.perks.executeDamage += 0.18; }
       },
       {
-        id: "flame_heat",
-        name: "불꽃 가열",
-        grade: "normal",
-        synergies: [{ setId: "fire_disaster", value: 1 }],
-        maxLevel: 3,
-        desc(level = 1) { return `fire 피해 증가 ${percent([0, 0.16, 0.28, 0.42][level])}`; },
-        upgradeDesc(from, to) { return `fire 피해 증가 ${percent([0, 0.16, 0.28, 0.42][from])} → ${percent([0, 0.16, 0.28, 0.42][to])}`; },
-        apply(state, level) { state.tagMods.fire *= [0, 1.16, 1.28, 1.42][level]; }
+        id: "holy_seed", name: "성스러운 씨앗", grade: "normal", attrs: { "聖": 1 },
+        desc: "처치 시 낮은 확률로 보호막을 얻습니다.",
+        apply(s) { s.perks.killShieldChance += 0.06; }
       },
       {
-        id: "orbit_tune",
-        name: "궤도 조율",
-        grade: "normal",
-        synergies: [{ setId: "orbit_weaponry", value: 1 }],
-        maxLevel: 3,
-        desc(level = 1) { return `orbit 피해/회전속도 증가 ${percent([0, 0.15, 0.25, 0.38][level])}`; },
-        upgradeDesc(from, to) { return `orbit 강화 ${percent([0, 0.15, 0.25, 0.38][from])} → ${percent([0, 0.15, 0.25, 0.38][to])}`; },
-        apply(state, level) {
-          const value = [0, 1.15, 1.25, 1.38][level];
-          state.tagMods.orbit *= value;
-          state.mods.orbitSpeedMul *= value;
-        }
+        id: "evil_drop", name: "악의 혈방울", grade: "normal", attrs: { "惡": 1 },
+        desc: "처치 시 낮은 확률로 체력을 회복합니다.",
+        apply(s) { s.perks.killHealChance += 0.06; }
       },
       {
-        id: "guard_pose",
-        name: "방어 자세",
-        grade: "normal",
-        synergies: [{ setId: "guardian_wall", value: 1 }],
-        maxLevel: 3,
-        desc(level = 1) { return `받는 피해 감소 ${percent([0, 0.07, 0.12, 0.18][level])}`; },
-        upgradeDesc(from, to) { return `받는 피해 감소 ${percent([0, 0.07, 0.12, 0.18][from])} → ${percent([0, 0.07, 0.12, 0.18][to])}`; },
-        apply(state, level) { state.mods.damageReduction += [0, 0.07, 0.12, 0.18][level]; }
+        id: "frostfire_core", name: "서리불꽃 핵", grade: "advanced", attrs: { "氷": 1, "火": 1 },
+        desc: "둔화된 적에게 화상 피해가 강해집니다.",
+        apply(s) { s.perks.frostfireBonus += 0.35; }
       },
       {
-        id: "execution_training",
-        name: "처형 연마",
-        grade: "normal",
-        synergies: [{ setId: "executioner", value: 1 }],
-        maxLevel: 3,
-        desc(level = 1) { return `체력 낮은 적에게 추가 피해 ${percent([0, 0.20, 0.35, 0.55][level])}`; },
-        upgradeDesc(from, to) { return `처형 추가 피해 ${percent([0, 0.20, 0.35, 0.55][from])} → ${percent([0, 0.20, 0.35, 0.55][to])}`; },
-        apply(state, level) { state.mods.executeBonus += [0, 0.20, 0.35, 0.55][level]; }
+        id: "burning_wind", name: "불타는 순풍", grade: "advanced", attrs: { "火": 1, "風": 1 },
+        desc: "화상 중인 적을 공격하면 주변에 약한 화상이 전이될 수 있습니다.",
+        apply(s) { s.perks.burnSpreadChance += 0.12; }
+      },
+      {
+        id: "radiant_wind", name: "광휘질풍", grade: "advanced", attrs: { "風": 1, "光": 1 },
+        desc: "공격속도가 높을수록 공격 범위가 증가합니다.",
+        apply(s) { s.perks.speedToArea += 0.18; }
+      },
+      {
+        id: "eclipse_mark", name: "일식의 표식", grade: "advanced", attrs: { "光": 1, "暗": 1 },
+        desc: "범위 피해가 체력 낮은 적에게 추가 피해를 줍니다.",
+        apply(s) { s.perks.areaExecute += 0.18; }
+      },
+      {
+        id: "fallen_sanctuary", name: "타락한 성역", grade: "epic", attrs: { "聖": 1, "惡": 1 },
+        desc: "보호막과 회복 효과가 서로를 강화합니다.",
+        apply(s) { s.perks.sanctuaryLoop = true; }
+      },
+      {
+        id: "perfect_focus", name: "완전한 집중", grade: "epic", attrs: { "風": 1, "光": 1 },
+        desc: "타격 시 공격력 ×1.005. 최대 80중첩. 피격 시 초기화.",
+        apply(s) { s.perks.focusBlade = true; }
+      },
+      {
+        id: "glass_sanctuary", name: "유리성역", grade: "epic", attrs: { "光": 1, "聖": 1 },
+        desc: "보호막 보유 중 피해 +60%. 보호막이 없으면 받는 피해 증가.",
+        apply(s) { s.perks.glassSanctuary = true; }
+      },
+      {
+        id: "chain_reaction", name: "연쇄 반응", grade: "advanced", attrs: { "風": 1 },
+        desc: "투사체 적중 시 추가 탄환을 생성할 수 있습니다.",
+        apply(s) { s.perks.chainChance += 0.22; }
+      },
+      {
+        id: "star_tuning", name: "별의 조율", grade: "epic", attrs: { "光": 1, "風": 1 },
+        desc: "투사체 적중 시 별빛 폭발. 연쇄 탄환에도 발동 가능.",
+        apply(s) { s.perks.starChance += 0.22; }
+      },
+      {
+        id: "curse_crown", name: "저주받은 왕관", grade: "legendary", attrs: { "氷": 1, "火": 1, "風": 1, "光": 1, "暗": 1, "聖": 1, "惡": 1 },
+        desc: "모든 일반 속성 +1. 최대 HP 감소, 회복량 감소.",
+        apply(s) { s.perks.cursedCrown = true; }
+      },
+      {
+        id: "overheat_heart", name: "과열 심장", grade: "legendary", attrs: { "火": 2 },
+        desc: "공격속도 크게 증가. 공격할 때마다 HP를 조금 소모합니다.",
+        apply(s) { s.perks.attackSpeedMul *= 1.55; s.perks.overheat = true; }
+      },
+      {
+        id: "void_feast", name: "심연포식", grade: "legendary", attrs: { "暗": 1, "惡": 1 },
+        desc: "처형 성공 시 회복하고, 회복 초과분이 공격력으로 전환됩니다.",
+        apply(s) { s.perks.voidFeast = true; }
       },
 
       {
-        id: "chain_reaction",
-        name: "연쇄 반응",
-        grade: "advanced",
-        synergies: [
-          { setId: "magic_overload", value: 1 },
-          { setId: "chain_amp", value: 1 }
-        ],
-        maxLevel: 3,
-        desc(level = 1) { return `투사체 적중 시 ${[0, 18, 25, 35][level]}% 확률로 추가 탄환` },
-        upgradeDesc(from, to) { return `추가 탄환 확률 ${[0, 18, 25, 35][from]}% → ${[0, 18, 25, 35][to]}%`; },
-        apply(state, level) { state.reactions.chainProjectileChance = [0, 0.18, 0.25, 0.35][level]; }
+        id: "demon_gate", name: "귀문개방", grade: "legendary", attrs: { "鬼": 2 },
+        ghost: true,
+        desc: "鬼 +2. 처치 중첩이 강해지지만 피격 시 현재 HP 추가 피해.",
+        apply(s) { s.perks.demonGate = true; }
       },
       {
-        id: "black_flame",
-        name: "검은 불씨",
-        grade: "advanced",
-        synergies: [
-          { setId: "fire_disaster", value: 1 },
-          { setId: "dark_ritual", value: 1 }
-        ],
-        maxLevel: 3,
-        desc(level = 1) { return `fire 피해 시 dark 추가 피해 ${percent([0, 0.22, 0.35, 0.50][level])}`; },
-        upgradeDesc(from, to) { return `dark 추가 피해 ${percent([0, 0.22, 0.35, 0.50][from])} → ${percent([0, 0.22, 0.35, 0.50][to])}`; },
-        apply(state, level) { state.reactions.blackFlameRatio = [0, 0.22, 0.35, 0.50][level]; }
+        id: "demon_mark", name: "귀왕의 낙인", grade: "legendary", attrs: { "鬼": 1 },
+        ghost: true,
+        desc: "처치 시 공격력 중첩. 피격 시 큰 폭 감소.",
+        apply(s) { s.perks.demonMark = true; }
       },
       {
-        id: "shield_overload",
-        name: "보호막 과부하",
-        grade: "advanced",
-        synergies: [
-          { setId: "guardian_wall", value: 1 },
-          { setId: "area_destruction", value: 1 }
-        ],
-        maxLevel: 3,
-        desc(level = 1) { return `보호막 획득 시 주변 폭발 피해 ${[0, 30, 45, 70][level]}`; },
-        upgradeDesc(from, to) { return `폭발 피해 ${[0, 30, 45, 70][from]} → ${[0, 30, 45, 70][to]}`; },
-        apply(state, level) { state.reactions.shieldOverloadDamage = [0, 30, 45, 70][level]; }
+        id: "blood_flame_demon", name: "혈염귀", grade: "epic", attrs: { "火": 1, "暗": 1, "鬼": 1 },
+        ghost: true,
+        desc: "화상 중인 적 처치와 처형 성공이 鬼 중첩을 밀어줍니다.",
+        apply(s) { s.perks.bloodFlameDemon = true; }
       },
       {
-        id: "orbit_growth",
-        name: "회전 증식",
-        grade: "advanced",
-        synergies: [
-          { setId: "orbit_weaponry", value: 1 },
-          { setId: "area_destruction", value: 1 }
-        ],
-        maxLevel: 3,
-        desc(level = 1) { return `회전 무기 수 +${[0, 1, 1, 2][level]}, 크기 증가`; },
-        upgradeDesc(from, to) { return `회전 무기 보너스 +${[0, 1, 1, 2][from]} → +${[0, 1, 1, 2][to]}`; },
-        apply(state, level) {
-          state.mods.extraOrbit += [0, 1, 1, 2][level];
-          state.mods.orbitSizeMul *= [0, 1.05, 1.18, 1.32][level];
-        }
+        id: "holy_demon_scar", name: "귀신성흔", grade: "epic", attrs: { "聖": 1, "鬼": 1 },
+        ghost: true,
+        desc: "보호막 보유 중 鬼 중첩 증가량 상승. 피격 시 감소 완화.",
+        apply(s) { s.perks.holyDemonScar = true; }
       },
       {
-        id: "blood_chain",
-        name: "피의 연쇄",
-        grade: "advanced",
-        synergies: [
-          { setId: "executioner", value: 1 },
-          { setId: "blood_pact", value: 1 }
-        ],
-        maxLevel: 3,
-        desc(level = 1) { return `처치 시 HP ${[0, 2, 3, 5][level]} 회복`; },
-        upgradeDesc(from, to) { return `처치 회복 ${[0, 2, 3, 5][from]} → ${[0, 2, 3, 5][to]}`; },
-        apply(state, level) { state.reactions.bloodHealOnKill = [0, 2, 3, 5][level]; }
-      },
-
-      {
-        id: "holy_echo",
-        name: "심판의 메아리",
-        grade: "epic",
-        synergies: [
-          { setId: "holy_judgement", value: 1 },
-          { setId: "area_destruction", value: 1 },
-          { setId: "magic_overload", value: 1 }
-        ],
-        maxLevel: 3,
-        desc(level = 1) { return `광역 피해 후 추가 빛줄기 발생 확률 ${[0, 18, 28, 40][level]}%`; },
-        upgradeDesc(from, to) { return `빛줄기 확률 ${[0, 18, 28, 40][from]}% → ${[0, 18, 28, 40][to]}%`; },
-        apply(state, level) { state.reactions.holyEchoChance = [0, 0.18, 0.28, 0.40][level]; }
-      },
-      {
-        id: "berserk_reactor",
-        name: "광전사 반응로",
-        grade: "epic",
-        synergies: [
-          { setId: "berserker", value: 1 },
-          { setId: "blood_pact", value: 1 },
-          { setId: "executioner", value: 1 }
-        ],
-        maxLevel: 3,
-        desc(level = 1) { return `HP 35% 이하일 때 피해 증가 ${percent([0, 0.25, 0.38, 0.55][level])}`; },
-        upgradeDesc(from, to) { return `저체력 피해 증가 ${percent([0, 0.25, 0.38, 0.55][from])} → ${percent([0, 0.25, 0.38, 0.55][to])}`; },
-        apply(state, level) { state.reactions.berserkDamageBonus = [0, 0.25, 0.38, 0.55][level]; }
-      },
-      {
-        id: "star_tuning",
-        name: "별의 조율",
-        grade: "epic",
-        synergies: [
-          { setId: "star_tuning", value: 1 },
-          { setId: "magic_overload", value: 1 },
-          { setId: "chain_amp", value: 1 }
-        ],
-        maxLevel: 3,
-        desc(level = 1) { return `투사체 적중 시 별빛 폭발 확률 ${[0, 16, 25, 36][level]}%`; },
-        upgradeDesc(from, to) { return `별빛 폭발 확률 ${[0, 16, 25, 36][from]}% → ${[0, 16, 25, 36][to]}%`; },
-        apply(state, level) { state.reactions.starShotChance = [0, 0.16, 0.25, 0.36][level]; }
-      },
-
-      {
-        id: "eclipse_core",
-        name: "일식 핵",
-        grade: "legendary",
-        synergies: [
-          { setId: "fire_disaster", value: 1 },
-          { setId: "dark_ritual", value: 1 },
-          { setId: "area_destruction", value: 1 },
-          { setId: "berserker", value: 1 }
-        ],
-        maxLevel: 3,
-        desc(level = 1) { return `fire/dark 발동 시 거대 폭발 쿨타임 ${[0, 6, 5, 4][level]}초`; },
-        upgradeDesc(from, to) { return `거대 폭발 쿨타임 ${[0, 6, 5, 4][from]}초 → ${[0, 6, 5, 4][to]}초`; },
-        apply(state, level) { state.reactions.eclipseCooldownMs = [0, 6000, 5000, 4000][level]; }
-      },
-      {
-        id: "infinite_engine",
-        name: "무한 동력",
-        grade: "legendary",
-        synergies: [
-          { setId: "executioner", value: 1 },
-          { setId: "blood_pact", value: 1 },
-          { setId: "guardian_wall", value: 1 },
-          { setId: "area_destruction", value: 1 }
-        ],
-        maxLevel: 3,
-        desc(level = 1) { return `처치 시 ${[0, 25, 35, 50][level]}% 확률로 보호막 획득`; },
-        upgradeDesc(from, to) { return `보호막 확률 ${[0, 25, 35, 50][from]}% → ${[0, 25, 35, 50][to]}%`; },
-        apply(state, level) { state.reactions.infiniteShieldChance = [0, 0.25, 0.35, 0.50][level]; }
+        id: "evil_demon_feast", name: "악귀포식", grade: "legendary", attrs: { "惡": 1, "鬼": 1 },
+        ghost: true,
+        desc: "회복이 발생할 때 鬼 중첩을 얻습니다.",
+        apply(s) { s.perks.evilDemonFeast = true; }
       }
     ];
 
     let state = null;
     let lastTs = 0;
     let loopId = null;
+    let currentChoices = [];
+    let rerollsLeft = 0;
 
     function makeState(weapon) {
-      const labHp = (playerMeta.upgrades.hp || 0) * 10;
-      const labShield = (playerMeta.upgrades.shield || 0) * 10;
-
+      const u = meta.upgrades;
+      const hp = 100 + u.hp * 10;
       return {
         running: false,
         paused: true,
@@ -939,173 +675,310 @@
         spawnMs: 0,
         attackMs: 0,
         auraMs: 0,
-        eclipseMs: 0,
-        orbitAngle: 0,
+        overExp: 0,
         level: 1,
         exp: 0,
-        overExp: 0,
         kills: 0,
-        coins: 0,
-        bonusResearch: 0,
-        augmentSlots: 0,
-        awakened: [],
-        selectedAugments: [],
-        augmentLevels: {},
+        runCoins: 0,
+        endBonusCoins: 0,
+        augments: [],
+        attrsFromAugments: {},
+        attrsFromGems: {},
+        activeSynergies: new Set(),
+        announcedSynergies: new Set(),
         weapon: JSON.parse(JSON.stringify(weapon)),
-        weaponLevel: 1,
-        statUpgrades: {
-          maxHpBonus: 0,
-          speedMul: 1,
-          magnetBonus: 0,
-          damageReduction: 0
-        },
         player: {
           x: canvas.width / 2,
           y: canvas.height / 2,
           r: 14,
-          hp: 100 + labHp,
-          maxHp: 100 + labHp,
-          shield: labShield,
+          hp,
+          maxHp: hp,
+          shield: u.shield * 10,
           speed: 220,
           magnetRange: 90,
-          damageReduction: 0,
           invuln: 0,
           kbX: 0,
-          kbY: 0
+          kbY: 0,
+          deathSaved: false,
+          emergencyUsed: false
         },
-        mods: {},
-        tagMods: {},
-        reactions: {},
-        synergies: {},
+        base: {},
+        perks: {},
+        synergy: {},
+        stacks: {
+          focus: 0,
+          demon: 0,
+          demonNoLossMs: 0
+        },
+        buffs: [],
         enemies: [],
         projectiles: [],
-        enemyProjectiles: [],
         gems: [],
+        drops: [],
         effects: [],
-        floating: []
+        floating: [],
+        itemStats: {
+          total: 0,
+          gems: 0,
+          legendary: 0
+        }
       };
     }
 
-    function resetDerivedStats() {
+    function rebuildStats() {
       if (!state) return;
+      const u = meta.upgrades;
+      const lv = state.level;
 
-      state.mods = {
-        damageMul: 1,
-        cooldownMul: 1,
+      state.base = {
+        damageMul: (1 + (lv - 1) * 0.035) * (1 + u.damage * 0.04),
+        attackSpeedMul: 1 + (lv - 1) * 0.018,
+        speedMul: 1 + (lv - 1) * 0.006 + u.speed * 0.03,
         areaMul: 1,
-        speedMul: 1,
-        magnetBonus: 0,
-        damageReduction: 0,
-        executeBonus: 0,
-        extraOrbit: 0,
-        orbitSpeedMul: 1,
-        orbitSizeMul: 1
+        expMul: 1 + u.exp * 0.03,
+        healMul: 1 + u.heal_eff * 0.06,
+        defense: Math.min(0.65, u.defense * 0.02),
+        magnetBonus: (lv - 1) * 2 + u.magnet * 15,
+        knockbackMul: 1 + u.knockback * 0.06,
+        synergyAmp: 1 + u.syn_amp * 0.03
       };
 
-      state.tagMods = {
-        magic: 1,
-        fire: 1,
-        orbit: 1,
-        physical: 1,
-        area: 1,
-        projectile: 1,
-        dark: 1,
-        holy: 1
+      state.perks = {
+        slowChance: 0,
+        burnChance: 0,
+        attackSpeedMul: 1,
+        areaMul: 1,
+        executeDamage: 0,
+        killShieldChance: 0,
+        killHealChance: 0,
+        frostfireBonus: 0,
+        burnSpreadChance: 0,
+        speedToArea: 0,
+        areaExecute: 0,
+        chainChance: 0,
+        starChance: 0
       };
 
-      state.reactions = {};
-      state.synergies = {};
-
-      for (const augment of state.selectedAugments) {
-        const level = state.augmentLevels[augment.id] || 1;
-
-        for (const s of augment.synergies || []) {
-          state.synergies[s.setId] = (state.synergies[s.setId] || 0) + s.value;
-        }
-
-        augment.apply(state, level);
+      state.attrsFromAugments = {};
+      for (const aug of state.augments) {
+        addAttrs(state.attrsFromAugments, aug.attrs || {});
+        aug.apply?.(state);
       }
 
-      const labHp = (playerMeta.upgrades.hp || 0) * 10;
-      const labDamage = 1 + (playerMeta.upgrades.damage || 0) * 0.04;
-      const labSpeed = 1 + (playerMeta.upgrades.speed || 0) * 0.03;
-      const labMagnet = (playerMeta.upgrades.magnet || 0) * 15;
+      if (state.perks.cursedCrown) {
+        state.player.maxHp = Math.max(60, 100 + u.hp * 10 + (lv - 1) * 3 - 30);
+      } else {
+        state.player.maxHp = 100 + u.hp * 10 + (lv - 1) * 3;
+      }
 
-      state.mods.damageMul *= labDamage;
-
-      state.player.maxHp = 100 + labHp + state.statUpgrades.maxHpBonus;
-      state.player.speed = 220 * labSpeed * state.statUpgrades.speedMul * state.mods.speedMul;
-      state.player.magnetRange = 90 + labMagnet + state.statUpgrades.magnetBonus + state.mods.magnetBonus;
-      state.player.damageReduction = Math.min(0.65, state.statUpgrades.damageReduction + state.mods.damageReduction);
+      state.player.speed = 220 * state.base.speedMul;
+      state.player.magnetRange = 90 + state.base.magnetBonus;
       state.player.hp = Math.min(state.player.hp, state.player.maxHp);
+
+      recalcSynergies();
+    }
+
+    function getAttrCounts() {
+      const out = {};
+      for (const a of ALL_ATTRS) out[a] = 0;
+      addAttrs(out, state.attrsFromAugments);
+      addAttrs(out, state.attrsFromGems);
+      return out;
+    }
+
+    function addAttrs(target, source) {
+      for (const [k, v] of Object.entries(source || {})) {
+        target[k] = (target[k] || 0) + v;
+      }
+    }
+
+    function recalcSynergies() {
+      const a = getAttrCounts();
+      const s = {
+        slowChance: 0,
+        slowPower: 0,
+        burnChance: 0,
+        burnDpsRatio: 0,
+        burnDuration: 2.5,
+        attackSpeedMul: 1,
+        moveMul: 1,
+        extraHitEvery: 0,
+        areaMul: 1,
+        areaDamageMul: 1,
+        executeThreshold: 0,
+        executeChance: 0,
+        shieldOnKillChance: 0,
+        shieldOnKill: 0,
+        healOnKillChance: 0,
+        healOnKill: 0,
+        demonKillStack: 0,
+        demonMax: 0,
+        demonLoss: 1
+      };
+
+      function active(key, name) {
+        state.activeSynergies.add(key);
+        if (!state.announcedSynergies.has(key)) {
+          state.announcedSynergies.add(key);
+          onSynergyFirstActivated(key, name);
+        }
+      }
+
+      state.activeSynergies = new Set();
+
+      if (a["氷"] >= 2) { active("ice2", "氷 2 냉기 개방"); s.slowChance += .25; s.slowPower += .3; }
+      if (a["氷"] >= 4) { active("ice4", "氷 4 혹한 전파"); s.slowChance += .20; s.areaDamageMul *= 1.10; }
+      if (a["氷"] >= 6) { active("ice6", "氷 6 절대영도"); s.slowChance += .25; s.areaDamageMul *= 1.25; }
+
+      if (a["火"] >= 2) { active("fire2", "火 2 화염 개방"); s.burnChance += .25; s.burnDpsRatio += .20; }
+      if (a["火"] >= 4) { active("fire4", "火 4 대화염"); s.burnDpsRatio += .22; s.burnDuration += 1.5; }
+      if (a["火"] >= 6) { active("fire6", "火 6 화염군주"); s.burnDpsRatio += .32; s.burnDuration += 2.0; }
+
+      if (a["風"] >= 2) { active("wind2", "風 2 질풍"); s.attackSpeedMul *= 1.15; s.moveMul *= 1.05; }
+      if (a["風"] >= 4) { active("wind4", "風 4 난무"); s.attackSpeedMul *= 1.18; s.moveMul *= 1.05; s.extraHitEvery = 5; }
+      if (a["風"] >= 6) { active("wind6", "風 6 질풍난무"); s.attackSpeedMul *= 1.28; s.extraHitEvery = 3; }
+
+      if (a["光"] >= 2) { active("light2", "光 2 광휘"); s.areaMul *= 1.15; }
+      if (a["光"] >= 4) { active("light4", "光 4 찬란한 영역"); s.areaMul *= 1.15; s.areaDamageMul *= 1.20; }
+      if (a["光"] >= 6) { active("light6", "光 6 태양광휘"); s.areaMul *= 1.20; s.areaDamageMul *= 1.25; }
+
+      if (a["暗"] >= 2) { active("dark2", "暗 2 처형 개방"); s.executeThreshold = .20; s.executeChance = .08; }
+      if (a["暗"] >= 4) { active("dark4", "暗 4 심연 처형"); s.executeThreshold = .30; s.executeChance = .12; }
+      if (a["暗"] >= 6) { active("dark6", "暗 6 심연처형"); s.executeThreshold = .40; s.executeChance = .18; }
+
+      if (a["聖"] >= 2) { active("holy2", "聖 2 축복"); s.shieldOnKillChance = .15; s.shieldOnKill = 6; }
+      if (a["聖"] >= 4) { active("holy4", "聖 4 성역"); s.shieldOnKillChance = .25; s.shieldOnKill = 10; }
+      if (a["聖"] >= 6) { active("holy6", "聖 6 성역강림"); s.shieldOnKillChance = .40; s.shieldOnKill = 14; }
+
+      if (a["惡"] >= 2) { active("evil2", "惡 2 흡혈"); s.healOnKillChance = .15; s.healOnKill = 4; }
+      if (a["惡"] >= 4) { active("evil4", "惡 4 피의 계약"); s.healOnKillChance = .25; s.healOnKill = 7; }
+      if (a["惡"] >= 6) { active("evil6", "惡 6 피의 연회"); s.healOnKillChance = .40; s.healOnKill = 10; }
+
+      if (a["鬼"] >= 2) { active("demon2", "鬼 2 귀기 개방"); s.demonKillStack = .005; s.demonMax = 80; s.demonLoss = .5; }
+      if (a["鬼"] >= 3) { active("demon3", "鬼 3 귀문 개방"); s.demonKillStack = .008; s.demonMax = 130; s.demonLoss = .3; }
+      if (a["鬼"] >= 4) { active("demon4", "鬼 4 귀왕 강림"); s.demonKillStack = .010; s.demonMax = 200; s.demonLoss = .15; }
+
+      if (a["氷"] >= 2 && a["火"] >= 2) active("frostfire", "서리불꽃");
+      if (a["火"] >= 4 && a["風"] >= 2) active("firestorm", "화염폭풍");
+      if (a["風"] >= 4 && a["光"] >= 2) active("radiantwind", "광휘질풍");
+      if (a["暗"] >= 4 && a["惡"] >= 2) active("voidfeast", "심연포식");
+      if (a["聖"] >= 4 && a["惡"] >= 2) active("fallenholy", "타락성역");
+      if (a["火"] >= 1 && a["暗"] >= 1 && a["鬼"] >= 1) active("bloodflamedemon", "혈염귀");
+      if (a["聖"] >= 2 && a["鬼"] >= 2) active("holydemon", "귀신성흔");
+      if (a["惡"] >= 2 && a["鬼"] >= 2) active("evildemon", "악귀포식");
+
+      state.synergy = s;
+    }
+
+    function onSynergyFirstActivated(key, name) {
+      let burst = false;
+
+      if (key.endsWith("6") || key === "demon4") burst = true;
+
+      if (key === "ice6") {
+        for (const e of state.enemies) e.freezeTime = Math.max(e.freezeTime || 0, 2);
+      }
+      if (key === "fire6") {
+        for (const e of state.enemies) applyBurn(e, 18, 4);
+      }
+      if (key === "wind6") {
+        addTimedBuff("attackSpeed", 2.0, 10);
+      }
+      if (key === "light6") {
+        damageArea(state.player.x, state.player.y, 999, 180, 40, ["light", "area"], true, "#fde68a");
+      }
+      if (key === "dark6") {
+        for (const e of state.enemies) {
+          if (e.hp / e.maxHp <= .35 && !e.elite) e.hp = 0;
+          else e.hp -= e.maxHp * .12;
+        }
+      }
+      if (key === "holy6") {
+        addShield(state.player.maxHp * .4);
+        damageArea(state.player.x, state.player.y, 160, 120, 45, ["holy", "area"], true, "#bfdbfe");
+      }
+      if (key === "evil6") {
+        healPlayer(state.player.maxHp);
+        addTimedBuff("damage", 1.5, 8);
+      }
+      if (key === "demon4") {
+        state.stacks.demon = Math.min(200, state.stacks.demon + 50);
+        state.stacks.demonNoLossMs = 10000;
+        for (const e of state.enemies) applyEnemyKnockback(e, state.player.x, state.player.y, 60);
+      }
+
+      if (burst) showBigAlert(name, "궁극 시너지 발현!");
+      else showToast(`시너지 발현: ${name}`);
     }
 
     function getWeaponStats() {
+      const lv = state.level;
       const id = state.weapon.id;
-      const lv = state.weaponLevel;
+      const s = state.synergy;
+
+      const focusMul = state.perks.focusBlade ? Math.pow(1.005, state.stacks.focus) : 1;
+      const demonMul = 1 + (state.stacks.demon * (s.demonKillStack || 0));
+      const buffDamage = getBuffMul("damage");
+      const buffAs = getBuffMul("attackSpeed");
+      const buffArea = getBuffMul("area");
+
+      let damageMul = state.base.damageMul * focusMul * demonMul * buffDamage;
+      let asMul = state.base.attackSpeedMul * state.perks.attackSpeedMul * s.attackSpeedMul * buffAs;
+      let areaMul = state.base.areaMul * state.perks.areaMul * s.areaMul * buffArea;
+
+      if (state.perks.glassSanctuary) {
+        if (state.player.shield > 0) damageMul *= 1.6;
+      }
+
+      if (state.perks.speedToArea) {
+        areaMul *= 1 + Math.min(.5, (asMul - 1) * state.perks.speedToArea);
+      }
 
       if (id === "magic_staff") {
         let damage = 28;
         let intervalMs = 820;
-        let projectileSpeed = 580;
+        let speed = 590;
         let pierce = 0;
-        let projectileCount = 1;
+        let count = 1;
         let radius = 5;
-        let knockback = 24;
-
-        if (lv >= 2) damage += 8;
-        if (lv >= 3) intervalMs -= 70;
         if (lv >= 4) pierce += 1;
-        if (lv >= 5) radius *= 1.25;
-        if (lv >= 6) damage += 12;
-        if (lv >= 7) projectileCount += 1;
-        if (lv >= 8) intervalMs -= 90;
-        if (lv >= 9) pierce += 1;
-        if (lv >= 10) {
-          projectileCount += 1;
-          damage *= 1.15;
-          knockback += 8;
-        }
-
+        if (lv >= 7) count += 1;
+        if (lv >= 10) damage *= 1.25;
+        if (lv >= 15) count += 1;
+        if (lv >= 20) intervalMs -= 160;
+        if (lv >= 25) pierce += 1;
+        if (lv >= 30) count += 1;
         return {
-          damage,
-          intervalMs: Math.max(360, intervalMs * state.mods.cooldownMul),
-          projectileSpeed,
+          damage: damage * damageMul,
+          intervalMs: Math.max(220, intervalMs / asMul),
+          speed,
           pierce,
-          projectileCount,
-          radius,
-          knockback,
-          tags: ["magic", "projectile"]
+          count,
+          radius: radius * areaMul,
+          knockback: 24 * state.base.knockbackMul,
+          tags: ["projectile", "magic"]
         };
       }
 
       if (id === "flame_heart") {
         let damage = 9;
-        let tickMs = 680;
-        let auraRadius = 86;
-        let knockback = 4;
+        let tickMs = 650;
+        let radius = 86;
         let pulse = false;
-
-        if (lv >= 2) damage += 2;
-        if (lv >= 3) auraRadius += 12;
-        if (lv >= 4) tickMs -= 60;
-        if (lv >= 5) damage += 3;
-        if (lv >= 6) auraRadius += 16;
-        if (lv >= 7) damage *= 1.18;
-        if (lv >= 8) tickMs -= 70;
-        if (lv >= 9) auraRadius += 18;
-        if (lv >= 10) {
-          damage *= 1.25;
-          pulse = true;
-        }
-
+        if (lv >= 4) radius += 12;
+        if (lv >= 7) tickMs -= 80;
+        if (lv >= 10) damage *= 1.25;
+        if (lv >= 15) radius += 18;
+        if (lv >= 20) pulse = true;
+        if (lv >= 25) tickMs -= 90;
+        if (lv >= 30) { radius += 24; damage *= 1.3; }
         return {
-          damage,
-          tickMs: Math.max(300, tickMs * state.mods.cooldownMul),
-          auraRadius: auraRadius * state.mods.areaMul,
-          knockback,
+          damage: damage * damageMul * s.areaDamageMul,
+          tickMs: Math.max(260, tickMs / asMul),
+          radius: radius * areaMul,
+          knockback: 5 * state.base.knockbackMul,
           pulse,
-          tags: ["fire", "aura", "area"]
+          tags: ["fire", "area"]
         };
       }
 
@@ -1113,99 +986,25 @@
         let damage = 24;
         let orbitRadius = 74;
         let orbitSpeed = 2.6;
-        let axeCount = 1;
+        let count = 1;
         let axeRadius = 10;
-        let knockback = 16;
-
-        if (lv >= 2) damage += 6;
-        if (lv >= 3) orbitSpeed *= 1.12;
-        if (lv >= 4) orbitRadius += 10;
-        if (lv >= 5) axeRadius *= 1.22;
-        if (lv >= 6) damage += 10;
-        if (lv >= 7) axeCount += 1;
-        if (lv >= 8) orbitSpeed *= 1.16;
-        if (lv >= 9) axeRadius *= 1.22;
-        if (lv >= 10) {
-          axeCount += 1;
-          damage *= 1.15;
-          knockback += 8;
-        }
-
-        axeCount += state.mods.extraOrbit;
-        orbitSpeed *= state.mods.orbitSpeedMul;
-        axeRadius *= state.mods.orbitSizeMul;
-
+        if (lv >= 4) orbitSpeed *= 1.15;
+        if (lv >= 7) count += 1;
+        if (lv >= 10) damage *= 1.25;
+        if (lv >= 15) axeRadius *= 1.25;
+        if (lv >= 20) count += 1;
+        if (lv >= 25) orbitSpeed *= 1.2;
+        if (lv >= 30) count += 1;
         return {
-          damage,
-          orbitRadius,
-          orbitSpeed,
-          axeCount,
-          axeRadius,
-          knockback,
-          tags: ["orbit", "physical"]
+          damage: damage * damageMul,
+          orbitRadius: orbitRadius * areaMul,
+          orbitSpeed: orbitSpeed * asMul,
+          count,
+          axeRadius: axeRadius * areaMul,
+          knockback: 16 * state.base.knockbackMul,
+          tags: ["physical", "orbit"]
         };
       }
-    }
-
-    function getWeaponUpgradeDesc() {
-      if (state.weaponLevel >= 10) return "무기 최대 레벨입니다.";
-
-      const next = state.weaponLevel + 1;
-
-      const map = {
-        magic_staff: {
-          2: "피해 +8",
-          3: "발사 간격 감소",
-          4: "관통 +1",
-          5: "투사체 크기 +25%",
-          6: "피해 +12",
-          7: "발사체 수 +1",
-          8: "발사 간격 추가 감소",
-          9: "관통 +1",
-          10: "발사체 수 +1, 피해 +15%, 넉백 증가"
-        },
-        flame_heart: {
-          2: "피해 +2",
-          3: "오라 반경 +12",
-          4: "피해 주기 감소",
-          5: "피해 +3",
-          6: "오라 반경 +16",
-          7: "오라 피해 +18%",
-          8: "피해 주기 추가 감소",
-          9: "오라 반경 +18",
-          10: "피해 +25%, 화염 파동 추가"
-        },
-        orbit_axe: {
-          2: "피해 +6",
-          3: "회전속도 +12%",
-          4: "궤도 반경 +10",
-          5: "도끼 크기 +22%",
-          6: "피해 +10",
-          7: "도끼 수 +1",
-          8: "회전속도 추가 증가",
-          9: "도끼 크기 추가 증가",
-          10: "도끼 수 +1, 피해 +15%, 넉백 증가"
-        }
-      };
-
-      return map[state.weapon.id][next];
-    }
-
-    function rollGrade() {
-      const table = [
-        ["basic", 15],
-        ["normal", 20],
-        ["advanced", 30],
-        ["epic", 20],
-        ["legendary", 15]
-      ];
-
-      let r = Math.random() * 100;
-      for (const [grade, weight] of table) {
-        r -= weight;
-        if (r <= 0) return grade;
-      }
-      return "basic";
     }
 
     function openWeaponSelect() {
@@ -1220,37 +1019,21 @@
 
     function renderWeapons() {
       weaponCards.innerHTML = "";
-
-      WEAPONS.forEach(weapon => {
+      WEAPONS.forEach(w => {
         const div = document.createElement("div");
         div.className = "card";
         div.innerHTML = `
-          <h3>${weapon.name}</h3>
-          <div class="desc">${weapon.desc}</div>
-          <div class="badge-row">
-            ${weapon.tags.map(t => `<span class="badge">${t}</span>`).join("")}
-          </div>
+          <h3>${w.name}</h3>
+          <div class="desc">${w.desc}</div>
+          <div class="badge-row">${w.tags.map(t => `<span class="badge">${t}</span>`).join("")}</div>
         `;
         div.onclick = () => {
-          state = makeState(weapon);
-          resetDerivedStats();
+          state = makeState(w);
+          rebuildStats();
           weaponOverlay.classList.remove("show");
-          openStartAugmentChoice();
+          startCombat();
         };
         weaponCards.appendChild(div);
-      });
-    }
-
-    function openStartAugmentChoice() {
-      state.paused = true;
-      choiceOverlay.classList.add("show");
-      choiceTitle.textContent = "시작 증강 선택";
-      choiceDesc.textContent = "시작 증강 1개를 선택하세요.";
-      const choices = getAugmentChoices(3);
-      renderChoiceCards(choices.map(a => makeNewAugmentChoice(a)), choice => {
-        choice.apply();
-        choiceOverlay.classList.remove("show");
-        startCombat();
       });
     }
 
@@ -1262,280 +1045,145 @@
       loopId = requestAnimationFrame(loop);
     }
 
-    function getAugmentChoices(count) {
-      const picked = new Set(state.selectedAugments.map(a => a.id));
-      const result = [];
-
-      while (result.length < count) {
-        const grade = rollGrade();
-        let pool = AUGMENTS.filter(a => a.grade === grade && !picked.has(a.id) && !result.some(x => x.id === a.id));
-
-        if (pool.length === 0) {
-          pool = AUGMENTS.filter(a => !picked.has(a.id) && !result.some(x => x.id === a.id));
-        }
-
-        if (pool.length === 0) break;
-
-        result.push(pool[Math.floor(Math.random() * pool.length)]);
-      }
-
-      return result;
-    }
-
-    function makeNewAugmentChoice(augment) {
-      return {
-        type: "new_augment",
-        name: augment.name,
-        grade: augment.grade,
-        desc: `${GRADE_LABEL[augment.grade]}\n${augment.desc(1)}`,
-        synergies: augment.synergies || [],
-        apply() { takeNewAugment(augment); }
-      };
-    }
-
-    function takeNewAugment(augment) {
-      state.selectedAugments.push(augment);
-      state.augmentLevels[augment.id] = 1;
-      state.augmentSlots += 1;
-      resetDerivedStats();
-      showToast(`신규 증강: ${augment.name}`);
-      checkAwakenings();
-      renderSide();
-    }
-
-    function openLevelChoice() {
+    function openAugmentChoice() {
       state.paused = true;
+      currentChoices = rollAugmentChoices();
+      rerollsLeft = meta.upgrades.reroll || 0;
+      renderAugmentChoice();
       choiceOverlay.classList.add("show");
-
-      const isSpecial = SPECIAL_LEVELS.has(state.level);
-      choiceTitle.textContent = `Lv.${state.level} 성장 선택`;
-      choiceDesc.textContent = isSpecial
-        ? "증강 변곡점: 신규 증강 카드 등장 확률이 90%입니다."
-        : "일반 레벨업: 증강 외 카드 80%, 신규 증강 카드 20%입니다.";
-
-      const choices = getLevelChoices();
-      renderChoiceCards(choices, choice => {
-        choice.apply();
-        choiceOverlay.classList.remove("show");
-        state.paused = false;
-        checkAwakenings();
-        renderSide();
-      });
     }
 
-    function getLevelChoices() {
-      const isSpecial = SPECIAL_LEVELS.has(state.level);
-      const choices = [];
-      const seen = new Set();
+    function renderAugmentChoice() {
+      choiceTitle.textContent = `Lv.${state.level} 증강 선택`;
+      choiceDesc.textContent = "증강은 빌드의 룰을 바꿉니다. 속성 조합으로 시너지를 폭발시키세요.";
+      rerollBtn.textContent = rerollsLeft > 0 ? `새로고침 ${rerollsLeft}회` : "새로고침 없음";
+      rerollBtn.disabled = rerollsLeft <= 0;
 
-      while (choices.length < 3) {
-        const canNewAugment = state.augmentSlots < MAX_AUGMENTS;
-        const augmentChance = isSpecial ? 0.9 : 0.2;
-        const shouldNewAugment = canNewAugment && Math.random() < augmentChance;
-
-        let candidate = shouldNewAugment
-          ? makeRandomNewAugmentChoice()
-          : makeRandomNonAugmentChoice();
-
-        if (!candidate && canNewAugment) candidate = makeRandomNewAugmentChoice();
-        if (!candidate) candidate = makeRandomStatChoice();
-
-        const key = candidate.type + "_" + candidate.name;
-        if (!seen.has(key)) {
-          seen.add(key);
-          choices.push(candidate);
-        }
-
-        if (seen.size > 20) break;
-      }
-
-      return choices.slice(0, 3);
-    }
-
-    function makeRandomNewAugmentChoice() {
-      const aug = getAugmentChoices(1)[0];
-      if (!aug) return null;
-      return makeNewAugmentChoice(aug);
-    }
-
-    function makeRandomNonAugmentChoice() {
-      const pool = [];
-
-      if (state.weaponLevel < 10) {
-        pool.push({ weight: 42, maker: makeWeaponUpgradeChoice });
-      }
-
-      const upgradable = state.selectedAugments.filter(a => {
-        const currentLv = state.augmentLevels[a.id] || 1;
-        return currentLv < (a.maxLevel || 3);
-      });
-
-      if (upgradable.length > 0) {
-        pool.push({ weight: 34, maker: () => makeAugmentUpgradeChoice(randomItem(upgradable)) });
-      }
-
-      pool.push({ weight: 24, maker: makeRandomStatChoice });
-
-      return weightedPick(pool).maker();
-    }
-
-    function makeWeaponUpgradeChoice() {
-      return {
-        type: "weapon_upgrade",
-        name: state.weapon.name,
-        grade: "basic",
-        desc: `Lv.${state.weaponLevel} → Lv.${state.weaponLevel + 1}\n${getWeaponUpgradeDesc()}`,
-        synergies: [],
-        apply() {
-          state.weaponLevel += 1;
-          resetDerivedStats();
-          showToast(`${state.weapon.name} Lv.${state.weaponLevel}`);
-        }
-      };
-    }
-
-    function makeAugmentUpgradeChoice(aug) {
-      const from = state.augmentLevels[aug.id] || 1;
-      const to = from + 1;
-
-      return {
-        type: "augment_upgrade",
-        name: aug.name,
-        grade: aug.grade,
-        desc: `Lv.${from} → Lv.${to}\n${aug.upgradeDesc(from, to)}`,
-        synergies: [],
-        apply() {
-          state.augmentLevels[aug.id] = to;
-          resetDerivedStats();
-          showToast(`${aug.name} Lv.${to}`);
-        }
-      };
-    }
-
-    function makeRandomStatChoice() {
-      const list = [
-        {
-          type: "stat",
-          name: "최대 HP 증가",
-          grade: "basic",
-          desc: "최대 HP +15\nHP 15 회복",
-          synergies: [],
-          apply() {
-            state.statUpgrades.maxHpBonus += 15;
-            resetDerivedStats();
-            healPlayer(15);
-            showToast("최대 HP 증가");
-          }
-        },
-        {
-          type: "stat",
-          name: "이동속도 증가",
-          grade: "basic",
-          desc: "이동속도 +5%",
-          synergies: [],
-          apply() {
-            state.statUpgrades.speedMul *= 1.05;
-            resetDerivedStats();
-            showToast("이동속도 증가");
-          }
-        },
-        {
-          type: "stat",
-          name: "자석 범위 증가",
-          grade: "basic",
-          desc: "경험치 흡수 범위 +25",
-          synergies: [],
-          apply() {
-            state.statUpgrades.magnetBonus += 25;
-            resetDerivedStats();
-            showToast("자석 범위 증가");
-          }
-        },
-        {
-          type: "stat",
-          name: "응급 회복",
-          grade: "basic",
-          desc: "HP 25 회복",
-          synergies: [],
-          apply() {
-            healPlayer(25);
-            showToast("HP 회복");
-          }
-        },
-        {
-          type: "stat",
-          name: "방어 훈련",
-          grade: "basic",
-          desc: "받는 피해 -3%",
-          synergies: [],
-          apply() {
-            state.statUpgrades.damageReduction += 0.03;
-            resetDerivedStats();
-            showToast("받는 피해 감소");
-          }
-        }
-      ];
-
-      return randomItem(list);
-    }
-
-    function renderChoiceCards(choices, onPick) {
       choiceCards.innerHTML = "";
-
-      choices.forEach(item => {
-        const typeLabel = {
-          new_augment: "신규 증강",
-          augment_upgrade: "증강 강화",
-          weapon_upgrade: "무기 강화",
-          stat: "스탯/유틸"
-        }[item.type] || "선택";
-
+      currentChoices.forEach(aug => {
         const div = document.createElement("div");
         div.className = "card";
         div.innerHTML = `
-          <div class="type-label">${typeLabel}</div>
-          <h3 class="${GRADE_CLASS[item.grade] || ""}">${item.name}</h3>
-          <div class="desc">${item.desc}</div>
-          <div class="badge-row">
-            ${(item.synergies || []).map(s => `<span class="badge">${SYNERGY_LABELS[s.setId] || s.setId} +${s.value}</span>`).join("")}
-          </div>
+          <div class="type-label">신규 증강</div>
+          <h3 class="${GRADE_CLASS[aug.grade]}">${aug.name}</h3>
+          <div class="desc">${GRADE_LABEL[aug.grade]}\n${aug.desc}</div>
+          <div class="badge-row">${renderAttrBadges(aug.attrs)}</div>
         `;
-        div.onclick = () => onPick(item);
+        div.onclick = () => takeAugment(aug);
         choiceCards.appendChild(div);
       });
+    }
+
+    function rerollAugments() {
+      if (rerollsLeft <= 0) return;
+      rerollsLeft -= 1;
+      currentChoices = rollAugmentChoices();
+      renderAugmentChoice();
+      showToast("증강 선택지 새로고침!");
+    }
+
+    function takeAugment(aug) {
+      if (state.augments.length >= MAX_AUGMENTS) return;
+      state.augments.push(aug);
+      rebuildStats();
+      choiceOverlay.classList.remove("show");
+      state.paused = false;
+      showBigAlert(aug.name, `${GRADE_LABEL[aug.grade]} 증강 획득`);
+      renderSide();
+    }
+
+    function rollAugmentChoices() {
+      const normalPool = AUGMENTS.filter(a => !a.ghost && !state.augments.some(x => x.id === a.id));
+      const ghostPool = AUGMENTS.filter(a => a.ghost && !state.augments.some(x => x.id === a.id));
+      const choices = [];
+
+      while (choices.length < 3) {
+        const pool = normalPool.filter(a => !choices.some(c => c.id === a.id));
+        if (!pool.length) break;
+        choices.push(pickByGrade(pool));
+      }
+
+      const ghostChance = getGhostChance();
+      if (ghostPool.length && Math.random() < ghostChance) {
+        const index = Math.floor(Math.random() * choices.length);
+        choices[index] = randomItem(ghostPool);
+      }
+
+      return choices;
+    }
+
+    function getGhostChance() {
+      let chance = state.level >= 30 ? .20 : state.level >= 20 ? .15 : .10;
+      const attrs = getAttrCounts();
+      if ((attrs["鬼"] || 0) > 0) chance += .05;
+      return chance;
+    }
+
+    function pickByGrade(pool) {
+      const high = meta.upgrades.high_grade || 0;
+      const table = {
+        basic: Math.max(3, 15 - high * 2),
+        normal: Math.max(5, 20 - high),
+        advanced: 30,
+        epic: 20 + high * 2,
+        legendary: 15 + high
+      };
+
+      let candidates = [];
+      let guard = 0;
+
+      while (!candidates.length && guard < 20) {
+        guard++;
+        const grade = weightedPick(Object.entries(table).map(([grade, weight]) => ({ grade, weight }))).grade;
+        candidates = pool.filter(a => a.grade === grade);
+      }
+
+      if (!candidates.length) candidates = pool;
+
+      const focus = meta.upgrades.attr_focus || 0;
+      if (focus > 0 && state.augments.length > 0) {
+        const current = getAttrCounts();
+        const weighted = candidates.map(a => {
+          let weight = 1;
+          for (const k of Object.keys(a.attrs || {})) {
+            if ((current[k] || 0) > 0) weight += focus * 0.08;
+          }
+          return { item: a, weight };
+        });
+        return weightedPick(weighted).item;
+      }
+
+      return randomItem(candidates);
     }
 
     function loop(ts) {
       const dt = Math.min(0.04, (ts - lastTs) / 1000);
       lastTs = ts;
 
-      if (state && state.running && !state.paused) {
-        update(dt);
-      }
+      if (state && state.running && !state.paused) update(dt);
 
       draw();
       updateUi();
 
-      if (state && state.running) {
-        loopId = requestAnimationFrame(loop);
-      }
+      if (state && state.running) loopId = requestAnimationFrame(loop);
     }
 
     function update(dt) {
       state.timeMs += dt * 1000;
+      state.stacks.demonNoLossMs = Math.max(0, state.stacks.demonNoLossMs - dt * 1000);
 
       if (state.timeMs >= GAME_LIMIT_MS) {
         endGame(true);
         return;
       }
 
+      updateBuffs(dt);
       updatePlayer(dt);
       updateWeapon(dt);
       updateSpawns(dt);
       updateEnemies(dt);
       updateProjectiles(dt);
-      updateEnemyProjectiles(dt);
-      updateGems(dt);
+      updateGemsAndDrops(dt);
       updateEffects(dt);
       updateFloating(dt);
     }
@@ -1543,17 +1191,16 @@
     function updatePlayer(dt) {
       state.player.invuln = Math.max(0, state.player.invuln - dt);
 
-      let dx = 0;
-      let dy = 0;
-
+      let dx = 0, dy = 0;
       if (keys.has("KeyW") || keys.has("ArrowUp")) dy -= 1;
       if (keys.has("KeyS") || keys.has("ArrowDown")) dy += 1;
       if (keys.has("KeyA") || keys.has("ArrowLeft")) dx -= 1;
       if (keys.has("KeyD") || keys.has("ArrowRight")) dx += 1;
 
       const len = Math.hypot(dx, dy) || 1;
-      state.player.x += (dx / len) * state.player.speed * dt;
-      state.player.y += (dy / len) * state.player.speed * dt;
+      const speed = state.player.speed * getBuffMul("speed") * (state.synergy.moveMul || 1);
+      state.player.x += (dx / len) * speed * dt;
+      state.player.y += (dy / len) * speed * dt;
 
       state.player.x += state.player.kbX * dt;
       state.player.y += state.player.kbY * dt;
@@ -1569,96 +1216,77 @@
 
       if (state.weapon.id === "magic_staff") {
         state.attackMs -= dt * 1000;
-        const stats = getWeaponStats();
-
+        const w = getWeaponStats();
         if (state.attackMs <= 0) {
-          state.attackMs = stats.intervalMs;
-          fireMagicProjectiles(stats);
+          state.attackMs = w.intervalMs;
+          if (state.perks.overheat) damagePlayerRaw(0.2);
+          fireProjectiles(w);
         }
       }
 
       if (state.weapon.id === "flame_heart") {
         state.auraMs -= dt * 1000;
-        const stats = getWeaponStats();
-
+        const w = getWeaponStats();
         if (state.auraMs <= 0) {
-          state.auraMs = stats.tickMs;
-          damageArea(state.player.x, state.player.y, stats.auraRadius, stats.damage, stats.knockback, stats.tags, false);
+          state.auraMs = w.tickMs;
+          damageArea(state.player.x, state.player.y, w.radius, w.damage, w.knockback, w.tags, false);
+          if (state.perks.overheat) damagePlayerRaw(0.2);
         }
-
-        if (stats.pulse) {
+        if (w.pulse) {
           state.attackMs -= dt * 1000;
           if (state.attackMs <= 0) {
             state.attackMs = 2000;
-            damageArea(state.player.x, state.player.y, stats.auraRadius * 1.2, stats.damage * 1.4, 22, stats.tags, true, "#fb7185");
+            damageArea(state.player.x, state.player.y, w.radius * 1.2, w.damage * 1.4, 28, w.tags, true, "#fb7185");
           }
         }
       }
 
       if (state.weapon.id === "orbit_axe") {
-        const stats = getWeaponStats();
-        state.orbitAngle += stats.orbitSpeed * dt;
-
-        for (let i = 0; i < stats.axeCount; i++) {
-          const a = state.orbitAngle + (Math.PI * 2 * i) / stats.axeCount;
-          const ox = state.player.x + Math.cos(a) * stats.orbitRadius;
-          const oy = state.player.y + Math.sin(a) * stats.orbitRadius;
-
-          for (const enemy of state.enemies) {
-            if (enemy.hitCd > 0) continue;
-            const dist = Math.hypot(enemy.x - ox, enemy.y - oy);
-            if (dist < enemy.r + stats.axeRadius) {
-              enemy.hitCd = 0.28;
-              damageEnemy(enemy, calcDamage(stats.damage, stats.tags), stats.tags, stats.knockback, ox, oy);
+        const w = getWeaponStats();
+        state.orbitAngle = (state.orbitAngle || 0) + w.orbitSpeed * dt;
+        for (let i = 0; i < w.count; i++) {
+          const a = state.orbitAngle + Math.PI * 2 * i / w.count;
+          const ox = state.player.x + Math.cos(a) * w.orbitRadius;
+          const oy = state.player.y + Math.sin(a) * w.orbitRadius;
+          for (const e of state.enemies) {
+            if (e.hitCd > 0) continue;
+            if (Math.hypot(e.x - ox, e.y - oy) < e.r + w.axeRadius) {
+              e.hitCd = 0.25;
+              hitEnemy(e, w.damage, w.tags, w.knockback, ox, oy, 0);
             }
           }
         }
       }
     }
 
-    function fireMagicProjectiles(stats) {
-      const nearest = getNearestEnemy();
-      if (!nearest) return;
+    function fireProjectiles(w) {
+      const target = getNearestEnemy();
+      if (!target) return;
 
-      for (let i = 0; i < stats.projectileCount; i++) {
-        const spread = (i - (stats.projectileCount - 1) / 2) * 0.14;
-        const angle = Math.atan2(nearest.y - state.player.y, nearest.x - state.player.x) + spread;
-
+      for (let i = 0; i < w.count; i++) {
+        const spread = (i - (w.count - 1) / 2) * 0.14;
+        const angle = Math.atan2(target.y - state.player.y, target.x - state.player.x) + spread;
         state.projectiles.push({
           x: state.player.x,
           y: state.player.y,
-          vx: Math.cos(angle) * stats.projectileSpeed,
-          vy: Math.sin(angle) * stats.projectileSpeed,
-          r: stats.radius,
-          damage: calcDamage(stats.damage, stats.tags),
-          pierce: stats.pierce,
-          knockback: stats.knockback,
-          tags: stats.tags,
+          vx: Math.cos(angle) * w.speed,
+          vy: Math.sin(angle) * w.speed,
+          r: w.radius,
+          damage: w.damage,
+          pierce: w.pierce,
+          knockback: w.knockback,
+          tags: w.tags,
           life: 2.4,
-          chainDepth: 0,
-          allowChain: true
+          allowChain: true,
+          depth: 0
         });
       }
-    }
-
-    function calcDamage(base, tags) {
-      let damage = base * state.mods.damageMul;
-
-      for (const tag of tags || []) {
-        if (state.tagMods[tag]) damage *= state.tagMods[tag];
-      }
-
-      if (state.reactions.berserkDamageBonus && state.player.hp / state.player.maxHp <= 0.35) {
-        damage *= 1 + state.reactions.berserkDamageBonus;
-      }
-
-      return damage;
     }
 
     function updateSpawns(dt) {
       state.spawnMs -= dt * 1000;
       const t = state.timeMs / 1000;
-      const interval = Math.max(240, 850 - t * 2.4);
+      const interval = Math.max(420, 1100 - t * 1.35);
 
       if (state.spawnMs <= 0) {
         state.spawnMs = interval;
@@ -1668,62 +1296,82 @@
 
     function spawnEnemy() {
       const t = state.timeMs / 1000;
-
       const types = [
-        { id: "slime", color: "#22c55e", hp: 28, speed: 70, damage: 8, exp: 8, r: 13, from: 0, weight: 50, knockbackResist: 0 },
-        { id: "wolf", color: "#94a3b8", hp: 24, speed: 125, damage: 7, exp: 12, r: 11, from: 60, weight: 30, knockbackResist: 0.1 },
-        { id: "bat", color: "#a78bfa", hp: 18, speed: 155, damage: 5, exp: 12, r: 9, from: 120, weight: 24, knockbackResist: 0 },
-        { id: "golem", color: "#78716c", hp: 120, speed: 48, damage: 14, exp: 35, r: 18, from: 240, weight: 13, knockbackResist: 0.6 },
-        { id: "bomb", color: "#f97316", hp: 50, speed: 65, damage: 9, exp: 25, r: 14, from: 360, weight: 16, knockbackResist: 0.3 }
+        { id: "slime", color: "#22c55e", hp: 22, speed: 62, damage: 5, exp: 8, r: 13, from: 0, weight: 52, kb: 0 },
+        { id: "wolf", color: "#94a3b8", hp: 22, speed: 110, damage: 6, exp: 12, r: 11, from: 60, weight: 30, kb: .1 },
+        { id: "bat", color: "#a78bfa", hp: 16, speed: 138, damage: 4, exp: 12, r: 9, from: 120, weight: 24, kb: 0 },
+        { id: "golem", color: "#78716c", hp: 90, speed: 42, damage: 10, exp: 35, r: 18, from: 240, weight: 13, kb: .6 },
+        { id: "bomb", color: "#f97316", hp: 42, speed: 58, damage: 8, exp: 25, r: 14, from: 360, weight: 16, kb: .3 }
       ].filter(m => t >= m.from);
 
       const picked = weightedPick(types.map(m => ({ ...m, weight: m.weight })));
-
+      const elite = t > 240 && Math.random() < 0.045;
       const side = Math.floor(Math.random() * 4);
       let x, y;
+      if (side === 0) { x = -25; y = Math.random() * canvas.height; }
+      if (side === 1) { x = canvas.width + 25; y = Math.random() * canvas.height; }
+      if (side === 2) { x = Math.random() * canvas.width; y = -25; }
+      if (side === 3) { x = Math.random() * canvas.width; y = canvas.height + 25; }
 
-      if (side === 0) { x = -20; y = Math.random() * canvas.height; }
-      if (side === 1) { x = canvas.width + 20; y = Math.random() * canvas.height; }
-      if (side === 2) { x = Math.random() * canvas.width; y = -20; }
-      if (side === 3) { x = Math.random() * canvas.width; y = canvas.height + 20; }
-
-      const diff = 1 + t / 520;
+      const diff = 1 + t / 620;
+      const hp = picked.hp * diff * (elite ? 3 : 1);
 
       state.enemies.push({
         ...picked,
-        x,
-        y,
-        hp: picked.hp * diff,
-        maxHp: picked.hp * diff,
-        speed: picked.speed * Math.min(1.35, 1 + t / 900),
+        x, y,
+        hp,
+        maxHp: hp,
+        speed: picked.speed * Math.min(1.25, 1 + t / 1100) * (elite ? .85 : 1),
+        damage: picked.damage * (elite ? 1.4 : 1),
+        exp: picked.exp * (elite ? 4 : 1),
+        r: picked.r * (elite ? 1.25 : 1),
+        elite,
+        color: elite ? "#facc15" : picked.color,
         hitCd: 0,
         contactCd: 0,
         vx: 0,
-        vy: 0
+        vy: 0,
+        slowTime: 0,
+        slowPower: 0,
+        freezeTime: 0,
+        burnTime: 0,
+        burnDps: 0,
+        burnTick: 0
       });
     }
 
     function updateEnemies(dt) {
-      for (const enemy of state.enemies) {
-        enemy.hitCd = Math.max(0, enemy.hitCd - dt);
-        enemy.contactCd = Math.max(0, enemy.contactCd - dt);
+      for (const e of state.enemies) {
+        e.hitCd = Math.max(0, e.hitCd - dt);
+        e.contactCd = Math.max(0, e.contactCd - dt);
+        e.slowTime = Math.max(0, e.slowTime - dt);
+        e.freezeTime = Math.max(0, e.freezeTime - dt);
 
-        const dx = state.player.x - enemy.x;
-        const dy = state.player.y - enemy.y;
-        const len = Math.hypot(dx, dy) || 1;
+        if (e.burnTime > 0) {
+          e.burnTime -= dt;
+          const dmg = e.burnDps * dt;
+          e.hp -= dmg;
+          if (e.hp <= 0) killEnemy(e, ["burn"]);
+        }
 
-        enemy.x += (dx / len) * enemy.speed * dt;
-        enemy.y += (dy / len) * enemy.speed * dt;
+        if (e.freezeTime <= 0) {
+          const dx = state.player.x - e.x;
+          const dy = state.player.y - e.y;
+          const len = Math.hypot(dx, dy) || 1;
+          const slowMul = e.slowTime > 0 ? (1 - e.slowPower) : 1;
+          e.x += (dx / len) * e.speed * slowMul * dt;
+          e.y += (dy / len) * e.speed * slowMul * dt;
+        }
 
-        enemy.x += enemy.vx * dt;
-        enemy.y += enemy.vy * dt;
-        enemy.vx *= Math.pow(0.005, dt);
-        enemy.vy *= Math.pow(0.005, dt);
+        e.x += e.vx * dt;
+        e.y += e.vy * dt;
+        e.vx *= Math.pow(0.005, dt);
+        e.vy *= Math.pow(0.005, dt);
 
-        const dist = Math.hypot(enemy.x - state.player.x, enemy.y - state.player.y);
-        if (dist < enemy.r + state.player.r && enemy.contactCd <= 0) {
-          enemy.contactCd = 0.55;
-          damagePlayer(enemy.damage, enemy.x, enemy.y);
+        const dist = Math.hypot(e.x - state.player.x, e.y - state.player.y);
+        if (dist < e.r + state.player.r && e.contactCd <= 0) {
+          e.contactCd = 0.9;
+          damagePlayer(e.damage, e.x, e.y);
         }
       }
 
@@ -1736,15 +1384,11 @@
         p.x += p.vx * dt;
         p.y += p.vy * dt;
 
-        for (const enemy of state.enemies) {
-          if (enemy.hp <= 0) continue;
-          const dist = Math.hypot(enemy.x - p.x, enemy.y - p.y);
-
-          if (dist < enemy.r + p.r) {
-            damageEnemy(enemy, p.damage, p.tags, p.knockback, p.x, p.y);
-            triggerProjectileHit(enemy, p);
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          if (Math.hypot(e.x - p.x, e.y - p.y) < e.r + p.r) {
+            hitEnemy(e, p.damage, p.tags, p.knockback, p.x, p.y, p.depth, p);
             p.pierce -= 1;
-
             if (p.pierce < 0) {
               p.life = 0;
               break;
@@ -1754,155 +1398,291 @@
       }
 
       state.projectiles = state.projectiles.filter(p =>
-        p.life > 0 &&
-        p.x > -50 &&
-        p.x < canvas.width + 50 &&
-        p.y > -50 &&
-        p.y < canvas.height + 50
+        p.life > 0 && p.x > -60 && p.x < canvas.width + 60 && p.y > -60 && p.y < canvas.height + 60
       );
     }
 
-    function updateEnemyProjectiles(dt) {
-      for (const p of state.enemyProjectiles) {
-        p.life -= dt;
-        p.x += p.vx * dt;
-        p.y += p.vy * dt;
+    function hitEnemy(e, amount, tags = [], knockback = 0, sx = state.player.x, sy = state.player.y, depth = 0, projectile = null) {
+      let dmg = amount;
 
-        const dist = Math.hypot(p.x - state.player.x, p.y - state.player.y);
+      if (e.hp / e.maxHp <= .35) dmg *= 1 + state.perks.executeDamage;
+      if (tags.includes("area")) dmg *= state.synergy.areaDamageMul || 1;
+      if (state.perks.areaExecute && tags.includes("area") && e.hp / e.maxHp <= .35) dmg *= 1 + state.perks.areaExecute;
 
-        if (dist < p.r + state.player.r) {
-          if (state.player.invuln > 0) {
-            // 무적 중에는 적 투사체가 피해를 주지 않고 그대로 통과한다.
-            continue;
+      if (state.activeSynergies.has("frostfire") && e.slowTime > 0 && e.burnTime > 0) {
+        dmg *= 1.65 + state.perks.frostfireBonus;
+      }
+
+      if (Math.random() < (state.synergy.executeChance || 0) && e.hp / e.maxHp <= (state.synergy.executeThreshold || 0)) {
+        if (!e.elite) {
+          dmg = e.hp + 9999;
+          if (state.activeSynergies.has("dark4")) damageArea(e.x, e.y, 55, amount * .7, 12, ["dark", "area"], true, "#6d28d9");
+        } else {
+          dmg += e.maxHp * .08;
+        }
+      }
+
+      e.hp -= dmg;
+      addFloating(e.x, e.y, Math.round(dmg), "#fef3c7");
+
+      if (knockback > 0) applyEnemyKnockback(e, sx, sy, knockback);
+
+      applyOnHitEffects(e, amount, tags, depth, projectile);
+
+      if (e.hp <= 0) killEnemy(e, tags);
+    }
+
+    function applyOnHitEffects(e, baseDamage, tags, depth, projectile) {
+      const s = state.synergy;
+
+      const slowChance = state.perks.slowChance + (s.slowChance || 0);
+      if (Math.random() < slowChance) {
+        e.slowTime = Math.max(e.slowTime, 2);
+        e.slowPower = Math.max(e.slowPower, .25 + (s.slowPower || 0));
+      }
+
+      const burnChance = state.perks.burnChance + (s.burnChance || 0);
+      if (Math.random() < burnChance) {
+        applyBurn(e, baseDamage * (s.burnDpsRatio || .20), s.burnDuration || 2.5);
+      }
+
+      if (state.activeSynergies.has("firestorm") && e.burnTime > 0 && Math.random() < .16) {
+        spreadBurn(e, baseDamage * .25);
+      }
+
+      if (state.perks.focusBlade) {
+        state.stacks.focus = Math.min(80, state.stacks.focus + 1);
+      }
+
+      if (state.synergy.extraHitEvery) {
+        state._hitCounter = (state._hitCounter || 0) + 1;
+        if (state._hitCounter >= state.synergy.extraHitEvery) {
+          state._hitCounter = 0;
+          e.hp -= baseDamage * .5;
+          addFloating(e.x, e.y - 10, "추가타!", "#a7f3d0");
+        }
+      }
+
+      if (projectile && projectile.tags.includes("projectile")) {
+        if (state.perks.chainChance && projectile.allowChain && Math.random() < state.perks.chainChance) {
+          const target = getNearestEnemy(e.x, e.y, e);
+          if (target) {
+            const a = Math.atan2(target.y - e.y, target.x - e.x);
+            state.projectiles.push({
+              x: e.x, y: e.y,
+              vx: Math.cos(a) * 560,
+              vy: Math.sin(a) * 560,
+              r: 4,
+              damage: projectile.damage * .45,
+              pierce: 0,
+              knockback: 14,
+              tags: ["projectile", "magic"],
+              life: 1.5,
+              allowChain: false,
+              depth: depth + 1
+            });
           }
+        }
 
-          damagePlayer(p.damage, p.x, p.y);
-          p.life = 0;
+        if (state.perks.starChance && Math.random() < state.perks.starChance) {
+          damageArea(e.x, e.y, 42, projectile.damage * .35, 16, ["light", "area"], true, "#c4b5fd");
         }
       }
-
-      state.enemyProjectiles = state.enemyProjectiles.filter(p =>
-        p.life > 0 &&
-        p.x > -60 &&
-        p.x < canvas.width + 60 &&
-        p.y > -60 &&
-        p.y < canvas.height + 60
-      );
     }
 
-    function triggerProjectileHit(enemy, p) {
-      if (state.reactions.chainProjectileChance && p.allowChain && Math.random() < state.reactions.chainProjectileChance) {
-        const target = getNearestEnemy(enemy.x, enemy.y, enemy);
-        if (target) {
-          const angle = Math.atan2(target.y - enemy.y, target.x - enemy.x);
-          state.projectiles.push({
-            x: enemy.x,
-            y: enemy.y,
-            vx: Math.cos(angle) * 560,
-            vy: Math.sin(angle) * 560,
-            r: 4,
-            damage: p.damage * 0.45,
-            pierce: 0,
-            knockback: 14,
-            tags: ["magic", "projectile"],
-            life: 1.6,
-            chainDepth: (p.chainDepth || 0) + 1,
-            allowChain: false
-          });
+    function applyBurn(e, dps, duration) {
+      e.burnTime = Math.max(e.burnTime, duration);
+      e.burnDps = Math.max(e.burnDps, dps);
+      if (state.activeSynergies.has("frostfire") && e.slowTime > 0) {
+        e.hp -= dps;
+        addFloating(e.x, e.y - 12, "서리불꽃", "#fb923c");
+      }
+    }
+
+    function spreadBurn(source, dps) {
+      let count = 0;
+      for (const e of state.enemies) {
+        if (e === source || count >= 2) continue;
+        if (Math.hypot(e.x - source.x, e.y - source.y) < 80) {
+          applyBurn(e, dps, 2.5);
+          count++;
         }
       }
-
-      if (state.reactions.starShotChance && Math.random() < state.reactions.starShotChance) {
-        damageArea(enemy.x, enemy.y, 42, p.damage * 0.35, 18, ["magic", "star", "area"], true, "#c4b5fd");
-      }
     }
 
-    function damageEnemy(enemy, amount, tags = [], knockback = 0, sourceX = state.player.x, sourceY = state.player.y) {
-      if (enemy.hp / enemy.maxHp <= 0.35) {
-        amount *= 1 + state.mods.executeBonus;
-      }
-
-      if (state.reactions.blackFlameRatio && tags.includes("fire")) {
-        amount *= 1 + state.reactions.blackFlameRatio;
-      }
-
-      enemy.hp -= amount;
-
-      if (knockback > 0) {
-        applyEnemyKnockback(enemy, sourceX, sourceY, knockback);
-      }
-
-      addFloating(enemy.x, enemy.y, Math.round(amount), "#fef3c7");
-
-      if (enemy.hp <= 0) {
-        killEnemy(enemy, tags);
-      }
-    }
-
-    function applyEnemyKnockback(enemy, sourceX, sourceY, power) {
-      const dx = enemy.x - sourceX;
-      const dy = enemy.y - sourceY;
-      const len = Math.hypot(dx, dy) || 1;
-      const finalPower = power * (1 - (enemy.knockbackResist || 0));
-      enemy.vx += (dx / len) * finalPower * 18;
-      enemy.vy += (dy / len) * finalPower * 18;
-    }
-
-    function killEnemy(enemy, tags) {
+    function killEnemy(e, tags = []) {
+      if (e.dead) return;
+      e.dead = true;
+      e.hp = 0;
       state.kills += 1;
-      state.gems.push({ x: enemy.x, y: enemy.y, exp: enemy.exp, r: 5 });
+      state.gems.push({ x: e.x, y: e.y, r: 5, exp: e.exp * state.base.expMul });
 
-      if (state.reactions.bloodHealOnKill) {
-        healPlayer(state.reactions.bloodHealOnKill);
+      if (e.elite) {
+        const bonus = Math.round(35 * (1 + meta.upgrades.elite_bounty * .1));
+        addRunCoins(bonus);
+        showToast(`정예 처치 +${bonus}코인`);
       }
 
-      if (state.reactions.infiniteShieldChance && Math.random() < state.reactions.infiniteShieldChance) {
-        addShield(10);
+      if (state.synergy.shieldOnKillChance && Math.random() < state.synergy.shieldOnKillChance + state.perks.killShieldChance) {
+        addShield(state.synergy.shieldOnKill || 6);
       }
 
-      if (enemy.id === "bomb") {
-        damageArea(enemy.x, enemy.y, 64, 25, 28, ["fire", "area"], true, "#fdba74");
+      if (state.synergy.healOnKillChance && Math.random() < state.synergy.healOnKillChance + state.perks.killHealChance) {
+        healPlayer(state.synergy.healOnKill || 4);
       }
 
-      checkAwakenings();
+      if (state.synergy.demonKillStack) {
+        let gain = 1;
+        if (state.perks.demonGate) gain += 1;
+        if (state.perks.bloodFlameDemon && (e.burnTime > 0 || tags.includes("burn"))) gain += 2;
+        if (state.perks.holyDemonScar && state.player.shield > 0) gain += 1;
+        state.stacks.demon = Math.min(state.synergy.demonMax || 80, state.stacks.demon + gain);
+      }
+
+      if (state.activeSynergies.has("fire6") && e.burnTime > 0) {
+        damageArea(e.x, e.y, 60, e.maxHp * .25, 24, ["fire", "area"], true, "#f97316");
+        spreadBurn(e, e.maxHp * .04);
+      }
+
+      if (state.activeSynergies.has("light6") && tags.includes("area") && Math.random() < .25) {
+        damageArea(e.x, e.y, 50, e.maxHp * .18, 18, ["light", "area"], true, "#fde68a");
+      }
+
+      maybeDropItem(e);
+    }
+
+    function maybeDropItem(e) {
+      const dropChance = e.elite ? .20 : .025;
+      if (Math.random() > dropChance) return;
+
+      const grade = rollItemGrade(e.elite);
+      const item = createDropItem(grade);
+      item.x = e.x;
+      item.y = e.y;
+      item.r = grade === "legendary" ? 9 : grade === "epic" ? 8 : 7;
+      state.drops.push(item);
+    }
+
+    function rollItemGrade(elite) {
+      const gemCount = state.itemStats.gems;
+      let gemMul = gemCount >= 3 ? .1 : gemCount >= 2 ? .3 : 1;
+
+      const table = elite
+        ? { basic: 35, normal: 35, advanced: 22, epic: 7 * gemMul, legendary: 1 * gemMul }
+        : { basic: 70, normal: 24, advanced: 5, epic: .9 * gemMul, legendary: .1 * gemMul };
+
+      return weightedPick(Object.entries(table).map(([grade, weight]) => ({ grade, weight }))).grade;
+    }
+
+    function createDropItem(grade) {
+      if (grade === "basic") {
+        const list = [
+          { name: "체력회복(소)", kind: "heal_small", color: "#bfdbfe" },
+          { name: "자석", kind: "magnet", color: "#22d3ee" },
+          { name: "코인(소)", kind: "coin_small", color: "#fde68a" }
+        ];
+        return { grade, ...randomItem(list) };
+      }
+
+      if (grade === "normal") {
+        const list = [
+          { name: "체력회복(대)", kind: "heal_big", color: "#60a5fa" },
+          { name: "전체 몹 킬", kind: "nuke", color: "#f87171" },
+          { name: "코인(대)", kind: "coin_big", color: "#facc15" }
+        ];
+        return { grade, ...randomItem(list) };
+      }
+
+      if (grade === "advanced") {
+        const list = [
+          { name: "공격력 증가", kind: "buff_damage", color: "#86efac" },
+          { name: "이속 증가", kind: "buff_speed", color: "#86efac" },
+          { name: "공속 증가", kind: "buff_as", color: "#86efac" },
+          { name: "공격범위 증가", kind: "buff_area", color: "#86efac" }
+        ];
+        return { grade, ...randomItem(list) };
+      }
+
+      if (grade === "epic") {
+        const attr = randomItem(NORMAL_ATTRS);
+        const value = Math.random() < .7 ? 1 : 2;
+        return { grade, kind: "gem", name: `${attr} +${value} 보석`, attr, value, color: "#c4b5fd" };
+      }
+
+      const roll = Math.random();
+      if (roll < .40) {
+        return { grade, kind: "gem", name: "특정 속성 +3 보석", attr: randomItem(NORMAL_ATTRS), value: 3, color: "#facc15" };
+      }
+      if (roll < .60) {
+        return { grade, kind: "all_gem", name: "모든 속성 +1 보석", value: 1, color: "#facc15" };
+      }
+      if (roll < .80) {
+        return { grade, kind: "gem", name: "특정 속성 +4 보석", attr: randomItem(NORMAL_ATTRS), value: 4, color: "#facc15" };
+      }
+      return { grade, kind: "gem", name: "鬼 +2 귀속 보석", attr: "鬼", value: 2, color: "#facc15" };
+    }
+
+    function applyDrop(item) {
+      state.itemStats.total += 1;
+
+      if (item.kind === "heal_small") healPlayer(state.player.maxHp * .15);
+      if (item.kind === "heal_big") healPlayer(state.player.maxHp * .40);
+      if (item.kind === "magnet") {
+        for (const g of state.gems) g.forceMagnet = true;
+      }
+      if (item.kind === "coin_small") addRunCoins(30);
+      if (item.kind === "coin_big") addRunCoins(120);
+      if (item.kind === "nuke") {
+        for (const e of state.enemies) {
+          if (e.elite) e.hp -= e.maxHp * .25;
+          else e.hp = 0;
+          if (e.hp <= 0) killEnemy(e, ["nuke"]);
+        }
+      }
+      if (item.kind === "buff_damage") addTimedBuff("damage", 1.4, 15);
+      if (item.kind === "buff_speed") addTimedBuff("speed", 1.35, 15);
+      if (item.kind === "buff_as") addTimedBuff("attackSpeed", 1.35, 15);
+      if (item.kind === "buff_area") addTimedBuff("area", 1.4, 15);
+
+      if (item.kind === "gem") {
+        state.attrsFromGems[item.attr] = (state.attrsFromGems[item.attr] || 0) + item.value;
+        state.itemStats.gems += 1;
+        if (item.grade === "legendary") state.itemStats.legendary += 1;
+        showBigAlert(item.name, `${item.attr} +${item.value}`);
+        rebuildStats();
+      }
+
+      if (item.kind === "all_gem") {
+        for (const a of NORMAL_ATTRS) state.attrsFromGems[a] = (state.attrsFromGems[a] || 0) + 1;
+        state.itemStats.gems += 1;
+        state.itemStats.legendary += 1;
+        showBigAlert("모든 속성 +1 보석", "鬼 제외 모든 일반 속성 강화");
+        rebuildStats();
+      }
+
+      showToast(`아이템 획득: ${item.name}`);
     }
 
     function damageArea(x, y, radius, damage, knockback, tags = ["area"], showEffect = true, color = "#facc15") {
-      if (showEffect) {
-        state.effects.push({ x, y, radius, life: 0.25, maxLife: 0.25, color });
-      }
+      if (showEffect) state.effects.push({ x, y, radius, life: .25, maxLife: .25, color });
 
-      for (const enemy of state.enemies) {
-        const dist = Math.hypot(enemy.x - x, enemy.y - y);
-        if (dist < radius + enemy.r) {
-          damageEnemy(enemy, calcDamage(damage, tags), tags, knockback, x, y);
+      for (const e of state.enemies) {
+        if (Math.hypot(e.x - x, e.y - y) < radius + e.r) {
+          hitEnemy(e, damage, tags, knockback, x, y, 1);
         }
-      }
-
-      if (state.reactions.holyEchoChance && tags.includes("area") && Math.random() < state.reactions.holyEchoChance) {
-        setTimeout(() => {
-          if (state && state.running) {
-            damageArea(x, y, radius * 0.75, damage * 0.45, 15, ["holy", "area"], true, "#fde68a");
-          }
-        }, 80);
       }
     }
 
     function damagePlayer(amount, sourceX, sourceY) {
       if (state.player.invuln > 0) return;
 
-      const reduced = amount * Math.max(0.2, 1 - state.player.damageReduction);
+      if (state.perks.glassSanctuary && state.player.shield <= 0) amount *= 1.2;
+      if (state.perks.demonGate) amount += state.player.hp * .08;
 
-      if (state.player.shield > 0) {
-        const used = Math.min(state.player.shield, reduced);
-        state.player.shield -= used;
-        const rest = reduced - used;
-        state.player.hp -= rest;
-      } else {
-        state.player.hp -= reduced;
-      }
+      const reduced = amount * Math.max(.2, 1 - state.base.defense);
+      damagePlayerRaw(reduced);
 
-      state.player.invuln = 1.0;
+      state.player.invuln = 1 + meta.upgrades.invuln * .08;
 
       const dx = state.player.x - sourceX;
       const dy = state.player.y - sourceY;
@@ -1910,43 +1690,108 @@
       state.player.kbX += (dx / len) * 560;
       state.player.kbY += (dy / len) * 560;
 
+      if (state.perks.focusBlade) state.stacks.focus = 0;
+
+      if (state.synergy.demonKillStack && state.stacks.demonNoLossMs <= 0) {
+        let loss = state.synergy.demonLoss || .5;
+        if (state.perks.holyDemonScar && state.player.shield > 0) loss *= .5;
+        state.stacks.demon = Math.floor(state.stacks.demon * (1 - loss));
+      }
+
       addFloating(state.player.x, state.player.y - 18, "피격!", "#fca5a5");
+    }
+
+    function damagePlayerRaw(amount) {
+      if (amount <= 0) return;
+
+      if (state.player.shield > 0) {
+        const used = Math.min(state.player.shield, amount);
+        state.player.shield -= used;
+        amount -= used;
+      }
+
+      state.player.hp -= amount;
+
+      if (state.player.hp <= state.player.maxHp * .25 && !state.player.emergencyUsed && meta.upgrades.emergency > 0) {
+        state.player.emergencyUsed = true;
+        healPlayer(10 + meta.upgrades.emergency * 5);
+        showToast("응급 회복 발동!");
+      }
 
       if (state.player.hp <= 0) {
+        if (!state.player.deathSaved && meta.upgrades.deathsave > 0) {
+          state.player.deathSaved = true;
+          state.player.hp = 1;
+          state.player.invuln = 2;
+          addShield(30);
+          showBigAlert("사망 유예", "치명 피해를 버텼습니다");
+          return;
+        }
         endGame(false);
       }
     }
 
     function addShield(amount) {
       state.player.shield += amount;
-
-      if (state.reactions.shieldOverloadDamage) {
-        damageArea(state.player.x, state.player.y, 90, state.reactions.shieldOverloadDamage, 28, ["area"], true, "#60a5fa");
-      }
+      if (state.perks.sanctuaryLoop) healPlayer(amount * .15);
     }
 
     function healPlayer(amount) {
-      state.player.hp = Math.min(state.player.maxHp, state.player.hp + amount);
-    }
+      let value = amount * state.base.healMul;
+      if (state.perks.cursedCrown) value *= .5;
 
-    function updateGems(dt) {
-      for (const gem of state.gems) {
-        const dx = state.player.x - gem.x;
-        const dy = state.player.y - gem.y;
-        const dist = Math.hypot(dx, dy) || 1;
+      const before = state.player.hp;
+      state.player.hp = Math.min(state.player.maxHp, state.player.hp + value);
+      const over = Math.max(0, before + value - state.player.maxHp);
 
-        if (dist < state.player.magnetRange) {
-          gem.x += (dx / dist) * 300 * dt;
-          gem.y += (dy / dist) * 300 * dt;
-        }
-
-        if (dist < state.player.r + gem.r + 4) {
-          gem.collected = true;
-          gainExp(gem.exp);
-        }
+      if (state.activeSynergies.has("evil6") && over > 0) {
+        addTimedBuff("damage", 1 + Math.min(.5, over / 100), 5);
       }
 
+      if (state.perks.evilDemonFeast && state.synergy.demonKillStack) {
+        state.stacks.demon = Math.min(state.synergy.demonMax || 80, state.stacks.demon + 1 + (over > 0 ? 1 : 0));
+      }
+    }
+
+    function applyEnemyKnockback(e, sx, sy, power) {
+      const dx = e.x - sx;
+      const dy = e.y - sy;
+      const len = Math.hypot(dx, dy) || 1;
+      const finalPower = power * (1 - (e.kb || 0));
+      e.vx += (dx / len) * finalPower * 18;
+      e.vy += (dy / len) * finalPower * 18;
+    }
+
+    function updateGemsAndDrops(dt) {
+      for (const g of state.gems) {
+        const dx = state.player.x - g.x;
+        const dy = state.player.y - g.y;
+        const dist = Math.hypot(dx, dy) || 1;
+        if (dist < state.player.magnetRange || g.forceMagnet) {
+          g.x += (dx / dist) * 330 * dt;
+          g.y += (dy / dist) * 330 * dt;
+        }
+        if (dist < state.player.r + g.r + 4) {
+          g.collected = true;
+          gainExp(g.exp);
+        }
+      }
       state.gems = state.gems.filter(g => !g.collected);
+
+      for (const d of state.drops) {
+        const dx = state.player.x - d.x;
+        const dy = state.player.y - d.y;
+        const dist = Math.hypot(dx, dy) || 1;
+        if (dist < state.player.magnetRange) {
+          d.x += (dx / dist) * 230 * dt;
+          d.y += (dy / dist) * 230 * dt;
+        }
+        if (dist < state.player.r + d.r + 6) {
+          d.collected = true;
+          applyDrop(d);
+        }
+      }
+      state.drops = state.drops.filter(d => !d.collected);
     }
 
     function gainExp(amount) {
@@ -1960,37 +1805,55 @@
       }
 
       state.exp += amount;
-
       while (state.level < MAX_LEVEL && state.exp >= EXP_TO_NEXT[state.level]) {
         state.exp -= EXP_TO_NEXT[state.level];
         state.level += 1;
+        rebuildStats();
+        showToast(`Lv.${state.level} 기본 능력 상승`);
+
+        if (SPECIAL_LEVELS.has(state.level) && state.augments.length < MAX_AUGMENTS) {
+          openAugmentChoice();
+        }
 
         if (state.level >= MAX_LEVEL) {
           state.level = MAX_LEVEL;
           state.overExp += state.exp;
           state.exp = 0;
-          showToast("Lv.MAX 달성!");
-          break;
+          showBigAlert("Lv.MAX", "초과 경험 보상 활성화");
         }
-
-        openLevelChoice();
         break;
       }
     }
 
     function grantOverExpReward() {
-      const rewards = [
-        { weight: 35, text: "HP 10% 회복", run: () => healPlayer(state.player.maxHp * 0.1) },
-        { weight: 10, text: "HP 25% 회복", run: () => healPlayer(state.player.maxHp * 0.25) },
-        { weight: 20, text: "보호막 획득", run: () => addShield(state.player.maxHp * 0.15) },
-        { weight: 25, text: "코인 +30", run: () => state.coins += 30 },
-        { weight: 7, text: "코인 +100", run: () => state.coins += 100 },
-        { weight: 3, text: "연구 포인트 조각 +50", run: () => state.bonusResearch += 50 }
+      const bonus = 1 + meta.upgrades.over_exp * .1;
+      const list = [
+        { weight: 35, run: () => healPlayer(state.player.maxHp * .1), text: "HP 10% 회복" },
+        { weight: 20, run: () => addShield(state.player.maxHp * .15), text: "보호막" },
+        { weight: 35, run: () => addRunCoins(Math.round(40 * bonus)), text: `코인 +${Math.round(40 * bonus)}` },
+        { weight: 10, run: () => addRunCoins(Math.round(120 * bonus)), text: `코인 +${Math.round(120 * bonus)}` }
       ];
+      const r = weightedPick(list);
+      r.run();
+      showToast(`초과 경험 보상: ${r.text}`);
+    }
 
-      const reward = weightedPick(rewards);
-      reward.run();
-      showToast(`초과 경험 보상: ${reward.text}`);
+    function addRunCoins(amount) {
+      const mul = 1 + meta.upgrades.coin_gain * .05;
+      state.runCoins += Math.round(amount * mul);
+    }
+
+    function addTimedBuff(type, mul, sec) {
+      state.buffs.push({ type, mul, time: sec });
+    }
+
+    function updateBuffs(dt) {
+      for (const b of state.buffs) b.time -= dt;
+      state.buffs = state.buffs.filter(b => b.time > 0);
+    }
+
+    function getBuffMul(type) {
+      return state.buffs.filter(b => b.type === type).reduce((m, b) => m * b.mul, 1);
     }
 
     function updateEffects(dt) {
@@ -1999,136 +1862,82 @@
     }
 
     function updateFloating(dt) {
-      state.floating.forEach(f => {
-        f.life -= dt;
-        f.y -= 25 * dt;
-      });
+      state.floating.forEach(f => { f.life -= dt; f.y -= 25 * dt; });
       state.floating = state.floating.filter(f => f.life > 0);
     }
 
     function addFloating(x, y, text, color) {
-      state.floating.push({ x, y, text, color, life: 0.6 });
-    }
-
-    function checkAwakenings() {
-      if (!state.awakened.includes("chain_magic_bolt")) {
-        if (
-          state.weapon.id === "magic_staff" &&
-          state.weaponLevel >= 8 &&
-          (state.synergies.magic_overload || 0) >= 3 &&
-          (state.synergies.chain_amp || 0) >= 2
-        ) {
-          state.awakened.push("chain_magic_bolt");
-          state.weaponLevel = Math.max(state.weaponLevel, 10);
-          showToast("각성 발현: 연쇄 마력탄!");
-        }
-      }
-
-      if (!state.awakened.includes("hellfire_aura")) {
-        if (
-          state.weapon.id === "flame_heart" &&
-          state.weaponLevel >= 8 &&
-          (state.synergies.fire_disaster || 0) >= 3 &&
-          (state.synergies.area_destruction || 0) >= 2
-        ) {
-          state.awakened.push("hellfire_aura");
-          state.mods.areaMul *= 1.15;
-          showToast("각성 발현: 지옥불 오라!");
-        }
-      }
-
-      if (!state.awakened.includes("storm_axe")) {
-        if (
-          state.weapon.id === "orbit_axe" &&
-          state.weaponLevel >= 8 &&
-          (state.synergies.orbit_weaponry || 0) >= 3 &&
-          (state.synergies.executioner || 0) >= 2
-        ) {
-          state.awakened.push("storm_axe");
-          state.mods.extraOrbit += 1;
-          showToast("각성 발현: 폭풍 도끼!");
-        }
-      }
-
-      if (!state.awakened.includes("black_sun")) {
-        if (
-          (state.synergies.fire_disaster || 0) >= 3 &&
-          (state.synergies.dark_ritual || 0) >= 3
-        ) {
-          state.awakened.push("black_sun");
-          state.mods.damageMul *= 1.15;
-          showToast("히든 각성 발현: 검은 태양!");
-        }
-      }
+      state.floating.push({ x, y, text, color, life: .6 });
     }
 
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawGrid();
 
-      if (state) drawFlameAura();
+      if (state) drawWeaponAuras();
 
-      for (const gem of state?.gems || []) {
+      for (const g of state?.gems || []) {
         ctx.beginPath();
         ctx.fillStyle = "#22d3ee";
-        ctx.arc(gem.x, gem.y, gem.r, 0, Math.PI * 2);
+        ctx.arc(g.x, g.y, g.r, 0, Math.PI * 2);
         ctx.fill();
       }
 
-      for (const effect of state?.effects || []) {
-        const alpha = Math.max(0, effect.life / effect.maxLife);
+      for (const d of state?.drops || []) {
         ctx.beginPath();
-        ctx.fillStyle = effect.color;
-        ctx.globalAlpha = alpha * 0.35;
-        ctx.arc(effect.x, effect.y, effect.radius, 0, Math.PI * 2);
+        ctx.fillStyle = d.color;
+        ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = d.grade === "legendary" ? "#fff7ed" : "rgba(255,255,255,.45)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      for (const ef of state?.effects || []) {
+        const alpha = Math.max(0, ef.life / ef.maxLife);
+        ctx.beginPath();
+        ctx.fillStyle = ef.color;
+        ctx.globalAlpha = alpha * .35;
+        ctx.arc(ef.x, ef.y, ef.radius, 0, Math.PI * 2);
         ctx.fill();
         ctx.globalAlpha = 1;
       }
 
       for (const p of state?.projectiles || []) {
         ctx.beginPath();
-        ctx.fillStyle = p.chainDepth > 0 ? "#c4b5fd" : "#bfdbfe";
+        ctx.fillStyle = p.depth > 0 ? "#c4b5fd" : "#bfdbfe";
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
         ctx.fill();
       }
 
-      for (const p of state?.enemyProjectiles || []) {
+      for (const e of state?.enemies || []) {
         ctx.beginPath();
-        ctx.fillStyle = "#fb7185";
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      for (const enemy of state?.enemies || []) {
-        ctx.beginPath();
-        ctx.fillStyle = enemy.color;
-        ctx.arc(enemy.x, enemy.y, enemy.r, 0, Math.PI * 2);
+        ctx.fillStyle = e.freezeTime > 0 ? "#7dd3fc" : e.burnTime > 0 ? "#fb923c" : e.color;
+        ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
         ctx.fill();
 
-        const w = enemy.r * 2;
-        ctx.fillStyle = "rgba(0,0,0,0.5)";
-        ctx.fillRect(enemy.x - enemy.r, enemy.y - enemy.r - 8, w, 3);
+        const w = e.r * 2;
+        ctx.fillStyle = "rgba(0,0,0,.5)";
+        ctx.fillRect(e.x - e.r, e.y - e.r - 8, w, 3);
         ctx.fillStyle = "#ef4444";
-        ctx.fillRect(enemy.x - enemy.r, enemy.y - enemy.r - 8, w * Math.max(0, enemy.hp / enemy.maxHp), 3);
+        ctx.fillRect(e.x - e.r, e.y - e.r - 8, w * Math.max(0, e.hp / e.maxHp), 3);
       }
 
       if (state) {
         drawOrbitWeapons();
 
-        const invuln = state.player.invuln > 0;
+        const inv = state.player.invuln > 0;
         ctx.save();
-        ctx.globalAlpha = invuln ? 0.55 : 1;
-
+        ctx.globalAlpha = inv ? .55 : 1;
         ctx.beginPath();
         ctx.fillStyle = state.weapon.color;
         ctx.arc(state.player.x, state.player.y, state.player.r, 0, Math.PI * 2);
         ctx.fill();
-
         ctx.restore();
 
-        if (invuln) {
+        if (inv) {
           ctx.beginPath();
-          ctx.strokeStyle = "rgba(255,255,255,0.72)";
+          ctx.strokeStyle = "rgba(255,255,255,.75)";
           ctx.lineWidth = 2;
           ctx.arc(state.player.x, state.player.y, state.player.r + 8, 0, Math.PI * 2);
           ctx.stroke();
@@ -2143,7 +1952,7 @@
         }
 
         for (const f of state.floating) {
-          ctx.globalAlpha = Math.max(0, f.life / 0.6);
+          ctx.globalAlpha = Math.max(0, f.life / .6);
           ctx.fillStyle = f.color;
           ctx.font = "bold 13px sans-serif";
           ctx.fillText(f.text, f.x, f.y);
@@ -2153,58 +1962,48 @@
     }
 
     function drawGrid() {
-      ctx.strokeStyle = "rgba(255,255,255,0.04)";
+      ctx.strokeStyle = "rgba(255,255,255,.04)";
       ctx.lineWidth = 1;
-
       for (let x = 0; x < canvas.width; x += 40) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
       }
-
       for (let y = 0; y < canvas.height; y += 40) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
       }
     }
 
-    function drawFlameAura() {
-      if (!state || state.weapon.id !== "flame_heart") return;
-
-      const stats = getWeaponStats();
-      ctx.beginPath();
-      ctx.fillStyle = "rgba(251, 113, 133, 0.08)";
-      ctx.arc(state.player.x, state.player.y, stats.auraRadius, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.strokeStyle = "rgba(251, 113, 133, 0.38)";
-      ctx.lineWidth = 2;
-      ctx.arc(state.player.x, state.player.y, stats.auraRadius, 0, Math.PI * 2);
-      ctx.stroke();
+    function drawWeaponAuras() {
+      if (state.weapon.id === "flame_heart") {
+        const w = getWeaponStats();
+        ctx.beginPath();
+        ctx.fillStyle = "rgba(251,113,133,.08)";
+        ctx.arc(state.player.x, state.player.y, w.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.strokeStyle = "rgba(251,113,133,.38)";
+        ctx.lineWidth = 2;
+        ctx.arc(state.player.x, state.player.y, w.radius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
     }
 
     function drawOrbitWeapons() {
-      if (!state || state.weapon.id !== "orbit_axe") return;
-
-      const stats = getWeaponStats();
-
-      for (let i = 0; i < stats.axeCount; i++) {
-        const a = state.orbitAngle + (Math.PI * 2 * i) / stats.axeCount;
-        const ox = state.player.x + Math.cos(a) * stats.orbitRadius;
-        const oy = state.player.y + Math.sin(a) * stats.orbitRadius;
-
+      if (state.weapon.id !== "orbit_axe") return;
+      const w = getWeaponStats();
+      for (let i = 0; i < w.count; i++) {
+        const a = (state.orbitAngle || 0) + Math.PI * 2 * i / w.count;
+        const x = state.player.x + Math.cos(a) * w.orbitRadius;
+        const y = state.player.y + Math.sin(a) * w.orbitRadius;
         ctx.beginPath();
         ctx.fillStyle = "#fbbf24";
-        ctx.arc(ox, oy, stats.axeRadius, 0, Math.PI * 2);
+        ctx.arc(x, y, w.axeRadius, 0, Math.PI * 2);
         ctx.fill();
       }
     }
 
     function updateUi() {
+      ui.titleCoins.textContent = Math.floor(meta.coins);
+
       if (!state) {
         ui.time.textContent = "00:00";
         ui.hp.textContent = "100/100";
@@ -2212,7 +2011,7 @@
         ui.exp.textContent = "0/100";
         ui.augCount.textContent = "0/6";
         ui.kills.textContent = "0";
-        ui.coins.textContent = "0";
+        ui.runCoins.textContent = "0";
         renderSide();
         return;
       }
@@ -2220,51 +2019,53 @@
       ui.time.textContent = formatTime(state.timeMs);
       ui.hp.textContent = `${Math.max(0, Math.ceil(state.player.hp))}/${Math.ceil(state.player.maxHp)}${state.player.shield > 0 ? ` +${Math.ceil(state.player.shield)}` : ""}`;
       ui.level.textContent = state.level >= MAX_LEVEL ? "MAX" : state.level;
-
-      if (state.level >= MAX_LEVEL) {
-        ui.exp.textContent = `${Math.floor(state.overExp)}/${OVER_EXP_REWARD}`;
-      } else {
-        ui.exp.textContent = `${Math.floor(state.exp)}/${EXP_TO_NEXT[state.level]}`;
-      }
-
-      ui.augCount.textContent = `${state.augmentSlots}/${MAX_AUGMENTS}`;
+      ui.exp.textContent = state.level >= MAX_LEVEL
+        ? `${Math.floor(state.overExp)}/${OVER_EXP_REWARD}`
+        : `${Math.floor(state.exp)}/${EXP_TO_NEXT[state.level]}`;
+      ui.augCount.textContent = `${state.augments.length}/${MAX_AUGMENTS}`;
       ui.kills.textContent = state.kills;
-      ui.coins.textContent = state.coins;
-
+      ui.runCoins.textContent = state.runCoins;
       renderSide();
     }
 
     function renderSide() {
       if (!state) {
         ui.sideWeapon.innerHTML = "메인 화면";
-        ui.sideAugments.innerHTML = `<div class="small">없음</div>`;
+        ui.sideAttributes.innerHTML = `<div class="small">없음</div>`;
         ui.sideSynergies.innerHTML = `<div class="small">없음</div>`;
-        ui.sideAwakenings.innerHTML = `<div class="small">아직 발현 없음</div>`;
+        ui.sideAugments.innerHTML = `<div class="small">없음</div>`;
+        ui.sideStacks.innerHTML = `<div class="small">없음</div>`;
         return;
       }
 
-      ui.sideWeapon.innerHTML = `
-        <strong>${state.weapon.name}</strong> Lv.${state.weaponLevel}<br />
-        <span class="small">${state.weapon.desc}</span>
-      `;
+      ui.sideWeapon.innerHTML = `<strong>${state.weapon.name}</strong><br><span class="small">플레이어 Lv.${state.level} 기반 자동 성장</span>`;
 
-      ui.sideAugments.innerHTML = state.selectedAugments.length
-        ? state.selectedAugments.map(a => `
+      const attrs = getAttrCounts();
+      ui.sideAttributes.innerHTML = ALL_ATTRS.map(a => {
+        const steps = a === "鬼" ? "2 / 3 / 4" : "2 / 4 / 6";
+        return `<div class="list-item">${a} ${ATTR_NAMES[a]}: <strong>${attrs[a] || 0}</strong> <span class="small">(${steps})</span></div>`;
+      }).join("");
+
+      const active = Array.from(state.activeSynergies);
+      ui.sideSynergies.innerHTML = active.length
+        ? active.map(x => `<div class="list-item">${x}</div>`).join("")
+        : `<div class="small">아직 발현 없음</div>`;
+
+      ui.sideAugments.innerHTML = state.augments.length
+        ? state.augments.map(a => `
           <div class="list-item">
-            <strong class="${GRADE_CLASS[a.grade]}">${a.name}</strong> Lv.${state.augmentLevels[a.id] || 1}<br />
-            <span class="small">${GRADE_LABEL[a.grade]} · ${a.desc(state.augmentLevels[a.id] || 1)}</span>
+            <strong class="${GRADE_CLASS[a.grade]}">${a.name}</strong><br>
+            <span class="small">${GRADE_LABEL[a.grade]} · ${renderAttrText(a.attrs)}</span>
           </div>
         `).join("")
         : `<div class="small">없음</div>`;
 
-      const synergyEntries = Object.entries(state.synergies).filter(([, v]) => v > 0);
-      ui.sideSynergies.innerHTML = synergyEntries.length
-        ? synergyEntries.map(([id, v]) => `<div class="list-item">${SYNERGY_LABELS[id] || id}: <strong>${v}</strong></div>`).join("")
-        : `<div class="small">없음</div>`;
-
-      ui.sideAwakenings.innerHTML = state.awakened.length
-        ? state.awakened.map(id => `<div class="list-item">${id}</div>`).join("")
-        : `<div class="small">아직 발현 없음</div>`;
+      ui.sideStacks.innerHTML = `
+        <div class="list-item">집중 중첩: <strong>${state.stacks.focus}</strong> / 80</div>
+        <div class="list-item">鬼 중첩: <strong>${state.stacks.demon}</strong> / ${state.synergy.demonMax || 0}</div>
+        <div class="list-item">보석 획득: <strong>${state.itemStats.gems}</strong>개</div>
+        <div class="list-item">버프: <strong>${state.buffs.length}</strong>개 활성</div>
+      `;
     }
 
     function endGame(success) {
@@ -2274,43 +2075,54 @@
       state.paused = true;
       cancelAnimationFrame(loopId);
 
-      const earnedPoints =
-        Math.floor(state.timeMs / 1000) +
-        state.kills * 2 +
-        state.augmentSlots * 80 +
-        state.awakened.length * 180 +
-        state.bonusResearch;
+      const survivalBase = Math.floor(state.timeMs / 1000);
+      const survivalCoins = Math.round(survivalBase * (1 + meta.upgrades.survival_coin * .05));
+      const killCoins = Math.round(state.kills * 2 * (1 + meta.upgrades.kill_coin * .05));
+      const levelCoins = state.level * 20;
+      const synergyCoins = state.activeSynergies.size * 120;
+      const augmentCoins = state.augments.length * 80;
+      const successBonus = success ? 500 : 0;
 
-      playerMeta.points += earnedPoints;
-      playerMeta.totalEarned += earnedPoints;
-      playerMeta.bestTimeMs = Math.max(playerMeta.bestTimeMs || 0, state.timeMs);
-      playerMeta.bestKills = Math.max(playerMeta.bestKills || 0, state.kills);
+      let earned = state.runCoins + survivalCoins + killCoins + levelCoins + synergyCoins + augmentCoins + successBonus;
+
+      const jackpotChance = meta.upgrades.jackpot * .02;
+      const jackpot = Math.random() < jackpotChance;
+      if (jackpot) earned *= 2;
+
+      earned = Math.round(earned);
+      meta.coins += earned;
+      meta.totalCoins += earned;
+      meta.bestTimeMs = Math.max(meta.bestTimeMs || 0, state.timeMs);
+      meta.bestKills = Math.max(meta.bestKills || 0, state.kills);
       state.rewardClaimed = true;
       saveMeta();
 
       resultTitle.textContent = success ? "15분 생존 성공!" : "사망";
       resultDesc.innerHTML = `
-        생존 시간: <strong>${formatTime(state.timeMs)}</strong><br />
-        레벨: <strong>${state.level >= MAX_LEVEL ? "MAX" : state.level}</strong><br />
-        처치 수: <strong>${state.kills}</strong><br />
-        증강 수: <strong>${state.augmentSlots}</strong><br />
-        각성 수: <strong>${state.awakened.length}</strong><br />
-        코인: <strong>${state.coins}</strong><br />
-        획득 연구 포인트: <strong>${earnedPoints}</strong><br />
-        보유 연구 포인트: <strong>${Math.floor(playerMeta.points)}</strong>
+        생존 시간: <strong>${formatTime(state.timeMs)}</strong><br>
+        레벨: <strong>${state.level >= MAX_LEVEL ? "MAX" : state.level}</strong><br>
+        처치 수: <strong>${state.kills}</strong><br>
+        증강 수: <strong>${state.augments.length}</strong><br>
+        발현 시너지 수: <strong>${state.activeSynergies.size}</strong><br>
+        획득 아이템: <strong>${state.itemStats.total}</strong><br>
+        획득 보석: <strong>${state.itemStats.gems}</strong><br>
+        전투 중 코인: <strong>${state.runCoins}</strong><br>
+        정산 코인: <strong>${earned - state.runCoins}</strong><br>
+        ${jackpot ? `<strong style="color:#facc15;">대박 보상 2배 발동!</strong><br>` : ""}
+        총 획득 코인: <strong>${earned}</strong><br>
+        보유 코인: <strong>${Math.floor(meta.coins)}</strong>
       `;
       resultOverlay.classList.add("show");
     }
 
     function pauseGame() {
       if (!state || !state.running || state.paused) return;
-
       state.paused = true;
       pauseInfo.innerHTML = `
-        현재 시간: <strong>${formatTime(state.timeMs)}</strong><br />
-        레벨: <strong>${state.level >= MAX_LEVEL ? "MAX" : state.level}</strong><br />
-        처치 수: <strong>${state.kills}</strong><br />
-        증강: <strong>${state.augmentSlots}/${MAX_AUGMENTS}</strong>
+        현재 시간: <strong>${formatTime(state.timeMs)}</strong><br>
+        레벨: <strong>${state.level}</strong><br>
+        처치 수: <strong>${state.kills}</strong><br>
+        전투 코인: <strong>${state.runCoins}</strong>
       `;
       pauseOverlay.classList.add("show");
     }
@@ -2344,10 +2156,11 @@
       updateUi();
     }
 
-    function getUpgradeCost(upgrade) {
-      const level = playerMeta.upgrades[upgrade.id] || 0;
-      if (level >= upgrade.maxLevel) return null;
-      return Math.round((upgrade.baseCost * Math.pow(upgrade.growth, level)) / 10) * 10;
+    function setLabTab(tab) {
+      labTab = tab;
+      document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+      document.getElementById(tab === "basic" ? "tabBasic" : tab === "combat" ? "tabCombat" : "tabEconomy").classList.add("active");
+      renderLab();
     }
 
     function openLab() {
@@ -2359,78 +2172,91 @@
     function closeLab() {
       labOverlay.classList.remove("show");
       titleOverlay.classList.add("show");
+      updateUi();
+    }
+
+    function getLabCost(item) {
+      const [id, , max, base, growth] = item;
+      const level = meta.upgrades[id] || 0;
+      if (level >= max) return null;
+      const discount = 1 - (meta.upgrades.research_discount || 0) * .03;
+      return Math.max(1, Math.round((base * Math.pow(growth, level) * discount) / 10) * 10);
     }
 
     function renderLab() {
-      labPoints.textContent = Math.floor(playerMeta.points);
+      labCoins.textContent = Math.floor(meta.coins);
       labList.innerHTML = "";
 
-      LAB_UPGRADES.forEach(upgrade => {
-        const level = playerMeta.upgrades[upgrade.id] || 0;
-        const cost = getUpgradeCost(upgrade);
-        const isMax = level >= upgrade.maxLevel;
-        const canBuy = !isMax && playerMeta.points >= cost;
+      for (const item of LABS[labTab]) {
+        const [id, name, max, , , effect] = item;
+        const level = meta.upgrades[id] || 0;
+        const cost = getLabCost(item);
+        const maxed = level >= max;
+        const canBuy = !maxed && meta.coins >= cost;
 
         const div = document.createElement("div");
         div.className = "lab-item";
         div.innerHTML = `
-          <h3>${upgrade.name}</h3>
-          <div class="level">Lv.${level} / ${upgrade.maxLevel}</div>
+          <h3>${name}</h3>
+          <div class="level">Lv.${level} / ${max}</div>
           <div class="effect">
-            현재: ${upgrade.effectText(level)}<br />
-            ${isMax ? "최대 레벨입니다." : `다음: ${upgrade.effectText(level + 1)}`}
+            현재: ${effect(level)}<br>
+            ${maxed ? "최대 레벨입니다." : `다음: ${effect(level + 1)}`}
           </div>
-          <div class="cost">${isMax ? "MAX" : `비용: ${cost}P`}</div>
-          <button ${canBuy ? "" : "disabled"} onclick="buyLabUpgrade('${upgrade.id}')">
-            ${isMax ? "완료" : "구매"}
-          </button>
+          <div class="cost">${maxed ? "MAX" : `비용: ${cost} 코인`}</div>
+          <button ${canBuy ? "" : "disabled"} onclick="buyLab('${id}')">${maxed ? "완료" : "구매"}</button>
         `;
         labList.appendChild(div);
-      });
+      }
     }
 
-    function buyLabUpgrade(id) {
-      const upgrade = LAB_UPGRADES.find(item => item.id === id);
-      if (!upgrade) return;
+    function buyLab(id) {
+      const item = Object.values(LABS).flat().find(x => x[0] === id);
+      if (!item) return;
 
-      const level = playerMeta.upgrades[id] || 0;
-      if (level >= upgrade.maxLevel) return;
+      const level = meta.upgrades[id] || 0;
+      const max = item[2];
+      if (level >= max) return;
 
-      const cost = getUpgradeCost(upgrade);
-      if (playerMeta.points < cost) {
-        showToast("연구 포인트가 부족합니다.");
+      const cost = getLabCost(item);
+      if (meta.coins < cost) {
+        showToast("코인이 부족합니다.");
         return;
       }
 
-      playerMeta.points -= cost;
-      playerMeta.upgrades[id] = level + 1;
+      meta.coins -= cost;
+      meta.upgrades[id] = level + 1;
       saveMeta();
       renderLab();
-      showToast(`${upgrade.name} Lv.${level + 1}`);
+      updateUi();
+      showToast(`${item[1]} Lv.${level + 1}`);
     }
 
     function resetLabData() {
-      if (!confirm("연구소 데이터를 초기화할까요? 연구 포인트와 업그레이드가 모두 초기화됩니다.")) return;
-      playerMeta = getDefaultMeta();
+      if (!confirm("모든 코인과 연구 데이터를 초기화할까요?")) return;
+      meta = defaultMeta();
       saveMeta();
       renderLab();
-      showToast("연구소 초기화 완료");
+      updateUi();
+      showToast("데이터 초기화 완료");
     }
 
     function getNearestEnemy(x = state.player.x, y = state.player.y, exclude = null) {
-      let best = null;
-      let bestD = Infinity;
-
+      let best = null, bestD = Infinity;
       for (const e of state.enemies) {
         if (e === exclude || e.hp <= 0) continue;
         const d = Math.hypot(e.x - x, e.y - y);
-        if (d < bestD) {
-          bestD = d;
-          best = e;
-        }
+        if (d < bestD) { bestD = d; best = e; }
       }
-
       return best;
+    }
+
+    function renderAttrBadges(attrs) {
+      return Object.entries(attrs || {}).map(([k, v]) => `<span class="badge">${k} +${v}</span>`).join("");
+    }
+
+    function renderAttrText(attrs) {
+      return Object.entries(attrs || {}).map(([k, v]) => `${k}+${v}`).join(" · ");
     }
 
     function formatTime(ms) {
@@ -2440,15 +2266,19 @@
       return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
     }
 
-    function percent(v) {
-      return `${Math.round(v * 100)}%`;
-    }
-
     function showToast(text) {
       ui.toast.textContent = text;
       ui.toast.classList.add("show");
       clearTimeout(showToast.timer);
       showToast.timer = setTimeout(() => ui.toast.classList.remove("show"), 1500);
+    }
+
+    function showBigAlert(main, sub) {
+      bigAlertMain.textContent = main;
+      bigAlertSub.textContent = sub || "";
+      bigAlert.classList.add("show");
+      clearTimeout(showBigAlert.timer);
+      showBigAlert.timer = setTimeout(() => bigAlert.classList.remove("show"), 1400);
     }
 
     function weightedPick(list) {
@@ -2473,7 +2303,6 @@
 
     window.addEventListener("keydown", e => {
       keys.add(e.code);
-
       if ((e.code === "Escape" || e.code === "KeyP") && state && state.running) {
         if (state.paused) resumeGame();
         else pauseGame();
