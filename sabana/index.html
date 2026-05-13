@@ -32,10 +32,11 @@
     button.secondary:hover { background: #475569; }
     button.danger { background: #dc2626; }
     button.danger:hover { background: #b91c1c; }
+
     .app {
-      width: min(1240px, 100%);
+      width: min(1280px, 100%);
       display: grid;
-      grid-template-columns: 1fr 340px;
+      grid-template-columns: 1fr 370px;
       gap: 14px;
     }
     .panel {
@@ -58,7 +59,13 @@
     }
     .topbar strong { color: #fff; font-size: 15px; }
     .mini-btn { padding: 7px 10px; border-radius: 10px; font-size: 12px; background: #334155; }
-    .canvas-wrap { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #020617; }
+
+    .canvas-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #020617;
+    }
     canvas {
       display: block;
       width: 100%;
@@ -68,6 +75,7 @@
         radial-gradient(circle at 80% 70%, rgba(168,85,247,.12), transparent 30%),
         #020617;
     }
+
     .overlay {
       position: absolute;
       inset: 0;
@@ -80,8 +88,9 @@
       z-index: 20;
     }
     .overlay.show { display: flex; }
+
     .modal {
-      width: min(860px, 96%);
+      width: min(920px, 96%);
       max-height: 92%;
       overflow-y: auto;
       background: #111827;
@@ -92,9 +101,11 @@
     .modal.center { text-align: center; }
     .modal h1, .modal h2 { margin: 0 0 10px; }
     .modal p { color: #cbd5e1; line-height: 1.5; margin: 8px 0 14px; font-size: 14px; }
+
     .title-logo { font-size: 42px; font-weight: 900; letter-spacing: -1px; margin-bottom: 8px; }
     .title-sub { color: #cbd5e1; margin-bottom: 20px; line-height: 1.5; }
     .menu-row { display: flex; flex-direction: column; gap: 10px; max-width: 380px; margin: 0 auto; }
+
     .cards {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -109,16 +120,12 @@
       cursor: pointer;
       transition: .15s;
       text-align: left;
-      min-height: 165px;
+      min-height: 160px;
     }
     .card:hover { transform: translateY(-2px); border-color: #60a5fa; background: #263244; }
     .card h3 { margin: 0 0 8px; font-size: 17px; }
-    .card .desc {
-      font-size: 13px;
-      color: #cbd5e1;
-      line-height: 1.45;
-      white-space: pre-line;
-    }
+    .card .desc { font-size: 13px; color: #cbd5e1; line-height: 1.45; white-space: pre-line; }
+
     .type-label {
       display: inline-block;
       margin-bottom: 8px;
@@ -138,11 +145,13 @@
       font-size: 11px;
       font-weight: 800;
     }
+
     .grade-basic { color: #d1d5db; }
     .grade-normal { color: #93c5fd; }
     .grade-advanced { color: #86efac; }
     .grade-epic { color: #c4b5fd; }
     .grade-legendary { color: #facc15; }
+
     .side { padding: 14px; }
     .side h2 { margin: 0 0 10px; font-size: 18px; }
     .side-section { padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.08); }
@@ -150,6 +159,8 @@
     .small { color: #cbd5e1; font-size: 13px; line-height: 1.45; }
     .list { display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
     .list-item { background: rgba(255,255,255,.05); padding: 8px; border-radius: 10px; }
+    .list-item strong { color: #fff; }
+
     .toast {
       position: absolute;
       left: 50%;
@@ -168,28 +179,7 @@
       white-space: nowrap;
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(-6px); }
-    .lab-top { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
-    .point-box { padding: 10px 12px; border-radius: 12px; background: rgba(250,204,21,.12); color: #fde68a; font-weight: 900; }
-    .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 12px; }
-    .tab.active { background: #2563eb; }
-    .lab-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 10px;
-      margin-top: 12px;
-    }
-    .lab-item {
-      background: #1f2937;
-      border: 1px solid rgba(255,255,255,.12);
-      border-radius: 14px;
-      padding: 12px;
-    }
-    .lab-item h3 { margin: 0 0 8px; font-size: 16px; }
-    .lab-item .level { color: #93c5fd; font-weight: 800; margin-bottom: 6px; }
-    .lab-item .effect { color: #cbd5e1; font-size: 13px; line-height: 1.45; min-height: 44px; }
-    .lab-item .cost { margin: 10px 0; color: #fde68a; font-weight: 900; }
-    .lab-actions { display: flex; gap: 8px; margin-top: 12px; }
-    .choice-actions { display: flex; justify-content: center; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+
     .big-alert {
       position: absolute;
       left: 50%;
@@ -206,6 +196,29 @@
     .big-alert.show { opacity: 1; transform: translate(-50%, -55%) scale(1.04); }
     .big-alert .main { font-size: 42px; color: #facc15; }
     .big-alert .sub { font-size: 18px; color: #fff; margin-top: 8px; }
+
+    .lab-top { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+    .point-box { padding: 10px 12px; border-radius: 12px; background: rgba(250,204,21,.12); color: #fde68a; font-weight: 900; }
+    .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 12px; }
+    .tab.active { background: #2563eb; }
+    .lab-list, .codex-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .lab-item, .codex-item {
+      background: #1f2937;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 14px;
+      padding: 12px;
+    }
+    .lab-item h3, .codex-item h3 { margin: 0 0 8px; font-size: 16px; }
+    .lab-item .level { color: #93c5fd; font-weight: 800; margin-bottom: 6px; }
+    .lab-item .effect, .codex-item .effect { color: #cbd5e1; font-size: 13px; line-height: 1.45; white-space: pre-line; }
+    .lab-item .cost { margin: 10px 0; color: #fde68a; font-weight: 900; }
+    .lab-actions, .choice-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; justify-content: center; }
+
     @media (max-width: 1000px) { .app { grid-template-columns: 1fr; } }
   </style>
 </head>
@@ -236,7 +249,7 @@
           <div class="modal center">
             <div class="title-logo">JSON Survivors</div>
             <div class="title-sub">
-              레벨업은 자동 성장, 증강은 5레벨마다 선택.<br />
+              일반 레벨업은 성장 카드, 5레벨마다 증강 보너스.<br />
               속성 시너지와 보석으로 판을 터뜨리는 뱀서류 MVP.
             </div>
             <div class="point-box" style="margin:0 auto 14px; width:max-content;">
@@ -245,8 +258,8 @@
             <div class="menu-row">
               <button onclick="openWeaponSelect()">게임 시작</button>
               <button class="secondary" onclick="openLab()">연구소</button>
+              <button class="secondary" onclick="openCodex()">증강 / 시너지 목록</button>
               <button class="secondary" onclick="showToast('생성 증강 상점은 다음 단계에서 구현 예정')">생성 증강 상점 - 준비 중</button>
-              <button class="secondary" onclick="showToast('도감은 다음 단계에서 구현 예정')">도감 - 준비 중</button>
             </div>
           </div>
         </div>
@@ -258,9 +271,7 @@
                 <h2>연구소</h2>
                 <p>모든 재화는 코인으로 통일됩니다. 사망해도 획득 코인은 지급됩니다.</p>
               </div>
-              <div class="point-box">
-                보유 코인: <span id="labCoins">0</span>
-              </div>
+              <div class="point-box">보유 코인: <span id="labCoins">0</span></div>
             </div>
             <div class="tabs">
               <button class="tab active" id="tabBasic" onclick="setLabTab('basic')">기초</button>
@@ -275,17 +286,33 @@
           </div>
         </div>
 
+        <div id="codexOverlay" class="overlay">
+          <div class="modal">
+            <h2>증강 / 시너지 / 아이템 목록</h2>
+            <p>상세 목록에는 확률, 수치, 지속시간을 표시합니다.</p>
+            <div class="tabs">
+              <button class="tab active" id="codexAugTab" onclick="setCodexTab('augments')">증강</button>
+              <button class="tab" id="codexSynTab" onclick="setCodexTab('synergies')">시너지</button>
+              <button class="tab" id="codexItemTab" onclick="setCodexTab('items')">아이템</button>
+            </div>
+            <div id="codexList" class="codex-list"></div>
+            <div class="lab-actions">
+              <button onclick="closeCodex()">메인으로</button>
+            </div>
+          </div>
+        </div>
+
         <div id="weaponOverlay" class="overlay">
           <div class="modal">
             <h2>기본 무기 선택</h2>
-            <p>무기는 플레이어 레벨에 따라 자동 성장합니다.</p>
+            <p>무기는 일반 성장 카드와 플레이어 레벨에 따라 강화됩니다.</p>
             <div id="weaponCards" class="cards"></div>
           </div>
         </div>
 
         <div id="choiceOverlay" class="overlay">
           <div class="modal">
-            <h2 id="choiceTitle">증강 선택</h2>
+            <h2 id="choiceTitle">선택</h2>
             <p id="choiceDesc"></p>
             <div id="choiceCards" class="cards"></div>
             <div class="choice-actions">
@@ -326,12 +353,17 @@
       </div>
 
       <div class="side-section">
-        <h2>속성</h2>
+        <h2>현재 스탯</h2>
+        <div id="sideStats" class="list"></div>
+      </div>
+
+      <div class="side-section">
+        <h2>현재 속성</h2>
         <div id="sideAttributes" class="list"></div>
       </div>
 
       <div class="side-section">
-        <h2>발현 시너지</h2>
+        <h2>활성 시너지</h2>
         <div id="sideSynergies" class="list"></div>
       </div>
 
@@ -350,7 +382,8 @@
         WASD / 방향키 이동<br />
         ESC / P 일시정지<br />
         피격 후 기본 1초 무적<br /><br />
-        Lv.5 / 10 / 15 / 20 / 25 / 30에서 증강 선택
+        모든 레벨업: 일반 성장 카드<br />
+        5레벨 단위: 일반 성장 + 증강 선택
       </div>
     </aside>
   </main>
@@ -368,6 +401,7 @@
       kills: document.getElementById("uiKills"),
       runCoins: document.getElementById("uiRunCoins"),
       sideWeapon: document.getElementById("sideWeapon"),
+      sideStats: document.getElementById("sideStats"),
       sideAttributes: document.getElementById("sideAttributes"),
       sideSynergies: document.getElementById("sideSynergies"),
       sideAugments: document.getElementById("sideAugments"),
@@ -378,6 +412,7 @@
 
     const titleOverlay = document.getElementById("titleOverlay");
     const labOverlay = document.getElementById("labOverlay");
+    const codexOverlay = document.getElementById("codexOverlay");
     const weaponOverlay = document.getElementById("weaponOverlay");
     const choiceOverlay = document.getElementById("choiceOverlay");
     const pauseOverlay = document.getElementById("pauseOverlay");
@@ -385,6 +420,7 @@
 
     const labCoins = document.getElementById("labCoins");
     const labList = document.getElementById("labList");
+    const codexList = document.getElementById("codexList");
     const weaponCards = document.getElementById("weaponCards");
     const choiceCards = document.getElementById("choiceCards");
     const choiceTitle = document.getElementById("choiceTitle");
@@ -446,7 +482,50 @@
       5550, 5900, 6250, 6700
     ];
 
-    const META_KEY = "json_survivors_coin_meta_v4";
+    const SYNERGY_INFO = {
+      ice2: { name: "氷 2 냉기 개방", cond: "氷 2", short: "공격 시 적을 둔화시킵니다.", detail: "공격 적중 시 25% 확률로 적을 2초 둔화\n둔화 강도: 30%" },
+      ice4: { name: "氷 4 혹한 전파", cond: "氷 4", short: "둔화 확률이 증가하고 광역 피해가 강화됩니다.", detail: "둔화 확률 추가 +20%\n광역 피해 +10%" },
+      ice6: { name: "氷 6 절대영도", cond: "氷 6", short: "발현 시 화면 내 적을 빙결시키고 피해가 증가합니다.", detail: "발현 순간: 화면 내 적 2초 빙결\n상시: 둔화 확률 추가 +25%, 광역 피해 추가 강화" },
+
+      fire2: { name: "火 2 화염 개방", cond: "火 2", short: "공격 시 화상을 부여합니다.", detail: "공격 적중 시 25% 확률로 2.5초 화상\n화상 피해: 공격력의 20%/초" },
+      fire4: { name: "火 4 대화염", cond: "火 4", short: "화상 피해와 지속시간이 증가합니다.", detail: "화상 피해 추가 +22%\n화상 지속시간 +1.5초" },
+      fire6: { name: "火 6 화염군주", cond: "火 6", short: "화상 중인 적 처치 시 폭발과 전이가 발생합니다.", detail: "발현 순간: 화면 내 적에게 화상 부여\n상시: 화상 피해 추가 +32%, 화상 처치 폭발" },
+
+      wind2: { name: "風 2 질풍", cond: "風 2", short: "공격속도와 이동속도가 증가합니다.", detail: "공격속도 +15%\n이동속도 +5%" },
+      wind4: { name: "風 4 난무", cond: "風 4", short: "공격속도가 더 오르고 추가타가 발생합니다.", detail: "공격속도 추가 +18%\n이동속도 추가 +5%\n5번째 공격마다 추가타" },
+      wind6: { name: "風 6 질풍난무", cond: "風 6", short: "발현 시 폭발적인 공속 버프, 이후 추가타가 더 자주 발생합니다.", detail: "발현 순간: 10초간 공격속도 x2\n상시: 공격속도 추가 +28%, 3번째 공격마다 추가타" },
+
+      light2: { name: "光 2 광휘", cond: "光 2", short: "모든 공격 범위가 증가합니다.", detail: "공격 범위 +15%" },
+      light4: { name: "光 4 찬란한 영역", cond: "光 4", short: "공격 범위와 광역 피해가 증가합니다.", detail: "공격 범위 추가 +15%\n광역 피해 +20%" },
+      light6: { name: "光 6 태양광휘", cond: "光 6", short: "발현 시 화면 전체 피해, 범위 공격이 크게 강화됩니다.", detail: "발현 순간: 화면 전체 빛 폭발\n상시: 공격 범위 추가 +20%, 광역 피해 추가 +25%" },
+
+      dark2: { name: "暗 2 처형 개방", cond: "暗 2", short: "체력 낮은 적을 일정 확률로 처형합니다.", detail: "체력 20% 이하 적 타격 시 8% 확률 처형" },
+      dark4: { name: "暗 4 심연 처형", cond: "暗 4", short: "처형 기준과 확률이 증가합니다.", detail: "체력 30% 이하 적 타격 시 12% 확률 처형\n처형 성공 시 암흑 폭발" },
+      dark6: { name: "暗 6 심연처형", cond: "暗 6", short: "발현 시 체력 낮은 적을 정리하고 처형력이 크게 증가합니다.", detail: "발현 순간: 체력 35% 이하 일반 적 즉시 처형\n상시: 체력 40% 이하 적 타격 시 18% 확률 처형" },
+
+      holy2: { name: "聖 2 축복", cond: "聖 2", short: "처치 시 보호막을 얻을 수 있습니다.", detail: "처치 시 15% 확률로 보호막 +6" },
+      holy4: { name: "聖 4 성역", cond: "聖 4", short: "보호막 획득 확률과 양이 증가합니다.", detail: "처치 시 25% 확률로 보호막 +10" },
+      holy6: { name: "聖 6 성역강림", cond: "聖 6", short: "발현 시 보호막을 크게 얻고 처치 보호막이 강해집니다.", detail: "발현 순간: 최대 HP 40% 보호막 획득\n상시: 처치 시 40% 확률로 보호막 +14" },
+
+      evil2: { name: "惡 2 흡혈", cond: "惡 2", short: "처치 시 체력을 회복할 수 있습니다.", detail: "처치 시 15% 확률로 HP 4 회복" },
+      evil4: { name: "惡 4 피의 계약", cond: "惡 4", short: "처치 회복 확률과 회복량이 증가합니다.", detail: "처치 시 25% 확률로 HP 7 회복" },
+      evil6: { name: "惡 6 피의 연회", cond: "惡 6", short: "발현 시 회복하고 초과 회복이 공격력으로 전환됩니다.", detail: "발현 순간: HP 100% 회복, 공격력 버프\n상시: 처치 시 40% 확률로 HP 10 회복" },
+
+      demon2: { name: "鬼 2 귀기 개방", cond: "鬼 2", short: "처치 시 鬼 중첩을 얻습니다.", detail: "처치 시 공격력 +0.5% 중첩\n최대 80중첩\n피격 시 중첩 50% 감소" },
+      demon3: { name: "鬼 3 귀문 개방", cond: "鬼 3", short: "鬼 중첩 성장과 한계가 증가합니다.", detail: "처치 시 공격력 +0.8% 중첩\n최대 130중첩\n피격 시 중첩 30% 감소" },
+      demon4: { name: "鬼 4 귀왕 강림", cond: "鬼 4", short: "鬼 중첩이 폭발적으로 강화됩니다.", detail: "발현 순간: 鬼 중첩 +50, 10초간 중첩 감소 면역\n상시: 처치 시 공격력 +1.0% 중첩, 최대 200, 피격 시 15% 감소" },
+
+      frostfire: { name: "서리불꽃", cond: "氷 2 + 火 2", short: "둔화된 적에게 화상 피해가 크게 증가합니다.", detail: "둔화 + 화상 상태 적에게 피해 대폭 증가\n화상 중 둔화 발생 시 즉시 화상 피해 1회 발동" },
+      firestorm: { name: "화염폭풍", cond: "火 4 + 風 2", short: "화상이 주변 적에게 전이될 수 있습니다.", detail: "화상 중인 적 타격 시 주변 2명에게 화상 전이\n전이 내부 확률: 16%" },
+      radiantwind: { name: "광휘질풍", cond: "風 4 + 光 2", short: "공격속도가 공격 범위를 밀어올립니다.", detail: "공격속도 증가분 일부가 공격 범위 증가로 전환" },
+      voidfeast: { name: "심연포식", cond: "暗 4 + 惡 2", short: "처형과 회복이 연결됩니다.", detail: "처형 성공 시 회복 효과와 공격력 버프가 연계됩니다." },
+      fallenholy: { name: "타락성역", cond: "聖 4 + 惡 2", short: "보호막과 회복이 서로 강화됩니다.", detail: "회복 발생 시 보호막, 보호막 획득 시 회복 보조 효과" },
+      bloodflamedemon: { name: "혈염귀", cond: "火 1 + 暗 1 + 鬼 1", short: "화상과 처형이 鬼 중첩을 밀어줍니다.", detail: "화상 중인 적 처치, 체력 낮은 적 처형 시 鬼 중첩 추가 획득" },
+      holydemon: { name: "귀신성흔", cond: "聖 2 + 鬼 2", short: "보호막이 鬼 중첩 손실을 줄입니다.", detail: "보호막 보유 중 鬼 중첩 증가량 상승\n피격 시 중첩 감소 완화" },
+      evildemon: { name: "악귀포식", cond: "惡 2 + 鬼 2", short: "회복이 鬼 중첩으로 이어집니다.", detail: "회복 발생 시 鬼 중첩 획득\n초과 회복 시 추가 중첩" }
+    };
+
+    const META_KEY = "json_survivors_coin_meta_v5";
 
     const LABS = {
       basic: [
@@ -504,12 +583,13 @@
 
     let meta = loadMeta();
     let labTab = "basic";
+    let codexTab = "augments";
 
     const WEAPONS = [
       {
         id: "magic_staff",
         name: "마력탄 지팡이",
-        desc: "가장 가까운 적에게 마력탄을 자동 발사합니다.",
+        desc: "가장 가까운 적들에게 마력탄을 자동 발사합니다.",
         color: "#93c5fd",
         tags: ["magic", "projectile"]
       },
@@ -533,96 +613,115 @@
       {
         id: "cold_edge", name: "차가운 칼끝", grade: "basic", attrs: { "氷": 1 },
         desc: "공격 적중 시 낮은 확률로 적을 둔화시킵니다.",
+        detail: "공격 적중 시 둔화 확률 +8%\n속성: 氷 +1",
         apply(s) { s.perks.slowChance += 0.08; }
       },
       {
         id: "small_flame", name: "작은 불씨", grade: "basic", attrs: { "火": 1 },
         desc: "공격 적중 시 낮은 확률로 화상을 부여합니다.",
+        detail: "공격 적중 시 화상 확률 +8%\n속성: 火 +1",
         apply(s) { s.perks.burnChance += 0.08; }
       },
       {
         id: "light_breeze", name: "가벼운 순풍", grade: "basic", attrs: { "風": 1 },
         desc: "공격속도가 조금 증가합니다.",
+        detail: "공격속도 +8%\n속성: 風 +1",
         apply(s) { s.perks.attackSpeedMul *= 1.08; }
       },
       {
         id: "shimmer", name: "희미한 광휘", grade: "basic", attrs: { "光": 1 },
         desc: "공격 범위가 조금 증가합니다.",
+        detail: "공격 범위 +8%\n속성: 光 +1",
         apply(s) { s.perks.areaMul *= 1.08; }
       },
       {
         id: "shadow_cut", name: "그림자 절단", grade: "normal", attrs: { "暗": 1 },
         desc: "체력이 낮은 적에게 추가 피해를 줍니다.",
+        detail: "체력 35% 이하 적에게 추가 피해 +18%\n속성: 暗 +1",
         apply(s) { s.perks.executeDamage += 0.18; }
       },
       {
         id: "holy_seed", name: "성스러운 씨앗", grade: "normal", attrs: { "聖": 1 },
         desc: "처치 시 낮은 확률로 보호막을 얻습니다.",
+        detail: "처치 시 보호막 획득 확률 +6%\n속성: 聖 +1",
         apply(s) { s.perks.killShieldChance += 0.06; }
       },
       {
         id: "evil_drop", name: "악의 혈방울", grade: "normal", attrs: { "惡": 1 },
         desc: "처치 시 낮은 확률로 체력을 회복합니다.",
+        detail: "처치 시 회복 확률 +6%\n속성: 惡 +1",
         apply(s) { s.perks.killHealChance += 0.06; }
       },
       {
         id: "frostfire_core", name: "서리불꽃 핵", grade: "advanced", attrs: { "氷": 1, "火": 1 },
         desc: "둔화된 적에게 화상 피해가 강해집니다.",
+        detail: "둔화 + 화상 상태 적 추가 피해 +35%\n속성: 氷 +1, 火 +1",
         apply(s) { s.perks.frostfireBonus += 0.35; }
       },
       {
         id: "burning_wind", name: "불타는 순풍", grade: "advanced", attrs: { "火": 1, "風": 1 },
         desc: "화상 중인 적을 공격하면 주변에 약한 화상이 전이될 수 있습니다.",
+        detail: "화상 중인 적 공격 시 화상 전이 확률 +12%\n속성: 火 +1, 風 +1",
         apply(s) { s.perks.burnSpreadChance += 0.12; }
       },
       {
         id: "radiant_wind", name: "광휘질풍", grade: "advanced", attrs: { "風": 1, "光": 1 },
         desc: "공격속도가 높을수록 공격 범위가 증가합니다.",
+        detail: "공격속도 증가분 일부가 공격 범위로 전환\n속성: 風 +1, 光 +1",
         apply(s) { s.perks.speedToArea += 0.18; }
       },
       {
         id: "eclipse_mark", name: "일식의 표식", grade: "advanced", attrs: { "光": 1, "暗": 1 },
         desc: "범위 피해가 체력 낮은 적에게 추가 피해를 줍니다.",
+        detail: "범위 피해가 체력 낮은 적에게 추가 피해 +18%\n속성: 光 +1, 暗 +1",
         apply(s) { s.perks.areaExecute += 0.18; }
       },
       {
         id: "fallen_sanctuary", name: "타락한 성역", grade: "epic", attrs: { "聖": 1, "惡": 1 },
         desc: "보호막과 회복 효과가 서로를 강화합니다.",
+        detail: "보호막 획득 시 회복 보조\n회복 발생 시 보호막 보조\n속성: 聖 +1, 惡 +1",
         apply(s) { s.perks.sanctuaryLoop = true; }
       },
       {
         id: "perfect_focus", name: "완전한 집중", grade: "epic", attrs: { "風": 1, "光": 1 },
         desc: "타격 시 공격력 ×1.005. 최대 80중첩. 피격 시 초기화.",
+        detail: "타격 시 공격력 ×1.005\n최대 중첩: 80\n피격 시 중첩 초기화\n속성: 風 +1, 光 +1",
         apply(s) { s.perks.focusBlade = true; }
       },
       {
         id: "glass_sanctuary", name: "유리성역", grade: "epic", attrs: { "光": 1, "聖": 1 },
         desc: "보호막 보유 중 피해 +60%. 보호막이 없으면 받는 피해 증가.",
+        detail: "보호막 보유 중 피해 +60%\n보호막이 없으면 받는 피해 +20%\n속성: 光 +1, 聖 +1",
         apply(s) { s.perks.glassSanctuary = true; }
       },
       {
         id: "chain_reaction", name: "연쇄 반응", grade: "advanced", attrs: { "風": 1 },
         desc: "투사체 적중 시 추가 탄환을 생성할 수 있습니다.",
+        detail: "투사체 적중 시 22% 확률로 추가 탄환\n연쇄 탄환은 다시 연쇄 반응을 만들지 않음\n속성: 風 +1",
         apply(s) { s.perks.chainChance += 0.22; }
       },
       {
         id: "star_tuning", name: "별의 조율", grade: "epic", attrs: { "光": 1, "風": 1 },
         desc: "투사체 적중 시 별빛 폭발. 연쇄 탄환에도 발동 가능.",
+        detail: "투사체 적중 시 22% 확률로 별빛 폭발\n연쇄 반응 탄환에도 발동 가능\n속성: 光 +1, 風 +1",
         apply(s) { s.perks.starChance += 0.22; }
       },
       {
         id: "curse_crown", name: "저주받은 왕관", grade: "legendary", attrs: { "氷": 1, "火": 1, "風": 1, "光": 1, "暗": 1, "聖": 1, "惡": 1 },
         desc: "모든 일반 속성 +1. 최대 HP 감소, 회복량 감소.",
+        detail: "氷 火 風 光 暗 聖 惡 +1\n최대 HP -30\n회복량 -50%\n鬼는 제외",
         apply(s) { s.perks.cursedCrown = true; }
       },
       {
         id: "overheat_heart", name: "과열 심장", grade: "legendary", attrs: { "火": 2 },
         desc: "공격속도 크게 증가. 공격할 때마다 HP를 조금 소모합니다.",
+        detail: "공격속도 +55%\n공격 시 HP 0.2 소모\n속성: 火 +2",
         apply(s) { s.perks.attackSpeedMul *= 1.55; s.perks.overheat = true; }
       },
       {
         id: "void_feast", name: "심연포식", grade: "legendary", attrs: { "暗": 1, "惡": 1 },
         desc: "처형 성공 시 회복하고, 회복 초과분이 공격력으로 전환됩니다.",
+        detail: "처형 성공 시 회복 연계\n초과 회복량 일부가 공격력 버프로 전환\n속성: 暗 +1, 惡 +1",
         apply(s) { s.perks.voidFeast = true; }
       },
 
@@ -630,30 +729,35 @@
         id: "demon_gate", name: "귀문개방", grade: "legendary", attrs: { "鬼": 2 },
         ghost: true,
         desc: "鬼 +2. 처치 중첩이 강해지지만 피격 시 현재 HP 추가 피해.",
+        detail: "鬼 +2\n처치 시 鬼 중첩 추가 +1\n피격 시 현재 HP 8% 추가 피해",
         apply(s) { s.perks.demonGate = true; }
       },
       {
         id: "demon_mark", name: "귀왕의 낙인", grade: "legendary", attrs: { "鬼": 1 },
         ghost: true,
         desc: "처치 시 공격력 중첩. 피격 시 큰 폭 감소.",
+        detail: "처치 시 鬼 중첩 기반 공격력 강화\n피격 시 중첩 감소\n속성: 鬼 +1",
         apply(s) { s.perks.demonMark = true; }
       },
       {
         id: "blood_flame_demon", name: "혈염귀", grade: "epic", attrs: { "火": 1, "暗": 1, "鬼": 1 },
         ghost: true,
         desc: "화상 중인 적 처치와 처형 성공이 鬼 중첩을 밀어줍니다.",
+        detail: "화상 중인 적 처치 시 鬼 중첩 추가\n처형 성공 시 鬼 중첩 추가\n속성: 火 +1, 暗 +1, 鬼 +1",
         apply(s) { s.perks.bloodFlameDemon = true; }
       },
       {
         id: "holy_demon_scar", name: "귀신성흔", grade: "epic", attrs: { "聖": 1, "鬼": 1 },
         ghost: true,
         desc: "보호막 보유 중 鬼 중첩 증가량 상승. 피격 시 감소 완화.",
+        detail: "보호막 보유 중 鬼 중첩 증가량 상승\n보호막 보유 중 피격 시 鬼 중첩 감소량 완화\n속성: 聖 +1, 鬼 +1",
         apply(s) { s.perks.holyDemonScar = true; }
       },
       {
         id: "evil_demon_feast", name: "악귀포식", grade: "legendary", attrs: { "惡": 1, "鬼": 1 },
         ghost: true,
         desc: "회복이 발생할 때 鬼 중첩을 얻습니다.",
+        detail: "회복 발생 시 鬼 중첩 +1\n초과 회복 시 鬼 중첩 추가 +1\n속성: 惡 +1, 鬼 +1",
         apply(s) { s.perks.evilDemonFeast = true; }
       }
     ];
@@ -662,6 +766,8 @@
     let lastTs = 0;
     let loopId = null;
     let currentChoices = [];
+    let currentChoiceMode = "growth";
+    let pendingAugmentAfterGrowth = false;
     let rerollsLeft = 0;
 
     function makeState(weapon) {
@@ -680,13 +786,30 @@
         exp: 0,
         kills: 0,
         runCoins: 0,
-        endBonusCoins: 0,
         augments: [],
         attrsFromAugments: {},
         attrsFromGems: {},
         activeSynergies: new Set(),
         announcedSynergies: new Set(),
         weapon: JSON.parse(JSON.stringify(weapon)),
+        growth: {
+          damage: 0,
+          attackSpeed: 0,
+          area: 0,
+          move: 0,
+          hp: 0,
+          defense: 0,
+          magnet: 0,
+          knockback: 0,
+          exp: 0,
+          projectile: 0,
+          pierce: 0,
+          projectileSpeed: 0,
+          auraTick: 0,
+          orbitCount: 0,
+          orbitSpeed: 0,
+          weaponSize: 0
+        },
         player: {
           x: canvas.width / 2,
           y: canvas.height / 2,
@@ -705,11 +828,7 @@
         base: {},
         perks: {},
         synergy: {},
-        stacks: {
-          focus: 0,
-          demon: 0,
-          demonNoLossMs: 0
-        },
+        stacks: { focus: 0, demon: 0, demonNoLossMs: 0 },
         buffs: [],
         enemies: [],
         projectiles: [],
@@ -717,11 +836,7 @@
         drops: [],
         effects: [],
         floating: [],
-        itemStats: {
-          total: 0,
-          gems: 0,
-          legendary: 0
-        }
+        itemStats: { total: 0, gems: 0, legendary: 0 }
       };
     }
 
@@ -729,17 +844,18 @@
       if (!state) return;
       const u = meta.upgrades;
       const lv = state.level;
+      const g = state.growth;
 
       state.base = {
-        damageMul: (1 + (lv - 1) * 0.035) * (1 + u.damage * 0.04),
-        attackSpeedMul: 1 + (lv - 1) * 0.018,
-        speedMul: 1 + (lv - 1) * 0.006 + u.speed * 0.03,
-        areaMul: 1,
-        expMul: 1 + u.exp * 0.03,
+        damageMul: (1 + (lv - 1) * 0.01 + g.damage) * (1 + u.damage * 0.04),
+        attackSpeedMul: 1 + g.attackSpeed,
+        speedMul: 1 + (lv - 1) * 0.002 + g.move + u.speed * 0.03,
+        areaMul: 1 + g.area,
+        expMul: 1 + g.exp + u.exp * 0.03,
         healMul: 1 + u.heal_eff * 0.06,
-        defense: Math.min(0.65, u.defense * 0.02),
-        magnetBonus: (lv - 1) * 2 + u.magnet * 15,
-        knockbackMul: 1 + u.knockback * 0.06,
+        defense: Math.min(0.70, g.defense + u.defense * 0.02),
+        magnetBonus: (lv - 1) + g.magnet + u.magnet * 15,
+        knockbackMul: 1 + g.knockback + u.knockback * 0.06,
         synergyAmp: 1 + u.syn_amp * 0.03
       };
 
@@ -765,12 +881,8 @@
         aug.apply?.(state);
       }
 
-      if (state.perks.cursedCrown) {
-        state.player.maxHp = Math.max(60, 100 + u.hp * 10 + (lv - 1) * 3 - 30);
-      } else {
-        state.player.maxHp = 100 + u.hp * 10 + (lv - 1) * 3;
-      }
-
+      const maxHp = 100 + u.hp * 10 + (lv - 1) + g.hp;
+      state.player.maxHp = state.perks.cursedCrown ? Math.max(60, maxHp - 30) : maxHp;
       state.player.speed = 220 * state.base.speedMul;
       state.player.magnetRange = 90 + state.base.magnetBonus;
       state.player.hp = Math.min(state.player.hp, state.player.maxHp);
@@ -816,64 +928,64 @@
         demonLoss: 1
       };
 
-      function active(key, name) {
-        state.activeSynergies.add(key);
+      const newActive = new Set();
+
+      function active(key) {
+        newActive.add(key);
         if (!state.announcedSynergies.has(key)) {
           state.announcedSynergies.add(key);
-          onSynergyFirstActivated(key, name);
+          onSynergyFirstActivated(key);
         }
       }
 
-      state.activeSynergies = new Set();
+      if (a["氷"] >= 2) { active("ice2"); s.slowChance += .25; s.slowPower += .3; }
+      if (a["氷"] >= 4) { active("ice4"); s.slowChance += .20; s.areaDamageMul *= 1.10; }
+      if (a["氷"] >= 6) { active("ice6"); s.slowChance += .25; s.areaDamageMul *= 1.25; }
 
-      if (a["氷"] >= 2) { active("ice2", "氷 2 냉기 개방"); s.slowChance += .25; s.slowPower += .3; }
-      if (a["氷"] >= 4) { active("ice4", "氷 4 혹한 전파"); s.slowChance += .20; s.areaDamageMul *= 1.10; }
-      if (a["氷"] >= 6) { active("ice6", "氷 6 절대영도"); s.slowChance += .25; s.areaDamageMul *= 1.25; }
+      if (a["火"] >= 2) { active("fire2"); s.burnChance += .25; s.burnDpsRatio += .20; }
+      if (a["火"] >= 4) { active("fire4"); s.burnDpsRatio += .22; s.burnDuration += 1.5; }
+      if (a["火"] >= 6) { active("fire6"); s.burnDpsRatio += .32; s.burnDuration += 2.0; }
 
-      if (a["火"] >= 2) { active("fire2", "火 2 화염 개방"); s.burnChance += .25; s.burnDpsRatio += .20; }
-      if (a["火"] >= 4) { active("fire4", "火 4 대화염"); s.burnDpsRatio += .22; s.burnDuration += 1.5; }
-      if (a["火"] >= 6) { active("fire6", "火 6 화염군주"); s.burnDpsRatio += .32; s.burnDuration += 2.0; }
+      if (a["風"] >= 2) { active("wind2"); s.attackSpeedMul *= 1.15; s.moveMul *= 1.05; }
+      if (a["風"] >= 4) { active("wind4"); s.attackSpeedMul *= 1.18; s.moveMul *= 1.05; s.extraHitEvery = 5; }
+      if (a["風"] >= 6) { active("wind6"); s.attackSpeedMul *= 1.28; s.extraHitEvery = 3; }
 
-      if (a["風"] >= 2) { active("wind2", "風 2 질풍"); s.attackSpeedMul *= 1.15; s.moveMul *= 1.05; }
-      if (a["風"] >= 4) { active("wind4", "風 4 난무"); s.attackSpeedMul *= 1.18; s.moveMul *= 1.05; s.extraHitEvery = 5; }
-      if (a["風"] >= 6) { active("wind6", "風 6 질풍난무"); s.attackSpeedMul *= 1.28; s.extraHitEvery = 3; }
+      if (a["光"] >= 2) { active("light2"); s.areaMul *= 1.15; }
+      if (a["光"] >= 4) { active("light4"); s.areaMul *= 1.15; s.areaDamageMul *= 1.20; }
+      if (a["光"] >= 6) { active("light6"); s.areaMul *= 1.20; s.areaDamageMul *= 1.25; }
 
-      if (a["光"] >= 2) { active("light2", "光 2 광휘"); s.areaMul *= 1.15; }
-      if (a["光"] >= 4) { active("light4", "光 4 찬란한 영역"); s.areaMul *= 1.15; s.areaDamageMul *= 1.20; }
-      if (a["光"] >= 6) { active("light6", "光 6 태양광휘"); s.areaMul *= 1.20; s.areaDamageMul *= 1.25; }
+      if (a["暗"] >= 2) { active("dark2"); s.executeThreshold = .20; s.executeChance = .08; }
+      if (a["暗"] >= 4) { active("dark4"); s.executeThreshold = .30; s.executeChance = .12; }
+      if (a["暗"] >= 6) { active("dark6"); s.executeThreshold = .40; s.executeChance = .18; }
 
-      if (a["暗"] >= 2) { active("dark2", "暗 2 처형 개방"); s.executeThreshold = .20; s.executeChance = .08; }
-      if (a["暗"] >= 4) { active("dark4", "暗 4 심연 처형"); s.executeThreshold = .30; s.executeChance = .12; }
-      if (a["暗"] >= 6) { active("dark6", "暗 6 심연처형"); s.executeThreshold = .40; s.executeChance = .18; }
+      if (a["聖"] >= 2) { active("holy2"); s.shieldOnKillChance = .15; s.shieldOnKill = 6; }
+      if (a["聖"] >= 4) { active("holy4"); s.shieldOnKillChance = .25; s.shieldOnKill = 10; }
+      if (a["聖"] >= 6) { active("holy6"); s.shieldOnKillChance = .40; s.shieldOnKill = 14; }
 
-      if (a["聖"] >= 2) { active("holy2", "聖 2 축복"); s.shieldOnKillChance = .15; s.shieldOnKill = 6; }
-      if (a["聖"] >= 4) { active("holy4", "聖 4 성역"); s.shieldOnKillChance = .25; s.shieldOnKill = 10; }
-      if (a["聖"] >= 6) { active("holy6", "聖 6 성역강림"); s.shieldOnKillChance = .40; s.shieldOnKill = 14; }
+      if (a["惡"] >= 2) { active("evil2"); s.healOnKillChance = .15; s.healOnKill = 4; }
+      if (a["惡"] >= 4) { active("evil4"); s.healOnKillChance = .25; s.healOnKill = 7; }
+      if (a["惡"] >= 6) { active("evil6"); s.healOnKillChance = .40; s.healOnKill = 10; }
 
-      if (a["惡"] >= 2) { active("evil2", "惡 2 흡혈"); s.healOnKillChance = .15; s.healOnKill = 4; }
-      if (a["惡"] >= 4) { active("evil4", "惡 4 피의 계약"); s.healOnKillChance = .25; s.healOnKill = 7; }
-      if (a["惡"] >= 6) { active("evil6", "惡 6 피의 연회"); s.healOnKillChance = .40; s.healOnKill = 10; }
+      if (a["鬼"] >= 2) { active("demon2"); s.demonKillStack = .005; s.demonMax = 80; s.demonLoss = .5; }
+      if (a["鬼"] >= 3) { active("demon3"); s.demonKillStack = .008; s.demonMax = 130; s.demonLoss = .3; }
+      if (a["鬼"] >= 4) { active("demon4"); s.demonKillStack = .010; s.demonMax = 200; s.demonLoss = .15; }
 
-      if (a["鬼"] >= 2) { active("demon2", "鬼 2 귀기 개방"); s.demonKillStack = .005; s.demonMax = 80; s.demonLoss = .5; }
-      if (a["鬼"] >= 3) { active("demon3", "鬼 3 귀문 개방"); s.demonKillStack = .008; s.demonMax = 130; s.demonLoss = .3; }
-      if (a["鬼"] >= 4) { active("demon4", "鬼 4 귀왕 강림"); s.demonKillStack = .010; s.demonMax = 200; s.demonLoss = .15; }
+      if (a["氷"] >= 2 && a["火"] >= 2) active("frostfire");
+      if (a["火"] >= 4 && a["風"] >= 2) active("firestorm");
+      if (a["風"] >= 4 && a["光"] >= 2) active("radiantwind");
+      if (a["暗"] >= 4 && a["惡"] >= 2) active("voidfeast");
+      if (a["聖"] >= 4 && a["惡"] >= 2) active("fallenholy");
+      if (a["火"] >= 1 && a["暗"] >= 1 && a["鬼"] >= 1) active("bloodflamedemon");
+      if (a["聖"] >= 2 && a["鬼"] >= 2) active("holydemon");
+      if (a["惡"] >= 2 && a["鬼"] >= 2) active("evildemon");
 
-      if (a["氷"] >= 2 && a["火"] >= 2) active("frostfire", "서리불꽃");
-      if (a["火"] >= 4 && a["風"] >= 2) active("firestorm", "화염폭풍");
-      if (a["風"] >= 4 && a["光"] >= 2) active("radiantwind", "광휘질풍");
-      if (a["暗"] >= 4 && a["惡"] >= 2) active("voidfeast", "심연포식");
-      if (a["聖"] >= 4 && a["惡"] >= 2) active("fallenholy", "타락성역");
-      if (a["火"] >= 1 && a["暗"] >= 1 && a["鬼"] >= 1) active("bloodflamedemon", "혈염귀");
-      if (a["聖"] >= 2 && a["鬼"] >= 2) active("holydemon", "귀신성흔");
-      if (a["惡"] >= 2 && a["鬼"] >= 2) active("evildemon", "악귀포식");
-
+      state.activeSynergies = newActive;
       state.synergy = s;
     }
 
-    function onSynergyFirstActivated(key, name) {
-      let burst = false;
-
-      if (key.endsWith("6") || key === "demon4") burst = true;
+    function onSynergyFirstActivated(key) {
+      const info = SYNERGY_INFO[key] || { name: key };
+      let burst = key.endsWith("6") || key === "demon4";
 
       if (key === "ice6") {
         for (const e of state.enemies) e.freezeTime = Math.max(e.freezeTime || 0, 2);
@@ -881,12 +993,8 @@
       if (key === "fire6") {
         for (const e of state.enemies) applyBurn(e, 18, 4);
       }
-      if (key === "wind6") {
-        addTimedBuff("attackSpeed", 2.0, 10);
-      }
-      if (key === "light6") {
-        damageArea(state.player.x, state.player.y, 999, 180, 40, ["light", "area"], true, "#fde68a");
-      }
+      if (key === "wind6") addTimedBuff("attackSpeed", 2.0, 10);
+      if (key === "light6") damageArea(state.player.x, state.player.y, 999, 180, 40, ["light", "area"], true, "#fde68a");
       if (key === "dark6") {
         for (const e of state.enemies) {
           if (e.hp / e.maxHp <= .35 && !e.elite) e.hp = 0;
@@ -907,14 +1015,15 @@
         for (const e of state.enemies) applyEnemyKnockback(e, state.player.x, state.player.y, 60);
       }
 
-      if (burst) showBigAlert(name, "궁극 시너지 발현!");
-      else showToast(`시너지 발현: ${name}`);
+      if (burst) showBigAlert(info.name, "궁극 시너지 발현!");
+      else showToast(`시너지 발현: ${info.name}`);
     }
 
     function getWeaponStats() {
       const lv = state.level;
       const id = state.weapon.id;
       const s = state.synergy;
+      const g = state.growth;
 
       const focusMul = state.perks.focusBlade ? Math.pow(1.005, state.stacks.focus) : 1;
       const demonMul = 1 + (state.stacks.demon * (s.demonKillStack || 0));
@@ -926,28 +1035,26 @@
       let asMul = state.base.attackSpeedMul * state.perks.attackSpeedMul * s.attackSpeedMul * buffAs;
       let areaMul = state.base.areaMul * state.perks.areaMul * s.areaMul * buffArea;
 
-      if (state.perks.glassSanctuary) {
-        if (state.player.shield > 0) damageMul *= 1.6;
-      }
-
-      if (state.perks.speedToArea) {
-        areaMul *= 1 + Math.min(.5, (asMul - 1) * state.perks.speedToArea);
-      }
+      if (state.perks.glassSanctuary && state.player.shield > 0) damageMul *= 1.6;
+      if (state.perks.speedToArea) areaMul *= 1 + Math.min(.5, (asMul - 1) * state.perks.speedToArea);
 
       if (id === "magic_staff") {
         let damage = 28;
-        let intervalMs = 820;
+        let intervalMs = 830;
         let speed = 590;
         let pierce = 0;
         let count = 1;
         let radius = 5;
-        if (lv >= 4) pierce += 1;
-        if (lv >= 7) count += 1;
-        if (lv >= 10) damage *= 1.25;
-        if (lv >= 15) count += 1;
-        if (lv >= 20) intervalMs -= 160;
-        if (lv >= 25) pierce += 1;
-        if (lv >= 30) count += 1;
+
+        if (lv >= 10) damage *= 1.15;
+        if (lv >= 20) intervalMs -= 80;
+        if (lv >= 30) damage *= 1.15;
+
+        count += g.projectile;
+        pierce += g.pierce;
+        speed *= 1 + g.projectileSpeed;
+        radius *= 1 + g.weaponSize;
+
         return {
           damage: damage * damageMul,
           intervalMs: Math.max(220, intervalMs / asMul),
@@ -962,19 +1069,19 @@
 
       if (id === "flame_heart") {
         let damage = 9;
-        let tickMs = 650;
+        let tickMs = 660;
         let radius = 86;
-        let pulse = false;
-        if (lv >= 4) radius += 12;
-        if (lv >= 7) tickMs -= 80;
-        if (lv >= 10) damage *= 1.25;
-        if (lv >= 15) radius += 18;
-        if (lv >= 20) pulse = true;
-        if (lv >= 25) tickMs -= 90;
-        if (lv >= 30) { radius += 24; damage *= 1.3; }
+        let pulse = lv >= 20;
+
+        if (lv >= 10) damage *= 1.15;
+        if (lv >= 30) { radius += 20; damage *= 1.15; }
+
+        tickMs *= Math.max(.35, 1 - g.auraTick);
+        radius *= 1 + g.weaponSize;
+
         return {
           damage: damage * damageMul * s.areaDamageMul,
-          tickMs: Math.max(260, tickMs / asMul),
+          tickMs: Math.max(240, tickMs / asMul),
           radius: radius * areaMul,
           knockback: 5 * state.base.knockbackMul,
           pulse,
@@ -988,13 +1095,15 @@
         let orbitSpeed = 2.6;
         let count = 1;
         let axeRadius = 10;
-        if (lv >= 4) orbitSpeed *= 1.15;
-        if (lv >= 7) count += 1;
-        if (lv >= 10) damage *= 1.25;
-        if (lv >= 15) axeRadius *= 1.25;
-        if (lv >= 20) count += 1;
-        if (lv >= 25) orbitSpeed *= 1.2;
+
+        if (lv >= 10) damage *= 1.15;
         if (lv >= 30) count += 1;
+
+        count += g.orbitCount;
+        orbitSpeed *= 1 + g.orbitSpeed;
+        axeRadius *= 1 + g.weaponSize;
+        orbitRadius *= 1 + g.area;
+
         return {
           damage: damage * damageMul,
           orbitRadius: orbitRadius * areaMul,
@@ -1010,6 +1119,7 @@
     function openWeaponSelect() {
       titleOverlay.classList.remove("show");
       labOverlay.classList.remove("show");
+      codexOverlay.classList.remove("show");
       resultOverlay.classList.remove("show");
       pauseOverlay.classList.remove("show");
       choiceOverlay.classList.remove("show");
@@ -1045,51 +1155,193 @@
       loopId = requestAnimationFrame(loop);
     }
 
-    function openAugmentChoice() {
+    function openGrowthChoice() {
       state.paused = true;
-      currentChoices = rollAugmentChoices();
-      rerollsLeft = meta.upgrades.reroll || 0;
-      renderAugmentChoice();
+      currentChoiceMode = "growth";
+      currentChoices = rollGrowthChoices();
+      rerollBtn.style.display = "none";
+      choiceTitle.textContent = `Lv.${state.level} 성장 선택`;
+      choiceDesc.textContent = SPECIAL_LEVELS.has(state.level)
+        ? "기본 성장 카드를 선택하세요. 선택 후 증강 선택이 추가로 열립니다."
+        : "기본 전투 능력을 강화하세요.";
+      renderChoiceCards();
       choiceOverlay.classList.add("show");
     }
 
-    function renderAugmentChoice() {
-      choiceTitle.textContent = `Lv.${state.level} 증강 선택`;
-      choiceDesc.textContent = "증강은 빌드의 룰을 바꿉니다. 속성 조합으로 시너지를 폭발시키세요.";
-      rerollBtn.textContent = rerollsLeft > 0 ? `새로고침 ${rerollsLeft}회` : "새로고침 없음";
-      rerollBtn.disabled = rerollsLeft <= 0;
+    function rollGrowthChoices() {
+      const pool = [
+        {
+          type: "growth", label: "전투 성장", name: "공격력 증가", desc: "모든 피해 +7%",
+          apply() { state.growth.damage += .07; }
+        },
+        {
+          type: "growth", label: "전투 성장", name: "공격속도 증가", desc: "공격속도 +6%",
+          apply() { state.growth.attackSpeed += .06; }
+        },
+        {
+          type: "growth", label: "전투 성장", name: "공격범위 증가", desc: "공격 범위 +8%",
+          apply() { state.growth.area += .08; }
+        },
+        {
+          type: "growth", label: "생존 성장", name: "이동속도 증가", desc: "이동속도 +5%",
+          apply() { state.growth.move += .05; }
+        },
+        {
+          type: "growth", label: "생존 성장", name: "최대 HP 증가", desc: "최대 HP +15\nHP 15 회복",
+          apply() { state.growth.hp += 15; rebuildStats(); healPlayer(15); }
+        },
+        {
+          type: "growth", label: "생존 성장", name: "방어력 증가", desc: "받는 피해 -2%",
+          apply() { state.growth.defense += .02; }
+        },
+        {
+          type: "growth", label: "유틸 성장", name: "자석 범위 증가", desc: "경험치 흡수 범위 +20",
+          apply() { state.growth.magnet += 20; }
+        },
+        {
+          type: "growth", label: "유틸 성장", name: "경험치 획득 증가", desc: "경험치 획득량 +5%",
+          apply() { state.growth.exp += .05; }
+        },
+        {
+          type: "growth", label: "전투 성장", name: "넉백 증가", desc: "타격 넉백 +10%",
+          apply() { state.growth.knockback += .10; }
+        }
+      ];
 
+      if (state.weapon.id === "magic_staff") {
+        pool.push(
+          {
+            type: "growth", label: "무기 성장", name: "투사체 수 증가", desc: "마력탄 발사체 +1",
+            weight: 4, apply() { state.growth.projectile += 1; }
+          },
+          {
+            type: "growth", label: "무기 성장", name: "관통 증가", desc: "마력탄 관통 +1",
+            weight: 5, apply() { state.growth.pierce += 1; }
+          },
+          {
+            type: "growth", label: "무기 성장", name: "투사체 속도 증가", desc: "마력탄 속도 +15%",
+            weight: 8, apply() { state.growth.projectileSpeed += .15; }
+          },
+          {
+            type: "growth", label: "무기 성장", name: "투사체 크기 증가", desc: "마력탄 크기 +12%",
+            weight: 8, apply() { state.growth.weaponSize += .12; }
+          }
+        );
+      }
+
+      if (state.weapon.id === "flame_heart") {
+        pool.push(
+          {
+            type: "growth", label: "무기 성장", name: "오라 범위 증가", desc: "화염 오라 범위 +12%",
+            weight: 8, apply() { state.growth.weaponSize += .12; }
+          },
+          {
+            type: "growth", label: "무기 성장", name: "피해 주기 감소", desc: "화염 오라 피해 주기 -8%",
+            weight: 8, apply() { state.growth.auraTick += .08; }
+          }
+        );
+      }
+
+      if (state.weapon.id === "orbit_axe") {
+        pool.push(
+          {
+            type: "growth", label: "무기 성장", name: "도끼 수 증가", desc: "회전 도끼 +1",
+            weight: 4, apply() { state.growth.orbitCount += 1; }
+          },
+          {
+            type: "growth", label: "무기 성장", name: "회전속도 증가", desc: "도끼 회전속도 +12%",
+            weight: 8, apply() { state.growth.orbitSpeed += .12; }
+          },
+          {
+            type: "growth", label: "무기 성장", name: "도끼 크기 증가", desc: "도끼 크기 +12%",
+            weight: 8, apply() { state.growth.weaponSize += .12; }
+          }
+        );
+      }
+
+      const weighted = pool.map(x => ({ item: x, weight: x.weight || 12 }));
+      const result = [];
+      while (result.length < 3) {
+        const picked = weightedPick(weighted).item;
+        if (!result.some(x => x.name === picked.name)) result.push(picked);
+      }
+      return result;
+    }
+
+    function openAugmentChoice() {
+      state.paused = true;
+      currentChoiceMode = "augment";
+      currentChoices = rollAugmentChoices();
+      rerollsLeft = meta.upgrades.reroll || 0;
+      rerollBtn.style.display = "inline-block";
+      choiceTitle.textContent = `Lv.${state.level} 증강 선택`;
+      choiceDesc.textContent = "추가 보너스 증강입니다. 속성을 선택하고 시너지를 폭발시키세요.";
+      renderChoiceCards();
+      choiceOverlay.classList.add("show");
+    }
+
+    function renderChoiceCards() {
       choiceCards.innerHTML = "";
-      currentChoices.forEach(aug => {
+      rerollBtn.textContent = rerollsLeft > 0 ? `새로고침 ${rerollsLeft}회` : "새로고침 없음";
+      rerollBtn.disabled = currentChoiceMode !== "augment" || rerollsLeft <= 0;
+
+      currentChoices.forEach(item => {
         const div = document.createElement("div");
         div.className = "card";
-        div.innerHTML = `
-          <div class="type-label">신규 증강</div>
-          <h3 class="${GRADE_CLASS[aug.grade]}">${aug.name}</h3>
-          <div class="desc">${GRADE_LABEL[aug.grade]}\n${aug.desc}</div>
-          <div class="badge-row">${renderAttrBadges(aug.attrs)}</div>
-        `;
-        div.onclick = () => takeAugment(aug);
+
+        if (currentChoiceMode === "augment") {
+          div.innerHTML = `
+            <div class="type-label">신규 증강</div>
+            <h3 class="${GRADE_CLASS[item.grade]}">${item.name} ${renderAttrInline(item.attrs)}</h3>
+            <div class="desc">${item.desc}</div>
+            <div class="badge-row">${renderAttrBadges(item.attrs)}</div>
+          `;
+        } else {
+          div.innerHTML = `
+            <div class="type-label">${item.label}</div>
+            <h3>${item.name}</h3>
+            <div class="desc">${item.desc}</div>
+          `;
+        }
+
+        div.onclick = () => selectCurrentChoice(item);
         choiceCards.appendChild(div);
       });
     }
 
-    function rerollAugments() {
-      if (rerollsLeft <= 0) return;
-      rerollsLeft -= 1;
-      currentChoices = rollAugmentChoices();
-      renderAugmentChoice();
-      showToast("증강 선택지 새로고침!");
+    function selectCurrentChoice(item) {
+      if (currentChoiceMode === "growth") {
+        item.apply();
+        rebuildStats();
+        showToast(`${item.name} 선택`);
+        choiceOverlay.classList.remove("show");
+
+        if (pendingAugmentAfterGrowth) {
+          pendingAugmentAfterGrowth = false;
+          openAugmentChoice();
+          return;
+        }
+
+        state.paused = false;
+        return;
+      }
+
+      if (currentChoiceMode === "augment") {
+        if (state.augments.length >= MAX_AUGMENTS) return;
+        state.augments.push(item);
+        rebuildStats();
+        choiceOverlay.classList.remove("show");
+        state.paused = false;
+        showBigAlert(item.name, `${GRADE_LABEL[item.grade]} 증강 획득`);
+      }
     }
 
-    function takeAugment(aug) {
-      if (state.augments.length >= MAX_AUGMENTS) return;
-      state.augments.push(aug);
-      rebuildStats();
-      choiceOverlay.classList.remove("show");
-      state.paused = false;
-      showBigAlert(aug.name, `${GRADE_LABEL[aug.grade]} 증강 획득`);
-      renderSide();
+    function rerollAugments() {
+      if (currentChoiceMode !== "augment" || rerollsLeft <= 0) return;
+      rerollsLeft -= 1;
+      currentChoices = rollAugmentChoices();
+      renderChoiceCards();
+      showToast("증강 선택지 새로고침!");
     }
 
     function rollAugmentChoices() {
@@ -1260,12 +1512,14 @@
     }
 
     function fireProjectiles(w) {
-      const target = getNearestEnemy();
-      if (!target) return;
+      const targets = getEnemiesSortedByDistance();
+      if (!targets.length) return;
 
       for (let i = 0; i < w.count; i++) {
-        const spread = (i - (w.count - 1) / 2) * 0.14;
+        const target = targets[i % targets.length];
+        const spread = targets.length < w.count ? (i - (w.count - 1) / 2) * 0.08 : 0;
         const angle = Math.atan2(target.y - state.player.y, target.x - state.player.x) + spread;
+
         state.projectiles.push({
           x: state.player.x,
           y: state.player.y,
@@ -1286,7 +1540,7 @@
     function updateSpawns(dt) {
       state.spawnMs -= dt * 1000;
       const t = state.timeMs / 1000;
-      const interval = Math.max(420, 1100 - t * 1.35);
+      const interval = Math.max(300, 850 - t * 1.65);
 
       if (state.spawnMs <= 0) {
         state.spawnMs = interval;
@@ -1297,15 +1551,15 @@
     function spawnEnemy() {
       const t = state.timeMs / 1000;
       const types = [
-        { id: "slime", color: "#22c55e", hp: 22, speed: 62, damage: 5, exp: 8, r: 13, from: 0, weight: 52, kb: 0 },
-        { id: "wolf", color: "#94a3b8", hp: 22, speed: 110, damage: 6, exp: 12, r: 11, from: 60, weight: 30, kb: .1 },
-        { id: "bat", color: "#a78bfa", hp: 16, speed: 138, damage: 4, exp: 12, r: 9, from: 120, weight: 24, kb: 0 },
-        { id: "golem", color: "#78716c", hp: 90, speed: 42, damage: 10, exp: 35, r: 18, from: 240, weight: 13, kb: .6 },
-        { id: "bomb", color: "#f97316", hp: 42, speed: 58, damage: 8, exp: 25, r: 14, from: 360, weight: 16, kb: .3 }
+        { id: "slime", color: "#22c55e", hp: 28, speed: 72, damage: 7, exp: 8, r: 13, from: 0, weight: 52, kb: 0 },
+        { id: "wolf", color: "#94a3b8", hp: 28, speed: 128, damage: 8, exp: 12, r: 11, from: 60, weight: 30, kb: .1 },
+        { id: "bat", color: "#a78bfa", hp: 22, speed: 158, damage: 6, exp: 12, r: 9, from: 120, weight: 24, kb: 0 },
+        { id: "golem", color: "#78716c", hp: 130, speed: 50, damage: 14, exp: 35, r: 18, from: 240, weight: 13, kb: .6 },
+        { id: "bomb", color: "#f97316", hp: 60, speed: 68, damage: 11, exp: 25, r: 14, from: 360, weight: 16, kb: .3 }
       ].filter(m => t >= m.from);
 
       const picked = weightedPick(types.map(m => ({ ...m, weight: m.weight })));
-      const elite = t > 240 && Math.random() < 0.045;
+      const elite = t > 240 && Math.random() < 0.05;
       const side = Math.floor(Math.random() * 4);
       let x, y;
       if (side === 0) { x = -25; y = Math.random() * canvas.height; }
@@ -1313,16 +1567,16 @@
       if (side === 2) { x = Math.random() * canvas.width; y = -25; }
       if (side === 3) { x = Math.random() * canvas.width; y = canvas.height + 25; }
 
-      const diff = 1 + t / 620;
-      const hp = picked.hp * diff * (elite ? 3 : 1);
+      const diff = 1 + t / 420;
+      const hp = picked.hp * diff * (elite ? 3.2 : 1);
 
       state.enemies.push({
         ...picked,
         x, y,
         hp,
         maxHp: hp,
-        speed: picked.speed * Math.min(1.25, 1 + t / 1100) * (elite ? .85 : 1),
-        damage: picked.damage * (elite ? 1.4 : 1),
+        speed: picked.speed * Math.min(1.45, 1 + t / 850) * (elite ? .9 : 1),
+        damage: picked.damage * (elite ? 1.45 : 1),
         exp: picked.exp * (elite ? 4 : 1),
         r: picked.r * (elite ? 1.25 : 1),
         elite,
@@ -1335,8 +1589,7 @@
         slowPower: 0,
         freezeTime: 0,
         burnTime: 0,
-        burnDps: 0,
-        burnTick: 0
+        burnDps: 0
       });
     }
 
@@ -1552,7 +1805,7 @@
     }
 
     function maybeDropItem(e) {
-      const dropChance = e.elite ? .20 : .025;
+      const dropChance = e.elite ? .18 : .015;
       if (Math.random() > dropChance) return;
 
       const grade = rollItemGrade(e.elite);
@@ -1576,31 +1829,28 @@
 
     function createDropItem(grade) {
       if (grade === "basic") {
-        const list = [
+        return { grade, ...randomItem([
           { name: "체력회복(소)", kind: "heal_small", color: "#bfdbfe" },
           { name: "자석", kind: "magnet", color: "#22d3ee" },
           { name: "코인(소)", kind: "coin_small", color: "#fde68a" }
-        ];
-        return { grade, ...randomItem(list) };
+        ]) };
       }
 
       if (grade === "normal") {
-        const list = [
+        return { grade, ...randomItem([
           { name: "체력회복(대)", kind: "heal_big", color: "#60a5fa" },
           { name: "전체 몹 킬", kind: "nuke", color: "#f87171" },
           { name: "코인(대)", kind: "coin_big", color: "#facc15" }
-        ];
-        return { grade, ...randomItem(list) };
+        ]) };
       }
 
       if (grade === "advanced") {
-        const list = [
+        return { grade, ...randomItem([
           { name: "공격력 증가", kind: "buff_damage", color: "#86efac" },
           { name: "이속 증가", kind: "buff_speed", color: "#86efac" },
           { name: "공속 증가", kind: "buff_as", color: "#86efac" },
           { name: "공격범위 증가", kind: "buff_area", color: "#86efac" }
-        ];
-        return { grade, ...randomItem(list) };
+        ]) };
       }
 
       if (grade === "epic") {
@@ -1610,15 +1860,9 @@
       }
 
       const roll = Math.random();
-      if (roll < .40) {
-        return { grade, kind: "gem", name: "특정 속성 +3 보석", attr: randomItem(NORMAL_ATTRS), value: 3, color: "#facc15" };
-      }
-      if (roll < .60) {
-        return { grade, kind: "all_gem", name: "모든 속성 +1 보석", value: 1, color: "#facc15" };
-      }
-      if (roll < .80) {
-        return { grade, kind: "gem", name: "특정 속성 +4 보석", attr: randomItem(NORMAL_ATTRS), value: 4, color: "#facc15" };
-      }
+      if (roll < .40) return { grade, kind: "gem", name: "특정 속성 +3 보석", attr: randomItem(NORMAL_ATTRS), value: 3, color: "#facc15" };
+      if (roll < .60) return { grade, kind: "all_gem", name: "모든 속성 +1 보석", value: 1, color: "#facc15" };
+      if (roll < .80) return { grade, kind: "gem", name: "특정 속성 +4 보석", attr: randomItem(NORMAL_ATTRS), value: 4, color: "#facc15" };
       return { grade, kind: "gem", name: "鬼 +2 귀속 보석", attr: "鬼", value: 2, color: "#facc15" };
     }
 
@@ -1633,7 +1877,7 @@
       if (item.kind === "coin_small") addRunCoins(30);
       if (item.kind === "coin_big") addRunCoins(120);
       if (item.kind === "nuke") {
-        for (const e of state.enemies) {
+        for (const e of [...state.enemies]) {
           if (e.elite) e.hp -= e.maxHp * .25;
           else e.hp = 0;
           if (e.hp <= 0) killEnemy(e, ["nuke"]);
@@ -1809,17 +2053,19 @@
         state.exp -= EXP_TO_NEXT[state.level];
         state.level += 1;
         rebuildStats();
-        showToast(`Lv.${state.level} 기본 능력 상승`);
 
         if (SPECIAL_LEVELS.has(state.level) && state.augments.length < MAX_AUGMENTS) {
-          openAugmentChoice();
+          pendingAugmentAfterGrowth = true;
+        } else {
+          pendingAugmentAfterGrowth = false;
         }
+
+        openGrowthChoice();
 
         if (state.level >= MAX_LEVEL) {
           state.level = MAX_LEVEL;
           state.overExp += state.exp;
           state.exp = 0;
-          showBigAlert("Lv.MAX", "초과 경험 보상 활성화");
         }
         break;
       }
@@ -2031,6 +2277,7 @@
     function renderSide() {
       if (!state) {
         ui.sideWeapon.innerHTML = "메인 화면";
+        ui.sideStats.innerHTML = `<div class="small">없음</div>`;
         ui.sideAttributes.innerHTML = `<div class="small">없음</div>`;
         ui.sideSynergies.innerHTML = `<div class="small">없음</div>`;
         ui.sideAugments.innerHTML = `<div class="small">없음</div>`;
@@ -2038,34 +2285,73 @@
         return;
       }
 
-      ui.sideWeapon.innerHTML = `<strong>${state.weapon.name}</strong><br><span class="small">플레이어 Lv.${state.level} 기반 자동 성장</span>`;
+      const w = getWeaponStats();
+
+      ui.sideWeapon.innerHTML = `<strong>${state.weapon.name}</strong><br><span class="small">${weaponDetailText(w)}</span>`;
+
+      ui.sideStats.innerHTML = `
+        <div class="list-item">공격력 배율 <strong>x${statDamageMul().toFixed(2)}</strong></div>
+        <div class="list-item">공격속도 <strong>x${statAttackSpeedMul().toFixed(2)}</strong></div>
+        <div class="list-item">공격범위 <strong>x${statAreaMul().toFixed(2)}</strong></div>
+        <div class="list-item">이동속도 <strong>x${(state.player.speed / 220).toFixed(2)}</strong></div>
+        <div class="list-item">방어율 <strong>${Math.round(state.base.defense * 100)}%</strong></div>
+        <div class="list-item">자석범위 <strong>${Math.round(state.player.magnetRange)}</strong></div>
+      `;
 
       const attrs = getAttrCounts();
-      ui.sideAttributes.innerHTML = ALL_ATTRS.map(a => {
-        const steps = a === "鬼" ? "2 / 3 / 4" : "2 / 4 / 6";
-        return `<div class="list-item">${a} ${ATTR_NAMES[a]}: <strong>${attrs[a] || 0}</strong> <span class="small">(${steps})</span></div>`;
-      }).join("");
+      ui.sideAttributes.innerHTML = ALL_ATTRS
+        .filter(a => (attrs[a] || 0) > 0)
+        .map(a => `<div class="list-item">${a} ${ATTR_NAMES[a]} <strong>${attrs[a]}</strong></div>`)
+        .join("") || `<div class="small">없음</div>`;
 
       const active = Array.from(state.activeSynergies);
       ui.sideSynergies.innerHTML = active.length
-        ? active.map(x => `<div class="list-item">${x}</div>`).join("")
+        ? active.map(key => {
+          const info = SYNERGY_INFO[key] || { name: key, short: "" };
+          return `<div class="list-item"><strong>${info.name}</strong><br><span class="small">${info.short}</span></div>`;
+        }).join("")
         : `<div class="small">아직 발현 없음</div>`;
 
       ui.sideAugments.innerHTML = state.augments.length
         ? state.augments.map(a => `
           <div class="list-item">
-            <strong class="${GRADE_CLASS[a.grade]}">${a.name}</strong><br>
-            <span class="small">${GRADE_LABEL[a.grade]} · ${renderAttrText(a.attrs)}</span>
+            <strong class="${GRADE_CLASS[a.grade]}">${a.name} ${renderAttrInline(a.attrs)}</strong><br>
+            <span class="small">${a.desc}</span>
           </div>
         `).join("")
         : `<div class="small">없음</div>`;
 
       ui.sideStacks.innerHTML = `
-        <div class="list-item">집중 중첩: <strong>${state.stacks.focus}</strong> / 80</div>
-        <div class="list-item">鬼 중첩: <strong>${state.stacks.demon}</strong> / ${state.synergy.demonMax || 0}</div>
-        <div class="list-item">보석 획득: <strong>${state.itemStats.gems}</strong>개</div>
-        <div class="list-item">버프: <strong>${state.buffs.length}</strong>개 활성</div>
+        <div class="list-item">집중 중첩 <strong>${state.stacks.focus}</strong> / 80</div>
+        <div class="list-item">鬼 중첩 <strong>${state.stacks.demon}</strong> / ${state.synergy.demonMax || 0}</div>
+        <div class="list-item">보석 획득 <strong>${state.itemStats.gems}</strong>개</div>
+        <div class="list-item">버프 <strong>${state.buffs.length}</strong>개 활성</div>
       `;
+    }
+
+    function weaponDetailText(w) {
+      if (!state) return "";
+      if (state.weapon.id === "magic_staff") {
+        return `피해 ${Math.round(w.damage)} / 간격 ${(w.intervalMs / 1000).toFixed(2)}초 / 발사체 ${w.count} / 관통 ${w.pierce}`;
+      }
+      if (state.weapon.id === "flame_heart") {
+        return `피해 ${Math.round(w.damage)} / 주기 ${(w.tickMs / 1000).toFixed(2)}초 / 범위 ${Math.round(w.radius)} / 파동 ${w.pulse ? "활성" : "비활성"}`;
+      }
+      return `피해 ${Math.round(w.damage)} / 도끼 ${w.count} / 회전속도 x${w.orbitSpeed.toFixed(2)} / 크기 ${Math.round(w.axeRadius)}`;
+    }
+
+    function statDamageMul() {
+      const focusMul = state.perks.focusBlade ? Math.pow(1.005, state.stacks.focus) : 1;
+      const demonMul = 1 + (state.stacks.demon * (state.synergy.demonKillStack || 0));
+      return state.base.damageMul * focusMul * demonMul * getBuffMul("damage");
+    }
+
+    function statAttackSpeedMul() {
+      return state.base.attackSpeedMul * state.perks.attackSpeedMul * state.synergy.attackSpeedMul * getBuffMul("attackSpeed");
+    }
+
+    function statAreaMul() {
+      return state.base.areaMul * state.perks.areaMul * state.synergy.areaMul * getBuffMul("area");
     }
 
     function endGame(success) {
@@ -2150,6 +2436,7 @@
       choiceOverlay.classList.remove("show");
       weaponOverlay.classList.remove("show");
       labOverlay.classList.remove("show");
+      codexOverlay.classList.remove("show");
       cancelAnimationFrame(loopId);
       state = null;
       titleOverlay.classList.add("show");
@@ -2158,7 +2445,7 @@
 
     function setLabTab(tab) {
       labTab = tab;
-      document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll("#labOverlay .tab").forEach(b => b.classList.remove("active"));
       document.getElementById(tab === "basic" ? "tabBasic" : tab === "combat" ? "tabCombat" : "tabEconomy").classList.add("active");
       renderLab();
     }
@@ -2241,6 +2528,77 @@
       showToast("데이터 초기화 완료");
     }
 
+    function openCodex() {
+      titleOverlay.classList.remove("show");
+      codexOverlay.classList.add("show");
+      renderCodex();
+    }
+
+    function closeCodex() {
+      codexOverlay.classList.remove("show");
+      titleOverlay.classList.add("show");
+    }
+
+    function setCodexTab(tab) {
+      codexTab = tab;
+      document.querySelectorAll("#codexOverlay .tab").forEach(b => b.classList.remove("active"));
+      document.getElementById(tab === "augments" ? "codexAugTab" : tab === "synergies" ? "codexSynTab" : "codexItemTab").classList.add("active");
+      renderCodex();
+    }
+
+    function renderCodex() {
+      codexList.innerHTML = "";
+
+      if (codexTab === "augments") {
+        for (const a of AUGMENTS) {
+          const div = document.createElement("div");
+          div.className = "codex-item";
+          div.innerHTML = `
+            <h3 class="${GRADE_CLASS[a.grade]}">[${GRADE_LABEL[a.grade]}] ${a.name} ${renderAttrInline(a.attrs)}</h3>
+            <div class="effect">${a.detail || a.desc}</div>
+          `;
+          codexList.appendChild(div);
+        }
+        return;
+      }
+
+      if (codexTab === "synergies") {
+        for (const info of Object.values(SYNERGY_INFO)) {
+          const div = document.createElement("div");
+          div.className = "codex-item";
+          div.innerHTML = `
+            <h3>${info.name}</h3>
+            <div class="effect">조건: ${info.cond}\n\n효과:\n${info.detail}</div>
+          `;
+          codexList.appendChild(div);
+        }
+        return;
+      }
+
+      const items = [
+        ["[초급] 체력회복(소)", "최대 HP의 15% 회복"],
+        ["[초급] 자석", "화면 내 경험치 구슬을 끌어옵니다."],
+        ["[초급] 코인(소)", "코인 +30"],
+        ["[일반] 체력회복(대)", "최대 HP의 40% 회복"],
+        ["[일반] 전체 몹 킬", "일반 몬스터 즉시 처치\n정예 몬스터는 최대 HP 25% 피해"],
+        ["[일반] 코인(대)", "코인 +120"],
+        ["[고급] 공격력 증가", "15초간 공격력 +40%"],
+        ["[고급] 이속 증가", "15초간 이동속도 +35%"],
+        ["[고급] 공속 증가", "15초간 공격속도 +35%"],
+        ["[고급] 공격범위 증가", "15초간 공격 범위 +40%"],
+        ["[에픽] 속성 보석", "특정 일반 속성 +1: 70%\n특정 일반 속성 +2: 30%"],
+        ["[전설] 속성 보석", "특정 일반 속성 +3: 40%\n모든 일반 속성 +1: 20%\n특정 일반 속성 +4: 20%\n鬼 +2: 20%"],
+        ["드랍 확률", "일반 몬스터 아이템 드랍률: 1.5%\n정예 몬스터 아이템 드랍률: 18%\n\n일반 몬스터 등급 확률:\n초급 70% / 일반 24% / 고급 5% / 에픽 0.9% / 전설 0.1%\n\n정예 몬스터 등급 확률:\n초급 35% / 일반 35% / 고급 22% / 에픽 7% / 전설 1%\n\n보석 2개 이상 획득 시 이후 보석 확률 크게 감소"]
+      ];
+
+      for (const [name, effect] of items) {
+        const div = document.createElement("div");
+        div.className = "codex-item";
+        div.innerHTML = `<h3>${name}</h3><div class="effect">${effect}</div>`;
+        codexList.appendChild(div);
+      }
+    }
+
     function getNearestEnemy(x = state.player.x, y = state.player.y, exclude = null) {
       let best = null, bestD = Infinity;
       for (const e of state.enemies) {
@@ -2251,12 +2609,23 @@
       return best;
     }
 
+    function getEnemiesSortedByDistance() {
+      return [...state.enemies]
+        .filter(e => e.hp > 0)
+        .sort((a, b) =>
+          Math.hypot(a.x - state.player.x, a.y - state.player.y) -
+          Math.hypot(b.x - state.player.x, b.y - state.player.y)
+        );
+    }
+
     function renderAttrBadges(attrs) {
       return Object.entries(attrs || {}).map(([k, v]) => `<span class="badge">${k} +${v}</span>`).join("");
     }
 
-    function renderAttrText(attrs) {
-      return Object.entries(attrs || {}).map(([k, v]) => `${k}+${v}`).join(" · ");
+    function renderAttrInline(attrs) {
+      let out = "";
+      for (const [k, v] of Object.entries(attrs || {})) out += " " + k.repeat(v);
+      return out;
     }
 
     function formatTime(ms) {
