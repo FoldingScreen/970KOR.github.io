@@ -1634,7 +1634,97 @@ function updateEnemies(dt) {
       updateEnemyShooting(e, dt);
     }
 
-    function shootEnemyBullet(e, damage, speed, radius, color, homing = false) {
+    e.x += e.vx * dt;
+    e.y += e.vy * dt;
+    e.vx *= Math.pow(0.005, dt);
+    e.vy *= Math.pow(0.005, dt);
+
+    const dist = Math.hypot(e.x - state.player.x, e.y - state.player.y);
+
+    if (dist < e.r + state.player.r && e.contactCd <= 0) {
+      e.contactCd = 0.9;
+      damagePlayer(e.damage, e.x, e.y);
+    }
+  }
+
+  state.enemies = state.enemies.filter(e => e.hp > 0);
+}
+
+function updateEnemyMovement(e, dt) {
+  const dx = state.player.x - e.x;
+  const dy = state.player.y - e.y;
+  const dist = Math.hypot(dx, dy) || 1;
+
+  const slowMul = e.slowTime > 0 ? 1 - e.slowPower : 1;
+  let moveX = dx / dist;
+  let moveY = dy / dist;
+
+  if (e.ai === "ranged") {
+    const preferred = e.range || 280;
+
+    if (dist < preferred * 0.72) {
+      moveX *= -1;
+      moveY *= -1;
+    } else if (dist <= preferred) {
+      moveX *= 0.2;
+      moveY *= 0.2;
+    }
+  }
+
+  if (e.ai === "boss" || e.ai === "midboss") {
+    if (dist < 140) {
+      moveX *= -0.25;
+      moveY *= -0.25;
+    }
+  }
+
+  e.x += moveX * e.speed * slowMul * dt;
+  e.y += moveY * e.speed * slowMul * dt;
+}
+
+function updateEnemyShooting(e, dt) {
+  if (!["ranged", "midboss", "boss"].includes(e.ai)) return;
+
+  e.shootTimer = (e.shootTimer || 0) - dt;
+
+  if (e.shootTimer > 0) return;
+
+  if (e.ai === "boss") {
+    e.shootTimer = 1.25;
+    shootBossPattern(e);
+    return;
+  }
+
+  if (e.ai === "midboss") {
+    e.shootTimer = 1.8;
+    shootSpreadEnemyBullet(e, 5, e.damage * 0.75, 190, 5, "#facc15");
+    return;
+  }
+
+  e.shootTimer = e.shootCd || 2;
+
+  if (e.spread) {
+    shootSpreadEnemyBullet(
+      e,
+      e.spread,
+      e.bulletDamage,
+      e.bulletSpeed,
+      e.bulletRadius,
+      e.color
+    );
+  } else {
+    shootEnemyBullet(
+      e,
+      e.bulletDamage,
+      e.bulletSpeed,
+      e.bulletRadius,
+      e.color,
+      !!e.homing
+    );
+  }
+}
+
+function shootEnemyBullet(e, damage, speed, radius, color, homing = false) {
   const angle = Math.atan2(state.player.y - e.y, state.player.x - e.x);
 
   state.enemyProjectiles.push({
@@ -1739,82 +1829,6 @@ function updateEnemyProjectiles(dt) {
     p.y > -80 &&
     p.y < canvas.height + 80
   );
-}
-
-    e.x += e.vx * dt;
-    e.y += e.vy * dt;
-    e.vx *= Math.pow(0.005, dt);
-    e.vy *= Math.pow(0.005, dt);
-
-    const dist = Math.hypot(e.x - state.player.x, e.y - state.player.y);
-
-    if (dist < e.r + state.player.r && e.contactCd <= 0) {
-      e.contactCd = 0.9;
-      damagePlayer(e.damage, e.x, e.y);
-    }
-  }
-
-  state.enemies = state.enemies.filter(e => e.hp > 0);
-}
-
-function updateEnemyMovement(e, dt) {
-  const dx = state.player.x - e.x;
-  const dy = state.player.y - e.y;
-  const dist = Math.hypot(dx, dy) || 1;
-
-  const slowMul = e.slowTime > 0 ? 1 - e.slowPower : 1;
-  let moveX = dx / dist;
-  let moveY = dy / dist;
-
-  if (e.ai === "ranged") {
-    const preferred = e.range || 280;
-
-    if (dist < preferred * 0.72) {
-      moveX *= -1;
-      moveY *= -1;
-    } else if (dist <= preferred) {
-      moveX *= 0.2;
-      moveY *= 0.2;
-    }
-  }
-
-  if (e.ai === "boss" || e.ai === "midboss") {
-    if (dist < 140) {
-      moveX *= -0.25;
-      moveY *= -0.25;
-    }
-  }
-
-  e.x += moveX * e.speed * slowMul * dt;
-  e.y += moveY * e.speed * slowMul * dt;
-}
-
-function updateEnemyShooting(e, dt) {
-  if (!["ranged", "midboss", "boss"].includes(e.ai)) return;
-
-  e.shootTimer = (e.shootTimer || 0) - dt;
-
-  if (e.shootTimer > 0) return;
-
-  if (e.ai === "boss") {
-    e.shootTimer = 1.25;
-    shootBossPattern(e);
-    return;
-  }
-
-  if (e.ai === "midboss") {
-    e.shootTimer = 1.8;
-    shootSpreadEnemyBullet(e, 5, e.damage * 0.75, 190, 5, "#facc15");
-    return;
-  }
-
-  e.shootTimer = e.shootCd || 2;
-
-  if (e.spread) {
-    shootSpreadEnemyBullet(e, e.spread, e.bulletDamage, e.bulletSpeed, e.bulletRadius, e.color);
-  } else {
-    shootEnemyBullet(e, e.bulletDamage, e.bulletSpeed, e.bulletRadius, e.color, !!e.homing);
-  }
 }
 
 function updateProjectiles(dt) {
@@ -2023,50 +2037,74 @@ function spreadBurn(source, dps) {
 }
 function killEnemy(e, tags = []) {
   if (e.dead) return;
+
   e.dead = true;
   e.hp = 0;
   state.kills += 1;
-  state.gems.push({ x: e.x, y: e.y, r: 5, exp: e.exp * state.base.expMul });
-  if (tags.includes("holy")) addShield(4);
-if (e.boss) {
-  const bonus = Math.round(1200 * (1 + meta.upgrades.elite_bounty * 0.1));
-  addRunCoins(bonus);
-  showBigAlert("보스 처치!", `+${bonus} 코인`);
-} else if (e.midBoss) {
-  const bonus = Math.round(350 * (1 + meta.upgrades.elite_bounty * 0.1));
-  addRunCoins(bonus);
-  showBigAlert("중간보스 처치!", `+${bonus} 코인`);
-} else if (e.elite) {
-  const bonus = Math.round(35 * (1 + meta.upgrades.elite_bounty * 0.1));
-  addRunCoins(bonus);
-  showToast(`정예 처치 +${bonus}코인`);
-}
+
+  state.gems.push({
+    x: e.x,
+    y: e.y,
+    r: 5,
+    exp: e.exp * state.base.expMul
+  });
+
+  if (tags.includes("holy")) {
+    addShield(4);
   }
+
+  if (e.boss) {
+    const bonus = Math.round(1200 * (1 + meta.upgrades.elite_bounty * 0.1));
+    addRunCoins(bonus);
+    showBigAlert("보스 처치!", `+${bonus} 코인`);
+  } else if (e.midBoss) {
+    const bonus = Math.round(350 * (1 + meta.upgrades.elite_bounty * 0.1));
+    addRunCoins(bonus);
+    showBigAlert("중간보스 처치!", `+${bonus} 코인`);
+  } else if (e.elite) {
+    const bonus = Math.round(35 * (1 + meta.upgrades.elite_bounty * 0.1));
+    addRunCoins(bonus);
+    showToast(`정예 처치 +${bonus}코인`);
+  }
+
   if (
     state.synergy.shieldOnKillChance &&
     Math.random() <
       state.synergy.shieldOnKillChance + state.perks.killShieldChance
-  )
+  ) {
     addShield(state.synergy.shieldOnKill || 6);
+  }
+
   if (
     state.synergy.healOnKillChance &&
-    Math.random() < state.synergy.healOnKillChance + state.perks.killHealChance
-  )
+    Math.random() <
+      state.synergy.healOnKillChance + state.perks.killHealChance
+  ) {
     healPlayer(state.synergy.healOnKill || 4);
+  }
+
   if (state.synergy.demonKillStack) {
     let gain = 1;
+
     if (state.perks.demonGate) gain += 1;
+
     if (
       state.perks.bloodFlameDemon &&
       (e.burnTime > 0 || tags.includes("burn"))
-    )
+    ) {
       gain += 2;
-    if (state.perks.holyDemonScar && state.player.shield > 0) gain += 1;
+    }
+
+    if (state.perks.holyDemonScar && state.player.shield > 0) {
+      gain += 1;
+    }
+
     state.stacks.demon = Math.min(
       state.synergy.demonMax || 80,
-      state.stacks.demon + gain,
+      state.stacks.demon + gain
     );
   }
+
   if (state.activeSynergies.has("fire6") && e.burnTime > 0) {
     damageArea(
       e.x,
@@ -2076,15 +2114,17 @@ if (e.boss) {
       24,
       ["fire", "area"],
       true,
-      "#f97316",
+      "#f97316"
     );
+
     spreadBurn(e, e.maxHp * 0.04);
   }
+
   if (
     state.activeSynergies.has("light6") &&
     tags.includes("area") &&
     Math.random() < 0.25
-  )
+  ) {
     damageArea(
       e.x,
       e.y,
@@ -2093,10 +2133,13 @@ if (e.boss) {
       18,
       ["light", "area"],
       true,
-      "#fde68a",
+      "#fde68a"
     );
+  }
+
   maybeDropItem(e);
 }
+
 function maybeDropItem(e) {
   const dropChance = e.elite ? 0.18 : 0.015;
   if (Math.random() > dropChance) return;
@@ -2453,18 +2496,7 @@ function draw() {
     ctx.arc(g.x, g.y, g.r, 0, Math.PI * 2);
     ctx.fill();
   }
-  for (const p of state?.enemyProjectiles || []) {
-  ctx.beginPath();
-  ctx.fillStyle = p.color || "#fca5a5";
-  ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-  ctx.fill();
 
-  ctx.beginPath();
-  ctx.strokeStyle = "rgba(255,255,255,.35)";
-  ctx.lineWidth = 1;
-  ctx.arc(p.x, p.y, p.r + 2, 0, Math.PI * 2);
-  ctx.stroke();
-}
   for (const d of state?.drops || []) {
     ctx.beginPath();
     ctx.fillStyle = d.color;
@@ -2490,6 +2522,19 @@ function draw() {
     ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
     ctx.fill();
   }
+for (const p of state?.enemyProjectiles || []) {
+  ctx.beginPath();
+  ctx.fillStyle = p.color || "#fca5a5";
+  ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.strokeStyle = "rgba(255,255,255,.35)";
+  ctx.lineWidth = 1;
+  ctx.arc(p.x, p.y, p.r + 2, 0, Math.PI * 2);
+  ctx.stroke();
+}
+  
   for (const e of state?.enemies || []) {
     ctx.beginPath();
     ctx.fillStyle =
