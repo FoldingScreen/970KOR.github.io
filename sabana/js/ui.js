@@ -249,8 +249,21 @@ function getPotentialSynergies() {
 
   const attrs = getAttrCounts();
 
+  // 보유 증강에서 얻은 속성만 기준으로 "내 빌드와 겹치는지" 판단
+  const augmentAttrs = {};
+  for (const aug of state.augments || []) {
+    for (const [attr, value] of Object.entries(aug.attrs || {})) {
+      augmentAttrs[attr] = (augmentAttrs[attr] || 0) + value;
+    }
+  }
+
+  function hasOwnedAugmentOverlap(req) {
+    return Object.keys(req).some(attr => (augmentAttrs[attr] || 0) > 0);
+  }
+
   return SYNERGY_REQUIREMENTS
     .filter(item => !state.activeSynergies.has(item.key))
+    .filter(item => hasOwnedAugmentOverlap(item.req))
     .map(item => {
       const info = SYNERGY_INFO[item.key];
       const progress = getSynergyProgress(item.req, attrs);
