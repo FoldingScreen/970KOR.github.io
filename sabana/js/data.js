@@ -119,28 +119,225 @@ const WEAPONS = [
 ];
 
 const AUGMENTS = [
-  { id: "cold_edge", name: "차가운 칼끝", grade: "basic", attrs: { "氷": 1 }, desc: "공격 적중 시 낮은 확률로 적을 둔화시킵니다.", detail: "공격 적중 시 둔화 확률 +8%\n속성: 氷 +1", apply(s) { s.perks.slowChance += 0.08; } },
-  { id: "small_flame", name: "작은 불씨", grade: "basic", attrs: { "火": 1 }, desc: "공격 적중 시 낮은 확률로 화상을 부여합니다.", detail: "공격 적중 시 화상 확률 +8%\n속성: 火 +1", apply(s) { s.perks.burnChance += 0.08; } },
-  { id: "light_breeze", name: "가벼운 순풍", grade: "basic", attrs: { "風": 1 }, desc: "공격속도가 조금 증가합니다.", detail: "공격속도 +8%\n속성: 風 +1", apply(s) { s.perks.attackSpeedMul *= 1.08; } },
-  { id: "shimmer", name: "희미한 광휘", grade: "basic", attrs: { "光": 1 }, desc: "공격 범위가 조금 증가합니다.", detail: "공격 범위 +8%\n속성: 光 +1", apply(s) { s.perks.areaMul *= 1.08; } },
-  { id: "shadow_cut", name: "그림자 절단", grade: "normal", attrs: { "暗": 1 }, desc: "체력이 낮은 적에게 추가 피해를 줍니다.", detail: "체력 35% 이하 적에게 추가 피해 +18%\n속성: 暗 +1", apply(s) { s.perks.executeDamage += 0.18; } },
-  { id: "holy_seed", name: "성스러운 씨앗", grade: "normal", attrs: { "聖": 1 }, desc: "처치 시 낮은 확률로 보호막을 얻습니다.", detail: "처치 시 보호막 획득 확률 +6%\n속성: 聖 +1", apply(s) { s.perks.killShieldChance += 0.06; } },
-  { id: "evil_drop", name: "악의 혈방울", grade: "normal", attrs: { "惡": 1 }, desc: "처치 시 낮은 확률로 체력을 회복합니다.", detail: "처치 시 회복 확률 +6%\n속성: 惡 +1", apply(s) { s.perks.killHealChance += 0.06; } },
-  { id: "frostfire_core", name: "서리불꽃 핵", grade: "advanced", attrs: { "氷": 1, "火": 1 }, desc: "둔화된 적에게 화상 피해가 강해집니다.", detail: "둔화 + 화상 상태 적 추가 피해 +35%\n속성: 氷 +1, 火 +1", apply(s) { s.perks.frostfireBonus += 0.35; } },
-  { id: "burning_wind", name: "불타는 순풍", grade: "advanced", attrs: { "火": 1, "風": 1 }, desc: "화상 중인 적을 공격하면 주변에 약한 화상이 전이될 수 있습니다.", detail: "화상 중인 적 공격 시 화상 전이 확률 +12%\n속성: 火 +1, 風 +1", apply(s) { s.perks.burnSpreadChance += 0.12; } },
-  { id: "radiant_wind", name: "광휘질풍", grade: "advanced", attrs: { "風": 1, "光": 1 }, desc: "공격속도가 높을수록 공격 범위가 증가합니다.", detail: "공격속도 증가분 일부가 공격 범위로 전환\n속성: 風 +1, 光 +1", apply(s) { s.perks.speedToArea += 0.18; } },
-  { id: "eclipse_mark", name: "일식의 표식", grade: "advanced", attrs: { "光": 1, "暗": 1 }, desc: "범위 피해가 체력 낮은 적에게 추가 피해를 줍니다.", detail: "범위 피해가 체력 낮은 적에게 추가 피해 +18%\n속성: 光 +1, 暗 +1", apply(s) { s.perks.areaExecute += 0.18; } },
-  { id: "fallen_sanctuary", name: "타락한 성역", grade: "epic", attrs: { "聖": 1, "惡": 1 }, desc: "보호막과 회복 효과가 서로를 강화합니다.", detail: "보호막 획득 시 회복 보조\n회복 발생 시 보호막 보조\n속성: 聖 +1, 惡 +1", apply(s) { s.perks.sanctuaryLoop = true; } },
-  { id: "perfect_focus", name: "완전한 집중", grade: "epic", attrs: { "風": 1, "光": 1 }, desc: "타격 시 공격력 ×1.005. 최대 80중첩. 피격 시 초기화.", detail: "타격 시 공격력 ×1.005\n최대 중첩: 80\n피격 시 중첩 초기화\n속성: 風 +1, 光 +1", apply(s) { s.perks.focusBlade = true; } },
-  { id: "glass_sanctuary", name: "유리성역", grade: "epic", attrs: { "光": 1, "聖": 1 }, desc: "보호막 보유 중 피해 +60%. 보호막이 없으면 받는 피해 증가.", detail: "보호막 보유 중 피해 +60%\n보호막이 없으면 받는 피해 +20%\n속성: 光 +1, 聖 +1", apply(s) { s.perks.glassSanctuary = true; } },
-  { id: "chain_reaction", name: "연쇄 반응", grade: "advanced", attrs: { "風": 1 }, desc: "투사체 적중 시 추가 탄환을 생성할 수 있습니다.", detail: "투사체 적중 시 22% 확률로 추가 탄환\n연쇄 탄환은 다시 연쇄 반응을 만들지 않음\n속성: 風 +1", apply(s) { s.perks.chainChance += 0.22; } },
-  { id: "star_tuning", name: "별의 조율", grade: "epic", attrs: { "光": 1, "風": 1 }, desc: "투사체 적중 시 별빛 폭발. 연쇄 탄환에도 발동 가능.", detail: "투사체 적중 시 22% 확률로 별빛 폭발\n연쇄 반응 탄환에도 발동 가능\n속성: 光 +1, 風 +1", apply(s) { s.perks.starChance += 0.22; } },
-  { id: "curse_crown", name: "저주받은 왕관", grade: "legendary", attrs: { "氷": 1, "火": 1, "風": 1, "光": 1, "暗": 1, "聖": 1, "惡": 1 }, desc: "모든 일반 속성 +1. 최대 HP 감소, 회복량 감소.", detail: "氷 火 風 光 暗 聖 惡 +1\n최대 HP -30\n회복량 -50%\n鬼는 제외", apply(s) { s.perks.cursedCrown = true; } },
-  { id: "overheat_heart", name: "과열 심장", grade: "legendary", attrs: { "火": 2 }, desc: "공격속도 크게 증가. 공격할 때마다 HP를 조금 소모합니다.", detail: "공격속도 +55%\n공격 시 HP 0.2 소모\n속성: 火 +2", apply(s) { s.perks.attackSpeedMul *= 1.55; s.perks.overheat = true; } },
-  { id: "void_feast", name: "심연포식", grade: "legendary", attrs: { "暗": 1, "惡": 1 }, desc: "처형 성공 시 회복하고, 회복 초과분이 공격력으로 전환됩니다.", detail: "처형 성공 시 회복 연계\n초과 회복량 일부가 공격력 버프로 전환\n속성: 暗 +1, 惡 +1", apply(s) { s.perks.voidFeast = true; } },
-  { id: "demon_gate", name: "귀문개방", grade: "legendary", attrs: { "鬼": 2 }, ghost: true, desc: "鬼 +2. 처치 중첩이 강해지지만 피격 시 현재 HP 추가 피해.", detail: "鬼 +2\n처치 시 鬼 중첩 추가 +1\n피격 시 현재 HP 8% 추가 피해", apply(s) { s.perks.demonGate = true; } },
-  { id: "demon_mark", name: "귀왕의 낙인", grade: "legendary", attrs: { "鬼": 1 }, ghost: true, desc: "처치 시 공격력 중첩. 피격 시 큰 폭 감소.", detail: "처치 시 鬼 중첩 기반 공격력 강화\n피격 시 중첩 감소\n속성: 鬼 +1", apply(s) { s.perks.demonMark = true; } },
-  { id: "blood_flame_demon", name: "혈염귀", grade: "epic", attrs: { "火": 1, "暗": 1, "鬼": 1 }, ghost: true, desc: "화상 중인 적 처치와 처형 성공이 鬼 중첩을 밀어줍니다.", detail: "화상 중인 적 처치 시 鬼 중첩 추가\n처형 성공 시 鬼 중첩 추가\n속성: 火 +1, 暗 +1, 鬼 +1", apply(s) { s.perks.bloodFlameDemon = true; } },
-  { id: "holy_demon_scar", name: "귀신성흔", grade: "epic", attrs: { "聖": 1, "鬼": 1 }, ghost: true, desc: "보호막 보유 중 鬼 중첩 증가량 상승. 피격 시 감소 완화.", detail: "보호막 보유 중 鬼 중첩 증가량 상승\n보호막 보유 중 피격 시 鬼 중첩 감소량 완화\n속성: 聖 +1, 鬼 +1", apply(s) { s.perks.holyDemonScar = true; } },
-  { id: "evil_demon_feast", name: "악귀포식", grade: "legendary", attrs: { "惡": 1, "鬼": 1 }, ghost: true, desc: "회복이 발생할 때 鬼 중첩을 얻습니다.", detail: "회복 발생 시 鬼 중첩 +1\n초과 회복 시 鬼 중첩 추가 +1\n속성: 惡 +1, 鬼 +1", apply(s) { s.perks.evilDemonFeast = true; } }
+  {
+    id: "cold_edge",
+    name: "빙결 파편",
+    grade: "basic",
+    attrs: { "氷": 1 },
+    desc: "3초마다 가장 가까운 적에게 얼음 파편을 발사합니다.",
+    detail: "3초마다 얼음 파편 1개 발사\n피해: 현재 무기 피해의 80%\n적중 시 둔화\n氷 4: +1발 / 氷 6: +2발\n속성: 氷 +1",
+    apply(s) { s.perks.slowChance += 0.08; s.perks.iceShard = true; }
+  },
+  {
+    id: "small_flame",
+    name: "유성 불씨",
+    grade: "basic",
+    attrs: { "火": 1 },
+    desc: "일정 주기마다 적 위치에 작은 유성이 떨어집니다.",
+    detail: "4.5초마다 무작위 적 위치에 화염 폭발\n피해: 현재 무기 피해의 140%\n범위: 70\n火 4: 범위 증가 / 火 6: 2회 낙하\n속성: 火 +1",
+    apply(s) { s.perks.burnChance += 0.08; s.perks.fireMeteor = true; }
+  },
+  {
+    id: "light_breeze",
+    name: "칼날 난무",
+    grade: "basic",
+    attrs: { "風": 1 },
+    desc: "일정 주기마다 플레이어 주변으로 바람 칼날을 발사합니다.",
+    detail: "3.5초마다 4방향 바람 칼날 발사\n피해: 현재 무기 피해의 55%\n공격속도 영향을 받음\n風 4: 6방향 / 風 6: 8방향\n속성: 風 +1",
+    apply(s) { s.perks.attackSpeedMul *= 1.08; s.perks.windBlade = true; }
+  },
+  {
+    id: "shimmer",
+    name: "신성 폭발",
+    grade: "basic",
+    attrs: { "光": 1 },
+    desc: "몇 초마다 플레이어 주변에 빛 폭발을 일으킵니다.",
+    detail: "5.5초마다 주변 빛 폭발\n피해: 현재 무기 피해의 120%\n범위: 110\n공격범위 증가 효과 적용\n속성: 光 +1",
+    apply(s) { s.perks.areaMul *= 1.08; s.perks.lightBurst = true; }
+  },
+  {
+    id: "shadow_cut",
+    name: "그림자 추적자",
+    grade: "normal",
+    attrs: { "暗": 1 },
+    desc: "체력이 낮은 적을 추적하는 암흑탄을 생성합니다.",
+    detail: "3.8초마다 체력 비율이 가장 낮은 적에게 유도탄 발사\n피해: 현재 무기 피해의 130%\n체력 35% 이하 적에게 추가 피해\n속성: 暗 +1",
+    apply(s) { s.perks.executeDamage += 0.18; s.perks.shadowSeeker = true; }
+  },
+  {
+    id: "holy_seed",
+    name: "성검 낙하",
+    grade: "normal",
+    attrs: { "聖": 1 },
+    desc: "가장 체력이 높은 적에게 성검이 떨어집니다.",
+    detail: "5초마다 가장 체력이 높은 적 위치에 성검 낙하\n피해: 현재 무기 피해의 220%\n작은 범위 피해\n처치 시 보호막 효과와 연계\n속성: 聖 +1",
+    apply(s) { s.perks.killShieldChance += 0.06; s.perks.holySword = true; }
+  },
+  {
+    id: "evil_drop",
+    name: "흡혈 박쥐",
+    grade: "normal",
+    attrs: { "惡": 1 },
+    desc: "흡혈 박쥐가 적을 공격하고 피해 일부를 회복합니다.",
+    detail: "4초마다 흡혈 박쥐 2마리 발사\n피해: 현재 무기 피해의 70%\n적중 피해의 8% 회복\n惡 4 이상: 박쥐 +1\n속성: 惡 +1",
+    apply(s) { s.perks.killHealChance += 0.06; s.perks.bloodBat = true; }
+  },
+  {
+    id: "frostfire_core",
+    name: "서리불꽃 핵",
+    grade: "advanced",
+    attrs: { "氷": 1, "火": 1 },
+    desc: "얼음 파편과 유성 불씨를 동시에 강화합니다.",
+    detail: "빙결 파편 발사 + 유성 낙하 활성\n둔화 + 화상 상태 적 추가 피해 +35%\n속성: 氷 +1, 火 +1",
+    apply(s) { s.perks.frostfireBonus += 0.35; s.perks.iceShard = true; s.perks.fireMeteor = true; }
+  },
+  {
+    id: "burning_wind",
+    name: "불타는 순풍",
+    grade: "advanced",
+    attrs: { "火": 1, "風": 1 },
+    desc: "바람 칼날과 화염 유성이 화상을 퍼뜨립니다.",
+    detail: "칼날 난무 + 유성 불씨 활성\n화상 중인 적 공격 시 화상 전이 확률 +12%\n속성: 火 +1, 風 +1",
+    apply(s) { s.perks.burnSpreadChance += 0.12; s.perks.windBlade = true; s.perks.fireMeteor = true; }
+  },
+  {
+    id: "radiant_wind",
+    name: "광휘질풍",
+    grade: "advanced",
+    attrs: { "風": 1, "光": 1 },
+    desc: "바람 칼날과 신성 폭발이 함께 발동합니다.",
+    detail: "칼날 난무 + 신성 폭발 활성\n공격속도 증가분 일부가 공격 범위로 전환\n속성: 風 +1, 光 +1",
+    apply(s) { s.perks.speedToArea += 0.18; s.perks.windBlade = true; s.perks.lightBurst = true; }
+  },
+  {
+    id: "eclipse_mark",
+    name: "일식의 표식",
+    grade: "advanced",
+    attrs: { "光": 1, "暗": 1 },
+    desc: "빛 폭발과 그림자 추적자가 적을 마무리합니다.",
+    detail: "신성 폭발 + 그림자 추적자 활성\n범위 피해가 체력 낮은 적에게 추가 피해 +18%\n속성: 光 +1, 暗 +1",
+    apply(s) { s.perks.areaExecute += 0.18; s.perks.lightBurst = true; s.perks.shadowSeeker = true; }
+  },
+  {
+    id: "fallen_sanctuary",
+    name: "타락한 성역",
+    grade: "epic",
+    attrs: { "聖": 1, "惡": 1 },
+    desc: "성검과 흡혈 박쥐가 생존력을 크게 끌어올립니다.",
+    detail: "성검 낙하 + 흡혈 박쥐 활성\n보호막 획득 시 회복 보조\n회복 발생 시 보호막 보조\n속성: 聖 +1, 惡 +1",
+    apply(s) { s.perks.sanctuaryLoop = true; s.perks.holySword = true; s.perks.bloodBat = true; }
+  },
+  {
+    id: "perfect_focus",
+    name: "완전한 집중",
+    grade: "epic",
+    attrs: { "風": 1, "光": 1 },
+    desc: "타격 중첩과 칼날 난무로 화력이 계속 상승합니다.",
+    detail: "타격 시 공격력 ×1.005\n최대 중첩: 80\n피격 시 중첩 초기화\n칼날 난무 활성\n속성: 風 +1, 光 +1",
+    apply(s) { s.perks.focusBlade = true; s.perks.windBlade = true; }
+  },
+  {
+    id: "glass_sanctuary",
+    name: "유리성역",
+    grade: "epic",
+    attrs: { "光": 1, "聖": 1 },
+    desc: "보호막이 있을 때 피해가 폭증하고 빛 폭발이 추가됩니다.",
+    detail: "신성 폭발 활성\n보호막 보유 중 피해 +60%\n보호막이 없으면 받는 피해 +20%\n속성: 光 +1, 聖 +1",
+    apply(s) { s.perks.glassSanctuary = true; s.perks.lightBurst = true; }
+  },
+  {
+    id: "chain_reaction",
+    name: "연쇄 반응",
+    grade: "advanced",
+    attrs: { "風": 1 },
+    desc: "투사체 적중 시 추가 탄환을 생성하고 칼날 난무를 얻습니다.",
+    detail: "투사체 적중 시 22% 확률로 추가 탄환\n연쇄 탄환은 다시 연쇄 반응을 만들지 않음\n칼날 난무 활성\n속성: 風 +1",
+    apply(s) { s.perks.chainChance += 0.22; s.perks.windBlade = true; }
+  },
+  {
+    id: "star_tuning",
+    name: "별의 조율",
+    grade: "epic",
+    attrs: { "光": 1, "風": 1 },
+    desc: "별빛 폭발에 주기적 별무리 폭격이 추가됩니다.",
+    detail: "투사체 적중 시 22% 확률로 별빛 폭발\n연쇄 반응 탄환에도 발동 가능\n6초마다 별무리 폭격\n속성: 光 +1, 風 +1",
+    apply(s) { s.perks.starChance += 0.22; s.perks.starBarrage = true; }
+  },
+  {
+    id: "curse_crown",
+    name: "저주받은 왕관",
+    grade: "legendary",
+    attrs: { "氷": 1, "火": 1, "風": 1, "光": 1, "暗": 1, "聖": 1, "惡": 1 },
+    desc: "모든 일반 속성 +1. 여러 보조 공격을 한꺼번에 깨웁니다.",
+    detail: "氷 火 風 光 暗 聖 惡 +1\n빙결 파편, 유성 불씨, 칼날 난무, 신성 폭발 활성\n최대 HP -30\n회복량 -50%\n鬼는 제외",
+    apply(s) { s.perks.cursedCrown = true; s.perks.iceShard = true; s.perks.fireMeteor = true; s.perks.windBlade = true; s.perks.lightBurst = true; }
+  },
+  {
+    id: "overheat_heart",
+    name: "과열 심장",
+    grade: "legendary",
+    attrs: { "火": 2 },
+    desc: "공격속도가 크게 증가하고 모든 공격에 화염 보조타가 붙습니다.",
+    detail: "공격속도 +55%\n공격 시 HP 0.2 소모\n유성 불씨 활성\n기본 공격 때 추가 화염탄 발사\n속성: 火 +2",
+    apply(s) { s.perks.attackSpeedMul *= 1.55; s.perks.overheat = true; s.perks.fireMeteor = true; s.perks.overheatBolt = true; }
+  },
+  {
+    id: "void_feast",
+    name: "심연포식",
+    grade: "legendary",
+    attrs: { "暗": 1, "惡": 1 },
+    desc: "그림자 추적자와 흡혈 박쥐가 처형과 회복을 연결합니다.",
+    detail: "그림자 추적자 + 흡혈 박쥐 활성\n처형 성공 시 회복 연계\n초과 회복량 일부가 공격력 버프로 전환\n속성: 暗 +1, 惡 +1",
+    apply(s) { s.perks.voidFeast = true; s.perks.shadowSeeker = true; s.perks.bloodBat = true; }
+  },
+  {
+    id: "demon_gate",
+    name: "귀문개방",
+    grade: "legendary",
+    attrs: { "鬼": 2 },
+    ghost: true,
+    desc: "鬼 +2. 주기적으로 거대한 귀참을 휘두릅니다.",
+    detail: "鬼 +2\n6초마다 전방위 귀참\n처치 시 鬼 중첩 추가 +1\n피격 시 현재 HP 8% 추가 피해",
+    apply(s) { s.perks.demonGate = true; s.perks.demonSlash = true; }
+  },
+  {
+    id: "demon_mark",
+    name: "귀왕의 낙인",
+    grade: "legendary",
+    attrs: { "鬼": 1 },
+    ghost: true,
+    desc: "처치 중첩과 귀참으로 판을 터뜨립니다.",
+    detail: "처치 시 鬼 중첩 기반 공격력 강화\n6초마다 귀참\n피격 시 중첩 감소\n속성: 鬼 +1",
+    apply(s) { s.perks.demonMark = true; s.perks.demonSlash = true; }
+  },
+  {
+    id: "blood_flame_demon",
+    name: "혈염귀",
+    grade: "epic",
+    attrs: { "火": 1, "暗": 1, "鬼": 1 },
+    ghost: true,
+    desc: "유성, 그림자, 귀참이 함께 화상 처치를 밀어줍니다.",
+    detail: "유성 불씨 + 그림자 추적자 + 귀참 활성\n화상 중인 적 처치 시 鬼 중첩 추가\n처형 성공 시 鬼 중첩 추가\n속성: 火 +1, 暗 +1, 鬼 +1",
+    apply(s) { s.perks.bloodFlameDemon = true; s.perks.fireMeteor = true; s.perks.shadowSeeker = true; s.perks.demonSlash = true; }
+  },
+  {
+    id: "holy_demon_scar",
+    name: "귀신성흔",
+    grade: "epic",
+    attrs: { "聖": 1, "鬼": 1 },
+    ghost: true,
+    desc: "성검과 귀참이 보호막 빌드를 공격적으로 바꿉니다.",
+    detail: "성검 낙하 + 귀참 활성\n보호막 보유 중 鬼 중첩 증가량 상승\n보호막 보유 중 피격 시 鬼 중첩 감소량 완화\n속성: 聖 +1, 鬼 +1",
+    apply(s) { s.perks.holyDemonScar = true; s.perks.holySword = true; s.perks.demonSlash = true; }
+  },
+  {
+    id: "evil_demon_feast",
+    name: "악귀포식",
+    grade: "legendary",
+    attrs: { "惡": 1, "鬼": 1 },
+    ghost: true,
+    desc: "흡혈 박쥐와 귀참으로 회복과 중첩을 동시에 굴립니다.",
+    detail: "흡혈 박쥐 + 귀참 활성\n회복 발생 시 鬼 중첩 +1\n초과 회복 시 鬼 중첩 추가 +1\n속성: 惡 +1, 鬼 +1",
+    apply(s) { s.perks.evilDemonFeast = true; s.perks.bloodBat = true; s.perks.demonSlash = true; }
+  }
 ];
