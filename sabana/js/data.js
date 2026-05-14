@@ -657,7 +657,7 @@ const AUGMENTS = [
     attrs: { 火: 2 },
     desc: "공격속도가 크게 증가하고 모든 공격에 화염 보조타가 붙습니다.",
     detail:
-      "공격속도 +55%\n공격 시 HP 0.2 소모\n유성 불씨 활성\n기본 공격 때 추가 화염탄 발사\n속성: 火 +2",
+  "공격속도 +55%\n유성 불씨 활성\n기본 공격 때 추가 화염탄 발사\n속성: 火 +2",
     apply(s) {
       s.perks.attackSpeedMul *= 1.55;
       s.perks.overheat = true;
@@ -665,6 +665,20 @@ const AUGMENTS = [
       s.perks.overheatBolt = true;
     },
   },
+
+{
+  id: "blood_furnace",
+  name: "피의 화로",
+  grade: "legendary",
+  attrs: { 火: 1, 惡: 1 },
+  desc: "체력이 계속 소모되지만, 모든 피해에 흡혈이 붙습니다.",
+  detail:
+    "초당 현재 HP의 0.6% 소모\n모든 직접 피해의 3% 회복\n화상 피해의 8% 회복\nHP 30% 이하일 때 흡혈량 2배\n속성: 火 +1, 惡 +1",
+  apply(s) {
+    s.perks.bloodFurnace = true;
+  },
+},
+  
   {
     id: "void_feast",
     name: "심연포식",
