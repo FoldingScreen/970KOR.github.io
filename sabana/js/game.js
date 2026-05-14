@@ -108,7 +108,7 @@ function rebuildStats() {
     healMul: 1 + u.heal_eff * 0.15,
     defense: Math.min(0.7, g.defense + u.defense * 0.06),
     magnetBonus: lv - 1 + g.magnet + u.magnet * 40,
-    knockbackMul: 1 + g.knockback + u.knockback * 0.08,
+    knockbackMul: 1 + g.knockback + (u.knockback || 0) * 0.08,
     synergyAmp: 1 + u.syn_amp * 0.03,
   };
   state.perks = {
@@ -908,17 +908,18 @@ function update(dt) {
     return;
   }
   updateBuffs(dt);
-updatePlayer(dt);
-updateWeapon(dt);
-updateAugmentAttacks(dt);
-updateTimedBossSpawns();
-updateSpawns(dt);
-updateEnemies(dt);
-updateProjectiles(dt);
-updateEnemyProjectiles(dt);
-updateGemsAndDrops(dt);
-updateEffects(dt);
-updateFloating(dt);
+  updatePassiveRegen(dt);
+  updatePlayer(dt);
+  updateWeapon(dt);
+  updateAugmentAttacks(dt);
+  updateTimedBossSpawns();
+  updateSpawns(dt);
+  updateEnemies(dt);
+  updateProjectiles(dt);
+  updateEnemyProjectiles(dt);
+  updateGemsAndDrops(dt);
+  updateEffects(dt);
+  updateFloating(dt);
 }
 function updatePlayer(dt) {
   state.player.invuln = Math.max(0, state.player.invuln - dt);
@@ -2395,6 +2396,22 @@ function healPlayer(amount) {
       state.stacks.demon + 1 + (over > 0 ? 1 : 0),
     );
 }
+
+function updatePassiveRegen(dt) {
+  if (!state || !state.player) return;
+
+  const regenLevel = meta.upgrades.regen || 0;
+  if (regenLevel <= 0) return;
+  if (state.player.hp <= 0) return;
+  if (state.player.hp >= state.player.maxHp) return;
+
+  const regenPerSec = regenLevel * 0.35;
+  const healEff = state.base?.healMul || 1;
+  const value = regenPerSec * healEff * dt;
+
+  state.player.hp = Math.min(state.player.maxHp, state.player.hp + value);
+}
+
 function applyEnemyKnockback(e, sx, sy, power) {
   const dx = e.x - sx,
     dy = e.y - sy,
