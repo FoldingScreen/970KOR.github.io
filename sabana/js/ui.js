@@ -322,36 +322,61 @@ function renderSide() {
     ui.sideStacks.innerHTML = `<div class="small">없음</div>`;
     return;
   }
+
   const w = getWeaponStats();
-  ui.sideWeapon.innerHTML = `<strong>${state.weapon.name}</strong><br><span class="small">${weaponDetailText(w)}</span>`;
+  const active = Array.from(state.activeSynergies);
+
+  ui.sideWeapon.innerHTML = `
+    <strong>${state.weapon.name}</strong><br>
+    <span class="small">${weaponDetailText(w)}</span>
+  `;
+
   ui.sideStats.innerHTML = `
     <div class="list-item">공격력 배율 <strong>x${statDamageMul().toFixed(2)}</strong></div>
     <div class="list-item">공격속도 <strong>x${statAttackSpeedMul().toFixed(2)}</strong></div>
     <div class="list-item">공격범위 <strong>x${statAreaMul().toFixed(2)}</strong></div>
     <div class="list-item">이동속도 <strong>x${(state.player.speed / 220).toFixed(2)}</strong></div>
     <div class="list-item">방어율 <strong>${Math.round(state.base.defense * 100)}%</strong></div>
-    <div class="list-item">자석범위 <strong>${Math.round(state.player.magnetRange)}</strong></div>`;
-  const attrs = getAttrCounts();
-ui.sideSynergies.innerHTML = `
-  <div class="small" style="margin-bottom:6px;">활성</div>
-  ${
-    active.length
-      ? active.map(key => {
-        const info = SYNERGY_INFO[key] || { name: key, short: "" };
-        return `<div class="list-item"><strong>${info.name}</strong><br><span class="small">${info.short}</span></div>`;
-      }).join("")
-      : `<div class="small">아직 발현 없음</div>`
-  }
+    <div class="list-item">자석범위 <strong>${Math.round(state.player.magnetRange)}</strong></div>
+  `;
 
-  <div class="small" style="margin:10px 0 6px;">연계 가능</div>
-  ${renderPotentialSynergies()}
-`;
-  ui.sideAugments.innerHTML = state.augments.length ? state.augments.map(a => `<div class="list-item"><strong class="${GRADE_CLASS[a.grade]}">${a.name} ${renderAttrInline(a.attrs)}</strong><br><span class="small">${a.desc}</span></div>`).join("") : `<div class="small">없음</div>`;
+  ui.sideAttributes.innerHTML = renderAttributeLine();
+
+  ui.sideSynergies.innerHTML = `
+    <div class="small" style="margin-bottom:6px;">활성</div>
+    ${
+      active.length
+        ? active.map(key => {
+            const info = SYNERGY_INFO[key] || { name: key, short: "" };
+            return `
+              <div class="list-item">
+                <strong>${info.name}</strong><br>
+                <span class="small">${info.short}</span>
+              </div>
+            `;
+          }).join("")
+        : `<div class="small">아직 발현 없음</div>`
+    }
+
+    <div class="small" style="margin:10px 0 6px;">연계 가능</div>
+    ${renderPotentialSynergies()}
+  `;
+
+  ui.sideAugments.innerHTML = state.augments.length
+    ? state.augments.map(a => `
+      <div class="list-item">
+        <strong class="${GRADE_CLASS[a.grade]}">${a.name} ${renderAttrInline(a.attrs)}</strong><br>
+        <span class="small">${a.desc}</span>
+      </div>
+    `).join("")
+    : `<div class="small">없음</div>`;
+
   ui.sideStacks.innerHTML = `
     <div class="list-item">집중 중첩 <strong>${state.stacks.focus}</strong> / 80</div>
     <div class="list-item">鬼 중첩 <strong>${state.stacks.demon}</strong> / ${state.synergy.demonMax || 0}</div>
     <div class="list-item">보석 획득 <strong>${state.itemStats.gems}</strong>개</div>
-    <div class="list-item">버프 <strong>${state.buffs.length}</strong>개 활성</div>`;
+    <div class="list-item">버프 <strong>${state.buffs.length}</strong>개 활성</div>
+  `;
 }
 
 function weaponDetailText(w) {
@@ -363,22 +388,45 @@ function weaponDetailText(w) {
 
 function renderPauseDetails() {
   if (!state) return "";
-  const attrs = getAttrCounts();
+
   const w = getWeaponStats();
-  ui.sideAttributes.innerHTML = renderAttributeLine();
-const potentialSynergyHtml = getPotentialSynergies().length
-  ? getPotentialSynergies().map(item => `
-    <div class="detail-card">
-      <strong>${item.name}</strong><br>
-      조건: ${item.cond}<br>
-      부족: ${item.missingText}<br>
-      ${item.short}
-    </div>
-  `).join("")
-  : `<div class="detail-card">근접한 시너지 없음</div>`;
-  const augmentHtml = state.augments.length ? state.augments.map(a => `<div class="detail-card"><strong class="${GRADE_CLASS[a.grade]}">${a.name} ${renderAttrInline(a.attrs)}</strong><br>${a.desc}</div>`).join("") : `<div class="detail-card">없음</div>`;
+  const attrHtml = renderAttributeLine();
+
+  const activeSynergyHtml = Array.from(state.activeSynergies).length
+    ? Array.from(state.activeSynergies).map(key => {
+        const info = SYNERGY_INFO[key] || { name: key, short: "" };
+        return `
+          <div class="detail-card">
+            <strong>${info.name}</strong><br>
+            ${info.short}
+          </div>
+        `;
+      }).join("")
+    : `<div class="detail-card">아직 발현 없음</div>`;
+
+  const potentialSynergyHtml = getPotentialSynergies().length
+    ? getPotentialSynergies().map(item => `
+      <div class="detail-card">
+        <strong>${item.name}</strong><br>
+        조건: ${item.cond}<br>
+        부족: ${item.missingText}<br>
+        ${item.short}
+      </div>
+    `).join("")
+    : `<div class="detail-card">근접한 시너지 없음</div>`;
+
+  const augmentHtml = state.augments.length
+    ? state.augments.map(a => `
+      <div class="detail-card">
+        <strong class="${GRADE_CLASS[a.grade]}">${a.name} ${renderAttrInline(a.attrs)}</strong><br>
+        ${a.desc}
+      </div>
+    `).join("")
+    : `<div class="detail-card">없음</div>`;
+
   return `
-    <h3>현재 스탯</h3><div class="detail-grid">
+    <h3>현재 스탯</h3>
+    <div class="detail-grid">
       <div class="detail-card">공격력 배율 <strong>x${statDamageMul().toFixed(2)}</strong></div>
       <div class="detail-card">공격속도 <strong>x${statAttackSpeedMul().toFixed(2)}</strong></div>
       <div class="detail-card">공격범위 <strong>x${statAreaMul().toFixed(2)}</strong></div>
@@ -386,21 +434,39 @@ const potentialSynergyHtml = getPotentialSynergies().length
       <div class="detail-card">방어율 <strong>${Math.round(state.base.defense * 100)}%</strong></div>
       <div class="detail-card">자석범위 <strong>${Math.round(state.player.magnetRange)}</strong></div>
     </div>
-    <h3>무기 상세</h3><div class="detail-grid"><div class="detail-card">${weaponDetailText(w)}</div></div>
-    <h3>현재 속성</h3>${attrHtml}
+
+    <h3>무기 상세</h3>
+    <div class="detail-grid">
+      <div class="detail-card">${weaponDetailText(w)}</div>
+    </div>
+
+    <h3>현재 속성</h3>
+    ${attrHtml}
+
+    <h3>활성 시너지</h3>
+    <div class="detail-grid">
+      ${activeSynergyHtml}
+    </div>
+
     <h3>연계 가능 시너지</h3>
-<div class="detail-grid">
-  ${potentialSynergyHtml}
-</div>
-    <h3>보유 증강</h3><div class="detail-grid">${augmentHtml}</div>
-    <h3>중첩 / 버프</h3><div class="detail-grid">
+    <div class="detail-grid">
+      ${potentialSynergyHtml}
+    </div>
+
+    <h3>보유 증강</h3>
+    <div class="detail-grid">
+      ${augmentHtml}
+    </div>
+
+    <h3>중첩 / 버프</h3>
+    <div class="detail-grid">
       <div class="detail-card">집중 중첩 <strong>${state.stacks.focus}</strong> / 80</div>
       <div class="detail-card">鬼 중첩 <strong>${state.stacks.demon}</strong> / ${state.synergy.demonMax || 0}</div>
       <div class="detail-card">보석 획득 <strong>${state.itemStats.gems}</strong>개</div>
       <div class="detail-card">버프 <strong>${state.buffs.length}</strong>개 활성</div>
-    </div>`;
+    </div>
+  `;
 }
-
 function renderAttrBadges(attrs) {
   return Object.entries(attrs || {}).map(([k, v]) => `<span class="badge">${k} +${v}</span>`).join("");
 }
