@@ -557,8 +557,12 @@ function startCombat() {
 
   state.running = true;
   state.paused = false;
+  state.timeMs = Math.max(0, state.timeMs || 0);
+  state.spawnMs = 0;
 
-  lastTs = performance.now();
+  // 첫 프레임에서 음수 dt 방지
+  lastTs = 0;
+
   cancelAnimationFrame(loopId);
 
   draw();
@@ -879,7 +883,13 @@ function pickByGrade(pool) {
 
 function loop(ts) {
   try {
-    const dt = Math.min(0.04, (ts - lastTs) / 1000);
+    if (!lastTs) {
+      lastTs = ts;
+    }
+
+    const rawDt = (ts - lastTs) / 1000;
+    const dt = Math.min(0.04, Math.max(0, rawDt));
+
     lastTs = ts;
 
     if (state && state.running && !state.paused) {
