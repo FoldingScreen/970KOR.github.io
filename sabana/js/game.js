@@ -543,10 +543,27 @@ function openWeaponSelect() {
   renderWeapons();
 }
 function startCombat() {
+  if (!state || !state.weapon) {
+    console.error("startCombat 실패: state 또는 weapon 없음", state);
+    showToast("게임 시작 실패: 무기 정보 없음");
+    return;
+  }
+
+  weaponOverlay.classList.remove("show");
+  choiceOverlay.classList.remove("show");
+  pauseOverlay.classList.remove("show");
+  resultOverlay.classList.remove("show");
+  titleOverlay.classList.remove("show");
+
   state.running = true;
   state.paused = false;
+
   lastTs = performance.now();
   cancelAnimationFrame(loopId);
+
+  draw();
+  updateUi();
+
   loopId = requestAnimationFrame(loop);
 }
 function openGrowthChoice() {
@@ -861,12 +878,28 @@ function pickByGrade(pool) {
 }
 
 function loop(ts) {
-  const dt = Math.min(0.04, (ts - lastTs) / 1000);
-  lastTs = ts;
-  if (state && state.running && !state.paused) update(dt);
-  draw();
-  updateUi();
-  if (state && state.running) loopId = requestAnimationFrame(loop);
+  try {
+    const dt = Math.min(0.04, (ts - lastTs) / 1000);
+    lastTs = ts;
+
+    if (state && state.running && !state.paused) {
+      update(dt);
+    }
+
+    draw();
+    updateUi();
+
+    if (state && state.running) {
+      loopId = requestAnimationFrame(loop);
+    }
+  } catch (err) {
+    console.error("게임 루프 오류:", err);
+    showToast("게임 오류 발생: 콘솔 확인 필요");
+
+    if (state) {
+      state.paused = true;
+    }
+  }
 }
 function update(dt) {
   state.timeMs += dt * 1000;
@@ -2708,9 +2741,14 @@ function drawBossTopBar() {
 }
 
 function draw() {
+  if (!ctx || !canvas) return;
+
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawGrid();
-  if (state) drawWeaponAuras();
+
+  if (state && state.weapon) {
+    drawWeaponAuras();
+  }
 for (const g of state?.gems || []) {
   drawDiamond(g.x, g.y, g.r + 1, "#22d3ee", "rgba(255,255,255,.65)");
 }
@@ -2806,12 +2844,16 @@ function drawGrid() {
   }
 }
 function drawWeaponAuras() {
+  if (!state || !state.weapon) return;
+
   if (state.weapon.id === "flame_heart") {
     const w = getWeaponStats();
+
     ctx.beginPath();
     ctx.fillStyle = "rgba(251,113,133,.08)";
     ctx.arc(state.player.x, state.player.y, w.radius, 0, Math.PI * 2);
     ctx.fill();
+
     ctx.beginPath();
     ctx.strokeStyle = "rgba(251,113,133,.38)";
     ctx.lineWidth = 2;
@@ -2819,19 +2861,25 @@ function drawWeaponAuras() {
     ctx.stroke();
   }
 }
+
 function drawOrbitWeapons() {
+  if (!state || !state.weapon) return;
   if (state.weapon.id !== "orbit_axe") return;
+
   const w = getWeaponStats();
+
   for (let i = 0; i < w.count; i++) {
     const a = (state.orbitAngle || 0) + (Math.PI * 2 * i) / w.count;
-    const x = state.player.x + Math.cos(a) * w.orbitRadius,
-      y = state.player.y + Math.sin(a) * w.orbitRadius;
+    const x = state.player.x + Math.cos(a) * w.orbitRadius;
+    const y = state.player.y + Math.sin(a) * w.orbitRadius;
+
     ctx.beginPath();
     ctx.fillStyle = "#fbbf24";
     ctx.arc(x, y, w.axeRadius, 0, Math.PI * 2);
     ctx.fill();
   }
 }
+
 function statDamageMul() {
   const focusMul = state.perks.focusBlade
     ? Math.pow(1.005, state.stacks.focus)
