@@ -909,6 +909,7 @@ function update(dt) {
   }
   updateBuffs(dt);
   updatePassiveRegen(dt);
+  updateBloodFurnace(dt);
   updatePlayer(dt);
   updateWeapon(dt);
   updateAugmentAttacks(dt);
@@ -1652,7 +1653,9 @@ function updateEnemies(dt) {
 
     if (e.burnTime > 0) {
       e.burnTime -= dt;
-      e.hp -= e.burnDps * dt;
+      const burnDamage = e.burnDps * dt;
+e.hp -= burnDamage;
+applyBloodFurnaceLifesteal(burnDamage, ["burn"]);
 
       if (e.hp <= 0) {
         killEnemy(e, ["burn"]);
@@ -1951,6 +1954,7 @@ function hitEnemy(
 
   e.hp -= dmg;
   addFloating(e.x, e.y, Math.round(dmg), "#fef3c7");
+  applyBloodFurnaceLifesteal(dmg, tags);
 
   if (tags.includes("lifesteal")) healPlayer(dmg * 0.08);
   if (tags.includes("holy") && Math.random() < 0.1)
@@ -2397,6 +2401,22 @@ function healPlayer(amount) {
     );
 }
 
+function applyBloodFurnaceLifesteal(damage, tags = []) {
+  if (!state || !state.perks.bloodFurnace) return;
+  if (!damage || damage <= 0) return;
+
+  let rate = tags.includes("burn") ? 0.08 : 0.03;
+
+  if (state.player.hp <= state.player.maxHp * 0.3) {
+    rate *= 2;
+  }
+
+  const heal = damage * rate;
+
+  // healPlayer를 쓰면 惡/鬼 회복 연계와 자연스럽게 연결됨
+  healPlayer(heal);
+}
+
 function updatePassiveRegen(dt) {
   if (!state || !state.player) return;
 
@@ -2410,6 +2430,17 @@ function updatePassiveRegen(dt) {
   const value = regenPerSec * healEff * dt;
 
   state.player.hp = Math.min(state.player.maxHp, state.player.hp + value);
+}
+
+function updateBloodFurnace(dt) {
+  if (!state || !state.player || !state.perks.bloodFurnace) return;
+  if (state.player.hp <= 1) return;
+
+  const drainPerSec = state.player.hp * 0.006;
+  const drain = drainPerSec * dt;
+
+  // 최소 1HP는 남겨서 자해로 즉사하지 않게 처리
+  state.player.hp = Math.max(1, state.player.hp - drain);
 }
 
 function applyEnemyKnockback(e, sx, sy, power) {
