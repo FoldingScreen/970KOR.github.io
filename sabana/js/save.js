@@ -8,7 +8,6 @@ const firebaseConfig = {
 };
 
 if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-
 const db = firebase.firestore();
 
 let linkedUser = "";
@@ -19,29 +18,17 @@ function getLinkedUser() {
 }
 
 function sabanaUserRef() {
-  return db
-    .collection("events")
-    .doc(SABANA_EVENT_ID)
-    .collection("users")
-    .doc(linkedUser);
+  return db.collection("events").doc(SABANA_EVENT_ID).collection("users").doc(linkedUser);
 }
 
 function defaultMeta() {
   const upgrades = {};
   Object.values(LABS).flat().forEach(([id]) => upgrades[id] = 0);
-
-  return {
-    coins: 0,
-    bestTimeMs: 0,
-    bestKills: 0,
-    totalCoins: 0,
-    upgrades
-  };
+  return { coins: 0, bestTimeMs: 0, bestKills: 0, totalCoins: 0, upgrades };
 }
 
 async function loadMetaFromFirestore() {
   linkedUser = getLinkedUser();
-
   if (!linkedUser) {
     alert("970KOR 로그인 후 이용할 수 있습니다.");
     location.href = "../";
@@ -50,36 +37,28 @@ async function loadMetaFromFirestore() {
 
   const ref = sabanaUserRef();
   const snap = await ref.get();
-
   if (!snap.exists) {
     const fresh = defaultMeta();
-
     await ref.set({
       nickname: linkedUser,
       ...fresh,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
-
     return fresh;
   }
 
   const base = defaultMeta();
   const saved = snap.data() || {};
-
   return {
     ...base,
     ...saved,
-    upgrades: {
-      ...base.upgrades,
-      ...(saved.upgrades || {})
-    }
+    upgrades: { ...base.upgrades, ...(saved.upgrades || {}) }
   };
 }
 
 async function saveMeta() {
   if (!linkedUser) return;
-
   try {
     await sabanaUserRef().set({
       nickname: linkedUser,
@@ -92,6 +71,6 @@ async function saveMeta() {
     }, { merge: true });
   } catch (err) {
     console.error("SABANA 저장 실패", err);
-    showToast("저장 실패: 네트워크를 확인하세요.");
+    if (typeof showToast === "function") showToast("저장 실패: 네트워크를 확인하세요.");
   }
 }
