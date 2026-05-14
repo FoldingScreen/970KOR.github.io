@@ -89,6 +89,10 @@ drops: [],
 effects: [],
 floating: [],
 itemStats: { total: 0, gems: 0, legendary: 0 },
+damageStats: {
+  total: 0,
+  bySource: {}
+},
 augmentTimers: {},
 bossFlags: {}
   };
@@ -149,6 +153,27 @@ function rebuildStats() {
   state.player.magnetRange = 90 + state.base.magnetBonus;
   state.player.hp = Math.min(state.player.hp, state.player.maxHp);
   recalcSynergies();
+}
+
+function recordDamage(sourceId, sourceName, amount) {
+  if (!state || !state.damageStats) return;
+  if (!amount || amount <= 0) return;
+
+  const id = sourceId || "unknown";
+  const name = sourceName || "기타 피해";
+
+  if (!state.damageStats.bySource[id]) {
+    state.damageStats.bySource[id] = {
+      id,
+      name,
+      damage: 0,
+      hits: 0
+    };
+  }
+
+  state.damageStats.bySource[id].damage += amount;
+  state.damageStats.bySource[id].hits += 1;
+  state.damageStats.total += amount;
 }
 
 function getAttrCounts() {
@@ -338,16 +363,17 @@ function onSynergyFirstActivated(key) {
   if (key === "fire6") for (const e of state.enemies) applyBurn(e, 18, 4);
   if (key === "wind6") addTimedBuff("attackSpeed", 2.0, 10);
   if (key === "light6")
-    damageArea(
-      state.player.x,
-      state.player.y,
-      999,
-      180,
-      40,
-      ["light", "area"],
-      true,
-      "#fde68a",
-    );
+damageArea(
+  state.player.x,
+  state.player.y,
+  w.radius,
+  w.damage,
+  w.knockback,
+  w.tags,
+  false,
+  "#fb7185",
+  { id: state.weapon.id, name: state.weapon.name }
+);
   if (key === "dark6")
     for (const e of state.enemies) {
       if (e.hp / e.maxHp <= 0.35 && !e.elite) e.hp = 0;
@@ -1004,7 +1030,17 @@ function updateWeapon(dt) {
           Math.hypot(e.x - ox, e.y - oy) < e.r + w.axeRadius
         ) {
           e.hitCd = 0.25;
-          hitEnemy(e, w.damage, w.tags, w.knockback, ox, oy, 0);
+          hitEnemy(
+          e,
+  w.damage,
+  w.tags,
+  w.knockback,
+  ox,
+  oy,
+  0,
+  null,
+  { id: state.weapon.id, name: state.weapon.name }
+);
         }
     }
   }
@@ -1225,6 +1261,10 @@ function fireAugmentProjectiles(
       life: 2.2,
       allowChain: true,
       depth: 0,
+      source: {
+  id: state.weapon.id,
+  name: state.weapon.name
+},
     });
   }
 }
@@ -1900,16 +1940,7 @@ function updateProjectiles(dt) {
       p.y < canvas.height + 60,
   );
 }
-function hitEnemy(
-  e,
-  amount,
-  tags = [],
-  knockback = 0,
-  sx = state.player.x,
-  sy = state.player.y,
-  depth = 0,
-  projectile = null,
-) {
+function hitEnemy(e, amount, tags = [], knockback = 0, sx = state.player.x, sy = state.player.y, depth = 0, projectile = null, source = null) {
   let dmg = amount;
 
   if (e.hp / e.maxHp <= 0.35) dmg *= 1 + state.perks.executeDamage;
@@ -1952,8 +1983,16 @@ function hitEnemy(
     }
   }
 
-  e.hp -= dmg;
-  addFloating(e.x, e.y, Math.round(dmg), "#fef3c7");
+const actualDamage = Math.max(0, Math.min(dmg, e.hp));
+
+e.hp -= dmg;
+addFloating(e.x, e.y, Math.round(dmg), "#fef3c7");
+
+recordDamage(
+  source?.id || projectile?.source?.id || state.weapon?.id || "unknown",
+  source?.name || projectile?.source?.name || state.weapon?.name || "기타 피해",
+  actualDamage
+);
   applyBloodFurnaceLifesteal(dmg, tags);
 
   if (tags.includes("lifesteal")) healPlayer(dmg * 0.08);
@@ -2318,21 +2357,12 @@ function applyDrop(item) {
   }
   showToast(`아이템 획득: ${item.name}`);
 }
-function damageArea(
-  x,
-  y,
-  radius,
-  damage,
-  knockback,
-  tags = ["area"],
-  showEffect = true,
-  color = "#facc15",
-) {
+function damageArea(x, y, radius, damage, knockback, tags = ["area"], showEffect = true, color = "#facc15", source = null) {
   if (showEffect)
     state.effects.push({ x, y, radius, life: 0.25, maxLife: 0.25, color });
   for (const e of state.enemies)
     if (Math.hypot(e.x - x, e.y - y) < radius + e.r)
-      hitEnemy(e, damage, tags, knockback, x, y, 1);
+      hitEnemy(e, damage, tags, knockback, x, y, 1, null, source);
 }
 function damagePlayer(amount, sourceX, sourceY) {
   if (state.player.invuln > 0) return;
@@ -2982,7 +3012,9 @@ async function endGame(success) {
   state.rewardClaimed = true;
   await saveMeta();
   resultTitle.textContent = success ? "20분 생존 성공!" : "사망";
-  resultDesc.innerHTML = `생존 시간: <strong>${formatTime(state.timeMs)}</strong><br>레벨: <strong>${state.level >= MAX_LEVEL ? "MAX" : state.level}</strong><br>처치 수: <strong>${state.kills}</strong><br>증강 수: <strong>${state.augments.length}</strong><br>발현 시너지 수: <strong>${state.activeSynergies.size}</strong><br>획득 아이템: <strong>${state.itemStats.total}</strong><br>획득 보석: <strong>${state.itemStats.gems}</strong><br>전투 중 코인: <strong>${state.runCoins}</strong><br>정산 코인: <strong>${earned - state.runCoins}</strong><br>${jackpot ? `<strong style="color:#facc15;">대박 보상 2배 발동!</strong><br>` : ""}총 획득 코인: <strong>${earned}</strong><br>보유 코인: <strong>${Math.floor(meta.coins)}</strong>`;
+  resultDesc.innerHTML = `생존 시간: <strong>${formatTime(state.timeMs)}</strong><br>레벨: <strong>${state.level >= MAX_LEVEL ? "MAX" : state.level}</strong><br>처치 수: <strong>${state.kills}</strong><br>증강 수: <strong>${state.augments.length}</strong><br>발현 시너지 수: <strong>${state.activeSynergies.size}</strong><br>획득 아이템: <strong>${state.itemStats.total}</strong><br>획득 보석: <strong>${state.itemStats.gems}</strong><br>전투 중 코인: <strong>${state.runCoins}</strong><br>정산 코인: <strong>${earned - state.runCoins}</strong><br>${jackpot ? `<strong style="color:#facc15;">대박 보상 2배 발동!</strong><br>` : ""}총 획득 코인: <strong>${earned}</strong><br>보유 코인: <strong>${Math.floor(meta.coins)}</strong>
+  ${renderRunSummaryHtml()}
+  `;
   resultOverlay.classList.add("show");
 }
 function pauseGame() {
@@ -3136,6 +3168,71 @@ function getEnemiesSortedByDistance() {
         Math.hypot(b.x - state.player.x, b.y - state.player.y),
     );
 }
+
+function renderRunSummaryHtml() {
+  if (!state) return "";
+
+  const damageList = Object.values(state.damageStats?.bySource || {})
+    .sort((a, b) => b.damage - a.damage);
+
+  const totalDamage = state.damageStats?.total || 0;
+
+  const damageHtml = damageList.length
+    ? damageList.map(item => {
+        const percent = totalDamage > 0 ? (item.damage / totalDamage) * 100 : 0;
+
+        return `
+          <div class="result-row">
+            <span>${item.name}</span>
+            <strong>${Math.round(item.damage).toLocaleString()} / ${percent.toFixed(1)}%</strong>
+          </div>
+        `;
+      }).join("")
+    : `<div class="small">기록된 데미지 없음</div>`;
+
+  const augmentHtml = state.augments.length
+    ? state.augments.map(a => `
+      <span class="result-chip ${GRADE_CLASS[a.grade]}">${a.name}</span>
+    `).join("")
+    : `<span class="small">없음</span>`;
+
+  const synergyHtml = Array.from(state.activeSynergies).length
+    ? Array.from(state.activeSynergies).map(key => {
+        const info = SYNERGY_INFO[key] || { name: key };
+        return `<span class="result-chip">${info.name}</span>`;
+      }).join("")
+    : `<span class="small">없음</span>`;
+
+  return `
+    <div class="result-summary">
+      <h3>최종 스탯</h3>
+      <div class="result-grid">
+        <div>공격력 배율 <strong>x${statDamageMul().toFixed(2)}</strong></div>
+        <div>공격속도 <strong>x${statAttackSpeedMul().toFixed(2)}</strong></div>
+        <div>공격범위 <strong>x${statAreaMul().toFixed(2)}</strong></div>
+        <div>이동속도 <strong>x${(state.player.speed / 220).toFixed(2)}</strong></div>
+        <div>방어율 <strong>${Math.round(state.base.defense * 100)}%</strong></div>
+        <div>자석범위 <strong>${Math.round(state.player.magnetRange)}</strong></div>
+      </div>
+
+      <h3>보유 증강</h3>
+      <div class="result-chip-row">
+        ${augmentHtml}
+      </div>
+
+      <h3>활성 시너지</h3>
+      <div class="result-chip-row">
+        ${synergyHtml}
+      </div>
+
+      <h3>데미지 기여도</h3>
+      <div class="result-damage-list">
+        ${damageHtml}
+      </div>
+    </div>
+  `;
+}
+
 function weightedPick(list) {
   const total = list.reduce((sum, item) => sum + item.weight, 0);
   let r = Math.random() * total;
