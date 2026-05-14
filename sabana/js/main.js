@@ -91,8 +91,27 @@ canvas.addEventListener("pointercancel", e => {
 pauseBtn.addEventListener("click", pauseGame);
 
 window.addEventListener("keydown", e => {
+  const blockScrollKeys = [
+    "Space",
+    "ArrowUp",
+    "ArrowDown",
+    "ArrowLeft",
+    "ArrowRight"
+  ];
+
+  if (blockScrollKeys.includes(e.code)) {
+    e.preventDefault();
+  }
+
   keys.add(e.code);
-  if ((e.code === "Escape" || e.code === "KeyP") && state && state.running) {
+
+  if (
+    (e.code === "Escape" || e.code === "KeyP") &&
+    state &&
+    state.running
+  ) {
+    e.preventDefault();
+
     if (state.paused) resumeGame();
     else pauseGame();
   }
