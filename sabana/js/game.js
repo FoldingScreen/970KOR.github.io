@@ -952,7 +952,7 @@ function updateWeapon(dt) {
     const w = getWeaponStats();
     if (state.attackMs <= 0) {
       state.attackMs = w.intervalMs;
-      if (state.perks.overheat) damagePlayerRaw(0.2);
+      //if (state.perks.overheat) damagePlayerRaw(0.2);
       fireProjectiles(w);
       if (state.perks.overheatBolt) fireOverheatBolt(w);
     }
@@ -971,7 +971,7 @@ function updateWeapon(dt) {
         w.tags,
         false,
       );
-      if (state.perks.overheat) damagePlayerRaw(0.2);
+      //if (state.perks.overheat) damagePlayerRaw(0.2);
     }
     if (w.pulse) {
       state.attackMs -= dt * 1000;
