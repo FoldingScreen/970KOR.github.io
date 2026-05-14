@@ -291,6 +291,27 @@ function renderPotentialSynergies() {
   `).join("");
 }
 
+function renderAttributeLine() {
+  if (!state) return `<span class="attr-empty">없음</span>`;
+
+  const attrs = getAttrCounts();
+  const activeAttrs = ALL_ATTRS.filter(a => (attrs[a] || 0) > 0);
+
+  if (!activeAttrs.length) {
+    return `<span class="attr-empty">없음</span>`;
+  }
+
+  return `
+    <div class="attr-line">
+      ${activeAttrs.map(a => `
+        <span class="attr-chip">
+          ${a} <strong>${attrs[a]}</strong>
+        </span>
+      `).join("")}
+    </div>
+  `;
+}
+
 function renderSide() {
   if (!state) {
     ui.sideWeapon.innerHTML = "메인 화면";
@@ -344,7 +365,7 @@ function renderPauseDetails() {
   if (!state) return "";
   const attrs = getAttrCounts();
   const w = getWeaponStats();
-  const attrHtml = ALL_ATTRS.filter(a => (attrs[a] || 0) > 0).map(a => `<div class="detail-card">${a} ${ATTR_NAMES[a]} <strong>${attrs[a]}</strong></div>`).join("") || `<div class="detail-card">없음</div>`;
+  ui.sideAttributes.innerHTML = renderAttributeLine();
 const potentialSynergyHtml = getPotentialSynergies().length
   ? getPotentialSynergies().map(item => `
     <div class="detail-card">
@@ -366,7 +387,7 @@ const potentialSynergyHtml = getPotentialSynergies().length
       <div class="detail-card">자석범위 <strong>${Math.round(state.player.magnetRange)}</strong></div>
     </div>
     <h3>무기 상세</h3><div class="detail-grid"><div class="detail-card">${weaponDetailText(w)}</div></div>
-    <h3>현재 속성</h3><div class="detail-grid">${attrHtml}</div>
+    <h3>현재 속성</h3>${attrHtml}
     <h3>연계 가능 시너지</h3>
 <div class="detail-grid">
   ${potentialSynergyHtml}
