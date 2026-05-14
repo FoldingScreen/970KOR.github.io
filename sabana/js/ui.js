@@ -355,40 +355,59 @@ function renderSide() {
 
   ui.sideAttributes.innerHTML = renderAttributeLine();
 
-  ui.sideSynergies.innerHTML = `
-    <div class="small" style="margin-bottom:6px;">활성</div>
-    ${
-      active.length
-        ? active.map(key => {
-            const info = SYNERGY_INFO[key] || { name: key, short: "" };
-            return `
-              <div class="list-item">
-                <strong>${info.name}</strong><br>
-                <span class="small">${info.short}</span>
-              </div>
-            `;
-          }).join("")
-        : `<div class="small">아직 발현 없음</div>`
-    }
+ui.sideSynergies.innerHTML = `
+  <div class="small" style="margin-bottom:6px;">활성</div>
+  ${
+    active.length
+      ? `
+        <div class="compact-name-list">
+          ${active.map(key => {
+            const info = SYNERGY_INFO[key] || { name: key };
+            return `<span class="compact-name">${info.name}</span>`;
+          }).join("")}
+        </div>
+      `
+      : `<div class="small">아직 발현 없음</div>`
+  }
 
-    <div class="small" style="margin:10px 0 6px;">연계 가능</div>
-    ${renderPotentialSynergies()}
-  `;
+  <div class="small" style="margin:10px 0 6px;">연계 가능</div>
+  ${renderPotentialSynergiesCompact()}
 
-  ui.sideAugments.innerHTML = state.augments.length
-    ? state.augments.map(a => `
-      <div class="list-item">
-        <strong class="${GRADE_CLASS[a.grade]}">${a.name} ${renderAttrInline(a.attrs)}</strong><br>
-        <span class="small">${a.desc}</span>
-      </div>
-    `).join("")
-    : `<div class="small">없음</div>`;
+  <button class="mini-btn secondary detail-btn" onclick="openBuildDetail()">상세설명</button>
+`;
+
+ui.sideAugments.innerHTML = state.augments.length
+  ? `
+    <div class="compact-name-list">
+      ${state.augments.map(a => `
+        <span class="compact-name ${GRADE_CLASS[a.grade]}">${a.name}</span>
+      `).join("")}
+    </div>
+    <button class="mini-btn secondary detail-btn" onclick="openBuildDetail()">상세설명</button>
+  `
+  : `<div class="small">없음</div>`;
 
   ui.sideStacks.innerHTML = `
     <div class="list-item">집중 중첩 <strong>${state.stacks.focus}</strong> / 80</div>
     <div class="list-item">鬼 중첩 <strong>${state.stacks.demon}</strong> / ${state.synergy.demonMax || 0}</div>
     <div class="list-item">보석 획득 <strong>${state.itemStats.gems}</strong>개</div>
     <div class="list-item">버프 <strong>${state.buffs.length}</strong>개 활성</div>
+  `;
+}
+
+function renderPotentialSynergiesCompact() {
+  const list = getPotentialSynergies();
+
+  if (!list.length) {
+    return `<div class="small">근접한 시너지 없음</div>`;
+  }
+
+  return `
+    <div class="compact-name-list">
+      ${list.map(item => `
+        <span class="compact-name">${item.name}</span>
+      `).join("")}
+    </div>
   `;
 }
 
