@@ -2522,18 +2522,6 @@ function draw() {
     ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
     ctx.fill();
   }
-for (const p of state?.enemyProjectiles || []) {
-  ctx.beginPath();
-  ctx.fillStyle = p.color || "#fca5a5";
-  ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.beginPath();
-  ctx.strokeStyle = "rgba(255,255,255,.35)";
-  ctx.lineWidth = 1;
-  ctx.arc(p.x, p.y, p.r + 2, 0, Math.PI * 2);
-  ctx.stroke();
-}
   
   for (const e of state?.enemies || []) {
     ctx.beginPath();
@@ -2554,6 +2542,20 @@ for (const p of state?.enemyProjectiles || []) {
     ctx.fillStyle = "#ef4444";
     ctx.fillRect(e.x - e.r, e.y - e.r - 8, w * Math.max(0, e.hp / e.maxHp), 3);
   }
+
+for (const p of state?.enemyProjectiles || []) {
+  ctx.beginPath();
+  ctx.fillStyle = p.color || "#fca5a5";
+  ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.strokeStyle = "rgba(255,255,255,.35)";
+  ctx.lineWidth = 1;
+  ctx.arc(p.x, p.y, p.r + 2, 0, Math.PI * 2);
+  ctx.stroke();
+}
+  
   if (state) {
     drawOrbitWeapons();
     const inv = state.player.invuln > 0;
