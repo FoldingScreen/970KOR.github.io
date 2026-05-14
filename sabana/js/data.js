@@ -660,7 +660,6 @@ const AUGMENTS = [
   "공격속도 +55%\n유성 불씨 활성\n기본 공격 때 추가 화염탄 발사\n속성: 火 +2",
     apply(s) {
       s.perks.attackSpeedMul *= 1.55;
-      s.perks.overheat = true;
       s.perks.fireMeteor = true;
       s.perks.overheatBolt = true;
     },
