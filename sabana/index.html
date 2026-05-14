@@ -6,7 +6,6 @@
   <title>SABANA Survivors</title>
   <link rel="stylesheet" href="./sabana.css" />
 </head>
-
 <body>
   <main class="app">
     <section class="panel">
@@ -23,14 +22,11 @@
 
       <div class="canvas-wrap">
         <canvas id="gameCanvas" width="960" height="540"></canvas>
-
         <div id="toast" class="toast"></div>
-
         <div id="bigAlert" class="big-alert">
           <div id="bigAlertMain" class="main"></div>
           <div id="bigAlertSub" class="sub"></div>
         </div>
-
         <div id="mobileStick" class="mobile-stick">
           <div id="mobileStickKnob" class="mobile-stick-knob"></div>
         </div>
@@ -63,15 +59,12 @@
               </div>
               <div class="point-box">보유 코인: <span id="labCoins">0</span></div>
             </div>
-
             <div class="tabs">
               <button class="tab active" id="tabBasic" onclick="setLabTab('basic')">기초</button>
               <button class="tab" id="tabCombat" onclick="setLabTab('combat')">전투</button>
               <button class="tab" id="tabEconomy" onclick="setLabTab('economy')">경제</button>
             </div>
-
             <div id="labList" class="lab-list"></div>
-
             <div class="lab-actions">
               <button onclick="closeLab()">메인으로</button>
               <button class="secondary" onclick="resetLabData()">데이터 초기화</button>
@@ -83,15 +76,12 @@
           <div class="modal">
             <h2>증강 / 시너지 / 아이템 목록</h2>
             <p>상세 목록에는 확률, 수치, 지속시간을 표시합니다.</p>
-
             <div class="tabs">
               <button class="tab active" id="codexAugTab" onclick="setCodexTab('augments')">증강</button>
               <button class="tab" id="codexSynTab" onclick="setCodexTab('synergies')">시너지</button>
               <button class="tab" id="codexItemTab" onclick="setCodexTab('items')">아이템</button>
             </div>
-
             <div id="codexList" class="codex-list"></div>
-
             <div class="lab-actions">
               <button onclick="closeCodex()">메인으로</button>
             </div>
@@ -148,32 +138,26 @@
         <h2>현재 무기</h2>
         <div id="sideWeapon" class="small">메인 화면</div>
       </div>
-
       <div class="side-section">
         <h2>현재 스탯</h2>
         <div id="sideStats" class="list"></div>
       </div>
-
       <div class="side-section">
         <h2>현재 속성</h2>
         <div id="sideAttributes" class="list"></div>
       </div>
-
       <div class="side-section">
         <h2>활성 시너지</h2>
         <div id="sideSynergies" class="list"></div>
       </div>
-
       <div class="side-section">
         <h2>보유 증강</h2>
         <div id="sideAugments" class="list"></div>
       </div>
-
       <div class="side-section">
         <h2>중첩 / 버프</h2>
         <div id="sideStacks" class="list"></div>
       </div>
-
       <div class="side-section small">
         <strong>조작</strong><br />
         WASD / 방향키 이동<br />
