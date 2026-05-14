@@ -171,6 +171,37 @@ canvas {
   margin: 0 0 10px;
 }
 
+.modal-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.modal-head h2 {
+  margin-bottom: 4px;
+}
+
+.modal-head p {
+  margin-top: 0;
+}
+
+.modal-head .mini-btn {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+@media (max-width: 1000px) {
+  .modal-head {
+    gap: 8px;
+  }
+
+  .modal-head .mini-btn {
+    padding: 7px 9px;
+    font-size: 11px;
+  }
+}
+
 .modal p {
   margin: 8px 0 14px;
   color: #cbd5e1;
