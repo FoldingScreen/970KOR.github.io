@@ -410,8 +410,12 @@ function renderAttrInline(attrs) {
   return out;
 }
 function formatTime(ms) {
-  const s = Math.floor(ms / 1000);
-  return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+  const safeMs = Math.max(0, Number.isFinite(ms) ? ms : 0);
+  const s = Math.floor(safeMs / 1000);
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+
+  return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
 }
 function showToast(text) {
   ui.toast.textContent = text;
