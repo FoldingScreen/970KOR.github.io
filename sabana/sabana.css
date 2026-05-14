@@ -741,3 +741,26 @@ canvas {
   justify-content: space-between;
   gap: 10px;
 }
+
+
+.compact-name-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.compact-name {
+  display: inline-flex;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.1);
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.detail-btn {
+  margin-top: 8px;
+  width: 100%;
+}
