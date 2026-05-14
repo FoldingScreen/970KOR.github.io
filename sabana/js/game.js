@@ -119,33 +119,145 @@ function onSynergyFirstActivated(key) {
   if (burst) showBigAlert(info.name, "궁극 시너지 발현!"); else showToast(`시너지 발현: ${info.name}`);
 }
 
-function getWeaponStats() {
-  const lv = state.level, id = state.weapon.id, s = state.synergy, g = state.growth;
-  const focusMul = state.perks.focusBlade ? Math.pow(1.005, state.stacks.focus) : 1;
-  const demonMul = 1 + (state.stacks.demon * (s.demonKillStack || 0));
-  let damageMul = state.base.damageMul * focusMul * demonMul * getBuffMul("damage");
-  let asMul = state.base.attackSpeedMul * state.perks.attackSpeedMul * s.attackSpeedMul * getBuffMul("attackSpeed");
-  let areaMul = state.base.areaMul * state.perks.areaMul * s.areaMul * getBuffMul("area");
-  if (state.perks.glassSanctuary && state.player.shield > 0) damageMul *= 1.6;
-  if (state.perks.speedToArea) areaMul *= 1 + Math.min(.5, (asMul - 1) * state.perks.speedToArea);
-  if (id === "magic_staff") {
-    let damage = 28, intervalMs = 830, speed = 590, pierce = 0, count = 1, radius = 5;
-    if (lv >= 10) damage *= 1.15; if (lv >= 20) intervalMs -= 80; if (lv >= 30) damage *= 1.15;
-    count += g.projectile; pierce += g.pierce; speed *= 1 + g.projectileSpeed; radius *= 1 + g.weaponSize;
-    return { damage: damage * damageMul, intervalMs: Math.max(220, intervalMs / asMul), speed, pierce, count, radius: radius * areaMul, knockback: 24 * state.base.knockbackMul, tags: ["projectile", "magic"] };
-  }
-  if (id === "flame_heart") {
-    let damage = 9, tickMs = 660, radius = 86, pulse = lv >= 20;
-    if (lv >= 10) damage *= 1.15; if (lv >= 30) { radius += 20; damage *= 1.15; }
-    tickMs *= Math.max(.35, 1 - g.auraTick); radius *= 1 + g.weaponSize;
-    return { damage: damage * damageMul * s.areaDamageMul, tickMs: Math.max(240, tickMs / asMul), radius: radius * areaMul, knockback: 5 * state.base.knockbackMul, pulse, tags: ["fire", "area"] };
-  }
-  let damage = 24, orbitRadius = 74, orbitSpeed = 2.6, count = 1, axeRadius = 10;
-  if (lv >= 10) damage *= 1.15; if (lv >= 30) count += 1;
-  count += g.orbitCount; orbitSpeed *= 1 + g.orbitSpeed; axeRadius *= 1 + g.weaponSize; orbitRadius *= 1 + g.area * 1.3;
-  return { damage: damage * damageMul, orbitRadius: orbitRadius * areaMul, orbitSpeed: orbitSpeed * asMul, count, axeRadius: axeRadius * areaMul, knockback: 16 * state.base.knockbackMul, tags: ["physical", "orbit"] };
+function getWeaponTier() {
+  if (!state) return 0;
+
+  const lv = state.level;
+
+  if (lv >= 28) return 6;
+  if (lv >= 23) return 5;
+  if (lv >= 18) return 4;
+  if (lv >= 13) return 3;
+  if (lv >= 8) return 2;
+  if (lv >= 3) return 1;
+
+  return 0;
 }
 
+function getWeaponStats() {
+  const id = state.weapon.id;
+  const s = state.synergy;
+  const g = state.growth;
+  const tier = getWeaponTier();
+
+  const focusMul = state.perks.focusBlade ? Math.pow(1.005, state.stacks.focus) : 1;
+  const demonMul = 1 + (state.stacks.demon * (s.demonKillStack || 0));
+  const buffDamage = getBuffMul("damage");
+  const buffAs = getBuffMul("attackSpeed");
+  const buffArea = getBuffMul("area");
+
+  let damageMul = state.base.damageMul * focusMul * demonMul * buffDamage;
+  let asMul = state.base.attackSpeedMul * state.perks.attackSpeedMul * s.attackSpeedMul * buffAs;
+  let areaMul = state.base.areaMul * state.perks.areaMul * s.areaMul * buffArea;
+
+  if (state.perks.glassSanctuary && state.player.shield > 0) damageMul *= 1.6;
+  if (state.perks.speedToArea) areaMul *= 1 + Math.min(.5, (asMul - 1) * state.perks.speedToArea);
+
+  if (id === "magic_staff") {
+    let damage = 30;
+    let intervalMs = 820;
+    let speed = 600;
+    let pierce = 0;
+    let count = 1;
+    let radius = 5.5;
+    let life = 2.4;
+
+    // 자동 무기 성장
+    damage *= 1 + tier * 0.12;
+    intervalMs *= Math.max(0.68, 1 - tier * 0.045);
+    speed *= 1 + tier * 0.05;
+    radius *= 1 + tier * 0.14;
+    life *= 1 + tier * 0.12;
+
+    if (tier >= 2) count += 1;
+    if (tier >= 4) count += 1;
+    if (tier >= 6) count += 1;
+
+    if (tier >= 3) pierce += 1;
+    if (tier >= 6) pierce += 1;
+
+    count += g.projectile;
+    pierce += g.pierce;
+    speed *= 1 + g.projectileSpeed;
+    radius *= 1 + g.weaponSize;
+    life *= 1 + (g.projectileLife || 0);
+
+    return {
+      damage: damage * damageMul,
+      intervalMs: Math.max(160, intervalMs / asMul),
+      speed,
+      pierce,
+      count,
+      radius: radius * areaMul,
+      life,
+      knockback: 26 * state.base.knockbackMul,
+      tags: ["projectile", "magic"]
+    };
+  }
+
+  if (id === "flame_heart") {
+    let damage = 8.2;
+    let tickMs = 690;
+    let radius = 82;
+    let pulse = tier >= 4;
+
+    // 자동 무기 성장
+    damage *= 1 + tier * 0.08;
+    tickMs *= Math.max(0.75, 1 - tier * 0.035);
+
+    if (tier >= 2) radius += 6;
+    if (tier >= 4) radius += 8;
+    if (tier >= 6) radius += 10;
+
+    tickMs *= Math.max(.15, 1 - g.auraTick);
+
+    // 화염심장 범위 증가 효율 절반
+    const flameAreaMul = 1 + (areaMul - 1) * 0.5;
+    const flameWeaponSizeMul = 1 + g.weaponSize * 0.5;
+    radius *= flameAreaMul * flameWeaponSizeMul;
+
+    return {
+      damage: damage * damageMul * s.areaDamageMul,
+      tickMs: Math.max(80, tickMs / asMul),
+      radius,
+      knockback: 5 * state.base.knockbackMul,
+      pulse,
+      tags: ["fire", "area"]
+    };
+  }
+
+  if (id === "orbit_axe") {
+    let damage = 24;
+    let orbitRadius = 74;
+    let orbitSpeed = 2.6;
+    let count = 1;
+    let axeRadius = 10;
+
+    // 자동 무기 성장
+    damage *= 1 + tier * 0.10;
+    orbitSpeed *= 1 + tier * 0.05;
+    orbitRadius *= 1 + tier * 0.05;
+    axeRadius *= 1 + tier * 0.08;
+
+    if (tier >= 2) count += 1;
+    if (tier >= 5) count += 1;
+
+    count += g.orbitCount;
+    orbitSpeed *= 1 + g.orbitSpeed;
+    axeRadius *= 1 + g.weaponSize;
+    orbitRadius *= 1 + g.area * 1.3;
+
+    return {
+      damage: damage * damageMul,
+      orbitRadius: orbitRadius * areaMul,
+      orbitSpeed: orbitSpeed * asMul,
+      count,
+      axeRadius: axeRadius * areaMul,
+      knockback: 16 * state.base.knockbackMul,
+      tags: ["physical", "orbit"]
+    };
+  }
+}
 function openWeaponSelect() {
   if (!metaReady) { showToast("저장 데이터를 불러오는 중입니다."); return; }
   resizeCanvasForDevice();
@@ -349,7 +461,7 @@ function fireHomingProjectile(target, damage, color, tags, speed, radius) {
     knockback: 20,
     tags,
     color,
-    life: 2.4,
+    life: w.life || 2.4,
     homing: true,
     target,
     allowChain: true,
@@ -380,8 +492,64 @@ function fireOverheatBolt(w) {
 }
 
 function fireProjectiles(w) { const targets = getEnemiesSortedByDistance(); if (!targets.length) return; for (let i = 0; i < w.count; i++) { const target = targets[i % targets.length]; const spread = targets.length < w.count ? (i - (w.count - 1) / 2) * .08 : 0; const angle = Math.atan2(target.y - state.player.y, target.x - state.player.x) + spread; state.projectiles.push({ x: state.player.x, y: state.player.y, vx: Math.cos(angle) * w.speed, vy: Math.sin(angle) * w.speed, r: w.radius, damage: w.damage, pierce: w.pierce, knockback: w.knockback, tags: w.tags, life: 2.4, allowChain: true, depth: 0 }); } }
-function updateSpawns(dt) { state.spawnMs -= dt * 1000; const t = state.timeMs / 1000; const interval = Math.max(300, 850 - t * 1.65); if (state.spawnMs <= 0) { state.spawnMs = interval; spawnEnemy(); } }
-function spawnEnemy() { const t = state.timeMs / 1000; const types = [{ id: "slime", color: "#22c55e", hp: 28, speed: 72, damage: 7, exp: 12, r: 13, from: 0, weight: 52, kb: 0 }, { id: "wolf", color: "#94a3b8", hp: 28, speed: 128, damage: 8, exp: 17, r: 11, from: 60, weight: 30, kb: .1 }, { id: "bat", color: "#a78bfa", hp: 22, speed: 158, damage: 6, exp: 18, r: 9, from: 120, weight: 24, kb: 0 }, { id: "golem", color: "#78716c", hp: 130, speed: 50, damage: 14, exp: 50, r: 18, from: 240, weight: 13, kb: .6 }, { id: "bomb", color: "#f97316", hp: 60, speed: 68, damage: 11, exp: 38, r: 14, from: 360, weight: 16, kb: .3 }].filter(m => t >= m.from); const picked = weightedPick(types.map(m => ({ ...m, weight: m.weight }))); const elite = t > 240 && Math.random() < .05; const side = Math.floor(Math.random() * 4); let x, y; if (side === 0) { x = -25; y = Math.random() * canvas.height; } if (side === 1) { x = canvas.width + 25; y = Math.random() * canvas.height; } if (side === 2) { x = Math.random() * canvas.width; y = -25; } if (side === 3) { x = Math.random() * canvas.width; y = canvas.height + 25; } const diff = 1 + t / 420; const hp = picked.hp * diff * (elite ? 3.2 : 1); state.enemies.push({ ...picked, x, y, hp, maxHp: hp, speed: picked.speed * Math.min(1.45, 1 + t / 850) * (elite ? .9 : 1), damage: picked.damage * (elite ? 1.45 : 1), exp: picked.exp * (elite ? 4 : 1), r: picked.r * (elite ? 1.25 : 1), elite, color: elite ? "#facc15" : picked.color, hitCd: 0, contactCd: 0, vx: 0, vy: 0, slowTime: 0, slowPower: 0, freezeTime: 0, burnTime: 0, burnDps: 0 }); }
+function getMonsterWave(t) {
+  if (t >= 1080 && t < 1200) {
+    return {
+      key: "wave_18",
+      active: true,
+      title: "최종 웨이브",
+      desc: "18:00 ~ 20:00 몬스터 대공세",
+      intervalMul: 0.55,
+      spawnCount: 2,
+      eliteBonus: 0.04
+    };
+  }
+
+  if (t >= 600 && t < 660) {
+    return {
+      key: "wave_10",
+      active: true,
+      title: "몬스터 웨이브",
+      desc: "10:00 ~ 11:00 몬스터 공세",
+      intervalMul: 0.65,
+      spawnCount: 2,
+      eliteBonus: 0.02
+    };
+  }
+
+  return {
+    key: "normal",
+    active: false,
+    intervalMul: 1,
+    spawnCount: 1,
+    eliteBonus: 0
+  };
+}
+function updateSpawns(dt) {
+  state.spawnMs -= dt * 1000;
+
+  const t = state.timeMs / 1000;
+  const wave = getMonsterWave(t);
+
+  if (state.waveKey !== wave.key) {
+    state.waveKey = wave.key;
+
+    if (wave.active) {
+      showBigAlert(wave.title, wave.desc);
+    }
+  }
+
+  const baseInterval = Math.max(300, 850 - t * 1.65);
+  const interval = baseInterval * wave.intervalMul;
+
+  if (state.spawnMs <= 0) {
+    state.spawnMs = interval;
+
+    for (let i = 0; i < wave.spawnCount; i++) {
+      spawnEnemy(wave);
+    }
+  }
+}function spawnEnemy() { const t = state.timeMs / 1000; const types = [{ id: "slime", color: "#22c55e", hp: 28, speed: 72, damage: 7, exp: 12, r: 13, from: 0, weight: 52, kb: 0 }, { id: "wolf", color: "#94a3b8", hp: 28, speed: 128, damage: 8, exp: 17, r: 11, from: 60, weight: 30, kb: .1 }, { id: "bat", color: "#a78bfa", hp: 22, speed: 158, damage: 6, exp: 18, r: 9, from: 120, weight: 24, kb: 0 }, { id: "golem", color: "#78716c", hp: 130, speed: 50, damage: 14, exp: 50, r: 18, from: 240, weight: 13, kb: .6 }, { id: "bomb", color: "#f97316", hp: 60, speed: 68, damage: 11, exp: 38, r: 14, from: 360, weight: 16, kb: .3 }].filter(m => t >= m.from); const picked = weightedPick(types.map(m => ({ ...m, weight: m.weight }))); const elite = t > 240 && Math.random() < .05; const side = Math.floor(Math.random() * 4); let x, y; if (side === 0) { x = -25; y = Math.random() * canvas.height; } if (side === 1) { x = canvas.width + 25; y = Math.random() * canvas.height; } if (side === 2) { x = Math.random() * canvas.width; y = -25; } if (side === 3) { x = Math.random() * canvas.width; y = canvas.height + 25; } const diff = 1 + t / 420; const hp = picked.hp * diff * (elite ? 3.2 : 1); state.enemies.push({ ...picked, x, y, hp, maxHp: hp, speed: picked.speed * Math.min(1.45, 1 + t / 850) * (elite ? .9 : 1), damage: picked.damage * (elite ? 1.45 : 1), exp: picked.exp * (elite ? 4 : 1), r: picked.r * (elite ? 1.25 : 1), elite, color: elite ? "#facc15" : picked.color, hitCd: 0, contactCd: 0, vx: 0, vy: 0, slowTime: 0, slowPower: 0, freezeTime: 0, burnTime: 0, burnDps: 0 }); }
 function updateEnemies(dt) { for (const e of state.enemies) { e.hitCd = Math.max(0, e.hitCd - dt); e.contactCd = Math.max(0, e.contactCd - dt); e.slowTime = Math.max(0, e.slowTime - dt); e.freezeTime = Math.max(0, e.freezeTime - dt); if (e.burnTime > 0) { e.burnTime -= dt; e.hp -= e.burnDps * dt; if (e.hp <= 0) killEnemy(e, ["burn"]); } if (e.freezeTime <= 0) { const dx = state.player.x - e.x, dy = state.player.y - e.y, len = Math.hypot(dx, dy) || 1, slowMul = e.slowTime > 0 ? (1 - e.slowPower) : 1; e.x += (dx / len) * e.speed * slowMul * dt; e.y += (dy / len) * e.speed * slowMul * dt; } e.x += e.vx * dt; e.y += e.vy * dt; e.vx *= Math.pow(0.005, dt); e.vy *= Math.pow(0.005, dt); if (Math.hypot(e.x - state.player.x, e.y - state.player.y) < e.r + state.player.r && e.contactCd <= 0) { e.contactCd = .9; damagePlayer(e.damage, e.x, e.y); } } state.enemies = state.enemies.filter(e => e.hp > 0); }
 function updateProjectiles(dt) {
   for (const p of state.projectiles) {
