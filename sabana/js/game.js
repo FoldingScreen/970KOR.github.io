@@ -82,14 +82,16 @@ function makeState(weapon) {
     synergy: {},
     stacks: { focus: 0, demon: 0, demonNoLossMs: 0 },
     buffs: [],
-    enemies: [],
-    projectiles: [],
-    gems: [],
-    drops: [],
-    effects: [],
-    floating: [],
-    itemStats: { total: 0, gems: 0, legendary: 0 },
-    augmentTimers: {},
+enemies: [],
+projectiles: [],
+enemyProjectiles: [],
+gems: [],
+drops: [],
+effects: [],
+floating: [],
+itemStats: { total: 0, gems: 0, legendary: 0 },
+augmentTimers: {},
+bossFlags: {}
   };
 }
 
@@ -877,15 +879,17 @@ function update(dt) {
     return;
   }
   updateBuffs(dt);
-  updatePlayer(dt);
-  updateWeapon(dt);
-  updateAugmentAttacks(dt);
-  updateSpawns(dt);
-  updateEnemies(dt);
-  updateProjectiles(dt);
-  updateGemsAndDrops(dt);
-  updateEffects(dt);
-  updateFloating(dt);
+updatePlayer(dt);
+updateWeapon(dt);
+updateAugmentAttacks(dt);
+updateTimedBossSpawns();
+updateSpawns(dt);
+updateEnemies(dt);
+updateProjectiles(dt);
+updateEnemyProjectiles(dt);
+updateGemsAndDrops(dt);
+updateEffects(dt);
+updateFloating(dt);
 }
 function updatePlayer(dt) {
   state.player.invuln = Math.max(0, state.player.invuln - dt);
@@ -1361,9 +1365,11 @@ function updateSpawns(dt) {
 
 function spawnEnemy(wave = null) {
   const t = state.timeMs / 1000;
+
   const types = [
     {
       id: "slime",
+      name: "슬라임",
       color: "#22c55e",
       hp: 28,
       speed: 72,
@@ -1371,11 +1377,13 @@ function spawnEnemy(wave = null) {
       exp: 12,
       r: 13,
       from: 0,
-      weight: 52,
+      weight: 48,
       kb: 0,
+      ai: "melee"
     },
     {
       id: "wolf",
+      name: "늑대",
       color: "#94a3b8",
       hp: 28,
       speed: 128,
@@ -1383,11 +1391,13 @@ function spawnEnemy(wave = null) {
       exp: 17,
       r: 11,
       from: 60,
-      weight: 30,
+      weight: 28,
       kb: 0.1,
+      ai: "melee"
     },
     {
       id: "bat",
+      name: "박쥐",
       color: "#a78bfa",
       hp: 22,
       speed: 158,
@@ -1395,11 +1405,13 @@ function spawnEnemy(wave = null) {
       exp: 18,
       r: 9,
       from: 120,
-      weight: 24,
+      weight: 22,
       kb: 0,
+      ai: "melee"
     },
     {
       id: "golem",
+      name: "골렘",
       color: "#78716c",
       hp: 130,
       speed: 50,
@@ -1407,11 +1419,13 @@ function spawnEnemy(wave = null) {
       exp: 50,
       r: 18,
       from: 240,
-      weight: 13,
+      weight: 12,
       kb: 0.6,
+      ai: "melee"
     },
     {
       id: "bomb",
+      name: "폭탄병",
       color: "#f97316",
       hp: 60,
       speed: 68,
@@ -1419,37 +1433,86 @@ function spawnEnemy(wave = null) {
       exp: 38,
       r: 14,
       from: 360,
-      weight: 16,
+      weight: 14,
       kb: 0.3,
+      ai: "melee"
     },
-  ].filter((m) => t >= m.from);
-  const picked = weightedPick(types.map((m) => ({ ...m, weight: m.weight })));
+
+    // 원거리 몹
+    {
+      id: "thrower",
+      name: "투척병",
+      color: "#38bdf8",
+      hp: 44,
+      speed: 64,
+      damage: 8,
+      exp: 26,
+      r: 12,
+      from: 180,
+      weight: 16,
+      kb: 0.15,
+      ai: "ranged",
+      shootCd: 1.8,
+      bulletSpeed: 210,
+      bulletRadius: 5,
+      bulletDamage: 8,
+      range: 260
+    },
+    {
+      id: "shaman",
+      name: "주술사",
+      color: "#c084fc",
+      hp: 70,
+      speed: 46,
+      damage: 10,
+      exp: 42,
+      r: 14,
+      from: 420,
+      weight: 10,
+      kb: 0.25,
+      ai: "ranged",
+      shootCd: 2.6,
+      bulletSpeed: 150,
+      bulletRadius: 6,
+      bulletDamage: 10,
+      range: 320,
+      homing: true
+    },
+    {
+      id: "spore",
+      name: "포자몹",
+      color: "#bef264",
+      hp: 58,
+      speed: 54,
+      damage: 7,
+      exp: 34,
+      r: 13,
+      from: 540,
+      weight: 9,
+      kb: 0.2,
+      ai: "ranged",
+      shootCd: 3.2,
+      bulletSpeed: 170,
+      bulletRadius: 4,
+      bulletDamage: 7,
+      range: 280,
+      spread: 3
+    }
+  ].filter(m => t >= m.from);
+
+  const picked = weightedPick(types.map(m => ({ ...m, weight: m.weight })));
+
   const eliteChance = 0.05 + (wave?.eliteBonus || 0);
   const elite = t > 240 && Math.random() < eliteChance;
-  const side = Math.floor(Math.random() * 4);
-  let x, y;
-  if (side === 0) {
-    x = -25;
-    y = Math.random() * canvas.height;
-  }
-  if (side === 1) {
-    x = canvas.width + 25;
-    y = Math.random() * canvas.height;
-  }
-  if (side === 2) {
-    x = Math.random() * canvas.width;
-    y = -25;
-  }
-  if (side === 3) {
-    x = Math.random() * canvas.width;
-    y = canvas.height + 25;
-  }
+
+  const pos = getSpawnPosition();
   const diff = 1 + t / 420;
   const hp = picked.hp * diff * (elite ? 3.2 : 1);
+
   state.enemies.push({
     ...picked,
-    x,
-    y,
+    x: pos.x,
+    y: pos.y,
     hp,
     maxHp: hp,
     speed: picked.speed * Math.min(1.45, 1 + t / 850) * (elite ? 0.9 : 1),
@@ -1457,52 +1520,303 @@ function spawnEnemy(wave = null) {
     exp: picked.exp * (elite ? 4 : 1),
     r: picked.r * (elite ? 1.25 : 1),
     elite,
+    boss: false,
+    midBoss: false,
     color: elite ? "#facc15" : picked.color,
     hitCd: 0,
     contactCd: 0,
+    shootTimer: Math.random() * (picked.shootCd || 2),
     vx: 0,
     vy: 0,
     slowTime: 0,
     slowPower: 0,
     freezeTime: 0,
     burnTime: 0,
-    burnDps: 0,
+    burnDps: 0
   });
 }
+
+function updateTimedBossSpawns() {
+  const t = state.timeMs / 1000;
+
+  if (t >= 300 && !state.bossFlags.mid5) {
+    state.bossFlags.mid5 = true;
+    spawnBossEnemy("mid_guardian", "중간보스", 1);
+  }
+
+  if (t >= 600 && !state.bossFlags.mid10) {
+    state.bossFlags.mid10 = true;
+    spawnBossEnemy("wave_brute", "웨이브 중간보스", 1.35);
+  }
+
+  if (t >= 900 && !state.bossFlags.mid15) {
+    state.bossFlags.mid15 = true;
+    spawnBossEnemy("dark_knight", "암흑 기사", 1.7);
+  }
+
+  if (t >= 1080 && !state.bossFlags.final18) {
+    state.bossFlags.final18 = true;
+    spawnBossEnemy("sabana_lord", "사바나 군주", 2.4, true);
+  }
+}
+
+function spawnBossEnemy(id, name, scale = 1, finalBoss = false) {
+  const t = state.timeMs / 1000;
+  const pos = getSpawnPosition();
+  const diff = 1 + t / 360;
+
+  const baseHp = finalBoss ? 1800 : 620;
+  const baseDamage = finalBoss ? 22 : 16;
+
+  state.enemies.push({
+    id,
+    name,
+    color: finalBoss ? "#ef4444" : "#facc15",
+    hp: baseHp * diff * scale,
+    maxHp: baseHp * diff * scale,
+    speed: finalBoss ? 54 : 62,
+    damage: baseDamage * scale,
+    exp: finalBoss ? 600 : 220,
+    r: finalBoss ? 30 : 24,
+    from: 0,
+    weight: 0,
+    kb: finalBoss ? 0.85 : 0.7,
+    ai: finalBoss ? "boss" : "midboss",
+    elite: true,
+    boss: finalBoss,
+    midBoss: !finalBoss,
+    x: pos.x,
+    y: pos.y,
+    hitCd: 0,
+    contactCd: 0,
+    shootTimer: 1.5,
+    patternTimer: 4,
+    vx: 0,
+    vy: 0,
+    slowTime: 0,
+    slowPower: 0,
+    freezeTime: 0,
+    burnTime: 0,
+    burnDps: 0
+  });
+
+  showBigAlert(name, finalBoss ? "최종 보스 등장!" : "중간보스 등장!");
+}
+
+function getSpawnPosition() {
+  const side = Math.floor(Math.random() * 4);
+
+  if (side === 0) return { x: -25, y: Math.random() * canvas.height };
+  if (side === 1) return { x: canvas.width + 25, y: Math.random() * canvas.height };
+  if (side === 2) return { x: Math.random() * canvas.width, y: -25 };
+
+  return { x: Math.random() * canvas.width, y: canvas.height + 25 };
+}
+
 function updateEnemies(dt) {
   for (const e of state.enemies) {
     e.hitCd = Math.max(0, e.hitCd - dt);
     e.contactCd = Math.max(0, e.contactCd - dt);
     e.slowTime = Math.max(0, e.slowTime - dt);
     e.freezeTime = Math.max(0, e.freezeTime - dt);
+
     if (e.burnTime > 0) {
       e.burnTime -= dt;
       e.hp -= e.burnDps * dt;
-      if (e.hp <= 0) killEnemy(e, ["burn"]);
+
+      if (e.hp <= 0) {
+        killEnemy(e, ["burn"]);
+      }
     }
+
     if (e.freezeTime <= 0) {
-      const dx = state.player.x - e.x,
-        dy = state.player.y - e.y,
-        len = Math.hypot(dx, dy) || 1,
-        slowMul = e.slowTime > 0 ? 1 - e.slowPower : 1;
-      e.x += (dx / len) * e.speed * slowMul * dt;
-      e.y += (dy / len) * e.speed * slowMul * dt;
+      updateEnemyMovement(e, dt);
+      updateEnemyShooting(e, dt);
     }
+
+    function shootEnemyBullet(e, damage, speed, radius, color, homing = false) {
+  const angle = Math.atan2(state.player.y - e.y, state.player.x - e.x);
+
+  state.enemyProjectiles.push({
+    x: e.x,
+    y: e.y,
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed,
+    r: radius,
+    damage,
+    color,
+    life: 4,
+    homing,
+    turnRate: homing ? 0.035 : 0
+  });
+}
+
+function shootSpreadEnemyBullet(e, count, damage, speed, radius, color) {
+  const baseAngle = Math.atan2(state.player.y - e.y, state.player.x - e.x);
+  const gap = 0.22;
+
+  for (let i = 0; i < count; i++) {
+    const offset = (i - (count - 1) / 2) * gap;
+    const angle = baseAngle + offset;
+
+    state.enemyProjectiles.push({
+      x: e.x,
+      y: e.y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      r: radius,
+      damage,
+      color,
+      life: 4,
+      homing: false,
+      turnRate: 0
+    });
+  }
+}
+
+function shootBossPattern(e) {
+  e.patternTimer = (e.patternTimer || 0) + 1;
+
+  if (e.patternTimer % 3 === 0) {
+    shootRadialEnemyBullet(e, 14, e.damage * 0.55, 150, 5, "#ef4444");
+    return;
+  }
+
+  if (e.patternTimer % 2 === 0) {
+    shootSpreadEnemyBullet(e, 7, e.damage * 0.7, 210, 5, "#fb7185");
+    return;
+  }
+
+  shootEnemyBullet(e, e.damage * 0.9, 190, 7, "#fca5a5", true);
+}
+
+function shootRadialEnemyBullet(e, count, damage, speed, radius, color) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.PI * 2 * i / count;
+
+    state.enemyProjectiles.push({
+      x: e.x,
+      y: e.y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      r: radius,
+      damage,
+      color,
+      life: 5,
+      homing: false,
+      turnRate: 0
+    });
+  }
+}
+
+function updateEnemyProjectiles(dt) {
+  for (const p of state.enemyProjectiles) {
+    p.life -= dt;
+
+    if (p.homing) {
+      const angle = Math.atan2(state.player.y - p.y, state.player.x - p.x);
+      const speed = Math.hypot(p.vx, p.vy) || 160;
+
+      p.vx = p.vx * (1 - p.turnRate) + Math.cos(angle) * speed * p.turnRate;
+      p.vy = p.vy * (1 - p.turnRate) + Math.sin(angle) * speed * p.turnRate;
+    }
+
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+
+    const dist = Math.hypot(p.x - state.player.x, p.y - state.player.y);
+
+    if (dist < p.r + state.player.r) {
+      p.life = 0;
+      damagePlayer(p.damage, p.x, p.y);
+    }
+  }
+
+  state.enemyProjectiles = state.enemyProjectiles.filter(p =>
+    p.life > 0 &&
+    p.x > -80 &&
+    p.x < canvas.width + 80 &&
+    p.y > -80 &&
+    p.y < canvas.height + 80
+  );
+}
+
     e.x += e.vx * dt;
     e.y += e.vy * dt;
     e.vx *= Math.pow(0.005, dt);
     e.vy *= Math.pow(0.005, dt);
-    if (
-      Math.hypot(e.x - state.player.x, e.y - state.player.y) <
-        e.r + state.player.r &&
-      e.contactCd <= 0
-    ) {
+
+    const dist = Math.hypot(e.x - state.player.x, e.y - state.player.y);
+
+    if (dist < e.r + state.player.r && e.contactCd <= 0) {
       e.contactCd = 0.9;
       damagePlayer(e.damage, e.x, e.y);
     }
   }
-  state.enemies = state.enemies.filter((e) => e.hp > 0);
+
+  state.enemies = state.enemies.filter(e => e.hp > 0);
 }
+
+function updateEnemyMovement(e, dt) {
+  const dx = state.player.x - e.x;
+  const dy = state.player.y - e.y;
+  const dist = Math.hypot(dx, dy) || 1;
+
+  const slowMul = e.slowTime > 0 ? 1 - e.slowPower : 1;
+  let moveX = dx / dist;
+  let moveY = dy / dist;
+
+  if (e.ai === "ranged") {
+    const preferred = e.range || 280;
+
+    if (dist < preferred * 0.72) {
+      moveX *= -1;
+      moveY *= -1;
+    } else if (dist <= preferred) {
+      moveX *= 0.2;
+      moveY *= 0.2;
+    }
+  }
+
+  if (e.ai === "boss" || e.ai === "midboss") {
+    if (dist < 140) {
+      moveX *= -0.25;
+      moveY *= -0.25;
+    }
+  }
+
+  e.x += moveX * e.speed * slowMul * dt;
+  e.y += moveY * e.speed * slowMul * dt;
+}
+
+function updateEnemyShooting(e, dt) {
+  if (!["ranged", "midboss", "boss"].includes(e.ai)) return;
+
+  e.shootTimer = (e.shootTimer || 0) - dt;
+
+  if (e.shootTimer > 0) return;
+
+  if (e.ai === "boss") {
+    e.shootTimer = 1.25;
+    shootBossPattern(e);
+    return;
+  }
+
+  if (e.ai === "midboss") {
+    e.shootTimer = 1.8;
+    shootSpreadEnemyBullet(e, 5, e.damage * 0.75, 190, 5, "#facc15");
+    return;
+  }
+
+  e.shootTimer = e.shootCd || 2;
+
+  if (e.spread) {
+    shootSpreadEnemyBullet(e, e.spread, e.bulletDamage, e.bulletSpeed, e.bulletRadius, e.color);
+  } else {
+    shootEnemyBullet(e, e.bulletDamage, e.bulletSpeed, e.bulletRadius, e.color, !!e.homing);
+  }
+}
+
 function updateProjectiles(dt) {
   for (const p of state.projectiles) {
     p.life -= dt;
@@ -1714,10 +2028,19 @@ function killEnemy(e, tags = []) {
   state.kills += 1;
   state.gems.push({ x: e.x, y: e.y, r: 5, exp: e.exp * state.base.expMul });
   if (tags.includes("holy")) addShield(4);
-  if (e.elite) {
-    const bonus = Math.round(35 * (1 + meta.upgrades.elite_bounty * 0.1));
-    addRunCoins(bonus);
-    showToast(`정예 처치 +${bonus}코인`);
+if (e.boss) {
+  const bonus = Math.round(1200 * (1 + meta.upgrades.elite_bounty * 0.1));
+  addRunCoins(bonus);
+  showBigAlert("보스 처치!", `+${bonus} 코인`);
+} else if (e.midBoss) {
+  const bonus = Math.round(350 * (1 + meta.upgrades.elite_bounty * 0.1));
+  addRunCoins(bonus);
+  showBigAlert("중간보스 처치!", `+${bonus} 코인`);
+} else if (e.elite) {
+  const bonus = Math.round(35 * (1 + meta.upgrades.elite_bounty * 0.1));
+  addRunCoins(bonus);
+  showToast(`정예 처치 +${bonus}코인`);
+}
   }
   if (
     state.synergy.shieldOnKillChance &&
@@ -2130,6 +2453,18 @@ function draw() {
     ctx.arc(g.x, g.y, g.r, 0, Math.PI * 2);
     ctx.fill();
   }
+  for (const p of state?.enemyProjectiles || []) {
+  ctx.beginPath();
+  ctx.fillStyle = p.color || "#fca5a5";
+  ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.strokeStyle = "rgba(255,255,255,.35)";
+  ctx.lineWidth = 1;
+  ctx.arc(p.x, p.y, p.r + 2, 0, Math.PI * 2);
+  ctx.stroke();
+}
   for (const d of state?.drops || []) {
     ctx.beginPath();
     ctx.fillStyle = d.color;
@@ -2161,6 +2496,13 @@ function draw() {
       e.freezeTime > 0 ? "#7dd3fc" : e.burnTime > 0 ? "#fb923c" : e.color;
     ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
     ctx.fill();
+    if (e.boss || e.midBoss) {
+  ctx.beginPath();
+  ctx.strokeStyle = e.boss ? "#ef4444" : "#facc15";
+  ctx.lineWidth = e.boss ? 4 : 3;
+  ctx.arc(e.x, e.y, e.r + 5, 0, Math.PI * 2);
+  ctx.stroke();
+}
     const w = e.r * 2;
     ctx.fillStyle = "rgba(0,0,0,.5)";
     ctx.fillRect(e.x - e.r, e.y - e.r - 8, w, 3);
