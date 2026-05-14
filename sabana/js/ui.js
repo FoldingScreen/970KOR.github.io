@@ -181,6 +181,116 @@ function updateUi() {
   renderSide();
 }
 
+const SYNERGY_REQUIREMENTS = [
+  { key: "ice2", req: { "氷": 2 } },
+  { key: "ice4", req: { "氷": 4 } },
+  { key: "ice6", req: { "氷": 6 } },
+
+  { key: "fire2", req: { "火": 2 } },
+  { key: "fire4", req: { "火": 4 } },
+  { key: "fire6", req: { "火": 6 } },
+
+  { key: "wind2", req: { "風": 2 } },
+  { key: "wind4", req: { "風": 4 } },
+  { key: "wind6", req: { "風": 6 } },
+
+  { key: "light2", req: { "光": 2 } },
+  { key: "light4", req: { "光": 4 } },
+  { key: "light6", req: { "光": 6 } },
+
+  { key: "dark2", req: { "暗": 2 } },
+  { key: "dark4", req: { "暗": 4 } },
+  { key: "dark6", req: { "暗": 6 } },
+
+  { key: "holy2", req: { "聖": 2 } },
+  { key: "holy4", req: { "聖": 4 } },
+  { key: "holy6", req: { "聖": 6 } },
+
+  { key: "evil2", req: { "惡": 2 } },
+  { key: "evil4", req: { "惡": 4 } },
+  { key: "evil6", req: { "惡": 6 } },
+
+  { key: "demon2", req: { "鬼": 2 } },
+  { key: "demon3", req: { "鬼": 3 } },
+  { key: "demon4", req: { "鬼": 4 } },
+
+  { key: "frostfire", req: { "氷": 2, "火": 2 } },
+  { key: "firestorm", req: { "火": 4, "風": 2 } },
+  { key: "radiantwind", req: { "風": 4, "光": 2 } },
+  { key: "voidfeast", req: { "暗": 4, "惡": 2 } },
+  { key: "fallenholy", req: { "聖": 4, "惡": 2 } },
+  { key: "bloodflamedemon", req: { "火": 1, "暗": 1, "鬼": 1 } },
+  { key: "holydemon", req: { "聖": 2, "鬼": 2 } },
+  { key: "evildemon", req: { "惡": 2, "鬼": 2 } }
+];
+
+function getSynergyProgress(req, attrs) {
+  let missingTotal = 0;
+  const missing = [];
+
+  for (const [attr, need] of Object.entries(req)) {
+    const have = attrs[attr] || 0;
+    const lack = Math.max(0, need - have);
+
+    if (lack > 0) {
+      missingTotal += lack;
+      missing.push(`${attr} ${lack}`);
+    }
+  }
+
+  return {
+    missingTotal,
+    missingText: missing.join(", ")
+  };
+}
+
+function getPotentialSynergies() {
+  if (!state) return [];
+
+  const attrs = getAttrCounts();
+
+  return SYNERGY_REQUIREMENTS
+    .filter(item => !state.activeSynergies.has(item.key))
+    .map(item => {
+      const info = SYNERGY_INFO[item.key];
+      const progress = getSynergyProgress(item.req, attrs);
+
+      return {
+        key: item.key,
+        name: info?.name || item.key,
+        short: info?.short || "",
+        cond: info?.cond || "",
+        missingTotal: progress.missingTotal,
+        missingText: progress.missingText
+      };
+    })
+    .filter(item => item.missingTotal > 0 && item.missingTotal <= 2)
+    .sort((a, b) => {
+      if (a.missingTotal !== b.missingTotal) return a.missingTotal - b.missingTotal;
+      return a.name.localeCompare(b.name, "ko");
+    })
+    .slice(0, 6);
+}
+
+function renderPotentialSynergies() {
+  const list = getPotentialSynergies();
+
+  if (!list.length) {
+    return `<div class="small">근접한 시너지 없음</div>`;
+  }
+
+  return list.map(item => `
+    <div class="list-item">
+      <strong>${item.name}</strong><br>
+      <span class="small">
+        조건: ${item.cond}<br>
+        부족: ${item.missingText}<br>
+        ${item.short}
+      </span>
+    </div>
+  `).join("");
+}
+
 function renderSide() {
   if (!state) {
     ui.sideWeapon.innerHTML = "메인 화면";
@@ -201,12 +311,20 @@ function renderSide() {
     <div class="list-item">방어율 <strong>${Math.round(state.base.defense * 100)}%</strong></div>
     <div class="list-item">자석범위 <strong>${Math.round(state.player.magnetRange)}</strong></div>`;
   const attrs = getAttrCounts();
-  ui.sideAttributes.innerHTML = ALL_ATTRS.filter(a => (attrs[a] || 0) > 0).map(a => `<div class="list-item">${a} ${ATTR_NAMES[a]} <strong>${attrs[a]}</strong></div>`).join("") || `<div class="small">없음</div>`;
-  const active = Array.from(state.activeSynergies);
-  ui.sideSynergies.innerHTML = active.length ? active.map(key => {
-    const info = SYNERGY_INFO[key] || { name: key, short: "" };
-    return `<div class="list-item"><strong>${info.name}</strong><br><span class="small">${info.short}</span></div>`;
-  }).join("") : `<div class="small">아직 발현 없음</div>`;
+ui.sideSynergies.innerHTML = `
+  <div class="small" style="margin-bottom:6px;">활성</div>
+  ${
+    active.length
+      ? active.map(key => {
+        const info = SYNERGY_INFO[key] || { name: key, short: "" };
+        return `<div class="list-item"><strong>${info.name}</strong><br><span class="small">${info.short}</span></div>`;
+      }).join("")
+      : `<div class="small">아직 발현 없음</div>`
+  }
+
+  <div class="small" style="margin:10px 0 6px;">연계 가능</div>
+  ${renderPotentialSynergies()}
+`;
   ui.sideAugments.innerHTML = state.augments.length ? state.augments.map(a => `<div class="list-item"><strong class="${GRADE_CLASS[a.grade]}">${a.name} ${renderAttrInline(a.attrs)}</strong><br><span class="small">${a.desc}</span></div>`).join("") : `<div class="small">없음</div>`;
   ui.sideStacks.innerHTML = `
     <div class="list-item">집중 중첩 <strong>${state.stacks.focus}</strong> / 80</div>
@@ -227,10 +345,16 @@ function renderPauseDetails() {
   const attrs = getAttrCounts();
   const w = getWeaponStats();
   const attrHtml = ALL_ATTRS.filter(a => (attrs[a] || 0) > 0).map(a => `<div class="detail-card">${a} ${ATTR_NAMES[a]} <strong>${attrs[a]}</strong></div>`).join("") || `<div class="detail-card">없음</div>`;
-  const synergyHtml = Array.from(state.activeSynergies).length ? Array.from(state.activeSynergies).map(key => {
-    const info = SYNERGY_INFO[key] || { name: key, short: "" };
-    return `<div class="detail-card"><strong>${info.name}</strong><br>${info.short}</div>`;
-  }).join("") : `<div class="detail-card">아직 발현 없음</div>`;
+const potentialSynergyHtml = getPotentialSynergies().length
+  ? getPotentialSynergies().map(item => `
+    <div class="detail-card">
+      <strong>${item.name}</strong><br>
+      조건: ${item.cond}<br>
+      부족: ${item.missingText}<br>
+      ${item.short}
+    </div>
+  `).join("")
+  : `<div class="detail-card">근접한 시너지 없음</div>`;
   const augmentHtml = state.augments.length ? state.augments.map(a => `<div class="detail-card"><strong class="${GRADE_CLASS[a.grade]}">${a.name} ${renderAttrInline(a.attrs)}</strong><br>${a.desc}</div>`).join("") : `<div class="detail-card">없음</div>`;
   return `
     <h3>현재 스탯</h3><div class="detail-grid">
@@ -243,7 +367,10 @@ function renderPauseDetails() {
     </div>
     <h3>무기 상세</h3><div class="detail-grid"><div class="detail-card">${weaponDetailText(w)}</div></div>
     <h3>현재 속성</h3><div class="detail-grid">${attrHtml}</div>
-    <h3>활성 시너지</h3><div class="detail-grid">${synergyHtml}</div>
+    <h3>연계 가능 시너지</h3>
+<div class="detail-grid">
+  ${potentialSynergyHtml}
+</div>
     <h3>보유 증강</h3><div class="detail-grid">${augmentHtml}</div>
     <h3>중첩 / 버프</h3><div class="detail-grid">
       <div class="detail-card">집중 중첩 <strong>${state.stacks.focus}</strong> / 80</div>
@@ -271,6 +398,13 @@ function showToast(text) {
   clearTimeout(showToast.timer);
   showToast.timer = setTimeout(() => ui.toast.classList.remove("show"), 1500);
 }
+
+function backToTitleFromWeapon() {
+  weaponOverlay.classList.remove("show");
+  titleOverlay.classList.add("show");
+  updateUi();
+}
+
 function showBigAlert(main, sub) {
   bigAlertMain.textContent = main;
   bigAlertSub.textContent = sub || "";
