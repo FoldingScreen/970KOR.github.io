@@ -56,7 +56,6 @@ function makeState(weapon) {
       projectile: 0,
       pierce: 0,
       projectileSpeed: 0,
-      projectileLife: 0,
       auraTick: 0,
       orbitCount: 0,
       orbitSpeed: 0,
@@ -699,19 +698,6 @@ function rollGrowthChoices() {
         weight: 8,
         apply() {
           state.growth.projectileSpeed += 0.15;
-        },
-      },
-      {
-        type: "growth",
-        label: "무기 성장",
-        name: "마력탄 증폭",
-        desc: "마력탄 크기 +45%\n마력탄 사거리 +25%\n범위 효과 +10%",
-        weight: 8,
-        apply() {
-          state.growth.weaponSize += 0.45;
-          state.growth.projectileLife =
-            (state.growth.projectileLife || 0) + 0.25;
-          state.growth.area += 0.1;
         },
       },
     );
