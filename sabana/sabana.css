@@ -286,6 +286,36 @@ canvas {
   margin-top: 8px;
 }
 
+.attr-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.attr-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  font-size: 13px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.attr-chip strong {
+  color: #fff;
+  font-size: 13px;
+}
+
+.attr-empty {
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
 .badge {
   padding: 3px 7px;
   border-radius: 999px;
