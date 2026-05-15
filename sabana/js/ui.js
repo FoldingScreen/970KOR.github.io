@@ -26,6 +26,8 @@ const weaponOverlay = document.getElementById("weaponOverlay");
 const choiceOverlay = document.getElementById("choiceOverlay");
 const pauseOverlay = document.getElementById("pauseOverlay");
 const resultOverlay = document.getElementById("resultOverlay");
+const buildDetailOverlay = document.getElementById("buildDetailOverlay");
+const buildDetailContent = document.getElementById("buildDetailContent");
 
 const labCoins = document.getElementById("labCoins");
 const labList = document.getElementById("labList");
@@ -526,6 +528,46 @@ function backToTitleFromWeapon() {
   weaponOverlay.classList.remove("show");
   titleOverlay.classList.add("show");
   updateUi();
+}
+
+function openBuildDetail() {
+  if (!state || !buildDetailOverlay || !buildDetailContent) return;
+
+  const augHtml = state.augments.length
+    ? state.augments.map(a => `
+      <div class="codex-item">
+        <h3 class="${GRADE_CLASS[a.grade]}">${a.name} ${renderAttrInline(a.attrs)}</h3>
+        <div class="effect">${a.detail || a.desc}</div>
+      </div>
+    `).join("")
+    : `<div class="codex-item"><h3>보유 증강 없음</h3></div>`;
+
+  const synergyHtml = Array.from(state.activeSynergies).length
+    ? Array.from(state.activeSynergies).map(key => {
+        const info = SYNERGY_INFO[key] || { name: key, detail: "" };
+        return `
+          <div class="codex-item">
+            <h3>${info.name}</h3>
+            <div class="effect">조건: ${info.cond || "-"}\n\n${info.detail || info.short || ""}</div>
+          </div>
+        `;
+      }).join("")
+    : `<div class="codex-item"><h3>활성 시너지 없음</h3></div>`;
+
+  buildDetailContent.innerHTML = `
+    <div class="codex-item">
+      <h3>최종 계산 스탯</h3>
+      <div class="effect">공격력 배율: x${statDamageMul().toFixed(2)}\n공격속도: x${statAttackSpeedMul().toFixed(2)}\n공격범위: x${statAreaMul().toFixed(2)}\n이동속도: x${(state.player.speed / 220).toFixed(2)}\n방어율: ${Math.round(state.base.defense * 100)}%\n자석범위: ${Math.round(state.player.magnetRange)}</div>
+    </div>
+    ${augHtml}
+    ${synergyHtml}
+  `;
+
+  buildDetailOverlay.classList.add("show");
+}
+
+function closeBuildDetail() {
+  if (buildDetailOverlay) buildDetailOverlay.classList.remove("show");
 }
 
 function showBigAlert(main, sub) {
