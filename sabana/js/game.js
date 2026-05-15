@@ -2289,13 +2289,21 @@ function killEnemy(e, tags = []) {
 }
 
 function maybeDropItem(e) {
-  const dropChance = e.elite ? 0.18 : 0.015;
+  let dropChance = 0.004;
+
+  if (e.elite) dropChance = 0.05;
+  if (e.midBoss) dropChance = 0.35;
+  if (e.boss) dropChance = 1.0;
+
   if (Math.random() > dropChance) return;
-  const grade = rollItemGrade(e.elite);
+
+  const grade = rollItemGrade(e.elite || e.midBoss || e.boss);
   const item = createDropItem(grade);
+
   item.x = e.x;
   item.y = e.y;
   item.r = grade === "legendary" ? 9 : grade === "epic" ? 8 : 7;
+
   state.drops.push(item);
 }
 function rollItemGrade(elite) {
