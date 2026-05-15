@@ -17,6 +17,7 @@ const DEFAULT_RATING = 1000;
 const MIN_RATING = 100;
 const K_FACTOR = 32;
 const ROOM_LIMIT = 30;
+const RECONNECT_GRACE_MS = 10000;
 
 let linkedUser = "";
 let myStats = null;
@@ -58,6 +59,7 @@ const els = {
   betweenRoundBox: $("betweenRoundBox"),
   roundResultText: $("roundResultText"),
   roomInfo: $("roomInfo"),
+  connectionPanel: $("connectionPanel"),
   roomSettingsBox: $("roomSettingsBox"),
 spectatorList: $("spectatorList"),
   requestPanel: $("requestPanel"),
@@ -487,20 +489,144 @@ async function updatePresence() {
 }
 function checkStaleOpponent() {
   if (!room || room.status !== "playing" || !isPlayer()) return;
+
   const opponent = getOpponentNickname();
   if (!opponent || !room.players?.[opponent]?.lastSeenAt) return;
+
+  renderConnectionPanel();
+
   const last = nowMsFromTs(room.players[opponent].lastSeenAt);
   if (!last) return;
+
   const diff = Date.now() - last;
-  if (diff > 10000) {
-    setMessage(`${opponent}님 재접속 대기 중... ${Math.floor(diff / 1000)}초`, true);
+
+  if (diff > RECONNECT_GRACE_MS) {
+    setMessage(`${opponent}님 재접속 제한시간이 지났습니다. 내보내기 처리할 수 있습니다.`, true);
+    return;
   }
-  if (diff > 13000 && room.status === "playing") {
-    if (linkedUser.localeCompare(opponent, "ko") < 0 || myRole() === room.turn) {
-      finishRound({ winnerColor: myRole(), reason: "timeout" }).catch(() => {});
-    }
+
+  if (diff > 3000) {
+    const remain = Math.max(0, Math.ceil((RECONNECT_GRACE_MS - diff) / 1000));
+    setMessage(`${opponent}님 재접속 대기 중... ${remain}초`, true);
+    return;
+  }
+
+  if (isMyTurn()) {
+    setMessage("내 차례입니다.");
+  } else {
+    setMessage("상대 차례입니다.");
   }
 }
+
+function getOpponentStaleInfo() {
+  if (!room || room.status !== "playing" || !isPlayer()) {
+    return null;
+  }
+
+  const opponent = getOpponentNickname();
+
+  if (!opponent || !room.players?.[opponent]?.lastSeenAt) {
+    return null;
+  }
+
+  const last = nowMsFromTs(room.players[opponent].lastSeenAt);
+
+  if (!last) {
+    return null;
+  }
+
+  const diff = Date.now() - last;
+  const remainMs = Math.max(0, RECONNECT_GRACE_MS - diff);
+
+  return {
+    opponent,
+    diff,
+    remainSec: Math.ceil(remainMs / 1000),
+    expired: diff >= RECONNECT_GRACE_MS
+  };
+}
+
+function renderConnectionPanel() {
+  if (!els.connectionPanel) return;
+
+  if (!room || room.status !== "playing" || !isPlayer()) {
+    els.connectionPanel.innerHTML = `<div class="small">대국 중에만 접속 상태를 확인합니다.</div>`;
+    return;
+  }
+
+  const info = getOpponentStaleInfo();
+
+  if (!info) {
+    els.connectionPanel.innerHTML = `<div class="small">상대 접속 상태를 확인 중입니다.</div>`;
+    return;
+  }
+
+  if (!info.expired) {
+    els.connectionPanel.innerHTML = `
+      <div class="connection-box ${info.diff > 3000 ? "warn" : ""}">
+        <div>
+          <strong>${escapeHtml(info.opponent)}</strong>
+          <span>${info.diff > 3000 ? `재접속 대기 ${info.remainSec}초` : "접속 중"}</span>
+        </div>
+        <button class="secondary mini" type="button" disabled>내보내기</button>
+      </div>
+    `;
+    return;
+  }
+
+  els.connectionPanel.innerHTML = `
+    <div class="connection-box danger">
+      <div>
+        <strong>${escapeHtml(info.opponent)}</strong>
+        <span>재접속 제한시간 초과</span>
+      </div>
+      <button class="danger mini" type="button" onclick="kickDisconnectedOpponent()">내보내기</button>
+    </div>
+  `;
+}
+
+window.kickDisconnectedOpponent = async function kickDisconnectedOpponent() {
+  if (!room || room.status !== "playing" || !isPlayer()) return;
+
+  const info = getOpponentStaleInfo();
+
+  if (!info || !info.expired) {
+    showToast("아직 재접속 대기 시간이 남아 있습니다.");
+    return;
+  }
+
+  const opponent = info.opponent;
+  const winnerColor = myRole();
+  const loserColor = opponentColor(winnerColor);
+
+  if (!confirm(`${opponent}님을 시간초과 패배 처리하고 방에서 내보낼까요?`)) return;
+
+  try {
+    await finishRound({
+      winnerColor,
+      reason: "timeout"
+    });
+
+    await roomRef().update({
+      [`players.${opponent}`]: FV.delete(),
+      [`playerRequests.${opponent}`]: FV.delete(),
+      [`nextSeats.${winnerColor}`]: linkedUser,
+      [`nextSeats.${loserColor}`]: null,
+      [loserColor]: null,
+      updatedAt: FV.serverTimestamp()
+    });
+
+    await addSystemChat(
+      currentRoomId,
+      `${opponent}님이 재접속 제한시간을 초과하여 시간초과 패배 처리되었습니다.`
+    );
+
+    showToast("시간초과 승리 처리했습니다.");
+  } catch (err) {
+    console.error(err);
+    showToast("내보내기 처리 실패");
+  }
+};
 
 function renderRoom() {
   if (!room) return;
@@ -515,9 +641,10 @@ els.whiteName.innerHTML = room.white ? renderNicknameButton(room.white) : "대�
   els.whiteRating.textContent = room.whiteRatingBefore ? `${room.whiteRatingBefore}점` : "-";
   els.turnPill.textContent = room.status === "playing" ? `${colorName(room.turn)} 차례` : statusText(room.status);
 
-  renderRoomInfo();
+renderRoomInfo();
 renderRoomSettings();
 renderSpectatorList();
+renderConnectionPanel();
 renderRequests();
 renderPlayerRequests();
 renderButtons();
