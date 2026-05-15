@@ -1760,13 +1760,72 @@ spectators = [];
 async function leaveRoom() {
   if (currentRoomId && room) {
     try {
-      await roomRef().set({
-        [`players.${linkedUser}.connected`]: false,
-        [`players.${linkedUser}.disconnectedAt`]: FV.serverTimestamp(),
-        [`playerRequests.${linkedUser}`]: FV.delete(),
-        updatedAt: FV.serverTimestamp()
-      }, { merge: true });
+      const wasBlack = room.black === linkedUser;
+      const wasWhite = room.white === linkedUser;
+      const wasPlayer = wasBlack || wasWhite;
 
+      const updates = {
+        [`players.${linkedUser}`]: FV.delete(),
+        [`playerRequests.${linkedUser}`]: FV.delete(),
+        [`ready.${linkedUser}`]: FV.delete(),
+        updatedAt: FV.serverTimestamp()
+      };
+
+      // 현재 대국자 자리에서 제거
+      if (wasBlack) {
+        updates.black = null;
+        updates.blackRatingBefore = null;
+      }
+
+      if (wasWhite) {
+        updates.white = null;
+        updates.whiteRatingBefore = null;
+      }
+
+      // 다음 판 예정 좌석에서도 제거
+      if (room.nextSeats?.black === linkedUser) {
+        updates["nextSeats.black"] = null;
+      }
+
+      if (room.nextSeats?.white === linkedUser) {
+        updates["nextSeats.white"] = null;
+      }
+
+      // 현재 턴이 나간 사람 차례였다면 상대 차례로 넘김
+      if (room.status === "playing" && wasPlayer) {
+        updates.turn = wasBlack ? "white" : "black";
+        updates.turnStartedAt = FV.serverTimestamp();
+      }
+
+      // 둘 다 없으면 방 종료 처리
+      const nextBlack = wasBlack ? null : room.black;
+      const nextWhite = wasWhite ? null : room.white;
+
+      if (!nextBlack && !nextWhite) {
+        updates.status = "finished";
+        updates.finishedAt = FV.serverTimestamp();
+      } else if (room.status === "playing" && wasPlayer) {
+        // 대국 중 한 명이 나가면 게임판은 더 이상 정상 대국이 아니므로 대기 상태로 전환
+        updates.status = "waiting";
+        updates.board = emptyBoard();
+        updates.moveCount = 0;
+        updates.moveHistory = [];
+        updates.lastMove = null;
+        updates.winLine = [];
+        updates.winner = null;
+        updates.loser = null;
+        updates.finishReason = null;
+        updates.nextSeats = { black: null, white: null };
+        updates.ready = {};
+        updates.ratingApplied = false;
+        updates.undoRequest = null;
+        updates.drawRequest = null;
+        updates.requestLocks = { undo: {}, draw: {} };
+      }
+
+      await roomRef().update(updates);
+
+      // 관전자 하위 컬렉션에서도 제거
       await roomRef()
         .collection("spectators")
         .doc(linkedUser)
@@ -1774,10 +1833,12 @@ async function leaveRoom() {
         .catch(() => {});
 
       await addSystemChat(currentRoomId, `${linkedUser}님이 방을 나갔습니다.`);
-    } catch (_) {}
+    } catch (err) {
+      console.error("방 나가기 처리 실패", err);
+    }
   }
 
-leaveRoomLocal();
+  leaveRoomLocal();
 }
 
 async function sendChat() {
