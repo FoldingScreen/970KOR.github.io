@@ -549,6 +549,285 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+function formatPct(value, digits = 0) {
+  return `${(value * 100).toFixed(digits)}%`;
+}
+
+function getCurrentWeaponBaseDamage() {
+  if (!state || !state.weapon) return 0;
+  const w = getWeaponStats();
+  return w.damage || 0;
+}
+
+function getAugmentLiveDetail(id) {
+  if (!state) return "";
+
+  const baseDamage = getCurrentWeaponBaseDamage();
+  const attrs = getAttrCounts();
+
+  const lines = [];
+
+  if (id === "cold_edge" || id === "frostfire_core" || id === "curse_crown") {
+    const count = attrs["氷"] >= 6 ? 3 : attrs["氷"] >= 4 ? 2 : 1;
+    lines.push(`빙결 파편 현재 발사 수: ${count}개`);
+    lines.push(`빙결 파편 현재 피해: ${Math.round(baseDamage * 0.8).toLocaleString()}`);
+    lines.push(`발동 주기: 3.0초`);
+    lines.push(`둔화 부여: 적중 시 2.2초`);
+  }
+
+  if (id === "small_flame" || id === "frostfire_core" || id === "burning_wind" || id === "curse_crown" || id === "overheat_heart") {
+    const radius = attrs["火"] >= 4 ? 95 : 70;
+    const times = attrs["火"] >= 6 ? 2 : 1;
+    lines.push(`유성 불씨 현재 낙하 수: ${times}회`);
+    lines.push(`유성 불씨 현재 피해: ${Math.round(baseDamage * 1.4).toLocaleString()}`);
+    lines.push(`범위: ${radius}`);
+    lines.push(`발동 주기: 4.5초`);
+  }
+
+  if (id === "light_breeze" || id === "burning_wind" || id === "radiant_wind" || id === "perfect_focus" || id === "chain_reaction" || id === "curse_crown") {
+    const count = attrs["風"] >= 6 ? 8 : attrs["風"] >= 4 ? 6 : 4;
+    const interval = Math.max(0.7, 3.5 / Math.max(0.1, statAttackSpeedMul()));
+    lines.push(`칼날 난무 현재 발사 수: ${count}개`);
+    lines.push(`칼날 난무 현재 피해: ${Math.round(baseDamage * 0.55).toLocaleString()}`);
+    lines.push(`현재 발동 주기: ${interval.toFixed(2)}초`);
+  }
+
+  if (id === "shimmer" || id === "radiant_wind" || id === "eclipse_mark" || id === "glass_sanctuary" || id === "curse_crown") {
+    const radius = 110 * statAreaMul();
+    lines.push(`신성 폭발 현재 피해: ${Math.round(baseDamage * 1.2).toLocaleString()}`);
+    lines.push(`현재 범위: ${Math.round(radius)}`);
+    lines.push(`발동 주기: 5.5초`);
+  }
+
+  if (id === "shadow_cut" || id === "eclipse_mark" || id === "void_feast" || id === "blood_flame_demon") {
+    lines.push(`그림자 추적자 현재 피해: ${Math.round(baseDamage * 1.3).toLocaleString()}`);
+    lines.push(`발동 주기: 3.8초`);
+    lines.push(`대상: 체력 비율이 가장 낮은 적`);
+  }
+
+  if (id === "holy_seed" || id === "fallen_sanctuary" || id === "holy_demon_scar") {
+    lines.push(`성검 낙하 현재 피해: ${Math.round(baseDamage * 2.2).toLocaleString()}`);
+    lines.push(`범위: 52`);
+    lines.push(`발동 주기: 5.0초`);
+    lines.push(`대상: 현재 체력이 가장 높은 적`);
+  }
+
+  if (id === "evil_drop" || id === "fallen_sanctuary" || id === "void_feast" || id === "evil_demon_feast") {
+    const count = attrs["惡"] >= 4 ? 3 : 2;
+    lines.push(`흡혈 박쥐 현재 발사 수: ${count}개`);
+    lines.push(`흡혈 박쥐 현재 피해: ${Math.round(baseDamage * 0.7).toLocaleString()}`);
+    lines.push(`적중 시 회복: 피해량의 8%`);
+    lines.push(`발동 주기: 4.0초`);
+  }
+
+  if (id === "star_tuning") {
+    lines.push(`별빛 폭발 확률: 투사체 적중 시 22%`);
+    lines.push(`별빛 폭발 현재 피해: ${Math.round(baseDamage * 0.35).toLocaleString()}`);
+    lines.push(`별무리 폭격 현재 피해: ${Math.round(baseDamage * 0.75).toLocaleString()}`);
+    lines.push(`별무리 폭격 대상 수: 최대 5명`);
+    lines.push(`별무리 폭격 주기: 6.0초`);
+  }
+
+  if (id === "chain_reaction") {
+    lines.push(`연쇄 탄환 생성 확률: 22%`);
+    lines.push(`연쇄 탄환 현재 피해: ${Math.round(baseDamage * 0.45).toLocaleString()}`);
+    lines.push(`연쇄 탄환은 재연쇄 불가`);
+  }
+
+  if (id === "perfect_focus") {
+    const stack = state.stacks.focus || 0;
+    const mul = Math.pow(1.005, stack);
+    lines.push(`현재 집중 중첩: ${stack} / 80`);
+    lines.push(`중첩당 공격력 증가: 0.5% 곱연산`);
+    lines.push(`현재 집중 공격력 배율: x${mul.toFixed(3)}`);
+    lines.push(`최대 중첩 시 공격력 배율: x${Math.pow(1.005, 80).toFixed(3)}`);
+    lines.push(`피격 시 집중 중첩 초기화`);
+  }
+
+  if (id === "glass_sanctuary") {
+    lines.push(`보호막 보유 중 피해 배율: x1.6`);
+    lines.push(`보호막이 없을 때 받는 피해: +20%`);
+    lines.push(`현재 보호막: ${Math.round(state.player.shield || 0)}`);
+  }
+
+  if (id === "overheat_heart") {
+    lines.push(`공격속도 배율: x1.55`);
+    lines.push(`화염 보조탄 현재 피해: ${Math.round(baseDamage * 0.35).toLocaleString()}`);
+    lines.push(`화염 보조탄 발동: 기본 공격마다 1발`);
+    lines.push(`HP 소모 없음`);
+  }
+
+  if (id === "blood_furnace") {
+    lines.push(`초당 HP 소모: 현재 HP의 0.6%`);
+    lines.push(`직접 피해 회복: 피해량의 3%`);
+    lines.push(`화상 피해 회복: 피해량의 8%`);
+    lines.push(`HP 30% 이하일 때 회복량 2배`);
+  }
+
+  if (id === "demon_gate" || id === "demon_mark" || id === "blood_flame_demon" || id === "holy_demon_scar" || id === "evil_demon_feast") {
+    const bonus = 1 + (state.stacks.demon || 0) * 0.01;
+    const radius = 130 + (state.stacks.demon || 0) * 0.4;
+    lines.push(`귀참 현재 피해: ${Math.round(baseDamage * 2.5 * bonus).toLocaleString()}`);
+    lines.push(`귀참 현재 범위: ${Math.round(radius)}`);
+    lines.push(`귀참 발동 주기: 6.0초`);
+    lines.push(`현재 鬼 중첩: ${state.stacks.demon || 0}`);
+  }
+
+  if (!lines.length) return "";
+
+  return `
+    <hr class="detail-divider">
+    <div class="effect">
+      <strong>현재 계산값</strong><br>
+      ${lines.map(line => escapeHtml(line)).join("<br>")}
+    </div>
+  `;
+}
+
+function getSynergyLiveDetail(key) {
+  if (!state) return "";
+
+  const s = state.synergy || {};
+  const lines = [];
+
+  if (key === "ice2" || key === "ice4" || key === "ice6") {
+    lines.push(`현재 둔화 확률: ${formatPct(s.slowChance || 0)}`);
+    lines.push(`현재 둔화 강도: ${formatPct(s.slowPower || 0)}`);
+    if (key === "ice4" || key === "ice6") {
+      lines.push(`현재 광역 피해 배율: x${(s.areaDamageMul || 1).toFixed(2)}`);
+    }
+    if (key === "ice6") {
+      lines.push(`발현 순간: 화면 내 적 2초 빙결`);
+    }
+  }
+
+  if (key === "fire2" || key === "fire4" || key === "fire6") {
+    lines.push(`현재 화상 확률: ${formatPct(s.burnChance || 0)}`);
+    lines.push(`현재 화상 DPS: 적중 피해의 ${formatPct(s.burnDpsRatio || 0)}/초`);
+    lines.push(`현재 화상 지속시간: ${(s.burnDuration || 0).toFixed(1)}초`);
+    if (key === "fire6") {
+      lines.push(`화상 중인 적 처치 시 폭발: 적 최대 HP의 25%`);
+      lines.push(`화상 전이 피해: 적 최대 HP의 4%`);
+    }
+  }
+
+  if (key === "wind2" || key === "wind4" || key === "wind6") {
+    lines.push(`현재 시너지 공격속도 배율: x${(s.attackSpeedMul || 1).toFixed(2)}`);
+    lines.push(`현재 시너지 이동속도 배율: x${(s.moveMul || 1).toFixed(2)}`);
+    if (s.extraHitEvery) {
+      lines.push(`추가타: ${s.extraHitEvery}번째 타격마다 기본 피해의 50%`);
+    }
+    if (key === "wind6") {
+      lines.push(`발현 순간: 10초간 공격속도 x2.0`);
+    }
+  }
+
+  if (key === "light2" || key === "light4" || key === "light6") {
+    lines.push(`현재 시너지 공격범위 배율: x${(s.areaMul || 1).toFixed(2)}`);
+    lines.push(`현재 광역 피해 배율: x${(s.areaDamageMul || 1).toFixed(2)}`);
+    if (key === "light6") {
+      lines.push(`발현 순간: 화면 전체 180 피해`);
+      lines.push(`광역 처치 연계: 광역 피해로 처치 시 25% 확률 빛 폭발`);
+    }
+  }
+
+  if (key === "dark2" || key === "dark4" || key === "dark6") {
+    lines.push(`현재 처형 기준: HP ${formatPct(s.executeThreshold || 0)} 이하`);
+    lines.push(`현재 처형 확률: ${formatPct(s.executeChance || 0)}`);
+    lines.push(`정예 처형 실패 시 추가 피해: 적 최대 HP의 8%`);
+    if (key === "dark6") {
+      lines.push(`발현 순간: HP 35% 이하 일반 적 즉시 처형`);
+      lines.push(`그 외 적: 최대 HP의 12% 피해`);
+    }
+  }
+
+  if (key === "holy2" || key === "holy4" || key === "holy6") {
+    lines.push(`처치 시 보호막 획득 확률: ${formatPct(s.shieldOnKillChance || 0)}`);
+    lines.push(`처치 시 보호막 획득량: ${s.shieldOnKill || 0}`);
+    if (key === "holy6") {
+      lines.push(`발현 순간: 최대 HP의 40% 보호막 획득`);
+    }
+  }
+
+  if (key === "evil2" || key === "evil4" || key === "evil6") {
+    lines.push(`처치 시 회복 확률: ${formatPct(s.healOnKillChance || 0)}`);
+    lines.push(`처치 시 회복량: ${s.healOnKill || 0}`);
+    if (key === "evil6") {
+      lines.push(`발현 순간: HP 100% 회복`);
+      lines.push(`발현 순간: 8초간 공격력 x1.5`);
+      lines.push(`초과 회복 시 5초간 공격력 버프`);
+    }
+  }
+
+  if (key === "demon2" || key === "demon3" || key === "demon4") {
+    const perStack = s.demonKillStack || 0;
+    const stack = state.stacks.demon || 0;
+    const mul = 1 + stack * perStack;
+
+    lines.push(`처치 시 鬼 중첩 증가량: 기본 +1`);
+    lines.push(`중첩당 공격력 증가: ${formatPct(perStack, 1)}`);
+    lines.push(`현재 鬼 중첩: ${stack} / ${s.demonMax || 0}`);
+    lines.push(`현재 鬼 공격력 배율: x${mul.toFixed(3)}`);
+    lines.push(`피격 시 중첩 감소율: ${formatPct(s.demonLoss || 0)}`);
+    if (key === "demon4") {
+      lines.push(`발현 순간: 鬼 중첩 +50`);
+      lines.push(`발현 순간: 10초간 중첩 감소 면역`);
+    }
+  }
+
+  if (key === "frostfire") {
+    lines.push(`둔화 + 화상 상태 적 피해 배율: x${(1.65 + (state.perks.frostfireBonus || 0)).toFixed(2)}`);
+    lines.push(`화상 중 둔화 발생 시 즉시 화상 피해 1회`);
+  }
+
+  if (key === "firestorm") {
+    lines.push(`화상 중인 적 타격 시 화상 전이 확률: 16%`);
+    lines.push(`전이 대상: 주변 최대 2명`);
+    lines.push(`전이 피해: 기준 피해의 25%/초`);
+  }
+
+  if (key === "radiantwind") {
+    lines.push(`공격속도 증가분 일부를 공격범위로 전환`);
+    lines.push(`현재 공격속도 배율: x${statAttackSpeedMul().toFixed(2)}`);
+    lines.push(`현재 공격범위 배율: x${statAreaMul().toFixed(2)}`);
+  }
+
+  if (key === "voidfeast") {
+    lines.push(`처형/회복 연계형 시너지`);
+    lines.push(`초과 회복 발생 시 공격력 버프와 연결`);
+  }
+
+  if (key === "fallenholy") {
+    lines.push(`보호막 획득 시 회복 보조`);
+    lines.push(`회복 발생 시 보호막 보조`);
+  }
+
+  if (key === "bloodflamedemon") {
+    lines.push(`화상 중인 적 처치 시 鬼 중첩 추가 +2`);
+    lines.push(`demonGate 보유 시 처치 鬼 중첩 추가 +1`);
+  }
+
+  if (key === "holydemon") {
+    lines.push(`보호막 보유 중 鬼 중첩 증가량 +1`);
+    lines.push(`보호막 보유 중 피격 시 鬼 중첩 감소량 50% 완화`);
+  }
+
+  if (key === "evildemon") {
+    lines.push(`회복 발생 시 鬼 중첩 +1`);
+    lines.push(`초과 회복 발생 시 鬼 중첩 추가 +1`);
+  }
+
+  if (!lines.length) return "";
+
+  return `
+    <hr class="detail-divider">
+    <div class="effect">
+      <strong>현재 계산값</strong><br>
+      ${lines.map(line => escapeHtml(line)).join("<br>")}
+    </div>
+  `;
+}
+
 function getAugmentDetailHtml(id) {
   const aug =
     state?.augments?.find(a => a.id === id) ||
@@ -566,6 +845,7 @@ function getAugmentDetailHtml(id) {
       ${escapeHtml(aug.name)} ${renderAttrInline(aug.attrs)}
     </h3>
     <div class="effect">${escapeHtml(aug.detail || aug.desc).replaceAll("\n", "<br>")}</div>
+    ${getAugmentLiveDetail(id)}
   `;
 }
 
@@ -583,8 +863,9 @@ function getSynergyDetailHtml(key) {
     <h3>${escapeHtml(info.name)}</h3>
     <div class="effect">
       조건: ${escapeHtml(info.cond || "-")}<br><br>
-      효과:<br>${escapeHtml(info.detail || info.short || "").replaceAll("\n", "<br>")}
+      기본 설명:<br>${escapeHtml(info.detail || info.short || "").replaceAll("\n", "<br>")}
     </div>
+    ${getSynergyLiveDetail(key)}
   `;
 }
 
