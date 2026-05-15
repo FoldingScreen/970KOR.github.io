@@ -140,6 +140,24 @@
 
   <div id="toast" class="toast"></div>
 
+  <script>
+    (function () {
+      var loginName = String(localStorage.getItem("partyAppUser") || "").trim();
+      if (loginName) return;
+
+      var savedGuestName = String(localStorage.getItem("dalmutiGuestNickname") || "").trim();
+      var guestName = window.prompt("닉네임을 입력하세요", savedGuestName || "");
+      guestName = String(guestName || "").trim().slice(0, 12);
+
+      if (!guestName) {
+        guestName = "손님" + Math.floor(1000 + Math.random() * 9000);
+      }
+
+      localStorage.setItem("dalmutiGuestNickname", guestName);
+      localStorage.setItem("partyAppUser", guestName);
+      localStorage.setItem("dalmutiGuestMode", "true");
+    })();
+  </script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   <script src="./js/00-config.js?v=20260516-2"></script>
