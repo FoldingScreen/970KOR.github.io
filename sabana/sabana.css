@@ -764,3 +764,16 @@ canvas {
   margin-top: 8px;
   width: 100%;
 }
+
+#buildDetailOverlay {
+  z-index: 90;
+}
+
+#buildDetailOverlay.show {
+  display: flex;
+}
+
+.build-detail-trigger {
+  position: relative;
+  z-index: 2;
+}
