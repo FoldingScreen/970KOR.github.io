@@ -2591,28 +2591,28 @@ function updateGemsAndDrops(dt) {
   state.drops = state.drops.filter((d) => !d.collected);
 }
 function gainExp(amount) {
-  if (state.level >= MAX_LEVEL) {
-    state.overExp += amount;
-    while (state.overExp >= OVER_EXP_REWARD) {
-      state.overExp -= OVER_EXP_REWARD;
-      grantOverExpReward();
-    }
-    return;
-  }
   state.exp += amount;
-  while (state.level < MAX_LEVEL && state.exp >= EXP_TO_NEXT[state.level]) {
-    state.exp -= EXP_TO_NEXT[state.level];
+
+  while (state.exp >= getExpToNext(state.level)) {
+    const need = getExpToNext(state.level);
+
+    state.exp -= need;
     state.level += 1;
     rebuildStats();
-    pendingAugmentAfterGrowth =
-      SPECIAL_LEVELS.has(state.level) && state.augments.length < MAX_AUGMENTS;
-    openGrowthChoice();
-    if (state.level >= MAX_LEVEL) {
-      state.level = MAX_LEVEL;
-      state.overExp += state.exp;
-      state.exp = 0;
+
+    // 30레벨까지는 기존처럼 성장 카드/증강 선택 지급
+    if (state.level <= MAX_LEVEL) {
+      pendingAugmentAfterGrowth =
+        SPECIAL_LEVELS.has(state.level) && state.augments.length < MAX_AUGMENTS;
+
+      openGrowthChoice();
+      break;
     }
-    break;
+
+    // 31레벨 이후는 레벨 숫자만 상승.
+    // 성장 카드, 증강, 초과 경험 보상 없음.
+    pendingAugmentAfterGrowth = false;
+    showToast(`Lv.${state.level}`);
   }
 }
 function grantOverExpReward() {
@@ -3103,7 +3103,7 @@ earned = Math.round(earned);
   state.rewardClaimed = true;
   await saveMeta();
   resultTitle.textContent = success ? "20분 생존 성공!" : "사망";
-  resultDesc.innerHTML = `생존 시간: <strong>${formatTime(state.timeMs)}</strong><br>레벨: <strong>${state.level >= MAX_LEVEL ? "MAX" : state.level}</strong><br>처치 수: <strong>${state.kills}</strong><br>증강 수: <strong>${state.augments.length}</strong><br>발현 시너지 수: <strong>${state.activeSynergies.size}</strong><br>획득 아이템: <strong>${state.itemStats.total}</strong><br>획득 보석: <strong>${state.itemStats.gems}</strong><br>전투 중 코인: <strong>${state.runCoins}</strong><br>정산 코인: <strong>${earned - state.runCoins}</strong><br>${jackpot ? `<strong style="color:#facc15;">대박 보상 2배 발동!</strong><br>` : ""}총 획득 코인: <strong>${earned}</strong><br>보유 코인: <strong>${Math.floor(meta.coins)}</strong>
+  resultDesc.innerHTML = `생존 시간: <strong>${formatTime(state.timeMs)}</strong><br>레벨: <strong>${state.level}</strong><br>처치 수: <strong>${state.kills}</strong><br>증강 수: <strong>${state.augments.length}</strong><br>발현 시너지 수: <strong>${state.activeSynergies.size}</strong><br>획득 아이템: <strong>${state.itemStats.total}</strong><br>획득 보석: <strong>${state.itemStats.gems}</strong><br>전투 중 코인: <strong>${state.runCoins}</strong><br>정산 코인: <strong>${earned - state.runCoins}</strong><br>${jackpot ? `<strong style="color:#facc15;">대박 보상 2배 발동!</strong><br>` : ""}총 획득 코인: <strong>${earned}</strong><br>보유 코인: <strong>${Math.floor(meta.coins)}</strong>
   ${renderRunSummaryHtml()}
   `;
   resultOverlay.classList.add("show");
