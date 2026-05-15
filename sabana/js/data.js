@@ -40,6 +40,19 @@ const EXP_TO_NEXT = [
   5720, 6100,
 ];
 
+function getExpToNext(level) {
+  if (EXP_TO_NEXT[level]) {
+    return EXP_TO_NEXT[level];
+  }
+
+  const lastIndex = EXP_TO_NEXT.length - 1;
+  const base = EXP_TO_NEXT[lastIndex];
+  const extraLevel = level - lastIndex;
+
+  // 30레벨 이후부터는 요구 경험치가 계속 가파르게 상승
+  return Math.round(base * Math.pow(1.10, extraLevel) + extraLevel * 240);
+}
+
 const SYNERGY_INFO = {
   ice2: {
     name: "氷 2 냉기 개방",
