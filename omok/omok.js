@@ -331,6 +331,21 @@ async function arrangeSeatsByRating(nicknameA, nicknameB) {
   };
 }
 
+async function buildInitialMatchRequest(playerA, playerB) {
+  const arranged = await arrangeSeatsByRating(playerA, playerB);
+
+  return {
+    requestedBy: arranged.black,
+    requestedTo: arranged.white,
+    black: arranged.black,
+    white: arranged.white,
+    blackRating: arranged.blackRating,
+    whiteRating: arranged.whiteRating,
+    requestedAt: FV.serverTimestamp(),
+    status: "pending"
+  };
+}
+
 function requestTimeMs(req) {
   if (!req) return 0;
   return nowMsFromTs(req.requestedAt) || 0;
@@ -478,6 +493,7 @@ settings: {
       undoRequest: null,
       drawRequest: null,
       rematchRequest: null,
+      matchRequest: null,
       createdAt: FV.serverTimestamp(),
       updatedAt: FV.serverTimestamp(),
       startedAt: null,
@@ -492,36 +508,54 @@ settings: {
 }
 window.joinRoomAsWhite = async function joinRoomAsWhite(id) {
   try {
-    const stats = await ensureUserStats(linkedUser);
+    let requestInfo = null;
+
     await db.runTransaction(async tx => {
       const ref = roomRef(id);
       const snap = await tx.get(ref);
+
       if (!snap.exists) throw new Error("방이 없습니다.");
+
       const r = snap.data();
-      if (r.status !== "waiting" || r.white) throw new Error("참가할 수 없는 방입니다.");
-      if (r.black === linkedUser) throw new Error("이미 방에 있습니다.");
+
+      if (r.status !== "waiting" || r.white) {
+        throw new Error("참가할 수 없는 방입니다.");
+      }
+
+      if (r.black === linkedUser) {
+        throw new Error("이미 방에 있습니다.");
+      }
+
+      if (r.matchRequest?.status === "pending") {
+        throw new Error("이미 대국 요청이 진행 중입니다.");
+      }
+
+      requestInfo = await buildInitialMatchRequest(r.black, linkedUser);
+
       tx.update(ref, {
-        white: linkedUser,
-        whiteRatingBefore: Math.round(stats.rating || DEFAULT_RATING),
-status: "playing",
-startedAt: FV.serverTimestamp(),
-turnStartedAt: FV.serverTimestamp(),
-updatedAt: FV.serverTimestamp(),
+        matchRequest: requestInfo,
         [`players.${linkedUser}`]: {
-          role: "white",
+          role: "spectator",
           connected: true,
           lastSeenAt: FV.serverTimestamp(),
           disconnectedAt: null
-        }
+        },
+        updatedAt: FV.serverTimestamp()
       });
     });
-    await addSystemChat(id, `${linkedUser}님이 백돌로 참가했습니다.`);
+
+    await addSystemChat(
+      id,
+      `${requestInfo.requestedBy}님이 ${requestInfo.requestedTo}님에게 대국을 요청했습니다.`
+    );
+
     enterRoom(id);
   } catch (err) {
     console.error(err);
-    showToast(err.message || "참가 실패");
+    showToast(err.message || "참가 요청 실패");
   }
 };
+
 window.enterRoom = function enterRoom(id) {
   currentRoomId = id;
   localStorage.setItem("omokCurrentRoomId", id);
@@ -988,52 +1022,38 @@ window.promoteWaitingPlayer = async function promoteWaitingPlayer(nickname) {
   }
 
   try {
-    // 방 생성 후 상대 대기 상태
-    if (room.status === "waiting" && room.black && !room.white) {
-      if (room.black !== linkedUser && room.host !== linkedUser) {
-        showToast("방장만 대기자를 올릴 수 있습니다.");
-        return;
-      }
+// 방 생성 후 상대 대기 상태:
+// 바로 시작하지 않고, 낮은 레이팅이 높은 레이팅에게 대국 요청
+if (room.status === "waiting" && room.black && !room.white) {
+  if (room.black !== linkedUser && room.host !== linkedUser) {
+    showToast("방장만 대기자를 올릴 수 있습니다.");
+    return;
+  }
 
-      const arranged = await arrangeSeatsByRating(room.black, nickname);
+  if (room.matchRequest?.status === "pending") {
+    showToast("이미 대국 요청이 진행 중입니다.");
+    return;
+  }
 
-      await roomRef().update({
-        black: arranged.black,
-        white: arranged.white,
-        blackRatingBefore: arranged.blackRating,
-        whiteRatingBefore: arranged.whiteRating,
-        status: "playing",
-        turn: "black",
-        startedAt: FV.serverTimestamp(),
-        turnStartedAt: FV.serverTimestamp(),
+  const requestInfo = await buildInitialMatchRequest(room.black, nickname);
 
-        [`players.${arranged.black}.role`]: "black",
-        [`players.${arranged.black}.connected`]: true,
-        [`players.${arranged.black}.lastSeenAt`]: FV.serverTimestamp(),
+  await roomRef().update({
+    matchRequest: requestInfo,
+    [`players.${nickname}.role`]: "spectator",
+    [`players.${nickname}.connected`]: true,
+    [`players.${nickname}.lastSeenAt`]: FV.serverTimestamp(),
+    [`playerRequests.${nickname}`]: FV.delete(),
+    updatedAt: FV.serverTimestamp()
+  });
 
-        [`players.${arranged.white}.role`]: "white",
-        [`players.${arranged.white}.connected`]: true,
-        [`players.${arranged.white}.lastSeenAt`]: FV.serverTimestamp(),
+  await addSystemChat(
+    currentRoomId,
+    `${requestInfo.requestedBy}님이 ${requestInfo.requestedTo}님에게 대국을 요청했습니다.`
+  );
 
-        [`playerRequests.${nickname}`]: FV.delete(),
-        ready: {},
-        updatedAt: FV.serverTimestamp()
-      });
-
-      await roomRef()
-        .collection("spectators")
-        .doc(nickname)
-        .delete()
-        .catch(() => {});
-
-      await addSystemChat(
-        currentRoomId,
-        `${nickname}님이 대국자로 참가했습니다. 레이팅 기준으로 ${arranged.black}님이 흑, ${arranged.white}님이 백입니다.`
-      );
-
-      showToast(`${nickname}님이 대국자로 참가했습니다.`);
-      return;
-    }
+  showToast("대국 요청을 보냈습니다.");
+  return;
+}
 
     if (room.status !== "betweenRounds") {
       showToast("판 종료 후에만 대기자를 올릴 수 있습니다.");
@@ -1149,7 +1169,8 @@ function hasPendingRequest() {
   return (
     room?.undoRequest?.status === "pending" ||
     room?.drawRequest?.status === "pending" ||
-    room?.rematchRequest?.status === "pending"
+    room?.rematchRequest?.status === "pending" ||
+    room?.matchRequest?.status === "pending"
   );
 }
 
@@ -1162,27 +1183,32 @@ function canRequest(type) {
 let activeRequestType = null;
 
 function renderRequests() {
+  const match = room?.matchRequest;
   const undo = room?.undoRequest;
   const draw = room?.drawRequest;
   const rematch = room?.rematchRequest;
 
   const pending =
-    undo?.status === "pending"
-      ? undo
-      : draw?.status === "pending"
-        ? draw
-        : rematch?.status === "pending"
-          ? rematch
-          : null;
+    match?.status === "pending"
+      ? match
+      : undo?.status === "pending"
+        ? undo
+        : draw?.status === "pending"
+          ? draw
+          : rematch?.status === "pending"
+            ? rematch
+            : null;
 
   const type =
-    undo?.status === "pending"
-      ? "undo"
-      : draw?.status === "pending"
-        ? "draw"
-        : rematch?.status === "pending"
-          ? "rematch"
-          : null;
+    match?.status === "pending"
+      ? "match"
+      : undo?.status === "pending"
+        ? "undo"
+        : draw?.status === "pending"
+          ? "draw"
+          : rematch?.status === "pending"
+            ? "rematch"
+            : null;
 
   if (!pending) {
     activeRequestType = null;
@@ -1196,15 +1222,13 @@ function renderRequests() {
     return;
   }
 
-  // 무르기/무승부/재대국 요청은 대국자에게만 표시
-  if (!isPlayer()) {
+  if (pending.requestedTo && pending.requestedTo !== linkedUser) {
     activeRequestType = null;
     closeRequestModal();
     return;
   }
 
-  // 재대국은 승자에게만 응답 모달 표시
-  if (type === "rematch" && pending.requestedTo !== linkedUser) {
+  if (type !== "match" && !isPlayer()) {
     activeRequestType = null;
     closeRequestModal();
     return;
@@ -1213,16 +1237,22 @@ function renderRequests() {
   activeRequestType = type;
 
   const label =
-    type === "undo"
-      ? "무르기"
-      : type === "draw"
-        ? "무승부"
-        : "재대국";
+    type === "match"
+      ? "대국"
+      : type === "undo"
+        ? "무르기"
+        : type === "draw"
+          ? "무승부"
+          : "재대국";
 
   els.requestModalTitle.textContent = `${label} 요청`;
   els.requestModalBody.innerHTML = `
     <p><strong>${escapeHtml(pending.requestedBy)}</strong>님이 ${label}를 요청했습니다.</p>
-    <p class="small">수락하시겠습니까?</p>
+    ${
+      type === "match"
+        ? `<p class="small">수락하면 ${escapeHtml(pending.black)}님이 흑, ${escapeHtml(pending.white)}님이 백으로 시작합니다.</p>`
+        : `<p class="small">수락하시겠습니까?</p>`
+    }
   `;
 
   els.requestOverlay.classList.add("show");
@@ -1577,6 +1607,7 @@ if (role !== r.turn) {
 undoRequest: null,
 drawRequest: null,
 rematchRequest: null,
+        matchRequest: null,
 updatedAt: FV.serverTimestamp()
       };
       if (win.win) {
@@ -1731,6 +1762,7 @@ const role = getRoleOf(linkedUser, r);
 undoRequest: null,
 drawRequest: null,
 rematchRequest: null,
+          matchRequest: null,
 updatedAt: FV.serverTimestamp()
         });
       }
@@ -1750,12 +1782,14 @@ async function resignGame() {
 }
 async function requestAction(type) {
   if (!canRequest(type)) return;
-  const label =
-  type === "undo"
-    ? "무르기"
-    : type === "draw"
-      ? "무승부"
-      : "재대국";
+const label =
+  type === "match"
+    ? "대국"
+    : type === "undo"
+      ? "무르기"
+      : type === "draw"
+        ? "무승부"
+        : "재대국";
   try {
     await roomRef().update({
       [`${type}Request`]: {
@@ -1784,12 +1818,14 @@ window.cancelRequest = async function cancelRequest(type) {
 };
 window.resolveRequest = async function resolveRequest(type, accepted) {
   if (!room) return;
-  const request =
-  type === "undo"
-    ? room.undoRequest
-    : type === "draw"
-      ? room.drawRequest
-      : room.rematchRequest;
+const request =
+  type === "match"
+    ? room.matchRequest
+    : type === "undo"
+      ? room.undoRequest
+      : type === "draw"
+        ? room.drawRequest
+        : room.rematchRequest;
   if (!request || request.status !== "pending" || request.requestedBy === linkedUser) return;
   const label = type === "undo" ? "무르기" : "무승부";
   if (!accepted) {
@@ -1797,11 +1833,28 @@ window.resolveRequest = async function resolveRequest(type, accepted) {
     await addSystemChat(currentRoomId, `${linkedUser}님이 ${label} 요청을 거절했습니다.`);
     return;
   }
+
+if (type === "match") {
+  if (!accepted) {
+    await roomRef().update({
+      matchRequest: null,
+      updatedAt: FV.serverTimestamp()
+    });
+
+    await addSystemChat(currentRoomId, `${linkedUser}님이 대국 요청을 거절했습니다.`);
+    return;
+  }
+
+  await acceptInitialMatch();
+  await addSystemChat(currentRoomId, `${linkedUser}님이 대국 요청을 수락했습니다.`);
+  return;
+}
   
   if (type === "rematch") {
   if (!accepted) {
     await roomRef().update({
       rematchRequest: null,
+      matchRequest: null,
       updatedAt: FV.serverTimestamp()
     });
 
@@ -1822,6 +1875,93 @@ window.resolveRequest = async function resolveRequest(type, accepted) {
   await acceptUndo();
   await addSystemChat(currentRoomId, `${linkedUser}님이 무르기 요청을 수락했습니다.`);
 };
+
+async function acceptInitialMatch() {
+  await db.runTransaction(async tx => {
+    const ref = roomRef();
+    const snap = await tx.get(ref);
+
+    if (!snap.exists) return;
+
+    const r = snap.data();
+    const req = r.matchRequest;
+
+    if (!req || req.status !== "pending") return;
+    if (req.requestedTo !== linkedUser) return;
+    if (r.status !== "waiting") return;
+
+    const black = req.black;
+    const white = req.white;
+
+    if (!black || !white) return;
+
+    tx.update(ref, {
+      status: "playing",
+      black,
+      white,
+      blackRatingBefore: Math.round(req.blackRating || DEFAULT_RATING),
+      whiteRatingBefore: Math.round(req.whiteRating || DEFAULT_RATING),
+
+      turn: "black",
+      turnSeq: (r.turnSeq || 1) + 1,
+      turnStartedAt: FV.serverTimestamp(),
+      startedAt: FV.serverTimestamp(),
+
+      board: emptyBoard(),
+      moveCount: 0,
+      moveHistory: [],
+      lastMove: null,
+      winLine: [],
+      winner: null,
+      loser: null,
+      finishReason: null,
+      consecutivePasses: 0,
+
+      nextSeats: { black: null, white: null },
+      ready: {},
+
+      blackRatingAfter: null,
+      whiteRatingAfter: null,
+      blackRatingChange: null,
+      whiteRatingChange: null,
+      ratingApplied: false,
+
+      undoRequest: null,
+      drawRequest: null,
+      matchRequest: null,
+      rematchRequest: null,
+      requestLocks: { undo: {}, draw: {} },
+
+      [`players.${black}.role`]: "black",
+      [`players.${black}.connected`]: true,
+      [`players.${black}.lastSeenAt`]: FV.serverTimestamp(),
+
+      [`players.${white}.role`]: "white",
+      [`players.${white}.connected`]: true,
+      [`players.${white}.lastSeenAt`]: FV.serverTimestamp(),
+
+      [`playerRequests.${black}`]: FV.delete(),
+      [`playerRequests.${white}`]: FV.delete(),
+
+      finishedAt: null,
+      updatedAt: FV.serverTimestamp()
+    });
+  });
+
+  await roomRef()
+    .collection("spectators")
+    .doc(room?.matchRequest?.black)
+    .delete()
+    .catch(() => {});
+
+  await roomRef()
+    .collection("spectators")
+    .doc(room?.matchRequest?.white)
+    .delete()
+    .catch(() => {});
+
+  showToast("대국을 시작합니다.");
+}
 
 async function requestRematch() {
   if (!room || room.status !== "betweenRounds") return;
@@ -1920,6 +2060,7 @@ async function acceptRematch() {
       undoRequest: null,
       drawRequest: null,
       rematchRequest: null,
+      matchRequest: null,
       requestLocks: { undo: {}, draw: {} },
 
       [`players.${loser}.role`]: "black",
@@ -1974,6 +2115,7 @@ winLine: [],
 undoRequest: null,
 drawRequest: null,
 rematchRequest: null,
+      matchRequest: null,
 updatedAt: FV.serverTimestamp()
     });
   });
@@ -2032,6 +2174,7 @@ round: (r.round || 1) + 1,
 undoRequest: null,
 drawRequest: null,
 rematchRequest: null,
+      matchRequest: null,
 requestLocks: { undo: {}, draw: {} },
       [`players.${black}.role`]: "black",
       [`players.${white}.role`]: "white",
