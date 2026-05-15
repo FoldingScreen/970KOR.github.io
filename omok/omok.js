@@ -58,6 +58,8 @@ const els = {
   betweenRoundBox: $("betweenRoundBox"),
   roundResultText: $("roundResultText"),
   roomInfo: $("roomInfo"),
+  roomSettingsBox: $("roomSettingsBox"),
+spectatorList: $("spectatorList"),
   requestPanel: $("requestPanel"),
   playerRequests: $("playerRequests"),
   chatList: $("chatList"),
@@ -502,10 +504,12 @@ function renderRoom() {
   els.turnPill.textContent = room.status === "playing" ? `${colorName(room.turn)} 차례` : statusText(room.status);
 
   renderRoomInfo();
-  renderRequests();
-  renderPlayerRequests();
-  renderButtons();
-  renderSelectedInfo();
+renderRoomSettings();
+renderSpectatorList();
+renderRequests();
+renderPlayerRequests();
+renderButtons();
+renderSelectedInfo();
 
   if (room.status === "waiting") {
     setMessage(room.black === linkedUser ? "상대를 기다리는 중입니다." : "참가 또는 관전할 수 있습니다.");
@@ -528,17 +532,100 @@ function setMessage(text, warn = false) {
   els.messageBar.classList.toggle("warn", !!warn);
 }
 function renderRoomInfo() {
-  const role = myRole();
   const requestCount = Object.keys(room.playerRequests || {}).length;
+
   els.roomInfo.innerHTML = `
-    <div class="info-row"><span>내 역할</span><strong>${role === "spectator" ? "관전자" : colorName(role)}</strong></div>
-    <div class="info-row"><span>상태</span><strong>${statusText(room.status)}</strong></div>
+    <div class="info-row"><span>라운드</span><strong>${room.round || 1}</strong></div>
     <div class="info-row"><span>수순</span><strong>${room.moveCount || 0}</strong></div>
+    <div class="info-row"><span>현재 차례</span><strong>${room.status === "playing" ? colorName(room.turn) : "-"}</strong></div>
     <div class="info-row"><span>33금지</span><strong>흑백 모두</strong></div>
-    <div class="info-row"><span>관전</span><strong>${room.settings?.allowSpectators === false ? "불가" : "허용"}</strong></div>
-    <div class="info-row"><span>훈수</span><strong>${room.settings?.allowAdvice ? "허용" : "금지"}</strong></div>
     <div class="info-row"><span>참여 희망</span><strong>${requestCount}명</strong></div>
   `;
+}
+function renderRoomSettings() {
+  const isHost = room?.host === linkedUser;
+  const allowSpectators = room?.settings?.allowSpectators !== false;
+  const allowAdvice = !!room?.settings?.allowAdvice;
+
+  els.roomSettingsBox.innerHTML = `
+    <label class="check-row room-setting-row">
+      <input id="roomAllowSpectators" type="checkbox" ${allowSpectators ? "checked" : ""} ${isHost ? "" : "disabled"} />
+      <span>관전 허용</span>
+    </label>
+
+    <label class="check-row room-setting-row">
+      <input id="roomAllowAdvice" type="checkbox" ${allowAdvice ? "checked" : ""} ${isHost ? "" : "disabled"} />
+      <span>훈수 허용 관전자 채팅 가능</span>
+    </label>
+
+    ${
+      isHost
+        ? `<button id="saveRoomSettingsBtn" class="secondary full" type="button">방 설정 저장</button>`
+        : `<div class="small">방 설정은 방장만 변경할 수 있습니다.</div>`
+    }
+  `;
+
+  const saveBtn = document.getElementById("saveRoomSettingsBtn");
+  if (saveBtn) {
+    saveBtn.onclick = updateRoomSettings;
+  }
+}
+
+function renderSpectatorList() {
+  const players = room?.players || {};
+  const names = Object.keys(players)
+    .filter(name => name !== room.black && name !== room.white)
+    .sort((a, b) => a.localeCompare(b, "ko"));
+
+  if (!names.length) {
+    els.spectatorList.innerHTML = `<div class="small">관전자 없음</div>`;
+    return;
+  }
+
+  els.spectatorList.innerHTML = names.map(name => {
+    const p = players[name] || {};
+    const lastSeen = nowMsFromTs(p.lastSeenAt);
+    const connected = lastSeen && Date.now() - lastSeen <= 10000;
+    const wants = !!room.playerRequests?.[name];
+
+    return `
+      <div class="spectator-item">
+        <div>
+          <strong>${escapeHtml(name)}</strong>
+          ${wants ? `<span class="spectator-want">🎮 참여 희망</span>` : ""}
+        </div>
+        <span class="${connected ? "online-dot" : "offline-dot"}">${connected ? "접속" : "이탈"}</span>
+      </div>
+    `;
+  }).join("");
+}
+
+async function updateRoomSettings() {
+  if (!room || room.host !== linkedUser) {
+    showToast("방장만 설정을 변경할 수 있습니다.");
+    return;
+  }
+
+  const allowSpectators = !!document.getElementById("roomAllowSpectators")?.checked;
+  const allowAdvice = !!document.getElementById("roomAllowAdvice")?.checked;
+
+  try {
+    await roomRef().update({
+      "settings.allowSpectators": allowSpectators,
+      "settings.allowAdvice": allowAdvice,
+      updatedAt: FV.serverTimestamp()
+    });
+
+    await addSystemChat(
+      currentRoomId,
+      `방 설정이 변경되었습니다. 관전: ${allowSpectators ? "허용" : "불가"} / 훈수: ${allowAdvice ? "허용" : "금지"}`
+    );
+
+    showToast("방 설정을 저장했습니다.");
+  } catch (err) {
+    console.error(err);
+    showToast("방 설정 저장 실패");
+  }
 }
 function hasPendingRequest() {
   return room?.undoRequest?.status === "pending" || room?.drawRequest?.status === "pending";
