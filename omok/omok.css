@@ -305,3 +305,17 @@ input[type="text"]:focus { border-color: #60a5fa; }
     padding: 7px 10px;
   }
 }
+
+/* 모바일 입력창 터치 시 자동 확대 방지 */
+@media (max-width: 1000px) {
+  input,
+  textarea,
+  select,
+  .chat-input-row input {
+    font-size: 16px;
+  }
+
+  #chatInput {
+    font-size: 16px;
+  }
+}
