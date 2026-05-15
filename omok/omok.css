@@ -333,3 +333,126 @@ input[type="text"]:focus { border-color: #60a5fa; }
 .connection-box.danger span {
   color: #fecaca;
 }
+
+/* ===== 오목: 판 위 정보 제거 + 우측 정보 패널 ===== */
+
+.side-match-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.side-player-card,
+.side-turn-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px;
+  border-radius: 12px;
+  background: rgba(255,255,255,.055);
+  border: 1px solid rgba(255,255,255,.08);
+}
+
+.side-player-card small,
+.side-turn-card span {
+  display: block;
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.side-player-card strong,
+.side-turn-card strong {
+  display: block;
+  color: #fff;
+  font-size: 14px;
+}
+
+.side-player-card em {
+  display: block;
+  margin-top: 2px;
+  color: #facc15;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.side-message {
+  margin-top: 8px;
+}
+
+.room-info-details {
+  border-radius: 12px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.07);
+  padding: 8px;
+}
+
+.room-info-details summary {
+  cursor: pointer;
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.room-info-details .info-list {
+  margin-top: 8px;
+}
+
+/* PC에서는 오목판 위 정보 숨기고 우측으로 통합 */
+@media (min-width: 1001px) {
+  body {
+    overflow: hidden;
+  }
+
+  .topbar {
+    margin-bottom: 10px;
+  }
+
+  .game-layout {
+    height: calc(100vh - 92px);
+    grid-template-columns: minmax(0, 1fr) 340px;
+    align-items: stretch;
+  }
+
+  .board-card {
+    min-height: 0;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .board-card > .game-head,
+  .board-card > .players-row,
+  .board-card > .message-bar {
+    display: none;
+  }
+
+  .canvas-shell {
+    width: min(100%, calc(100vh - 218px));
+    max-width: none;
+    margin: 0 auto;
+    flex: 0 0 auto;
+  }
+
+  .action-row {
+    margin-top: 8px;
+  }
+
+  .side-card {
+    max-height: calc(100vh - 92px);
+    overflow-y: auto;
+  }
+
+  .side-section {
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+  }
+}
+
+/* 모바일은 기존처럼 위 정보 유지 */
+@media (max-width: 1000px) {
+  .side-match-section {
+    display: none;
+  }
+}
