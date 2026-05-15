@@ -61,14 +61,15 @@ const els = {
   selectedInfo: $("selectedInfo"),
   betweenRoundBox: $("betweenRoundBox"),
   roundResultText: $("roundResultText"),
-    roomInfo: $("roomInfo"),
   sideMatchBox: $("sideMatchBox"),
   sideMessageBar: $("sideMessageBar"),
   connectionPanel: $("connectionPanel"),
   roomSettingsBox: $("roomSettingsBox"),
   spectatorList: $("spectatorList"),
-  requestPanel: $("requestPanel"),
-  playerRequests: $("playerRequests"),
+  requestOverlay: $("requestOverlay"),
+  requestModalTitle: $("requestModalTitle"),
+  requestModalBody: $("requestModalBody"),
+  settingsOverlay: $("settingsOverlay"),
   chatList: $("chatList"),
   chatInput: $("chatInput"),
   chatNotice: $("chatNotice"),
@@ -77,8 +78,9 @@ const els = {
 };
 
 const buttons = {
-  backHome: $("backHomeBtn"),
-  sound: $("soundBtn"),
+  homeBrand: $("homeBrandBtn"),
+  roomSettings: $("roomSettingsBtn"),
+  topLeaveRoom: $("topLeaveRoomBtn"),  sound: $("soundBtn"),
   createRoom: $("createRoomBtn"),
   refreshRooms: $("refreshRoomsBtn"),
   place: $("placeBtn"),
@@ -89,8 +91,10 @@ const buttons = {
   resign: $("resignBtn"),
   ready: $("readyBtn"),
   leaveSeat: $("leaveSeatBtn"),
-  leaveRoom: $("leaveRoomBtn"),
-  wantPlay: $("wantPlayBtn"),
+  sendChat: $("sendChatBtn"),
+  requestAccept: $("requestAcceptBtn"),
+  requestReject: $("requestRejectBtn"),
+  settingsClose: $("settingsCloseBtn")  wantPlay: $("wantPlayBtn"),
   sendChat: $("sendChatBtn")
 };
 
@@ -256,6 +260,14 @@ function applyRating(rating, change) {
 function setView(name) {
   lobbyView.classList.toggle("show", name === "lobby");
   roomView.classList.toggle("show", name === "room");
+
+  if (buttons.roomSettings) {
+    buttons.roomSettings.style.display = name === "room" ? "inline-flex" : "none";
+  }
+
+  if (buttons.topLeaveRoom) {
+    buttons.topLeaveRoom.style.display = name === "room" ? "inline-flex" : "none";
+  }
 }
 function startRoomListListener() {
   if (roomsUnsub) roomsUnsub();
@@ -692,49 +704,13 @@ els.whiteName.innerHTML = room.white ? renderNicknameButton(room.white) : "대�
   els.whiteRating.textContent = room.whiteRatingBefore ? `${room.whiteRatingBefore}점` : "-";
   els.turnPill.textContent = room.status === "playing" ? `${colorName(room.turn)} 차례` : statusText(room.status);
 
-renderRoomInfo();
-  function renderSideMatchBox() {
-  if (!els.sideMatchBox || !room) return;
-
-  const blackText = room.black ? renderNicknameButton(room.black) : "대기 중";
-  const whiteText = room.white ? renderNicknameButton(room.white) : "대기 중";
-
-  const blackRating = room.blackRatingBefore ? `${room.blackRatingBefore}점` : "-";
-  const whiteRating = room.whiteRatingBefore ? `${room.whiteRatingBefore}점` : "-";
-
-  els.sideMatchBox.innerHTML = `
-    <div class="side-player-card black">
-      <span class="stone-dot black"></span>
-      <div>
-        <small>흑</small>
-        <strong>${blackText}</strong>
-        <em>${blackRating}</em>
-      </div>
-    </div>
-
-    <div class="side-player-card white">
-      <span class="stone-dot white"></span>
-      <div>
-        <small>백</small>
-        <strong>${whiteText}</strong>
-        <em>${whiteRating}</em>
-      </div>
-    </div>
-
-    <div class="side-turn-card">
-      <span>현재 차례</span>
-      <strong>${room.status === "playing" ? colorName(room.turn) : statusText(room.status)}</strong>
-    </div>
-  `;
-}
   renderSideMatchBox();
-renderRoomSettings();
-renderSpectatorList();
-renderConnectionPanel();
-renderRequests();
-renderPlayerRequests();
-renderButtons();
-renderSelectedInfo();
+  renderRoomSettings();
+  renderSpectatorList();
+  renderConnectionPanel();
+  renderRequests();
+  renderButtons();
+  renderSelectedInfo();
 
   if (room.status === "waiting") {
     setMessage(room.black === linkedUser ? "상대를 기다리는 중입니다." : "참가 또는 관전할 수 있습니다.");
@@ -763,17 +739,42 @@ function setMessage(text, warn = false) {
     els.sideMessageBar.classList.toggle("warn", !!warn);
   }
 }
-function renderRoomInfo() {
-  const requestCount = Object.keys(room.playerRequests || {}).length;
 
-  els.roomInfo.innerHTML = `
-    <div class="info-row"><span>라운드</span><strong>${room.round || 1}</strong></div>
-    <div class="info-row"><span>수순</span><strong>${room.moveCount || 0}</strong></div>
-    <div class="info-row"><span>현재 차례</span><strong>${room.status === "playing" ? colorName(room.turn) : "-"}</strong></div>
-    <div class="info-row"><span>33금지</span><strong>흑백 모두</strong></div>
-    <div class="info-row"><span>참여 희망</span><strong>${requestCount}명</strong></div>
+function renderSideMatchBox() {
+  if (!els.sideMatchBox || !room) return;
+
+  const blackTurn = room.status === "playing" && room.turn === "black";
+  const whiteTurn = room.status === "playing" && room.turn === "white";
+
+  const blackText = room.black ? renderNicknameButton(room.black) : "대기 중";
+  const whiteText = room.white ? renderNicknameButton(room.white) : "대기 중";
+
+  const blackRating = room.blackRatingBefore ? `${room.blackRatingBefore}점` : "-";
+  const whiteRating = room.whiteRatingBefore ? `${room.whiteRatingBefore}점` : "-";
+
+  els.sideMatchBox.innerHTML = `
+    <div class="match-row-players">
+      <div class="match-player-card black ${blackTurn ? "active-turn" : ""}">
+        <span class="stone-dot black"></span>
+        <div>
+          <small>흑</small>
+          <strong>${blackText}</strong>
+          <em>${blackRating}</em>
+        </div>
+      </div>
+
+      <div class="match-player-card white ${whiteTurn ? "active-turn" : ""}">
+        <span class="stone-dot white"></span>
+        <div>
+          <small>백</small>
+          <strong>${whiteText}</strong>
+          <em>${whiteRating}</em>
+        </div>
+      </div>
+    </div>
   `;
 }
+
 function renderRoomSettings() {
   const isHost = room?.host === linkedUser;
   const allowSpectators = room?.settings?.allowSpectators !== false;
@@ -821,7 +822,7 @@ function renderSpectatorList() {
     .filter(s => s.nickname && s.nickname !== room?.black && s.nickname !== room?.white);
 
   if (!visibleSpectators.length) {
-    els.spectatorList.innerHTML = `<div class="small">관전자 없음</div>`;
+    els.spectatorList.innerHTML = `<div class="small">대기자 없음</div>`;
     return;
   }
 
@@ -832,15 +833,72 @@ function renderSpectatorList() {
 
     return `
       <div class="spectator-item">
-        <div>
+        <div class="spectator-main">
           ${renderNicknameButton(s.nickname)}
-          ${wants ? `<span class="spectator-want">🎮 참여 희망</span>` : ""}
+          ${wants ? `<button class="wait-hand" type="button" onclick="promoteWaitingPlayer('${escapeHtml(s.nickname)}')" title="대국자로 올리기">🖐️</button>` : ""}
         </div>
         <span class="${connected ? "online-dot" : "offline-dot"}">${connected ? "접속" : "이탈"}</span>
       </div>
     `;
   }).join("");
 }
+
+window.promoteWaitingPlayer = async function promoteWaitingPlayer(nickname) {
+  if (!room || !nickname) return;
+
+  if (!room.playerRequests?.[nickname]) {
+    showToast("참여 희망자가 아닙니다.");
+    return;
+  }
+
+  try {
+    // 방장이 혼자 기다리는 방이면 바로 백돌로 참가 처리
+    if (room.status === "waiting" && room.black === linkedUser && !room.white) {
+      const stats = await ensureUserStats(nickname);
+
+      await roomRef().update({
+        white: nickname,
+        whiteRatingBefore: Math.round(stats.rating || DEFAULT_RATING),
+        status: "playing",
+        startedAt: FV.serverTimestamp(),
+        turnStartedAt: FV.serverTimestamp(),
+        [`players.${nickname}.role`]: "white",
+        [`players.${nickname}.connected`]: true,
+        [`players.${nickname}.lastSeenAt`]: FV.serverTimestamp(),
+        [`playerRequests.${nickname}`]: FV.delete(),
+        updatedAt: FV.serverTimestamp()
+      });
+
+      await roomRef()
+        .collection("spectators")
+        .doc(nickname)
+        .set({
+          nickname,
+          wantsToPlay: false,
+          lastSeenAt: FV.serverTimestamp(),
+          updatedAt: FV.serverTimestamp()
+        }, { merge: true });
+
+      await addSystemChat(currentRoomId, `${nickname}님이 백돌로 참가했습니다.`);
+      return;
+    }
+
+    // 판 종료 후에는 현재 대국자가 자기 자리만 넘길 수 있음
+    if (
+      room.status === "betweenRounds" &&
+      isPlayer() &&
+      room.nextSeats?.[myRole()] === linkedUser
+    ) {
+      await transferSeat(nickname);
+      return;
+    }
+
+    showToast("판 종료 후 본인 자리만 넘길 수 있습니다.");
+  } catch (err) {
+    console.error(err);
+    showToast("대국자 올리기 실패");
+  }
+};
 
 async function updateRoomSettings() {
   if (!room || room.host !== linkedUser) {
@@ -880,37 +938,49 @@ function canRequest(type) {
   if (hasPendingRequest()) return false;
   return room.requestLocks?.[type]?.[linkedUser] !== room.turnSeq;
 }
+let activeRequestType = null;
+
 function renderRequests() {
-  const undo = room.undoRequest;
-  const draw = room.drawRequest;
-  let html = `<h3>요청</h3>`;
-  const pending = undo?.status === "pending" ? undo : draw?.status === "pending" ? draw : null;
-  const type = undo?.status === "pending" ? "undo" : draw?.status === "pending" ? "draw" : null;
-  if (!pending) {
-    els.requestPanel.innerHTML = html + `<div class="small">대기 중인 요청 없음</div>`;
+  const undo = room?.undoRequest;
+  const draw = room?.drawRequest;
+
+  const pending =
+    undo?.status === "pending"
+      ? undo
+      : draw?.status === "pending"
+        ? draw
+        : null;
+
+  const type =
+    undo?.status === "pending"
+      ? "undo"
+      : draw?.status === "pending"
+        ? "draw"
+        : null;
+
+  if (!pending || pending.requestedBy === linkedUser) {
+    activeRequestType = null;
+    closeRequestModal();
     return;
   }
+
+  activeRequestType = type;
+
   const label = type === "undo" ? "무르기" : "무승부";
-  if (pending.requestedBy === linkedUser) {
-    html += `
-      <div class="request-box">
-        <strong>${label} 요청 대기 중</strong><br>
-        <span class="small">상대의 응답을 기다립니다.</span>
-        <div class="request-actions"><button class="secondary mini" onclick="cancelRequest('${type}')">요청 취소</button></div>
-      </div>`;
-  } else {
-    html += `
-      <div class="request-box">
-        <strong>${pending.requestedBy}님의 ${label} 요청</strong><br>
-        <span class="small">수락하거나 거절할 수 있습니다.</span>
-        <div class="request-actions">
-          <button class="mini" onclick="resolveRequest('${type}', true)">수락</button>
-          <button class="secondary mini" onclick="resolveRequest('${type}', false)">거절</button>
-        </div>
-      </div>`;
-  }
-  els.requestPanel.innerHTML = html;
+
+  els.requestModalTitle.textContent = `${label} 요청`;
+  els.requestModalBody.innerHTML = `
+    <p><strong>${escapeHtml(pending.requestedBy)}</strong>님이 ${label}를 요청했습니다.</p>
+    <p class="small">수락하시겠습니까?</p>
+  `;
+
+  els.requestOverlay.classList.add("show");
 }
+
+function closeRequestModal() {
+  els.requestOverlay?.classList.remove("show");
+}
+
 function renderPlayerRequests() {
   const requests = room.playerRequests || {};
   const names = Object.keys(requests).sort((a, b) => (requests[a].requestedAt?.seconds || 0) - (requests[b].requestedAt?.seconds || 0));
@@ -948,6 +1018,8 @@ function renderButtons() {
   els.chatInput.disabled = !canChat;
   buttons.sendChat.disabled = !canChat;
   els.chatNotice.textContent = canChat ? "" : "훈수 금지 상태에서는 관전자가 채팅할 수 없습니다.";
+    buttons.roomSettings.style.display = currentRoomId ? "inline-flex" : "none";
+  buttons.topLeaveRoom.style.display = currentRoomId ? "inline-flex" : "none";
 }
 function renderSelectedInfo() {
   if (!selectedCell) {
@@ -1799,7 +1871,7 @@ canvas.addEventListener("pointerdown", async e => {
 });
 buttons.createRoom.addEventListener("click", createRoom);
 buttons.refreshRooms.addEventListener("click", startRoomListListener);
-buttons.backHome.addEventListener("click", () => location.href = "../");
+buttons.homeBrand.addEventListener("click", () => location.href = "../");
 buttons.sound.addEventListener("click", () => {
   soundEnabled = !soundEnabled;
   localStorage.setItem("omokSoundEnabled", String(soundEnabled));
@@ -1813,9 +1885,25 @@ buttons.draw.addEventListener("click", () => requestAction("draw"));
 buttons.resign.addEventListener("click", resignGame);
 buttons.ready.addEventListener("click", setReady);
 buttons.leaveSeat.addEventListener("click", leaveSeat);
-buttons.leaveRoom.addEventListener("click", leaveRoom);
+buttons.topLeaveRoom.addEventListener("click", leaveRoom);
 buttons.wantPlay.addEventListener("click", toggleWantPlay);
 buttons.sendChat.addEventListener("click", sendChat);
+buttons.roomSettings.addEventListener("click", () => {
+  renderRoomSettings();
+  els.settingsOverlay?.classList.add("show");
+});
+
+buttons.settingsClose.addEventListener("click", () => {
+  els.settingsOverlay?.classList.remove("show");
+});
+
+buttons.requestAccept.addEventListener("click", () => {
+  if (activeRequestType) resolveRequest(activeRequestType, true);
+});
+
+buttons.requestReject.addEventListener("click", () => {
+  if (activeRequestType) resolveRequest(activeRequestType, false);
+});
 $("userInfoCloseBtn").addEventListener("click", closeUserInfo);
 
 $("userInfoOverlay").addEventListener("click", e => {
