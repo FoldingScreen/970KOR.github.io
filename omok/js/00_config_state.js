@@ -73,6 +73,7 @@ const els = {
   betweenRoundBox: $("betweenRoundBox"),
   roundResultText: $("roundResultText"),
   sideMatchBox: $("sideMatchBox"),
+  mobileMatchBox: $("mobileMatchBox"),
   sideMessageBar: $("sideMessageBar"),
   connectionPanel: $("connectionPanel"),
   roomSettingsBox: $("roomSettingsBox"),
