@@ -23,9 +23,11 @@ let linkedUser = "";
 let myStats = null;
 let currentRoomId = null;
 let room = null;
+let spectators = [];
 let roomsUnsub = null;
 let roomUnsub = null;
 let chatUnsub = null;
+let spectatorUnsub = null;
 let heartbeatTimer = null;
 let staleTimer = null;
 let hoverCell = null;
@@ -59,6 +61,9 @@ const els = {
   betweenRoundBox: $("betweenRoundBox"),
   roundResultText: $("roundResultText"),
   roomInfo: $("roomInfo"),
+  sideMatchBox: $("sideMatchBox"),
+sideMessageBar: $("sideMessageBar"),
+spectatorList: $("spectatorList"),
   connectionPanel: $("connectionPanel"),
   roomSettingsBox: $("roomSettingsBox"),
 spectatorList: $("spectatorList"),
@@ -415,9 +420,10 @@ window.enterRoom = function enterRoom(id) {
   setView("room");
   selectedCell = null;
   hoverCell = null;
-  startRoomListener(id);
-  startChatListener(id);
-  startHeartbeat();
+startRoomListener(id);
+startChatListener(id);
+startSpectatorListener(id);
+startHeartbeat();
 };
 function startRoomListener(id) {
   if (roomUnsub) roomUnsub();
@@ -461,6 +467,58 @@ function startChatListener(id) {
     renderChat(messages);
   });
 }
+function startSpectatorListener(id) {
+  if (spectatorUnsub) spectatorUnsub();
+
+  spectatorUnsub = roomRef(id)
+    .collection("spectators")
+    .onSnapshot(snap => {
+      spectators = [];
+
+      snap.forEach(doc => {
+        const data = doc.data() || {};
+        spectators.push({
+          id: doc.id,
+          nickname: data.nickname || doc.id,
+          lastSeenAt: data.lastSeenAt || null,
+          wantsToPlay: !!data.wantsToPlay
+        });
+      });
+
+      spectators.sort((a, b) => a.nickname.localeCompare(b.nickname, "ko"));
+
+      renderSpectatorList();
+    }, err => {
+      console.error("관전자 목록 로딩 실패", err);
+      spectators = [];
+      renderSpectatorList();
+    });
+}
+async function syncSpectatorPresence() {
+  if (!currentRoomId || !room || !linkedUser) return;
+
+  const role = myRole();
+  const ref = roomRef().collection("spectators").doc(linkedUser);
+
+  try {
+    if (
+      role === "spectator" &&
+      room.status !== "finished" &&
+      room.settings?.allowSpectators !== false
+    ) {
+      await ref.set({
+        nickname: linkedUser,
+        lastSeenAt: FV.serverTimestamp(),
+        wantsToPlay: !!room.playerRequests?.[linkedUser],
+        updatedAt: FV.serverTimestamp()
+      }, { merge: true });
+    } else {
+      await ref.delete().catch(() => {});
+    }
+  } catch (err) {
+    console.warn("관전자 presence 갱신 실패", err);
+  }
+}
 function startHeartbeat() {
   stopHeartbeat();
   heartbeatTimer = setInterval(updatePresence, 3000);
@@ -485,6 +543,7 @@ async function updatePresence() {
   };
   try {
     await roomRef().set(update, { merge: true });
+    await syncSpectatorPresence();
   } catch (_) {}
 }
 function checkStaleOpponent() {
@@ -642,6 +701,41 @@ els.whiteName.innerHTML = room.white ? renderNicknameButton(room.white) : "대�
   els.turnPill.textContent = room.status === "playing" ? `${colorName(room.turn)} 차례` : statusText(room.status);
 
 renderRoomInfo();
+  function renderSideMatchBox() {
+  if (!els.sideMatchBox || !room) return;
+
+  const blackText = room.black ? renderNicknameButton(room.black) : "대기 중";
+  const whiteText = room.white ? renderNicknameButton(room.white) : "대기 중";
+
+  const blackRating = room.blackRatingBefore ? `${room.blackRatingBefore}점` : "-";
+  const whiteRating = room.whiteRatingBefore ? `${room.whiteRatingBefore}점` : "-";
+
+  els.sideMatchBox.innerHTML = `
+    <div class="side-player-card black">
+      <span class="stone-dot black"></span>
+      <div>
+        <small>흑</small>
+        <strong>${blackText}</strong>
+        <em>${blackRating}</em>
+      </div>
+    </div>
+
+    <div class="side-player-card white">
+      <span class="stone-dot white"></span>
+      <div>
+        <small>백</small>
+        <strong>${whiteText}</strong>
+        <em>${whiteRating}</em>
+      </div>
+    </div>
+
+    <div class="side-turn-card">
+      <span>현재 차례</span>
+      <strong>${room.status === "playing" ? colorName(room.turn) : statusText(room.status)}</strong>
+    </div>
+  `;
+}
+  renderSideMatchBox();
 renderRoomSettings();
 renderSpectatorList();
 renderConnectionPanel();
@@ -667,8 +761,15 @@ renderSelectedInfo();
   }
 }
 function setMessage(text, warn = false) {
-  els.messageBar.textContent = text;
-  els.messageBar.classList.toggle("warn", !!warn);
+  if (els.messageBar) {
+    els.messageBar.textContent = text;
+    els.messageBar.classList.toggle("warn", !!warn);
+  }
+
+  if (els.sideMessageBar) {
+    els.sideMessageBar.textContent = text;
+    els.sideMessageBar.classList.toggle("warn", !!warn);
+  }
 }
 function renderRoomInfo() {
   const requestCount = Object.keys(room.playerRequests || {}).length;
@@ -711,26 +812,25 @@ function renderRoomSettings() {
 }
 
 function renderSpectatorList() {
-  const players = room?.players || {};
-  const names = Object.keys(players)
-    .filter(name => name !== room.black && name !== room.white)
-    .sort((a, b) => a.localeCompare(b, "ko"));
+  if (!els.spectatorList) return;
 
-  if (!names.length) {
+  const visibleSpectators = (spectators || [])
+    .filter(s => s.nickname && s.nickname !== room?.black && s.nickname !== room?.white);
+
+  if (!visibleSpectators.length) {
     els.spectatorList.innerHTML = `<div class="small">관전자 없음</div>`;
     return;
   }
 
-  els.spectatorList.innerHTML = names.map(name => {
-    const p = players[name] || {};
-    const lastSeen = nowMsFromTs(p.lastSeenAt);
+  els.spectatorList.innerHTML = visibleSpectators.map(s => {
+    const lastSeen = nowMsFromTs(s.lastSeenAt);
     const connected = lastSeen && Date.now() - lastSeen <= 10000;
-    const wants = !!room.playerRequests?.[name];
+    const wants = !!room?.playerRequests?.[s.nickname] || !!s.wantsToPlay;
 
     return `
       <div class="spectator-item">
         <div>
-          ${renderNicknameButton(name)}
+          ${renderNicknameButton(s.nickname)}
           ${wants ? `<span class="spectator-want">🎮 참여 희망</span>` : ""}
         </div>
         <span class="${connected ? "online-dot" : "offline-dot"}">${connected ? "접속" : "이탈"}</span>
@@ -1412,10 +1512,17 @@ async function toggleWantPlay() {
   if (!room || isPlayer()) return;
   const wants = !!room.playerRequests?.[linkedUser];
   if (wants) {
-    await roomRef().update({
-      [`playerRequests.${linkedUser}`]: FV.delete(),
-      updatedAt: FV.serverTimestamp()
-    });
+await roomRef().update({
+  [`playerRequests.${linkedUser}`]: FV.delete(),
+  updatedAt: FV.serverTimestamp()
+});
+
+await roomRef().collection("spectators").doc(linkedUser).set({
+  nickname: linkedUser,
+  wantsToPlay: false,
+  lastSeenAt: FV.serverTimestamp(),
+  updatedAt: FV.serverTimestamp()
+}, { merge: true });
     await addSystemChat(currentRoomId, `${linkedUser}님이 참여 희망을 취소했습니다.`);
   } else {
     await roomRef().set({
@@ -1425,6 +1532,12 @@ async function toggleWantPlay() {
           requestedAt: FV.serverTimestamp()
         }
       },
+      await roomRef().collection("spectators").doc(linkedUser).set({
+  nickname: linkedUser,
+  wantsToPlay: true,
+  lastSeenAt: FV.serverTimestamp(),
+  updatedAt: FV.serverTimestamp()
+}, { merge: true });
       [`players.${linkedUser}.role`]: "spectator",
       [`players.${linkedUser}.lastSeenAt`]: FV.serverTimestamp(),
       updatedAt: FV.serverTimestamp()
@@ -1446,8 +1559,11 @@ window.transferSeat = async function transferSeat(name) {
   await addSystemChat(currentRoomId, `${linkedUser}님이 다음 판 자리를 ${name}님에게 넘겼습니다.`);
 };
 async function leaveRoomLocal() {
-  if (roomUnsub) roomUnsub();
-  if (chatUnsub) chatUnsub();
+if (roomUnsub) roomUnsub();
+if (chatUnsub) chatUnsub();
+if (spectatorUnsub) spectatorUnsub();
+  spectatorUnsub = null;
+spectators = [];
   stopHeartbeat();
   roomUnsub = null;
   chatUnsub = null;
@@ -1468,6 +1584,7 @@ async function leaveRoom() {
         [`players.${linkedUser}.disconnectedAt`]: FV.serverTimestamp(),
         [`playerRequests.${linkedUser}`]: FV.delete(),
         updatedAt: FV.serverTimestamp()
+        await roomRef().collection("spectators").doc(linkedUser).delete().catch(() => {});
       }, { merge: true });
       await addSystemChat(currentRoomId, `${linkedUser}님이 방을 나갔습니다.`);
     } catch (_) {}
