@@ -132,18 +132,54 @@ function colorName(color) {
 function opponentColor(color) {
   return color === "black" ? "white" : "black";
 }
+function getSeatPlayers(source = room) {
+  if (!source) {
+    return { black: null, white: null };
+  }
+
+  if (
+    source.status === "betweenRounds" &&
+    source.nextSeats &&
+    (source.nextSeats.black || source.nextSeats.white)
+  ) {
+    return {
+      black: source.nextSeats.black || null,
+      white: source.nextSeats.white || null
+    };
+  }
+
+  return {
+    black: source.black || null,
+    white: source.white || null
+  };
+}
+
 function myRole() {
-  if (!room) return "spectator";
-  if (room.black === linkedUser) return "black";
-  if (room.white === linkedUser) return "white";
+  const seats = getSeatPlayers();
+
+  if (seats.black === linkedUser) return "black";
+  if (seats.white === linkedUser) return "white";
+
   return "spectator";
 }
+
 function isPlayer() {
   const role = myRole();
   return role === "black" || role === "white";
 }
+
 function isMyTurn() {
   return room && room.status === "playing" && myRole() === room.turn;
+}
+
+function getOpponentNickname() {
+  const role = myRole();
+  const seats = getSeatPlayers();
+
+  if (role === "black") return seats.white;
+  if (role === "white") return seats.black;
+
+  return null;
 }
 function getOpponentNickname() {
   if (!room) return null;
@@ -294,6 +330,26 @@ async function arrangeSeatsByRating(nicknameA, nicknameB) {
     blackRating: ratingB,
     whiteRating: ratingA
   };
+}
+
+function requestTimeMs(req) {
+  if (!req) return 0;
+  return nowMsFromTs(req.requestedAt) || 0;
+}
+
+function getFirstWaitingPlayer(excludeNames = []) {
+  const exclude = new Set(excludeNames.filter(Boolean));
+  const entries = Object.entries(room?.playerRequests || {})
+    .filter(([name]) => !exclude.has(name))
+    .sort((a, b) => {
+      const aTime = requestTimeMs(a[1]);
+      const bTime = requestTimeMs(b[1]);
+
+      if (aTime !== bTime) return aTime - bTime;
+      return a[0].localeCompare(b[0], "ko");
+    });
+
+  return entries.length ? entries[0][0] : null;
 }
 
 function setView(name) {
@@ -737,10 +793,24 @@ function renderRoom() {
 
   els.roomStateText.textContent = `ROUND ${room.round || 1} · ${statusText(room.status)}`;
   els.roomTitle.textContent = `${room.host || "오목"}님의 방`;
-els.blackName.innerHTML = room.black ? renderNicknameButton(room.black) : "대기 중";
-els.whiteName.innerHTML = room.white ? renderNicknameButton(room.white) : "대기 중";
-  els.blackRating.textContent = room.blackRatingBefore ? `${room.blackRatingBefore}점` : "-";
-  els.whiteRating.textContent = room.whiteRatingBefore ? `${room.whiteRatingBefore}점` : "-";
+const seats = getSeatPlayers();
+
+els.blackName.innerHTML = seats.black ? renderNicknameButton(seats.black) : "대기 중";
+els.whiteName.innerHTML = seats.white ? renderNicknameButton(seats.white) : "대기 중";
+
+els.blackRating.textContent =
+  room.status === "betweenRounds"
+    ? "-"
+    : room.blackRatingBefore
+      ? `${room.blackRatingBefore}점`
+      : "-";
+
+els.whiteRating.textContent =
+  room.status === "betweenRounds"
+    ? "-"
+    : room.whiteRatingBefore
+      ? `${room.whiteRatingBefore}점`
+      : "-";
   els.turnPill.textContent = room.status === "playing" ? `${colorName(room.turn)} 차례` : statusText(room.status);
 
   renderSideMatchBox();
@@ -782,14 +852,27 @@ function setMessage(text, warn = false) {
 function renderSideMatchBox() {
   if (!els.sideMatchBox || !room) return;
 
+  const seats = getSeatPlayers();
+
   const blackTurn = room.status === "playing" && room.turn === "black";
   const whiteTurn = room.status === "playing" && room.turn === "white";
 
-  const blackText = room.black ? renderNicknameButton(room.black) : "대기 중";
-  const whiteText = room.white ? renderNicknameButton(room.white) : "대기 중";
+  const blackText = seats.black ? renderNicknameButton(seats.black) : "대기 중";
+  const whiteText = seats.white ? renderNicknameButton(seats.white) : "대기 중";
 
-  const blackRating = room.blackRatingBefore ? `${room.blackRatingBefore}점` : "-";
-  const whiteRating = room.whiteRatingBefore ? `${room.whiteRatingBefore}점` : "-";
+  const blackRating =
+    room.status === "betweenRounds"
+      ? "-"
+      : room.blackRatingBefore
+        ? `${room.blackRatingBefore}점`
+        : "-";
+
+  const whiteRating =
+    room.status === "betweenRounds"
+      ? "-"
+      : room.whiteRatingBefore
+        ? `${room.whiteRatingBefore}점`
+        : "-";
 
   els.sideMatchBox.innerHTML = `
     <div class="match-row-players">
@@ -859,8 +942,11 @@ function renderRoomSettings() {
 function renderSpectatorList() {
   if (!els.spectatorList) return;
 
+  const seats = getSeatPlayers();
+  const activeNames = new Set([seats.black, seats.white].filter(Boolean));
+
   const visibleSpectators = (spectators || [])
-    .filter(s => s.nickname && s.nickname !== room?.black && s.nickname !== room?.white);
+    .filter(s => s.nickname && !activeNames.has(s.nickname));
 
   if (!visibleSpectators.length) {
     els.spectatorList.innerHTML = `<div class="small">대기자 없음</div>`;
@@ -876,9 +962,11 @@ function renderSpectatorList() {
       <div class="spectator-item">
         <div class="spectator-main">
           ${renderNicknameButton(s.nickname)}
-${wants ? `
-  <button class="wait-hand" type="button" onclick="promoteWaitingPlayer('${escapeHtml(s.nickname)}')" title="내려가고 대국자로 올리기">🖐️</button>
-` : ""}
+          ${
+            wants
+              ? `<button class="wait-hand" type="button" onclick="promoteWaitingPlayer('${escapeHtml(s.nickname)}')" title="내려가고 대국자로 올리기">🖐️</button>`
+              : ""
+          }
         </div>
         <span class="${connected ? "online-dot" : "offline-dot"}">${connected ? "접속" : "이탈"}</span>
       </div>
@@ -894,55 +982,122 @@ window.promoteWaitingPlayer = async function promoteWaitingPlayer(nickname) {
     return;
   }
 
-  if (!isPlayer()) {
-    showToast("현재 대국자만 대기자를 올릴 수 있습니다.");
-    return;
-  }
-
-  if (room.status !== "betweenRounds") {
-    showToast("판 종료 후에만 대기자를 올릴 수 있습니다.");
+  if (nickname === linkedUser) {
+    showToast("본인은 직접 올릴 수 없습니다.");
     return;
   }
 
   try {
-    const myColor = myRole();
-    const otherColor = opponentColor(myColor);
+    // 방 생성 후 상대 대기 상태
+    if (room.status === "waiting" && room.black && !room.white) {
+      if (room.black !== linkedUser && room.host !== linkedUser) {
+        showToast("방장만 대기자를 올릴 수 있습니다.");
+        return;
+      }
 
+      const arranged = await arrangeSeatsByRating(room.black, nickname);
+
+      await roomRef().update({
+        black: arranged.black,
+        white: arranged.white,
+        blackRatingBefore: arranged.blackRating,
+        whiteRatingBefore: arranged.whiteRating,
+        status: "playing",
+        turn: "black",
+        startedAt: FV.serverTimestamp(),
+        turnStartedAt: FV.serverTimestamp(),
+
+        [`players.${arranged.black}.role`]: "black",
+        [`players.${arranged.black}.connected`]: true,
+        [`players.${arranged.black}.lastSeenAt`]: FV.serverTimestamp(),
+
+        [`players.${arranged.white}.role`]: "white",
+        [`players.${arranged.white}.connected`]: true,
+        [`players.${arranged.white}.lastSeenAt`]: FV.serverTimestamp(),
+
+        [`playerRequests.${nickname}`]: FV.delete(),
+        ready: {},
+        updatedAt: FV.serverTimestamp()
+      });
+
+      await roomRef()
+        .collection("spectators")
+        .doc(nickname)
+        .delete()
+        .catch(() => {});
+
+      await addSystemChat(
+        currentRoomId,
+        `${nickname}님이 대국자로 참가했습니다. 레이팅 기준으로 ${arranged.black}님이 흑, ${arranged.white}님이 백입니다.`
+      );
+
+      showToast(`${nickname}님이 대국자로 참가했습니다.`);
+      return;
+    }
+
+    if (room.status !== "betweenRounds") {
+      showToast("판 종료 후에만 대기자를 올릴 수 있습니다.");
+      return;
+    }
+
+    const seatsNow = getSeatPlayers(room);
+
+    const myColor =
+      seatsNow.black === linkedUser
+        ? "black"
+        : seatsNow.white === linkedUser
+          ? "white"
+          : null;
+
+    if (!myColor) {
+      showToast("다음 판 대국자만 대기자를 올릴 수 있습니다.");
+      return;
+    }
+
+    const otherColor = opponentColor(myColor);
     const leavingPlayer = linkedUser;
-    const remainingPlayer =
-      room.nextSeats?.[otherColor] ||
-      room[otherColor];
+    const remainingPlayer = seatsNow[otherColor];
 
     if (!remainingPlayer) {
       showToast("남은 대국자를 확인할 수 없습니다.");
       return;
     }
 
-    const seats = await arrangeSeatsByRating(remainingPlayer, nickname);
+    const arranged = await arrangeSeatsByRating(remainingPlayer, nickname);
 
     await roomRef().update({
-      "nextSeats.black": seats.black,
-      "nextSeats.white": seats.white,
+      "nextSeats.black": arranged.black,
+      "nextSeats.white": arranged.white,
 
-      [`players.${seats.black}.role`]: "black",
-      [`players.${seats.black}.connected`]: true,
-      [`players.${seats.black}.lastSeenAt`]: FV.serverTimestamp(),
+      [`players.${arranged.black}.role`]: "black",
+      [`players.${arranged.black}.connected`]: true,
+      [`players.${arranged.black}.lastSeenAt`]: FV.serverTimestamp(),
 
-      [`players.${seats.white}.role`]: "white",
-      [`players.${seats.white}.connected`]: true,
-      [`players.${seats.white}.lastSeenAt`]: FV.serverTimestamp(),
+      [`players.${arranged.white}.role`]: "white",
+      [`players.${arranged.white}.connected`]: true,
+      [`players.${arranged.white}.lastSeenAt`]: FV.serverTimestamp(),
 
       [`players.${leavingPlayer}.role`]: "spectator",
+      [`players.${leavingPlayer}.connected`]: true,
+      [`players.${leavingPlayer}.lastSeenAt`]: FV.serverTimestamp(),
+
       [`playerRequests.${nickname}`]: FV.delete(),
 
+      ready: {},
       updatedAt: FV.serverTimestamp()
     });
 
     await roomRef()
       .collection("spectators")
       .doc(nickname)
+      .delete()
+      .catch(() => {});
+
+    await roomRef()
+      .collection("spectators")
+      .doc(leavingPlayer)
       .set({
-        nickname,
+        nickname: leavingPlayer,
         wantsToPlay: false,
         lastSeenAt: FV.serverTimestamp(),
         updatedAt: FV.serverTimestamp()
@@ -950,7 +1105,7 @@ window.promoteWaitingPlayer = async function promoteWaitingPlayer(nickname) {
 
     await addSystemChat(
       currentRoomId,
-      `${leavingPlayer}님이 내려가고 ${nickname}님이 다음 판 대국자로 올라왔습니다. 레이팅 기준으로 ${seats.black}님이 흑, ${seats.white}님이 백입니다.`
+      `${leavingPlayer}님이 내려가고 ${nickname}님이 다음 판 대국자로 올라왔습니다. 레이팅 기준으로 ${arranged.black}님이 흑, ${arranged.white}님이 백입니다.`
     );
 
     showToast(`${nickname}님을 다음 판 대국자로 올렸습니다.`);
@@ -1760,9 +1915,19 @@ spectators = [];
 async function leaveRoom() {
   if (currentRoomId && room) {
     try {
-      const wasBlack = room.black === linkedUser;
-      const wasWhite = room.white === linkedUser;
-      const wasPlayer = wasBlack || wasWhite;
+      const seatsNow = getSeatPlayers(room);
+
+      const wasSeatBlack = seatsNow.black === linkedUser;
+      const wasSeatWhite = seatsNow.white === linkedUser;
+      const wasSeatPlayer = wasSeatBlack || wasSeatWhite;
+
+      const otherColor = wasSeatBlack ? "white" : wasSeatWhite ? "black" : null;
+      const remainingPlayer = otherColor ? seatsNow[otherColor] : null;
+
+      const firstWaiting = getFirstWaitingPlayer([
+        linkedUser,
+        remainingPlayer
+      ]);
 
       const updates = {
         [`players.${linkedUser}`]: FV.delete(),
@@ -1771,13 +1936,13 @@ async function leaveRoom() {
         updatedAt: FV.serverTimestamp()
       };
 
-      // 현재 대국자 자리에서 제거
-      if (wasBlack) {
+      // 실제 현재 대국자 자리에서도 제거
+      if (room.black === linkedUser) {
         updates.black = null;
         updates.blackRatingBefore = null;
       }
 
-      if (wasWhite) {
+      if (room.white === linkedUser) {
         updates.white = null;
         updates.whiteRatingBefore = null;
       }
@@ -1791,48 +1956,168 @@ async function leaveRoom() {
         updates["nextSeats.white"] = null;
       }
 
-      // 현재 턴이 나간 사람 차례였다면 상대 차례로 넘김
-      if (room.status === "playing" && wasPlayer) {
-        updates.turn = wasBlack ? "white" : "black";
-        updates.turnStartedAt = FV.serverTimestamp();
+      // 대국자가 나갔고, 남은 대국자 + 첫 번째 대기자가 있으면 자동 매칭
+      if (wasSeatPlayer && remainingPlayer && firstWaiting) {
+        const arranged = await arrangeSeatsByRating(remainingPlayer, firstWaiting);
+
+        if (room.status === "playing") {
+          Object.assign(updates, {
+            status: "playing",
+            black: arranged.black,
+            white: arranged.white,
+            blackRatingBefore: arranged.blackRating,
+            whiteRatingBefore: arranged.whiteRating,
+            turn: "black",
+            turnSeq: (room.turnSeq || 1) + 1,
+            turnStartedAt: FV.serverTimestamp(),
+            round: (room.round || 1) + 1,
+
+            board: emptyBoard(),
+            moveCount: 0,
+            moveHistory: [],
+            lastMove: null,
+            winLine: [],
+            winner: null,
+            loser: null,
+            finishReason: null,
+            consecutivePasses: 0,
+            nextSeats: { black: null, white: null },
+            ready: {},
+            ratingApplied: false,
+            undoRequest: null,
+            drawRequest: null,
+            requestLocks: { undo: {}, draw: {} },
+
+            [`players.${arranged.black}.role`]: "black",
+            [`players.${arranged.black}.connected`]: true,
+            [`players.${arranged.black}.lastSeenAt`]: FV.serverTimestamp(),
+
+            [`players.${arranged.white}.role`]: "white",
+            [`players.${arranged.white}.connected`]: true,
+            [`players.${arranged.white}.lastSeenAt`]: FV.serverTimestamp(),
+
+            [`playerRequests.${firstWaiting}`]: FV.delete()
+          });
+        } else if (room.status === "betweenRounds") {
+          Object.assign(updates, {
+            "nextSeats.black": arranged.black,
+            "nextSeats.white": arranged.white,
+
+            [`players.${arranged.black}.role`]: "black",
+            [`players.${arranged.black}.connected`]: true,
+            [`players.${arranged.black}.lastSeenAt`]: FV.serverTimestamp(),
+
+            [`players.${arranged.white}.role`]: "white",
+            [`players.${arranged.white}.connected`]: true,
+            [`players.${arranged.white}.lastSeenAt`]: FV.serverTimestamp(),
+
+            [`playerRequests.${firstWaiting}`]: FV.delete(),
+            ready: {}
+          });
+        }
       }
 
-      // 둘 다 없으면 방 종료 처리
-      const nextBlack = wasBlack ? null : room.black;
-      const nextWhite = wasWhite ? null : room.white;
+      // 대국자가 나갔고, 남은 대국자는 있는데 대기자가 없으면 남은 사람만 대기
+      else if (wasSeatPlayer && remainingPlayer && !firstWaiting) {
+        const remainingRating = await getUserRating(remainingPlayer);
 
-      if (!nextBlack && !nextWhite) {
-        updates.status = "finished";
-        updates.finishedAt = FV.serverTimestamp();
-      } else if (room.status === "playing" && wasPlayer) {
-        // 대국 중 한 명이 나가면 게임판은 더 이상 정상 대국이 아니므로 대기 상태로 전환
-        updates.status = "waiting";
-        updates.board = emptyBoard();
-        updates.moveCount = 0;
-        updates.moveHistory = [];
-        updates.lastMove = null;
-        updates.winLine = [];
-        updates.winner = null;
-        updates.loser = null;
-        updates.finishReason = null;
-        updates.nextSeats = { black: null, white: null };
-        updates.ready = {};
-        updates.ratingApplied = false;
-        updates.undoRequest = null;
-        updates.drawRequest = null;
-        updates.requestLocks = { undo: {}, draw: {} };
+        Object.assign(updates, {
+          status: "waiting",
+          black: remainingPlayer,
+          white: null,
+          blackRatingBefore: remainingRating,
+          whiteRatingBefore: null,
+          turn: "black",
+          board: emptyBoard(),
+          moveCount: 0,
+          moveHistory: [],
+          lastMove: null,
+          winLine: [],
+          winner: null,
+          loser: null,
+          finishReason: null,
+          consecutivePasses: 0,
+          nextSeats: { black: null, white: null },
+          ready: {},
+          ratingApplied: false,
+          undoRequest: null,
+          drawRequest: null,
+          requestLocks: { undo: {}, draw: {} },
+
+          [`players.${remainingPlayer}.role`]: "black",
+          [`players.${remainingPlayer}.connected`]: true,
+          [`players.${remainingPlayer}.lastSeenAt`]: FV.serverTimestamp()
+        });
+      }
+
+      // 대국자가 나갔고, 남은 대국자는 없지만 대기자가 있으면 첫 대기자가 방장처럼 대기
+      else if (wasSeatPlayer && !remainingPlayer && firstWaiting) {
+        const waitingRating = await getUserRating(firstWaiting);
+
+        Object.assign(updates, {
+          status: "waiting",
+          host: firstWaiting,
+          black: firstWaiting,
+          white: null,
+          blackRatingBefore: waitingRating,
+          whiteRatingBefore: null,
+          turn: "black",
+          board: emptyBoard(),
+          moveCount: 0,
+          moveHistory: [],
+          lastMove: null,
+          winLine: [],
+          winner: null,
+          loser: null,
+          finishReason: null,
+          consecutivePasses: 0,
+          nextSeats: { black: null, white: null },
+          ready: {},
+          ratingApplied: false,
+          undoRequest: null,
+          drawRequest: null,
+          requestLocks: { undo: {}, draw: {} },
+
+          [`players.${firstWaiting}.role`]: "black",
+          [`players.${firstWaiting}.connected`]: true,
+          [`players.${firstWaiting}.lastSeenAt`]: FV.serverTimestamp(),
+
+          [`playerRequests.${firstWaiting}`]: FV.delete()
+        });
+      }
+
+      // 아무도 안 남으면 방 종료
+      else if (wasSeatPlayer && !remainingPlayer && !firstWaiting) {
+        Object.assign(updates, {
+          status: "finished",
+          finishedAt: FV.serverTimestamp()
+        });
       }
 
       await roomRef().update(updates);
 
-      // 관전자 하위 컬렉션에서도 제거
       await roomRef()
         .collection("spectators")
         .doc(linkedUser)
         .delete()
         .catch(() => {});
 
+      if (firstWaiting && wasSeatPlayer) {
+        await roomRef()
+          .collection("spectators")
+          .doc(firstWaiting)
+          .delete()
+          .catch(() => {});
+      }
+
       await addSystemChat(currentRoomId, `${linkedUser}님이 방을 나갔습니다.`);
+
+      if (wasSeatPlayer && firstWaiting) {
+        await addSystemChat(
+          currentRoomId,
+          `${firstWaiting}님이 첫 번째 대기자로 자동 승격되었습니다.`
+        );
+      }
     } catch (err) {
       console.error("방 나가기 처리 실패", err);
     }
@@ -1840,7 +2125,6 @@ async function leaveRoom() {
 
   leaveRoomLocal();
 }
-
 async function sendChat() {
   const text = sanitizeText(els.chatInput.value);
   if (!text || !room) return;
