@@ -65,7 +65,8 @@ function setMessage(text, warn = false) {
 }
 
 function renderSideMatchBox() {
-  if (!els.sideMatchBox || !room) return;
+  const boxes = [els.sideMatchBox, els.mobileMatchBox].filter(Boolean);
+  if (!boxes.length || !room) return;
 
   const seats = getSeatPlayers();
 
@@ -89,7 +90,7 @@ function renderSideMatchBox() {
         ? `${room.whiteRatingBefore}점`
         : "-";
 
-  els.sideMatchBox.innerHTML = `
+  const html = `
     <div class="match-row-players">
       <div class="match-player-card black ${blackTurn ? "active-turn" : ""}">
         <span class="stone-dot black"></span>
@@ -110,8 +111,12 @@ function renderSideMatchBox() {
       </div>
     </div>
 
-    <div id="playerChatBubbles" class="player-chat-bubbles"></div>
+    <div class="player-chat-bubbles"></div>
   `;
+
+  boxes.forEach(box => {
+    box.innerHTML = html;
+  });
 }
 
 function renderRoomSettings() {
