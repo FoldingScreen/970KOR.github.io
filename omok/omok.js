@@ -35,6 +35,8 @@ let selectedCell = null;
 let soundEnabled = localStorage.getItem("omokSoundEnabled") !== "false";
 let lastTurnKey = "";
 let lastChatId = "";
+const PLAYER_BUBBLE_VISIBLE_MS = 5000;
+let playerBubbleTimer = null;
 
 const $ = (id) => document.getElementById(id);
 const lobbyView = $("lobbyView");
@@ -809,6 +811,8 @@ function renderSideMatchBox() {
         </div>
       </div>
     </div>
+
+    <div id="playerChatBubbles" class="player-chat-bubbles"></div>
   `;
 }
 
@@ -1905,45 +1909,90 @@ function closeUserInfo() {
 function renderChat(messages) {
   if (!messages.length) {
     els.chatList.innerHTML = `<div class="small">채팅 없음</div>`;
+    renderPlayerChatBubbles([]);
     return;
   }
+
   const latest = messages[messages.length - 1];
-  if (latest.id !== lastChatId && latest.type === "chat" && latest.sender !== linkedUser) playSound("chat");
+
+  if (latest.id !== lastChatId && latest.type === "chat" && latest.sender !== linkedUser) {
+    playSound("chat");
+  }
+
   lastChatId = latest.id;
+
   els.chatList.innerHTML = messages.map(m => {
-    if (m.type === "system") return `<div class="chat-msg system">${escapeHtml(m.message)}</div>`;
-    return `<div class="chat-msg"><span class="sender">${escapeHtml(m.sender)}</span> <span>${escapeHtml(m.message)}</span></div>`;
+    if (m.type === "system") {
+      return `<div class="chat-msg system">${escapeHtml(m.message)}</div>`;
+    }
+
+    return `
+      <div class="chat-msg">
+        <span class="sender">${escapeHtml(m.sender)}</span>
+        <span>${escapeHtml(m.message)}</span>
+      </div>
+    `;
   }).join("");
+
   els.chatList.scrollTop = els.chatList.scrollHeight;
+
+  renderPlayerChatBubbles(messages);
 }
 
-canvas.addEventListener("pointermove", e => {
-  if (isMobileInput()) return;
-  hoverCell = cellFromEvent(e);
-  drawBoard();
-});
-canvas.addEventListener("pointerleave", () => {
-  hoverCell = null;
-  drawBoard();
-});
-canvas.addEventListener("pointerdown", async e => {
-  e.preventDefault();
-  const cell = cellFromEvent(e);
-  if (!cell) return;
-  if (isMobileInput()) {
-    selectedCell = cell;
-    renderSelectedInfo();
-    renderButtons();
-    drawBoard();
-    const result = canPlaceAt(cell.row, cell.col);
-    if (!result.ok) {
-      playSound("forbidden");
-      showToast(result.reason);
-    }
-  } else {
-    await tryPlace(cell.row, cell.col);
+function renderPlayerChatBubbles(messages) {
+  const box = document.getElementById("playerChatBubbles");
+  if (!box || !room) return;
+
+  if (playerBubbleTimer) {
+    clearTimeout(playerBubbleTimer);
+    playerBubbleTimer = null;
   }
-});
+
+  const now = Date.now();
+  const playerNames = [room.black, room.white].filter(Boolean);
+  const latestByPlayer = {};
+
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i];
+
+    if (m.type !== "chat") continue;
+    if (!playerNames.includes(m.sender)) continue;
+    if (latestByPlayer[m.sender]) continue;
+
+    const createdMs = nowMsFromTs(m.createdAt);
+
+    if (!createdMs) continue;
+    if (now - createdMs > PLAYER_BUBBLE_VISIBLE_MS) continue;
+
+    latestByPlayer[m.sender] = m;
+  }
+
+  const bubbles = playerNames
+    .filter(name => latestByPlayer[name])
+    .map(name => {
+      const color = name === room.black ? "black" : "white";
+      const m = latestByPlayer[name];
+
+      return `
+        <div class="player-chat-bubble ${color}">
+          <div class="player-chat-name">
+            ${color === "black" ? "흑" : "백"} · ${escapeHtml(name)}
+          </div>
+          <div class="player-chat-text">${escapeHtml(m.message)}</div>
+        </div>
+      `;
+    });
+
+  box.innerHTML = bubbles.join("");
+
+  if (bubbles.length) {
+    playerBubbleTimer = setTimeout(() => {
+      const latestBox = document.getElementById("playerChatBubbles");
+      if (latestBox) latestBox.innerHTML = "";
+    }, PLAYER_BUBBLE_VISIBLE_MS);
+  }
+}
+
 buttons.createRoom.addEventListener("click", createRoom);
 buttons.refreshRooms.addEventListener("click", startRoomListListener);
 buttons.homeBrand.addEventListener("click", () => location.href = "../");
