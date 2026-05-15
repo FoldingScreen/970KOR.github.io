@@ -51,40 +51,44 @@
   const rankInfo = (rank) => RANKS.find((r) => r.rank === Number(rank)) || RANKS[RANKS.length - 1];
   const cardImg = (rank) => CARD_BASE + rankInfo(rank).image;
   const players = () => S.participants.filter((p) => p.type === "player").sort((a, b) => (a.seatOrder ?? 999) - (b.seatOrder ?? 999));
-  const spectators = () => S.participants.filter((p) => p.type === "spectator");
   const me = () => S.participants.find((p) => p.uid === S.user) || null;
   const isHost = () => S.room?.hostUid === S.user;
-  const toast = (text) => {
+  const nowTs = () => firebase.firestore.Timestamp.now();
+
+  function toast(text) {
     E.toast.textContent = text;
     E.toast.classList.add("show");
     clearTimeout(toast.timer);
     toast.timer = setTimeout(() => E.toast.classList.remove("show"), 1800);
-  };
-  const setView = (name) => {
+  }
+  function setView(name) {
     E.lobbyView.classList.toggle("show", name === "lobby");
     E.roomView.classList.toggle("show", name === "room");
     E.leaveRoomBtn.classList.toggle("hidden", name !== "room");
-  };
-  const shuffle = (arr) => {
+  }
+  function shuffle(arr) {
     const a = arr.slice();
     for (let i = a.length - 1; i > 0; i -= 1) {
       const j = Math.floor(Math.random() * (i + 1));
       [a[i], a[j]] = [a[j], a[i]];
     }
     return a;
-  };
-  const maxRankForCount = (count) => count <= 3 ? 8 : count <= 5 ? 10 : 12;
-  const roleByIndex = (i, count) => ({
-    2: ["사바나", "노비"],
-    3: ["사바나", "농민", "노비"],
-    4: ["사바나", "세자", "농민", "노비"],
-    5: ["사바나", "세자", "사또", "농민", "노비"],
-    6: ["사바나", "세자", "암행어사", "사또", "농민", "노비"],
-    7: ["사바나", "세자", "관찰사", "암행어사", "사또", "농민", "노비"],
-    8: ["사바나", "세자", "영의정", "관찰사", "암행어사", "사또", "농민", "노비"]
-  }[count] || [])[i] || `${i + 1}등`;
-  const sortHand = (cards = []) => cards.slice().sort((a, b) => a.rank - b.rank || String(a.id).localeCompare(String(b.id)));
-  const makeDeck = (count) => {
+  }
+  function maxRankForCount(count) { return count <= 3 ? 8 : count <= 5 ? 10 : 12; }
+  function roleByIndex(i, count) {
+    const map = {
+      2: ["사바나", "노비"],
+      3: ["사바나", "농민", "노비"],
+      4: ["사바나", "세자", "농민", "노비"],
+      5: ["사바나", "세자", "사또", "농민", "노비"],
+      6: ["사바나", "세자", "암행어사", "사또", "농민", "노비"],
+      7: ["사바나", "세자", "관찰사", "암행어사", "사또", "농민", "노비"],
+      8: ["사바나", "세자", "영의정", "관찰사", "암행어사", "사또", "농민", "노비"]
+    };
+    return (map[count] || [])[i] || `${i + 1}등`;
+  }
+  function sortHand(cards = []) { return cards.slice().sort((a, b) => a.rank - b.rank || String(a.id).localeCompare(String(b.id))); }
+  function makeDeck(count) {
     const max = maxRankForCount(count);
     const deck = [];
     RANKS.filter((r) => r.rank <= max).forEach((r) => {
@@ -92,32 +96,31 @@
     });
     for (let i = 1; i <= 2; i += 1) deck.push({ id: `j-${i}-${Math.random().toString(36).slice(2, 8)}`, rank: 13, name: "홍길동", joker: true });
     return shuffle(deck);
-  };
-  const groupHand = (cards = []) => {
+  }
+  function groupHand(cards = []) {
     const map = new Map();
     sortHand(cards).forEach((c) => {
       if (!map.has(c.rank)) map.set(c.rank, []);
       map.get(c.rank).push(c);
     });
     return Array.from(map.entries()).map(([rank, items]) => ({ rank, items }));
-  };
-  const comboText = (c) => c ? `${rankInfo(c.effectiveRank).name} ${c.count}장` : "새 판";
-  const selectedCards = () => {
-    const mine = me();
-    const hand = mine?.hand || [];
+  }
+  function comboText(c) { return c ? `${rankInfo(c.effectiveRank).name} ${c.count}장` : "새 판"; }
+  function selectedCards() {
+    const hand = me()?.hand || [];
     const ids = new Set();
     S.selected.forEach((items) => items.forEach((c) => ids.add(c.id)));
     return hand.filter((c) => ids.has(c.id));
-  };
-  const normalizeSelection = (cards) => {
+  }
+  function normalizeSelection(cards) {
     if (!cards.length) return { ok: false, reason: "카드를 선택하세요." };
     const normals = cards.filter((c) => !c.joker);
     const ranks = Array.from(new Set(normals.map((c) => c.rank)));
     if (ranks.length > 1) return { ok: false, reason: "같은 계급만 함께 낼 수 있습니다." };
     if (!normals.length) return { ok: true, effectiveRank: 13, effectiveName: "홍길동", count: cards.length, cards };
     return { ok: true, effectiveRank: ranks[0], effectiveName: rankInfo(ranks[0]).name, count: cards.length, cards };
-  };
-  const canPlay = (cards) => {
+  }
+  function canPlay(cards) {
     const combo = normalizeSelection(cards);
     if (!combo.ok) return combo;
     const cur = S.room?.currentSet;
@@ -125,8 +128,8 @@
     if (combo.count !== cur.count) return { ok: false, reason: `이번 판은 ${cur.count}장씩 내야 합니다.` };
     if (combo.effectiveRank >= cur.effectiveRank) return { ok: false, reason: "더 높은 계급만 낼 수 있습니다." };
     return combo;
-  };
-  const nextActiveUidAfter = (uid) => {
+  }
+  function nextActiveUidAfter(uid) {
     const active = players().filter((p) => !p.finished && !p.forfeited);
     if (!active.length) return "";
     const idx = Math.max(0, active.findIndex((p) => p.uid === uid));
@@ -135,7 +138,14 @@
       if (target && !target.finished && !target.forfeited) return target.uid;
     }
     return active[0]?.uid || "";
-  };
+  }
+  function myTributePair() {
+    const pairs = S.room?.tribute?.pairs || [];
+    return pairs.find((p) => p.toUid === S.user && !p.returned) || null;
+  }
+  function selectBestTributeCards(hand, count) {
+    return sortHand(hand).filter((c) => !c.joker).slice(0, count);
+  }
 
   async function addSystem(text) {
     if (!S.roomId) return;
@@ -164,7 +174,7 @@
       }
       E.roomList.innerHTML = snap.docs.map((doc) => {
         const r = doc.data();
-        const status = ({ waiting: "대기 중", playing: "진행 중", betweenRounds: "라운드 종료", finished: "게임 종료" })[r.status] || r.status;
+        const status = ({ waiting: "대기 중", playing: "진행 중", betweenRounds: "라운드 종료", tributeReturn: "상납 반환", finished: "게임 종료" })[r.status] || r.status;
         const total = r.totalRounds ? `${r.totalRounds}판` : "무제한";
         return `<div class="room-item"><div><strong>${esc(r.title || "사바나 달무티")}</strong><div class="room-meta">${status} · 플레이어 ${r.playerCount || 0}/${MAX_PLAYERS} · 관전자 ${r.spectatorCount || 0} · ${total}</div></div><button class="btn primary" type="button" onclick="Dalmuti.joinRoom('${doc.id}')">입장</button></div>`;
       }).join("");
@@ -209,6 +219,11 @@
     }).join("");
   }
   function renderPile() {
+    if (S.room?.status === "tributeReturn") {
+      const pairs = S.room.tribute?.pairs || [];
+      E.centerPile.innerHTML = `<div class="pile-title">상납 반환</div><div class="muted">상납 받은 사람이 돌려줄 카드를 선택합니다.</div><div class="muted">${pairs.map((p) => `${esc(p.fromNickname)} → ${esc(p.toNickname)} ${p.count}장 ${p.returned ? "완료" : "대기"}`).join("<br>")}</div>`;
+      return;
+    }
     const prev = S.room?.previousSet;
     const cur = S.room?.currentSet;
     if (!prev && !cur) {
@@ -219,6 +234,7 @@
     E.centerPile.innerHTML = draw(prev, "직전") + draw(cur, "현재");
   }
   function isSelectableRank(group) {
+    if (S.room?.status === "tributeReturn") return !!myTributePair();
     if (S.room?.status !== "playing" || S.room.currentTurnUid !== S.user) return true;
     if (!S.room.currentSet) return true;
     if (group.rank === 13) return false;
@@ -240,6 +256,11 @@
       return `<div class="hand-stack${sel ? " selected" : ""}${isSelectableRank(g) ? "" : " disabled"}" onclick="Dalmuti.toggleRank(${g.rank})">${sel ? `<span class="stack-selected">${sel}</span>` : ""}<img src="${cardImg(g.rank)}" alt="${esc(rankInfo(g.rank).name)}"><span class="stack-count">x${g.items.length}</span></div>`;
     }).join("") : `<div class="muted">손패가 없습니다.</div>`;
     const cards = selectedCards();
+    if (S.room?.status === "tributeReturn") {
+      const pair = myTributePair();
+      E.selectedSummary.textContent = pair ? `${cards.length}/${pair.count}장 반환 선택` : "상납 반환 대기";
+      return;
+    }
     const combo = canPlay(cards);
     E.selectedSummary.textContent = cards.length ? (combo.ok ? comboText(combo) : combo.reason) : "선택 없음";
   }
@@ -252,9 +273,12 @@
     const waiting = S.room?.status === "waiting";
     const between = S.room?.status === "betweenRounds" || S.room?.status === "finished";
     const myTurn = S.room?.status === "playing" && S.room.currentTurnUid === S.user && mine?.type === "player" && !mine.finished && !mine.forfeited;
+    const tributeTurn = S.room?.status === "tributeReturn" && !!myTributePair();
     E.lobbyControls.classList.toggle("hidden", !waiting);
     E.betweenControls.classList.toggle("hidden", !between);
-    E.playControls.classList.toggle("hidden", !myTurn);
+    E.playControls.classList.toggle("hidden", !(myTurn || tributeTurn));
+    E.passBtn.classList.toggle("hidden", !myTurn);
+    E.playBtn.textContent = tributeTurn ? "반환 카드 주기" : "선택 카드 내기";
     E.readyBtn.classList.toggle("hidden", !(waiting && mine?.type === "player"));
     E.watchBtn.classList.toggle("hidden", !(waiting && mine?.type === "player"));
     E.joinAsPlayerBtn.classList.toggle("hidden", !(waiting && mine?.type === "spectator"));
@@ -267,6 +291,7 @@
     const mine = me();
     if (!S.room) return "";
     if (S.room.status === "waiting") return mine?.type === "spectator" ? "관전 중입니다. 참가하려면 참가하기를 누르세요." : "준비를 누르거나 관전하기를 선택하세요.";
+    if (S.room.status === "tributeReturn") return myTributePair() ? "상납으로 받은 만큼 돌려줄 카드를 선택하세요." : "상납 반환을 기다리는 중입니다.";
     if (S.room.status === "betweenRounds") return "라운드가 끝났습니다. 다음 계급과 승점을 확인하세요.";
     if (S.room.status === "finished") return "게임이 종료되었습니다.";
     if (S.room.currentTurnUid === S.user) return "내 차례입니다.";
@@ -274,7 +299,7 @@
   }
   function renderRoom() {
     if (!S.room) return;
-    const statusName = ({ waiting: "대기 중", playing: `${S.room.round || 1}라운드 진행 중`, betweenRounds: "라운드 종료", finished: "게임 종료" })[S.room.status] || S.room.status;
+    const statusName = ({ waiting: "대기 중", playing: `${S.room.round || 1}라운드 진행 중`, tributeReturn: "상납 반환", betweenRounds: "라운드 종료", finished: "게임 종료" })[S.room.status] || S.room.status;
     E.roomStateText.textContent = statusName;
     E.roomTitle.textContent = S.room.title || "사바나 달무티";
     E.turnBadge.textContent = S.room.status === "playing" ? `차례: ${S.participants.find((p) => p.uid === S.room.currentTurnUid)?.nickname || "-"}` : statusName;
@@ -302,6 +327,7 @@
       finishOrder: [],
       lastRoundResult: null,
       finalResult: null,
+      tribute: null,
       spectatorChatEnabled: true,
       createdAt: FV.serverTimestamp(),
       updatedAt: FV.serverTimestamp()
@@ -405,25 +431,92 @@
     if (!ps.every((p) => p.isReady)) return toast("아직 준비하지 않은 인원이 있습니다.");
     await startRound(1, true);
   }
+  function makeTributePairs(ps, hands) {
+    if (ps.length < 3) return [];
+    const pairs = [];
+    if (ps.length === 3) pairs.push({ from: ps[2], to: ps[0], count: 1 });
+    else {
+      pairs.push({ from: ps[ps.length - 1], to: ps[0], count: 2 });
+      pairs.push({ from: ps[ps.length - 2], to: ps[1], count: 1 });
+    }
+    return pairs.map((x, idx) => {
+      const cards = selectBestTributeCards(hands[x.from.uid], x.count);
+      const ids = new Set(cards.map((c) => c.id));
+      hands[x.from.uid] = hands[x.from.uid].filter((c) => !ids.has(c.id));
+      hands[x.to.uid] = sortHand(hands[x.to.uid].concat(cards));
+      return {
+        id: `tribute-${idx}`,
+        fromUid: x.from.uid,
+        fromNickname: x.from.nickname,
+        toUid: x.to.uid,
+        toNickname: x.to.nickname,
+        count: cards.length,
+        cards,
+        returned: cards.length === 0,
+        returnedCards: []
+      };
+    }).filter((p) => p.count > 0);
+  }
   async function startRound(round, resetScore) {
     const ps = players().map((p, i) => ({ ...p, seatOrder: i }));
     const deck = makeDeck(ps.length);
     const hands = Object.fromEntries(ps.map((p) => [p.uid, []]));
     deck.forEach((c, i) => hands[ps[i % ps.length].uid].push(c));
+    Object.keys(hands).forEach((uid) => { hands[uid] = sortHand(hands[uid]); });
+    const pairs = round > 1 ? makeTributePairs(ps, hands) : [];
+    const hasTribute = pairs.some((p) => !p.returned);
     const batch = db.batch();
-    batch.set(roomRef(), { status: "playing", round, currentTurnUid: ps[0].uid, currentSet: null, previousSet: null, finishOrder: [], turnOrder: ps.map((p) => p.uid), updatedAt: FV.serverTimestamp() }, { merge: true });
+    batch.set(roomRef(), {
+      status: hasTribute ? "tributeReturn" : "playing",
+      round,
+      currentTurnUid: hasTribute ? null : ps[0].uid,
+      currentSet: null,
+      previousSet: null,
+      finishOrder: [],
+      turnOrder: ps.map((p) => p.uid),
+      tribute: hasTribute ? { phase: "return", pairs, returnStartedAt: nowTs() } : null,
+      updatedAt: FV.serverTimestamp()
+    }, { merge: true });
     ps.forEach((p, i) => {
       const hand = sortHand(hands[p.uid]);
-      batch.set(partRef().doc(p.uid), { type: "player", seatOrder: i, role: round === 1 ? roleByIndex(i, ps.length) : (p.role || roleByIndex(i, ps.length)), score: resetScore ? 0 : (p.score || 0), hand, cardCount: hand.length, isReady: false, passed: false, finished: false, finishedRank: null, forfeited: false, timeoutCount: 0, updatedAt: FV.serverTimestamp() }, { merge: true });
+      batch.set(partRef().doc(p.uid), {
+        type: "player",
+        seatOrder: i,
+        role: roleByIndex(i, ps.length),
+        score: resetScore ? 0 : (p.score || 0),
+        hand,
+        cardCount: hand.length,
+        isReady: false,
+        passed: false,
+        finished: false,
+        finishedRank: null,
+        forfeited: false,
+        timeoutCount: 0,
+        updatedAt: FV.serverTimestamp()
+      }, { merge: true });
     });
     await batch.commit();
-    await addSystem(`${round}라운드가 시작되었습니다.`);
+    await addSystem(hasTribute ? `${round}라운드 상납 반환을 시작합니다.` : `${round}라운드가 시작되었습니다.`);
+  }
+  function toggleTributeRank(rank, group) {
+    const pair = myTributePair();
+    if (!pair) return toast("반환할 차례가 아닙니다.");
+    const current = S.selected.get(rank) || [];
+    if (current.length) S.selected.delete(rank);
+    else {
+      const used = selectedCards().length;
+      const roomLeft = Math.max(0, pair.count - used);
+      if (roomLeft <= 0) return toast(`${pair.count}장만 선택할 수 있습니다.`);
+      S.selected.set(rank, group.items.slice(0, roomLeft));
+    }
+    renderHand();
   }
   function toggleRank(rank) {
     const mine = me();
     if (!mine || mine.type !== "player") return;
     const group = groupHand(mine.hand || []).find((g) => g.rank === rank);
     if (!group) return;
+    if (S.room?.status === "tributeReturn") return toggleTributeRank(rank, group);
     if (S.room?.status === "playing" && S.room.currentTurnUid === S.user && S.room.currentSet) {
       if (!isSelectableRank(group)) return toast("낼 수 없는 계급입니다.");
       S.selected.clear();
@@ -445,6 +538,7 @@
     renderHand();
   }
   async function playSelected() {
+    if (S.room?.status === "tributeReturn") return returnTributeCards();
     const mine = me();
     if (!mine || S.room?.currentTurnUid !== S.user || mine.type !== "player") return;
     const cards = selectedCards();
@@ -457,17 +551,17 @@
     const finished = newHand.length === 0;
     if (finished && !mine.finished) {
       finishedRank = finishOrder.length + 1;
-      finishOrder.push({ uid: S.user, nickname: mine.nickname, rank: finishedRank, finishedAt: firebase.firestore.Timestamp.now() });
+      finishOrder.push({ uid: S.user, nickname: mine.nickname, rank: finishedRank, finishedAt: nowTs() });
     }
     const remaining = players().filter((p) => p.uid !== S.user && !p.finished && !p.forfeited).length + (finished ? 0 : 1);
     const batch = db.batch();
     batch.set(partRef().doc(S.user), { hand: newHand, cardCount: newHand.length, passed: false, finished, finishedRank, timeoutCount: 0, updatedAt: FV.serverTimestamp() }, { merge: true });
     players().forEach((p) => { if (p.uid !== S.user) batch.set(partRef().doc(p.uid), { passed: false }, { merge: true }); });
-    const setData = { uid: S.user, nickname: mine.nickname, effectiveRank: combo.effectiveRank, effectiveName: combo.effectiveName, count: combo.count, cards, createdAt: firebase.firestore.Timestamp.now() };
+    const setData = { uid: S.user, nickname: mine.nickname, effectiveRank: combo.effectiveRank, effectiveName: combo.effectiveName, count: combo.count, cards, createdAt: nowTs() };
     if (remaining <= 1) {
       const last = players().find((p) => p.uid !== S.user && !p.finished && !p.forfeited);
       const finalOrder = finishOrder.slice();
-      if (last) finalOrder.push({ uid: last.uid, nickname: last.nickname, rank: finalOrder.length + 1, finishedAt: firebase.firestore.Timestamp.now() });
+      if (last) finalOrder.push({ uid: last.uid, nickname: last.nickname, rank: finalOrder.length + 1, finishedAt: nowTs() });
       batch.set(roomRef(), { status: "betweenRounds", currentTurnUid: null, previousSet: S.room.currentSet || null, currentSet: setData, finishOrder: finalOrder, updatedAt: FV.serverTimestamp() }, { merge: true });
       await batch.commit();
       await finishRound(finalOrder);
@@ -476,6 +570,26 @@
     batch.set(roomRef(), { previousSet: S.room.currentSet || null, currentSet: setData, currentTurnUid: nextActiveUidAfter(S.user), finishOrder, updatedAt: FV.serverTimestamp() }, { merge: true });
     S.selected.clear();
     await batch.commit();
+  }
+  async function returnTributeCards() {
+    const pair = myTributePair();
+    const mine = me();
+    if (!pair || !mine) return;
+    const cards = selectedCards();
+    if (cards.length !== pair.count) return toast(`${pair.count}장을 선택해야 합니다.`);
+    const ids = new Set(cards.map((c) => c.id));
+    const newMyHand = (mine.hand || []).filter((c) => !ids.has(c.id));
+    const fromPlayer = S.participants.find((p) => p.uid === pair.fromUid);
+    const fromHand = sortHand([...(fromPlayer?.hand || []), ...cards]);
+    const pairs = (S.room.tribute?.pairs || []).map((p) => p.id === pair.id ? { ...p, returned: true, returnedCards: cards } : p);
+    const allDone = pairs.every((p) => p.returned);
+    const batch = db.batch();
+    batch.set(partRef().doc(S.user), { hand: newMyHand, cardCount: newMyHand.length, updatedAt: FV.serverTimestamp() }, { merge: true });
+    batch.set(partRef().doc(pair.fromUid), { hand: fromHand, cardCount: fromHand.length, updatedAt: FV.serverTimestamp() }, { merge: true });
+    batch.set(roomRef(), { tribute: { ...(S.room.tribute || {}), pairs }, status: allDone ? "playing" : "tributeReturn", currentTurnUid: allDone ? players()[0]?.uid || null : null, updatedAt: FV.serverTimestamp() }, { merge: true });
+    S.selected.clear();
+    await batch.commit();
+    if (allDone) await addSystem(`${S.room.round}라운드가 시작되었습니다.`);
   }
   async function passTurn() {
     const mine = me();
@@ -490,7 +604,9 @@
     batch.set(partRef().doc(S.user), { passed: true, updatedAt: FV.serverTimestamp() }, { merge: true });
     if (trickOver) {
       players().forEach((p) => batch.set(partRef().doc(p.uid), { passed: false }, { merge: true }));
-      batch.set(roomRef(), { currentTurnUid: S.room.currentSet.uid, previousSet: S.room.currentSet, currentSet: null, updatedAt: FV.serverTimestamp() }, { merge: true });
+      const starter = S.room.currentSet.uid;
+      const starterPlayer = players().find((p) => p.uid === starter && !p.finished && !p.forfeited);
+      batch.set(roomRef(), { currentTurnUid: starterPlayer ? starter : nextActiveUidAfter(starter), previousSet: S.room.currentSet, currentSet: null, updatedAt: FV.serverTimestamp() }, { merge: true });
     } else batch.set(roomRef(), { currentTurnUid: nextActiveUidAfter(S.user), updatedAt: FV.serverTimestamp() }, { merge: true });
     await batch.commit();
   }
@@ -499,9 +615,9 @@
     const batch = db.batch();
     order.forEach((r, i) => {
       const score = total - i;
-      batch.set(partRef().doc(r.uid), { score: FV.increment(score), lastRoundScore: score, lastRoundRank: i + 1, role: roleByIndex(i, total), finished: true, finishedRank: i + 1, updatedAt: FV.serverTimestamp() }, { merge: true });
+      batch.set(partRef().doc(r.uid), { score: FV.increment(score), lastRoundScore: score, lastRoundRank: i + 1, role: roleByIndex(i, total), seatOrder: i, finished: true, finishedRank: i + 1, updatedAt: FV.serverTimestamp() }, { merge: true });
     });
-    batch.set(roomRef(), { status: S.room.totalRounds && S.room.round >= S.room.totalRounds ? "finished" : "betweenRounds", currentTurnUid: null, currentSet: null, previousSet: null, finishOrder: order, lastRoundResult: { round: S.room.round, results: order, endedAt: firebase.firestore.Timestamp.now() }, updatedAt: FV.serverTimestamp() }, { merge: true });
+    batch.set(roomRef(), { status: S.room.totalRounds && S.room.round >= S.room.totalRounds ? "finished" : "betweenRounds", currentTurnUid: null, currentSet: null, previousSet: null, tribute: null, finishOrder: order, lastRoundResult: { round: S.room.round, results: order, endedAt: nowTs() }, updatedAt: FV.serverTimestamp() }, { merge: true });
     await batch.commit();
     await addSystem(S.room.totalRounds && S.room.round >= S.room.totalRounds ? "게임이 종료되었습니다." : `${S.room.round}라운드가 종료되었습니다.`);
   }
@@ -513,7 +629,7 @@
     if (!isHost()) return;
     if (!confirm("현재 진행 상황과 누적 승점이 모두 초기화됩니다. 새 게임으로 초기화할까요?")) return;
     const batch = db.batch();
-    batch.set(roomRef(), { status: "waiting", round: 0, currentTurnUid: null, currentSet: null, previousSet: null, finishOrder: [], lastRoundResult: null, finalResult: null, updatedAt: FV.serverTimestamp() }, { merge: true });
+    batch.set(roomRef(), { status: "waiting", round: 0, currentTurnUid: null, currentSet: null, previousSet: null, tribute: null, finishOrder: [], lastRoundResult: null, finalResult: null, updatedAt: FV.serverTimestamp() }, { merge: true });
     S.participants.forEach((p) => batch.set(partRef().doc(p.uid), { isReady: false, role: null, score: 0, lastRoundScore: 0, lastRoundRank: null, hand: [], cardCount: 0, passed: false, finished: false, finishedRank: null, forfeited: false, timeoutCount: 0, updatedAt: FV.serverTimestamp() }, { merge: true }));
     await batch.commit();
     await addSystem("방장이 새 게임으로 초기화했습니다.");
@@ -536,7 +652,7 @@
   async function init() {
     collectEls();
     S.user = String(localStorage.getItem("partyAppUser") || "").trim();
-    if (!S.user) { alert("970KOR 로그인 후 이용할 수 있습니다."); location.href = "../"; return; }
+    if (!S.user) { alert("닉네임을 입력하세요."); return; }
     E.myNickname.textContent = S.user;
     renderRanks(); watchRooms();
     if (S.roomId) {
