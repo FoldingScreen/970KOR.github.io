@@ -94,7 +94,8 @@ damageStats: {
   bySource: {}
 },
 augmentTimers: {},
-bossFlags: {}
+bossFlags: {},
+rerollsLeft: meta.upgrades.reroll || 0
   };
 }
 
@@ -937,11 +938,11 @@ function openAugmentChoice() {
   resetTouchMove();
   currentChoiceMode = "augment";
   currentChoices = rollAugmentChoices();
-  rerollsLeft = meta.upgrades.reroll || 0;
+  rerollsLeft = state.rerollsLeft || 0;
   rerollBtn.style.display = "inline-block";
   choiceTitle.textContent = `Lv.${state.level} 증강 선택`;
-  choiceDesc.textContent =
-    "추가 보너스 증강입니다. 속성을 선택하고 시너지를 폭발시키세요.";
+choiceDesc.textContent =
+  `추가 보너스 증강입니다. 이번 판 남은 새로고침: ${rerollsLeft}회`;
   renderChoiceCards();
   choiceOverlay.classList.add("show");
 }
@@ -967,11 +968,26 @@ function selectCurrentChoice(item) {
   showBigAlert(item.name, `${GRADE_LABEL[item.grade]} 증강 획득`);
 }
 function rerollAugments() {
-  if (currentChoiceMode !== "augment" || rerollsLeft <= 0) return;
+  if (currentChoiceMode !== "augment") return;
+
+  rerollsLeft = state.rerollsLeft || 0;
+
+  if (rerollsLeft <= 0) {
+    showToast("이번 판 새로고침을 모두 사용했습니다.");
+    renderChoiceCards();
+    return;
+  }
+
   rerollsLeft -= 1;
+  state.rerollsLeft = rerollsLeft;
+
   currentChoices = rollAugmentChoices();
   renderChoiceCards();
-  showToast("증강 선택지 새로고침!");
+
+  choiceDesc.textContent =
+    `추가 보너스 증강입니다. 이번 판 남은 새로고침: ${rerollsLeft}회`;
+
+  showToast(`증강 선택지 새로고침! 남은 횟수 ${rerollsLeft}`);
 }
 function rollAugmentChoices() {
   const normalPool = AUGMENTS.filter(
