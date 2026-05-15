@@ -468,7 +468,11 @@ function renderPauseDetails() {
     `).join("")
     : `<div class="detail-card">없음</div>`;
 
-  return `
+return `
+    <button type="button" class="mini-btn secondary detail-btn build-detail-trigger" onclick="openBuildDetail()">
+      보유 증강 / 활성 시너지 상세설명
+    </button>
+
     <h3>현재 스탯</h3>
     <div class="detail-grid">
       <div class="detail-card">공격력 배율 <strong>x${statDamageMul().toFixed(2)}</strong></div>
