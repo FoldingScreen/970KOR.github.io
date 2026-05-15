@@ -176,6 +176,123 @@ function recordDamage(sourceId, sourceName, amount) {
   state.damageStats.total += amount;
 }
 
+function getActiveDemonSynergySource() {
+  if (!state) return null;
+
+  if (state.activeSynergies.has("demon4")) {
+    return {
+      id: "synergy_demon4",
+      name: SYNERGY_INFO.demon4?.name || "鬼 4 귀왕 강림",
+    };
+  }
+
+  if (state.activeSynergies.has("demon3")) {
+    return {
+      id: "synergy_demon3",
+      name: SYNERGY_INFO.demon3?.name || "鬼 3 귀문 개방",
+    };
+  }
+
+  if (state.activeSynergies.has("demon2")) {
+    return {
+      id: "synergy_demon2",
+      name: SYNERGY_INFO.demon2?.name || "鬼 2 귀기 개방",
+    };
+  }
+
+  return null;
+}
+
+function getDamageBonusAttributions(tags = []) {
+  const out = [];
+
+  if (!state) return out;
+
+  if (state.perks.focusBlade && state.stacks.focus > 0) {
+    const focusMul = Math.pow(1.005, state.stacks.focus);
+
+    if (focusMul > 1.001) {
+      out.push({
+        id: "augment_perfect_focus_bonus",
+        name: "완전한 집중",
+        mul: focusMul,
+      });
+    }
+  }
+
+  const demonMul = 1 + state.stacks.demon * (state.synergy.demonKillStack || 0);
+  const demonSource = getActiveDemonSynergySource();
+
+  if (demonSource && demonMul > 1.001) {
+    out.push({
+      ...demonSource,
+      mul: demonMul,
+    });
+  }
+
+  if (state.perks.glassSanctuary && state.player.shield > 0) {
+    out.push({
+      id: "augment_glass_sanctuary_bonus",
+      name: "유리성역",
+      mul: 1.6,
+    });
+  }
+
+  const buffMul = getBuffMul("damage");
+
+  if (buffMul > 1.001) {
+    out.push({
+      id: "bonus_damage_buff",
+      name: "공격력 버프",
+      mul: buffMul,
+    });
+  }
+
+  return out;
+}
+
+function recordDamageWithBonusAttribution(baseSource, amount, tags = []) {
+  if (!state || !state.damageStats) return;
+  if (!amount || amount <= 0) return;
+
+  const source = baseSource || {
+    id: state.weapon?.id || "unknown",
+    name: state.weapon?.name || "기타 피해",
+  };
+
+  const bonuses = getDamageBonusAttributions(tags)
+    .filter(b => b && b.mul && b.mul > 1.001);
+
+  if (!bonuses.length) {
+    recordDamage(source.id, source.name, amount);
+    return;
+  }
+
+  const totalMul = bonuses.reduce((acc, b) => acc * b.mul, 1);
+  let baseAmount = amount / totalMul;
+  let used = baseAmount;
+  let runningMul = 1;
+
+  recordDamage(source.id, source.name, baseAmount);
+
+  for (const bonus of bonuses) {
+    const bonusAmount = baseAmount * runningMul * (bonus.mul - 1);
+
+    if (bonusAmount > 0) {
+      recordDamage(bonus.id, bonus.name, bonusAmount);
+      used += bonusAmount;
+    }
+
+    runningMul *= bonus.mul;
+  }
+
+  const diff = amount - used;
+
+  if (Math.abs(diff) > 0.0001) {
+    recordDamage(source.id, source.name, diff);
+  }
+}
+
 function getAttrCounts() {
   const out = {};
   for (const a of ALL_ATTRS) out[a] = 0;
@@ -1945,10 +2062,13 @@ const actualDamage = Math.max(0, Math.min(dmg, e.hp));
 e.hp -= dmg;
 addFloating(e.x, e.y, Math.round(dmg), "#fef3c7");
 
-recordDamage(
-  source?.id || projectile?.source?.id || state.weapon?.id || "unknown",
-  source?.name || projectile?.source?.name || state.weapon?.name || "기타 피해",
-  actualDamage
+recordDamageWithBonusAttribution(
+  source || projectile?.source || {
+    id: state.weapon?.id || "unknown",
+    name: state.weapon?.name || "기타 피해",
+  },
+  actualDamage,
+  tags
 );
   applyBloodFurnaceLifesteal(dmg, tags);
 
