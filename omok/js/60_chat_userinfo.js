@@ -397,7 +397,7 @@ function renderChat(messages) {
 
 function renderPlayerChatBubbles(messages) {
   const boxes = Array.from(document.querySelectorAll(".player-chat-bubbles"));
-  if (!box || !room) return;
+  if (!boxes.length || !room) return;
 
   if (playerBubbleTimer) {
     clearTimeout(playerBubbleTimer);
@@ -405,7 +405,8 @@ function renderPlayerChatBubbles(messages) {
   }
 
   const now = Date.now();
-  const playerNames = [room.black, room.white].filter(Boolean);
+  const seats = getSeatPlayers();
+  const playerNames = [seats.black, seats.white].filter(Boolean);
   const latestByPlayer = {};
 
   for (let i = messages.length - 1; i >= 0; i--) {
@@ -426,7 +427,7 @@ function renderPlayerChatBubbles(messages) {
   const bubbles = playerNames
     .filter(name => latestByPlayer[name])
     .map(name => {
-      const color = name === room.black ? "black" : "white";
+      const color = name === seats.black ? "black" : "white";
       const m = latestByPlayer[name];
 
       return `
@@ -439,13 +440,15 @@ function renderPlayerChatBubbles(messages) {
       `;
     });
 
-  box.innerHTML = bubbles.join("");
+  boxes.forEach(box => {
+    box.innerHTML = bubbles.join("");
+  });
 
   if (bubbles.length) {
     playerBubbleTimer = setTimeout(() => {
-      const latestBox = document.getElementById("playerChatBubbles");
-      if (latestBox) latestBox.innerHTML = "";
+      document.querySelectorAll(".player-chat-bubbles").forEach(box => {
+        box.innerHTML = "";
+      });
     }, PLAYER_BUBBLE_VISIBLE_MS);
   }
 }
-
