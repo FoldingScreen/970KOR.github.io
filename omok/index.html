@@ -46,11 +46,22 @@
             <input id="allowSpectatorsInput" type="checkbox" checked />
             <span>관전 허용</span>
           </label>
-          <label class="check-row">
-            <input id="allowAdviceInput" type="checkbox" />
-            <span>훈수 허용 관전자 채팅 가능</span>
-          </label>
-          <button id="createRoomBtn">방 만들기</button>
+<label class="check-row">
+  <input id="allowAdviceInput" type="checkbox" />
+  <span>훈수 허용 관전자 채팅 가능</span>
+</label>
+
+<div class="form-row">
+  <label for="turnLimitInput">착수 제한시간</label>
+  <select id="turnLimitInput">
+    <option value="30">30초</option>
+    <option value="60" selected>60초</option>
+    <option value="120">120초</option>
+    <option value="180">180초</option>
+  </select>
+</div>
+
+<button id="createRoomBtn">방 만들기</button>
         </div>
       </section>
 
