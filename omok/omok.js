@@ -599,8 +599,10 @@ function reactToRoomChange(prev, next) {
   }
 
   if (prev.status === "playing" && next.status === "betweenRounds") playSound("win");
-  if (!prev.undoRequest && next.undoRequest?.status === "pending") playSound("request");
-  if (!prev.drawRequest && next.drawRequest?.status === "pending") playSound("request");
+if (!prev.undoRequest && next.undoRequest?.status === "pending") playSound("request");
+if (!prev.drawRequest && next.drawRequest?.status === "pending") playSound("request");
+if (!prev.rematchRequest && next.rematchRequest?.status === "pending") playSound("request");
+if (!prev.matchRequest && next.matchRequest?.status === "pending") playSound("request");
 }
 function startChatListener(id) {
   if (chatUnsub) chatUnsub();
@@ -1808,70 +1810,135 @@ const label =
 }
 window.cancelRequest = async function cancelRequest(type) {
   const label =
-  type === "undo"
-    ? "무르기"
-    : type === "draw"
-      ? "무승부"
-      : "재대국";
-  await roomRef().update({ [`${type}Request`]: null, updatedAt: FV.serverTimestamp() });
+    type === "match"
+      ? "대국"
+      : type === "undo"
+        ? "무르기"
+        : type === "draw"
+          ? "무승부"
+          : "재대국";
+
+  const requestField =
+    type === "match"
+      ? "matchRequest"
+      : type === "undo"
+        ? "undoRequest"
+        : type === "draw"
+          ? "drawRequest"
+          : "rematchRequest";
+
+  await roomRef().update({
+    [requestField]: null,
+    updatedAt: FV.serverTimestamp()
+  });
+
   await addSystemChat(currentRoomId, `${linkedUser}님이 ${label} 요청을 취소했습니다.`);
 };
+
 window.resolveRequest = async function resolveRequest(type, accepted) {
   if (!room) return;
-const request =
-  type === "match"
-    ? room.matchRequest
-    : type === "undo"
-      ? room.undoRequest
-      : type === "draw"
-        ? room.drawRequest
-        : room.rematchRequest;
-  if (!request || request.status !== "pending" || request.requestedBy === linkedUser) return;
-  const label = type === "undo" ? "무르기" : "무승부";
+
+  const request =
+    type === "match"
+      ? room.matchRequest
+      : type === "undo"
+        ? room.undoRequest
+        : type === "draw"
+          ? room.drawRequest
+          : room.rematchRequest;
+
+  if (!request || request.status !== "pending") return;
+  if (request.requestedBy === linkedUser) return;
+
+  const label =
+    type === "match"
+      ? "대국"
+      : type === "undo"
+        ? "무르기"
+        : type === "draw"
+          ? "무승부"
+          : "재대국";
+
+  const requestField =
+    type === "match"
+      ? "matchRequest"
+      : type === "undo"
+        ? "undoRequest"
+        : type === "draw"
+          ? "drawRequest"
+          : "rematchRequest";
+
   if (!accepted) {
-    await roomRef().update({ [`${type}Request`]: null, updatedAt: FV.serverTimestamp() });
+    await roomRef().update({
+      [requestField]: null,
+      updatedAt: FV.serverTimestamp()
+    });
+
     await addSystemChat(currentRoomId, `${linkedUser}님이 ${label} 요청을 거절했습니다.`);
     return;
   }
 
-if (type === "match") {
+  window.resolveRequest = async function resolveRequest(type, accepted) {
+  if (!room) return;
+
+  const request =
+    type === "match"
+      ? room.matchRequest
+      : type === "undo"
+        ? room.undoRequest
+        : type === "draw"
+          ? room.drawRequest
+          : room.rematchRequest;
+
+  if (!request || request.status !== "pending") return;
+  if (request.requestedBy === linkedUser) return;
+
+  const label =
+    type === "match"
+      ? "대국"
+      : type === "undo"
+        ? "무르기"
+        : type === "draw"
+          ? "무승부"
+          : "재대국";
+
+  const requestField =
+    type === "match"
+      ? "matchRequest"
+      : type === "undo"
+        ? "undoRequest"
+        : type === "draw"
+          ? "drawRequest"
+          : "rematchRequest";
+
   if (!accepted) {
     await roomRef().update({
-      matchRequest: null,
+      [requestField]: null,
       updatedAt: FV.serverTimestamp()
     });
 
-    await addSystemChat(currentRoomId, `${linkedUser}님이 대국 요청을 거절했습니다.`);
+    await addSystemChat(currentRoomId, `${linkedUser}님이 ${label} 요청을 거절했습니다.`);
     return;
   }
 
-  await acceptInitialMatch();
-  await addSystemChat(currentRoomId, `${linkedUser}님이 대국 요청을 수락했습니다.`);
-  return;
-}
-  
+  if (type === "match") {
+    await acceptInitialMatch();
+    await addSystemChat(currentRoomId, `${linkedUser}님이 대국 요청을 수락했습니다.`);
+    return;
+  }
+
   if (type === "rematch") {
-  if (!accepted) {
-    await roomRef().update({
-      rematchRequest: null,
-      matchRequest: null,
-      updatedAt: FV.serverTimestamp()
-    });
-
-    await addSystemChat(currentRoomId, `${linkedUser}님이 재대국 요청을 거절했습니다.`);
+    await acceptRematch();
+    await addSystemChat(currentRoomId, `${linkedUser}님이 재대국 요청을 수락했습니다.`);
     return;
   }
 
-  await acceptRematch();
-  await addSystemChat(currentRoomId, `${linkedUser}님이 재대국 요청을 수락했습니다.`);
-  return;
-}
-  
   if (type === "draw") {
     await finishRound({ winnerColor: null, reason: "draw" });
     await addSystemChat(currentRoomId, `${linkedUser}님이 무승부 요청을 수락했습니다.`);
     return;
   }
+
   await acceptUndo();
   await addSystemChat(currentRoomId, `${linkedUser}님이 무르기 요청을 수락했습니다.`);
 };
@@ -1926,11 +1993,11 @@ async function acceptInitialMatch() {
       whiteRatingChange: null,
       ratingApplied: false,
 
-      undoRequest: null,
-      drawRequest: null,
-      matchRequest: null,
-      rematchRequest: null,
-      requestLocks: { undo: {}, draw: {} },
+undoRequest: null,
+drawRequest: null,
+matchRequest: null,
+rematchRequest: null,
+requestLocks: { undo: {}, draw: {} },
 
       [`players.${black}.role`]: "black",
       [`players.${black}.connected`]: true,
@@ -2057,11 +2124,11 @@ async function acceptRematch() {
       whiteRatingChange: null,
       ratingApplied: false,
 
-      undoRequest: null,
-      drawRequest: null,
-      rematchRequest: null,
-      matchRequest: null,
-      requestLocks: { undo: {}, draw: {} },
+undoRequest: null,
+drawRequest: null,
+matchRequest: null,
+rematchRequest: null,
+requestLocks: { undo: {}, draw: {} },
 
       [`players.${loser}.role`]: "black",
       [`players.${loser}.connected`]: true,
@@ -2173,8 +2240,8 @@ round: (r.round || 1) + 1,
       ratingApplied: false,
 undoRequest: null,
 drawRequest: null,
+matchRequest: null,
 rematchRequest: null,
-      matchRequest: null,
 requestLocks: { undo: {}, draw: {} },
       [`players.${black}.role`]: "black",
       [`players.${white}.role`]: "white",
@@ -2331,9 +2398,11 @@ async function leaveRoom() {
             nextSeats: { black: null, white: null },
             ready: {},
             ratingApplied: false,
-            undoRequest: null,
-            drawRequest: null,
-            requestLocks: { undo: {}, draw: {} },
+undoRequest: null,
+drawRequest: null,
+matchRequest: null,
+rematchRequest: null,
+requestLocks: { undo: {}, draw: {} },
 
             [`players.${arranged.black}.role`]: "black",
             [`players.${arranged.black}.connected`]: true,
