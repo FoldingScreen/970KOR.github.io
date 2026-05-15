@@ -211,137 +211,145 @@ function recalcSynergies() {
     demonMax: 0,
     demonLoss: 1,
   };
+
   const newActive = new Set();
+
   function active(key) {
     newActive.add(key);
+
     if (!state.announcedSynergies.has(key)) {
       state.announcedSynergies.add(key);
       onSynergyFirstActivated(key);
     }
   }
-  if (a["氷"] >= 2) {
-    active("ice2");
-    s.slowChance += 0.25;
-    s.slowPower += 0.3;
-  }
-  if (a["氷"] >= 4) {
-    active("ice4");
-    s.slowChance += 0.2;
-    s.areaDamageMul *= 1.1;
-  }
+
+  // 같은 속성의 2 / 4 / 6 시너지는 전부 중복 발동하지 않고,
+  // 현재 달성한 최상위 단계 하나만 활성화한다.
+
   if (a["氷"] >= 6) {
     active("ice6");
-    s.slowChance += 0.25;
-    s.areaDamageMul *= 1.25;
+    s.slowChance = 0.45;
+    s.slowPower = 0.42;
+    s.areaDamageMul *= 1.18;
+  } else if (a["氷"] >= 4) {
+    active("ice4");
+    s.slowChance = 0.35;
+    s.slowPower = 0.36;
+    s.areaDamageMul *= 1.1;
+  } else if (a["氷"] >= 2) {
+    active("ice2");
+    s.slowChance = 0.25;
+    s.slowPower = 0.3;
   }
-  if (a["火"] >= 2) {
-    active("fire2");
-    s.burnChance += 0.25;
-    s.burnDpsRatio += 0.2;
-  }
-  if (a["火"] >= 4) {
-    active("fire4");
-    s.burnDpsRatio += 0.22;
-    s.burnDuration += 1.5;
-  }
+
   if (a["火"] >= 6) {
     active("fire6");
-    s.burnDpsRatio += 0.32;
-    s.burnDuration += 2.0;
+    s.burnChance = 0.42;
+    s.burnDpsRatio = 0.48;
+    s.burnDuration = 4.5;
+  } else if (a["火"] >= 4) {
+    active("fire4");
+    s.burnChance = 0.34;
+    s.burnDpsRatio = 0.34;
+    s.burnDuration = 3.6;
+  } else if (a["火"] >= 2) {
+    active("fire2");
+    s.burnChance = 0.25;
+    s.burnDpsRatio = 0.2;
+    s.burnDuration = 2.5;
   }
-  if (a["風"] >= 2) {
+
+  if (a["風"] >= 6) {
+    active("wind6");
+    s.attackSpeedMul *= 1.42;
+    s.moveMul *= 1.08;
+    s.extraHitEvery = 3;
+  } else if (a["風"] >= 4) {
+    active("wind4");
+    s.attackSpeedMul *= 1.26;
+    s.moveMul *= 1.06;
+    s.extraHitEvery = 5;
+  } else if (a["風"] >= 2) {
     active("wind2");
     s.attackSpeedMul *= 1.15;
     s.moveMul *= 1.05;
   }
-  if (a["風"] >= 4) {
-    active("wind4");
-    s.attackSpeedMul *= 1.18;
-    s.moveMul *= 1.05;
-    s.extraHitEvery = 5;
-  }
-  if (a["風"] >= 6) {
-    active("wind6");
-    s.attackSpeedMul *= 1.28;
-    s.extraHitEvery = 3;
-  }
-  if (a["光"] >= 2) {
+
+  if (a["光"] >= 6) {
+    active("light6");
+    s.areaMul *= 1.42;
+    s.areaDamageMul *= 1.28;
+  } else if (a["光"] >= 4) {
+    active("light4");
+    s.areaMul *= 1.26;
+    s.areaDamageMul *= 1.18;
+  } else if (a["光"] >= 2) {
     active("light2");
     s.areaMul *= 1.15;
   }
-  if (a["光"] >= 4) {
-    active("light4");
-    s.areaMul *= 1.15;
-    s.areaDamageMul *= 1.2;
-  }
-  if (a["光"] >= 6) {
-    active("light6");
-    s.areaMul *= 1.2;
-    s.areaDamageMul *= 1.25;
-  }
-  if (a["暗"] >= 2) {
+
+  if (a["暗"] >= 6) {
+    active("dark6");
+    s.executeThreshold = 0.35;
+    s.executeChance = 0.15;
+  } else if (a["暗"] >= 4) {
+    active("dark4");
+    s.executeThreshold = 0.28;
+    s.executeChance = 0.11;
+  } else if (a["暗"] >= 2) {
     active("dark2");
     s.executeThreshold = 0.2;
     s.executeChance = 0.08;
   }
-  if (a["暗"] >= 4) {
-    active("dark4");
-    s.executeThreshold = 0.3;
-    s.executeChance = 0.12;
-  }
-  if (a["暗"] >= 6) {
-    active("dark6");
-    s.executeThreshold = 0.4;
-    s.executeChance = 0.18;
-  }
-  if (a["聖"] >= 2) {
+
+  if (a["聖"] >= 6) {
+    active("holy6");
+    s.shieldOnKillChance = 0.32;
+    s.shieldOnKill = 13;
+  } else if (a["聖"] >= 4) {
+    active("holy4");
+    s.shieldOnKillChance = 0.23;
+    s.shieldOnKill = 9;
+  } else if (a["聖"] >= 2) {
     active("holy2");
     s.shieldOnKillChance = 0.15;
     s.shieldOnKill = 6;
   }
-  if (a["聖"] >= 4) {
-    active("holy4");
-    s.shieldOnKillChance = 0.25;
-    s.shieldOnKill = 10;
-  }
-  if (a["聖"] >= 6) {
-    active("holy6");
-    s.shieldOnKillChance = 0.4;
-    s.shieldOnKill = 14;
-  }
-  if (a["惡"] >= 2) {
+
+  if (a["惡"] >= 6) {
+    active("evil6");
+    s.healOnKillChance = 0.32;
+    s.healOnKill = 9;
+  } else if (a["惡"] >= 4) {
+    active("evil4");
+    s.healOnKillChance = 0.23;
+    s.healOnKill = 6;
+  } else if (a["惡"] >= 2) {
     active("evil2");
     s.healOnKillChance = 0.15;
     s.healOnKill = 4;
   }
-  if (a["惡"] >= 4) {
-    active("evil4");
-    s.healOnKillChance = 0.25;
-    s.healOnKill = 7;
-  }
-  if (a["惡"] >= 6) {
-    active("evil6");
-    s.healOnKillChance = 0.4;
-    s.healOnKill = 10;
-  }
-  if (a["鬼"] >= 2) {
-    active("demon2");
-    s.demonKillStack = 0.005;
-    s.demonMax = 80;
-    s.demonLoss = 0.5;
-  }
-  if (a["鬼"] >= 3) {
-    active("demon3");
-    s.demonKillStack = 0.008;
-    s.demonMax = 130;
-    s.demonLoss = 0.3;
-  }
+
   if (a["鬼"] >= 4) {
     active("demon4");
     s.demonKillStack = 0.01;
     s.demonMax = 200;
     s.demonLoss = 0.15;
+  } else if (a["鬼"] >= 3) {
+    active("demon3");
+    s.demonKillStack = 0.008;
+    s.demonMax = 130;
+    s.demonLoss = 0.3;
+  } else if (a["鬼"] >= 2) {
+    active("demon2");
+    s.demonKillStack = 0.005;
+    s.demonMax = 80;
+    s.demonLoss = 0.5;
   }
+
+  // 복합 시너지는 별도 발현.
+  // 단, 너무 쉽게 많이 터지지 않도록 기존 조건은 유지하되
+  // 기본 속성 시너지 중복 카운트 문제만 제거한다.
   if (a["氷"] >= 2 && a["火"] >= 2) active("frostfire");
   if (a["火"] >= 4 && a["風"] >= 2) active("firestorm");
   if (a["風"] >= 4 && a["光"] >= 2) active("radiantwind");
@@ -350,6 +358,7 @@ function recalcSynergies() {
   if (a["火"] >= 1 && a["暗"] >= 1 && a["鬼"] >= 1) active("bloodflamedemon");
   if (a["聖"] >= 2 && a["鬼"] >= 2) active("holydemon");
   if (a["惡"] >= 2 && a["鬼"] >= 2) active("evildemon");
+
   state.activeSynergies = newActive;
   state.synergy = s;
 }
@@ -1270,16 +1279,39 @@ function fireProjectiles(w) {
   }
 }
 
+function getLateGamePressure(t) {
+  if (t < 420) return 0;   // 0:00 ~ 7:00
+  if (t < 600) return 1;   // 7:00 ~ 10:00
+  if (t < 780) return 2;   // 10:00 ~ 13:00
+  if (t < 900) return 3;   // 13:00 ~ 15:00
+  if (t < 1080) return 4;  // 15:00 ~ 18:00
+  return 5;                // 18:00 ~ 20:00
+}
+
 function getMonsterWave(t) {
+  const pressure = getLateGamePressure(t);
+
   if (t >= 1080 && t < 1200) {
     return {
       key: "wave_18",
       active: true,
       title: "최종 웨이브",
       desc: "18:00 ~ 20:00 몬스터 대공세",
-      intervalMul: 0.55,
-      spawnCount: 2,
-      eliteBonus: 0.04,
+      intervalMul: 0.48,
+      spawnCount: 4,
+      eliteBonus: 0.08,
+    };
+  }
+
+  if (t >= 900 && t < 960) {
+    return {
+      key: "wave_15",
+      active: true,
+      title: "후반 공세",
+      desc: "15:00 ~ 16:00 강화 몬스터 공세",
+      intervalMul: 0.58,
+      spawnCount: 3,
+      eliteBonus: 0.06,
     };
   }
 
@@ -1289,9 +1321,9 @@ function getMonsterWave(t) {
       active: true,
       title: "몬스터 웨이브",
       desc: "10:00 ~ 11:00 몬스터 공세",
-      intervalMul: 0.65,
+      intervalMul: 0.62,
       spawnCount: 2,
-      eliteBonus: 0.02,
+      eliteBonus: 0.04,
     };
   }
 
@@ -1299,8 +1331,8 @@ function getMonsterWave(t) {
     key: "normal",
     active: false,
     intervalMul: 1,
-    spawnCount: 1,
-    eliteBonus: 0,
+    spawnCount: pressure >= 5 ? 3 : pressure >= 3 ? 2 : 1,
+    eliteBonus: pressure * 0.012,
   };
 }
 
@@ -1308,6 +1340,7 @@ function updateSpawns(dt) {
   state.spawnMs -= dt * 1000;
 
   const t = state.timeMs / 1000;
+  const pressure = getLateGamePressure(t);
   const wave = getMonsterWave(t);
 
   if (state.waveKey !== wave.key) {
@@ -1317,6 +1350,18 @@ function updateSpawns(dt) {
       showBigAlert(wave.title, wave.desc);
     }
   }
+
+  const baseInterval = Math.max(260, 850 - t * 1.65 - pressure * 18);
+  const interval = baseInterval * wave.intervalMul;
+
+  if (state.spawnMs <= 0) {
+    state.spawnMs = interval;
+
+    for (let i = 0; i < wave.spawnCount; i++) {
+      spawnEnemy(wave);
+    }
+  }
+}
 
   const baseInterval = Math.max(300, 850 - t * 1.65);
   const interval = baseInterval * wave.intervalMul;
@@ -1469,12 +1514,28 @@ function spawnEnemy(wave = null) {
 
   const picked = weightedPick(types.map(m => ({ ...m, weight: m.weight })));
 
-  const eliteChance = 0.05 + (wave?.eliteBonus || 0);
+  const pressure = getLateGamePressure(t);
+  const lateT = Math.max(0, t - 420);
+
+  const eliteChance = Math.min(0.24, 0.04 + pressure * 0.025 + (wave?.eliteBonus || 0));
   const elite = t > 240 && Math.random() < eliteChance;
 
   const pos = getSpawnPosition();
-  const diff = 1 + t / 420;
-  const hp = picked.hp * diff * (elite ? 3.2 : 1);
+
+  const hpScale =
+    1 +
+    t / 430 +
+    Math.pow(lateT / 330, 1.22) +
+    pressure * 0.18;
+
+  const damageScale =
+    1 +
+    Math.max(0, t - 360) / 720 +
+    pressure * 0.08;
+
+  const speedScale = Math.min(1.68, 1 + t / 850 + pressure * 0.025);
+
+  const hp = picked.hp * hpScale * (elite ? 3.45 : 1);
 
   state.enemies.push({
     ...picked,
@@ -1482,8 +1543,8 @@ function spawnEnemy(wave = null) {
     y: pos.y,
     hp,
     maxHp: hp,
-    speed: picked.speed * Math.min(1.45, 1 + t / 850) * (elite ? 0.9 : 1),
-    damage: picked.damage * (elite ? 1.45 : 1),
+    speed: picked.speed * speedScale * (elite ? 0.92 : 1),
+    damage: picked.damage * damageScale * (elite ? 1.55 : 1),
     exp: picked.exp * (elite ? 4 : 1),
     r: picked.r * (elite ? 1.25 : 1),
     elite,
