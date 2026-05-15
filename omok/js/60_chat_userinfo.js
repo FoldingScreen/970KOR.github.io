@@ -396,7 +396,7 @@ function renderChat(messages) {
 }
 
 function renderPlayerChatBubbles(messages) {
-  const box = document.getElementById("playerChatBubbles");
+  const boxes = Array.from(document.querySelectorAll(".player-chat-bubbles"));
   if (!box || !room) return;
 
   if (playerBubbleTimer) {
