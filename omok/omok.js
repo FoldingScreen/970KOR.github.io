@@ -1848,50 +1848,14 @@ window.resolveRequest = async function resolveRequest(type, accepted) {
           : room.rematchRequest;
 
   if (!request || request.status !== "pending") return;
-  if (request.requestedBy === linkedUser) return;
 
-  const label =
-    type === "match"
-      ? "대국"
-      : type === "undo"
-        ? "무르기"
-        : type === "draw"
-          ? "무승부"
-          : "재대국";
-
-  const requestField =
-    type === "match"
-      ? "matchRequest"
-      : type === "undo"
-        ? "undoRequest"
-        : type === "draw"
-          ? "drawRequest"
-          : "rematchRequest";
-
-  if (!accepted) {
-    await roomRef().update({
-      [requestField]: null,
-      updatedAt: FV.serverTimestamp()
-    });
-
-    await addSystemChat(currentRoomId, `${linkedUser}님이 ${label} 요청을 거절했습니다.`);
+  if (request.requestedBy === linkedUser) {
     return;
   }
 
-  window.resolveRequest = async function resolveRequest(type, accepted) {
-  if (!room) return;
-
-  const request =
-    type === "match"
-      ? room.matchRequest
-      : type === "undo"
-        ? room.undoRequest
-        : type === "draw"
-          ? room.drawRequest
-          : room.rematchRequest;
-
-  if (!request || request.status !== "pending") return;
-  if (request.requestedBy === linkedUser) return;
+  if (request.requestedTo && request.requestedTo !== linkedUser) {
+    return;
+  }
 
   const label =
     type === "match"
