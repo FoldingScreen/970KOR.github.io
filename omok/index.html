@@ -120,11 +120,18 @@
         </div>
 
         <aside class="side-card">
-          <div class="side-section">
-            <h3>방 정보</h3>
-            <div id="roomInfo" class="info-list"></div>
-            <button id="leaveRoomBtn" class="secondary full">방 나가기</button>
-          </div>
+          <div class="side-section side-match-section">
+  <h3>대국 정보</h3>
+  <div id="sideMatchBox" class="side-match-box"></div>
+  <div id="sideMessageBar" class="message-bar side-message">대국 정보를 불러오는 중입니다.</div>
+</div>
+<div class="side-section">
+  <details class="room-info-details">
+    <summary>방 정보</summary>
+    <div id="roomInfo" class="info-list"></div>
+  </details>
+  <button id="leaveRoomBtn" class="secondary full">방 나가기</button>
+</div>
 
           <div class="side-section">
   <h3>방 설정</h3>
@@ -134,10 +141,6 @@
 <div class="side-section">
   <h3>관전자 목록</h3>
   <div id="spectatorList" class="spectator-list small-list"></div>
-</div>
-          <div class="side-section">
-  <h3>접속 상태</h3>
-  <div id="connectionPanel" class="connection-panel"></div>
 </div>
           <div class="side-section" id="requestPanel"></div>
 
