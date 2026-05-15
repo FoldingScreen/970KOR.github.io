@@ -23,7 +23,7 @@ function resizeCanvasForDevice() {
 
 function makeState(weapon) {
   const u = meta.upgrades;
-  const hp = 100 + u.hp * 25;
+  const hp = 100 + (u.hp || 0) * 12;
   return {
     running: false,
     paused: true,
@@ -67,7 +67,7 @@ function makeState(weapon) {
       r: 14,
       hp,
       maxHp: hp,
-      shield: u.shield * 30,
+      shield: (u.shield || 0) * 12,
       speed: 220,
       magnetRange: 90,
       invuln: 0,
@@ -104,16 +104,16 @@ function rebuildStats() {
     lv = state.level,
     g = state.growth;
   state.base = {
-    damageMul: (1 + (lv - 1) * 0.01 + g.damage) * (1 + u.damage * 0.1),
+    damageMul: (1 + (lv - 1) * 0.01 + g.damage) * (1 + (u.damage || 0) * 0.05),
     attackSpeedMul: 1 + g.attackSpeed,
-    speedMul: 1 + (lv - 1) * 0.002 + g.move + u.speed * 0.08,
+    speedMul: 1 + (lv - 1) * 0.002 + g.move + (u.speed || 0) * 0.03,
     areaMul: 1 + g.area,
-    expMul: 1 + g.exp + u.exp * 0.08,
-    healMul: 1 + u.heal_eff * 0.15,
-    defense: Math.min(0.7, g.defense + u.defense * 0.06),
-    magnetBonus: lv - 1 + g.magnet + u.magnet * 40,
+    expMul: 1 + g.exp + (u.exp || 0) * 0.03,
+    healMul: 1 + (u.heal_eff || 0) * 0.06,
+    defense: Math.min(0.55, g.defense + (u.defense || 0) * 0.03),
+    magnetBonus: (lv - 1) * 0.5 + g.magnet + (u.magnet || 0) * 10,
     knockbackMul: 1 + g.knockback + (u.knockback || 0) * 0.08,
-    synergyAmp: 1 + u.syn_amp * 0.03,
+    synergyAmp: 1 + (u.syn_amp || 0) * 0.02,
   };
   state.perks = {
     slowChance: 0,
@@ -145,7 +145,7 @@ function rebuildStats() {
     addAttrs(state.attrsFromAugments, aug.attrs || {});
     aug.apply?.(state);
   }
-  const maxHp = 100 + u.hp * 25 + (lv - 1) + g.hp;
+  const maxHp = 100 + (u.hp || 0) * 12 + (lv - 1) + g.hp;
   state.player.maxHp = state.perks.cursedCrown
     ? Math.max(60, maxHp - 30)
     : maxHp;
@@ -2193,15 +2193,15 @@ function killEnemy(e, tags = []) {
   }
 
   if (e.boss) {
-    const bonus = Math.round(1200 * (1 + meta.upgrades.elite_bounty * 0.1));
+    const bonus = Math.round(1200 * (1 + (meta.upgrades.elite_bounty || 0) * 0.05));
     addRunCoins(bonus);
     showBigAlert("보스 처치!", `+${bonus} 코인`);
   } else if (e.midBoss) {
-    const bonus = Math.round(350 * (1 + meta.upgrades.elite_bounty * 0.1));
+    const bonus = Math.round(350 * (1 + (meta.upgrades.elite_bounty || 0) * 0.05));
     addRunCoins(bonus);
     showBigAlert("중간보스 처치!", `+${bonus} 코인`);
   } else if (e.elite) {
-    const bonus = Math.round(35 * (1 + meta.upgrades.elite_bounty * 0.1));
+    const bonus = Math.round(35 * (1 + (meta.upgrades.elite_bounty || 0) * 0.05));
     addRunCoins(bonus);
     showToast(`정예 처치 +${bonus}코인`);
   }
@@ -2631,7 +2631,8 @@ function grantOverExpReward() {
   showToast(`초과 경험 보상: ${r.text}`);
 }
 function addRunCoins(amount) {
-  state.runCoins += Math.round(amount * (1 + meta.upgrades.coin_gain * 0.05));
+  const mul = 1 + (meta.upgrades.coin_gain || 0) * 0.02;
+  state.runCoins += Math.round(amount * mul);
 }
 function addTimedBuff(type, mul, sec) {
   state.buffs.push({ type, mul, time: sec });
@@ -3049,28 +3050,39 @@ async function endGame(success) {
   state.paused = true;
   resetTouchMove();
   cancelAnimationFrame(loopId);
-  const survivalBase = Math.floor(state.timeMs / 1000);
-  const survivalCoins = Math.round(
-    survivalBase * (1 + meta.upgrades.survival_coin * 0.05),
-  );
-  const killCoins = Math.round(
-    state.kills * 2 * (1 + meta.upgrades.kill_coin * 0.05),
-  );
-  const levelCoins = state.level * 20;
-  const synergyCoins = state.activeSynergies.size * 120;
-  const augmentCoins = state.augments.length * 80;
-  const successBonus = success ? 500 : 0;
-  let earned =
-    state.runCoins +
-    survivalCoins +
-    killCoins +
-    levelCoins +
-    synergyCoins +
-    augmentCoins +
-    successBonus;
-  const jackpot = Math.random() < meta.upgrades.jackpot * 0.02;
-  if (jackpot) earned *= 2;
-  earned = Math.round(earned);
+const survivalBase = Math.floor(state.timeMs / 1000);
+
+// 생존 보상: 1초당 1코인급이 너무 많아서 4초당 1코인 수준으로 조정
+const survivalCoins = Math.round(
+  (survivalBase / 4) * (1 + (meta.upgrades.survival_coin || 0) * 0.02)
+);
+
+// 처치 보상: 1킬 2코인은 너무 많아서 1킬 0.6코인 수준
+const killCoins = Math.round(
+  state.kills * 0.6 * (1 + (meta.upgrades.kill_coin || 0) * 0.02)
+);
+
+// 레벨/시너지/증강 보상도 대폭 완화
+const levelCoins = state.level * 8;
+const synergyCoins = state.activeSynergies.size * 35;
+const augmentCoins = state.augments.length * 25;
+const successBonus = success ? 250 : 0;
+
+let earned =
+  state.runCoins +
+  survivalCoins +
+  killCoins +
+  levelCoins +
+  synergyCoins +
+  augmentCoins +
+  successBonus;
+
+const jackpotChance = (meta.upgrades.jackpot || 0) * 0.01;
+const jackpot = Math.random() < jackpotChance;
+
+if (jackpot) earned *= 2;
+
+earned = Math.round(earned);
   meta.coins += earned;
   meta.totalCoins += earned;
   meta.bestTimeMs = Math.max(meta.bestTimeMs || 0, state.timeMs);
