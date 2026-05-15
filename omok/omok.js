@@ -1216,24 +1216,69 @@ function isDoubleThree(board, row, col, color) {
 }
 function hasOpenThree(board, row, col, color, dr, dc) {
   const cells = [];
-  let center = 4;
+  const center = 4;
+
   for (let k = -4; k <= 4; k++) {
     const r = row + dr * k;
     const c = col + dc * k;
-    if (!inside(r, c)) cells.push("O");
-    else {
+
+    if (!inside(r, c)) {
+      cells.push("O");
+    } else {
       const v = board[idx(r, c)];
       cells.push(v === color ? "X" : v ? "O" : ".");
     }
   }
+
+  // 중요:
+  // 같은 방향에 이미 4목 계열이 만들어진 경우에는
+  // 그 줄은 3으로 세면 안 됨.
+  // 즉, 43은 허용하고 33만 금지해야 함.
+  if (hasFourThreatInLine(cells, center)) {
+    return false;
+  }
+
   const patterns = [".XXX.", ".XX.X.", ".X.XX."];
+
   for (const p of patterns) {
     for (let start = 0; start <= cells.length - p.length; start++) {
       if (center < start || center >= start + p.length) continue;
+
       const seg = cells.slice(start, start + p.length).join("");
-      if (seg === p) return true;
+
+      if (seg === p) {
+        return true;
+      }
     }
   }
+
+  return false;
+}
+
+function hasFourThreatInLine(cells, center) {
+  // 5칸 안에 내 돌 4개 + 빈칸 1개면 4목 계열로 본다.
+  // 예:
+  // XXXX.
+  // .XXXX
+  // XXX.X
+  // XX.XX
+  // X.XXX
+  //
+  // 이런 줄은 3이 아니라 4로 봐야 하므로
+  // 33 판정의 open three 카운트에서 제외한다.
+  for (let start = 0; start <= cells.length - 5; start++) {
+    if (center < start || center >= start + 5) continue;
+
+    const seg = cells.slice(start, start + 5);
+    const xCount = seg.filter(v => v === "X").length;
+    const dotCount = seg.filter(v => v === ".").length;
+    const blocked = seg.some(v => v === "O");
+
+    if (!blocked && xCount === 4 && dotCount === 1) {
+      return true;
+    }
+  }
+
   return false;
 }
 
