@@ -70,12 +70,24 @@ function renderWeapons() {
 
 function renderChoiceCards() {
   choiceCards.innerHTML = "";
-  rerollBtn.textContent = rerollsLeft > 0 ? `새로고침 ${rerollsLeft}회` : "새로고침 없음";
+
+  if (currentChoiceMode === "augment") {
+    rerollsLeft = state.rerollsLeft || 0;
+    rerollBtn.style.display = "inline-block";
+  } else {
+    rerollsLeft = 0;
+    rerollBtn.style.display = "none";
+  }
+
+  rerollBtn.textContent =
+    rerollsLeft > 0 ? `새로고침 ${rerollsLeft}회` : "새로고침 없음";
+
   rerollBtn.disabled = currentChoiceMode !== "augment" || rerollsLeft <= 0;
 
   currentChoices.forEach(item => {
     const div = document.createElement("div");
     div.className = "card";
+
     if (currentChoiceMode === "augment") {
       div.innerHTML = `
         <div class="type-label">신규 증강</div>
@@ -90,6 +102,7 @@ function renderChoiceCards() {
         <div class="desc">${item.desc}</div>
       `;
     }
+
     div.onclick = () => selectCurrentChoice(item);
     choiceCards.appendChild(div);
   });
