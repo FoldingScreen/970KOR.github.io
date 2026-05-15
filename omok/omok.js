@@ -1335,34 +1335,50 @@ function buildUserStatUpdate(s, color, result, newRating, r, nickname) {
 }
 async function passTurn() {
   if (!isMyTurn()) return;
+
   try {
     await db.runTransaction(async tx => {
       const ref = roomRef();
       const snap = await tx.get(ref);
       const r = snap.data();
-      const role = r.black === linkedUser ? "black" : r.white === linkedUser ? "white" : "spectator";
-      if (r.status !== "playing" || role !== r.turn) throw new Error("한 수 쉼 불가");
+
+      const role =
+        r.black === linkedUser
+          ? "black"
+          : r.white === linkedUser
+            ? "white"
+            : "spectator";
+
+      if (r.status !== "playing" || role !== r.turn) {
+        throw new Error("한 수 쉼 불가");
+      }
+
       const nextPass = (r.consecutivePasses || 0) + 1;
+
       if (nextPass >= 2) {
         tx.update(ref, {
           ...buildFinishUpdates(r, null, "doublePass", []),
-turn: opponentColor(r.turn),
-turnSeq: (r.turnSeq || 1) + 1,
-turnStartedAt: FV.serverTimestamp(),
-consecutivePasses: nextPass,
+          consecutivePasses: nextPass,
+          updatedAt: FV.serverTimestamp()
         });
       } else {
         tx.update(ref, {
           turn: opponentColor(r.turn),
           turnSeq: (r.turnSeq || 1) + 1,
+          turnStartedAt: FV.serverTimestamp(),
           consecutivePasses: nextPass,
-          lastAction: { type: "pass", by: linkedUser, atMs: Date.now() },
+          lastAction: {
+            type: "pass",
+            by: linkedUser,
+            atMs: Date.now()
+          },
           undoRequest: null,
           drawRequest: null,
           updatedAt: FV.serverTimestamp()
         });
       }
     });
+
     await addSystemChat(currentRoomId, `${linkedUser}님이 한 수 쉬었습니다.`);
   } catch (err) {
     showToast(err.message || "한 수 쉼 실패");
