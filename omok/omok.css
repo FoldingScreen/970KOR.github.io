@@ -283,3 +283,53 @@ input[type="text"]:focus { border-color: #60a5fa; }
     grid-template-columns: 1fr;
   }
 }
+
+
+.connection-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.connection-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px;
+  border-radius: 12px;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.08);
+}
+
+.connection-box strong {
+  display: block;
+  color: #fff;
+  font-size: 13px;
+}
+
+.connection-box span {
+  display: block;
+  margin-top: 2px;
+  color: #86efac;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.connection-box.warn {
+  border-color: rgba(250,204,21,.32);
+  background: rgba(250,204,21,.1);
+}
+
+.connection-box.warn span {
+  color: #fde68a;
+}
+
+.connection-box.danger {
+  border-color: rgba(239,68,68,.38);
+  background: rgba(239,68,68,.12);
+}
+
+.connection-box.danger span {
+  color: #fecaca;
+}
