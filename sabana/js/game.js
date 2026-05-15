@@ -1489,7 +1489,7 @@ function spawnEnemy(wave = null) {
       name: "슬라임",
       color: "#22c55e",
       hp: 28,
-      speed: 72,
+      speed: 62,
       damage: 7,
       exp: 12,
       r: 13,
@@ -1503,7 +1503,7 @@ function spawnEnemy(wave = null) {
       name: "늑대",
       color: "#94a3b8",
       hp: 28,
-      speed: 128,
+      speed: 108,
       damage: 8,
       exp: 17,
       r: 11,
@@ -1517,7 +1517,7 @@ function spawnEnemy(wave = null) {
       name: "박쥐",
       color: "#a78bfa",
       hp: 22,
-      speed: 158,
+      speed: 132,
       damage: 6,
       exp: 18,
       r: 9,
@@ -1531,7 +1531,7 @@ function spawnEnemy(wave = null) {
       name: "골렘",
       color: "#78716c",
       hp: 130,
-      speed: 50,
+      speed: 42,
       damage: 14,
       exp: 50,
       r: 18,
@@ -1545,7 +1545,7 @@ function spawnEnemy(wave = null) {
       name: "폭탄병",
       color: "#f97316",
       hp: 60,
-      speed: 68,
+      speed: 56,
       damage: 11,
       exp: 38,
       r: 14,
@@ -1561,7 +1561,7 @@ function spawnEnemy(wave = null) {
       name: "투척병",
       color: "#38bdf8",
       hp: 44,
-      speed: 64,
+      speed: 48,
       damage: 8,
       exp: 26,
       r: 12,
@@ -1580,7 +1580,7 @@ function spawnEnemy(wave = null) {
       name: "주술사",
       color: "#c084fc",
       hp: 70,
-      speed: 46,
+      speed: 36,
       damage: 10,
       exp: 42,
       r: 14,
@@ -1600,7 +1600,7 @@ function spawnEnemy(wave = null) {
       name: "포자몹",
       color: "#bef264",
       hp: 58,
-      speed: 54,
+      speed: 40,
       damage: 7,
       exp: 34,
       r: 13,
@@ -2501,15 +2501,19 @@ function applyBloodFurnaceLifesteal(damage, tags = []) {
   if (!state || !state.perks.bloodFurnace) return;
   if (!damage || damage <= 0) return;
 
-  let rate = tags.includes("burn") ? 0.08 : 0.03;
+  // 기존: 직접 3%, 화상 8%
+  // 변경: 직접 1%, 화상 2.5%
+  let rate = tags.includes("burn") ? 0.025 : 0.01;
 
+  // 기존: 저체력 2배
+  // 변경: 저체력 1.5배
   if (state.player.hp <= state.player.maxHp * 0.3) {
-    rate *= 2;
+    rate *= 1.5;
   }
 
   const heal = damage * rate;
 
-  // healPlayer를 쓰면 惡/鬼 회복 연계와 자연스럽게 연결됨
+  // 일단 惡/鬼 회복 연계는 유지
   healPlayer(heal);
 }
 
@@ -2532,7 +2536,7 @@ function updateBloodFurnace(dt) {
   if (!state || !state.player || !state.perks.bloodFurnace) return;
   if (state.player.hp <= 1) return;
 
-  const drainPerSec = state.player.hp * 0.006;
+  const drainPerSec = state.player.hp * 0.005;
   const drain = drainPerSec * dt;
 
   // 최소 1HP는 남겨서 자해로 즉사하지 않게 처리
