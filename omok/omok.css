@@ -160,3 +160,126 @@ input[type="text"]:focus { border-color: #60a5fa; }
 .offline-dot {
   color: #94a3b8;
 }
+
+.nickname-link {
+  display: inline;
+  width: auto;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 1000;
+  cursor: pointer;
+  text-align: left;
+}
+
+.nickname-link:hover {
+  background: transparent;
+  color: #93c5fd;
+  text-decoration: underline;
+}
+
+.info-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(0, 0, 0, .58);
+  backdrop-filter: blur(3px);
+}
+
+.info-modal-overlay.show {
+  display: flex;
+}
+
+.info-modal {
+  width: min(520px, 100%);
+  max-height: min(720px, calc(100vh - 36px));
+  overflow-y: auto;
+  padding: 16px;
+  border: 1px solid rgba(96, 165, 250, .35);
+  border-radius: 20px;
+  background: #111827;
+  box-shadow: 0 22px 60px rgba(0, 0, 0, .5);
+}
+
+.info-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.info-modal-head h2 {
+  margin: 2px 0 0;
+  font-size: 26px;
+}
+
+.user-info-rating {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.user-info-rating > div {
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(250, 204, 21, .12);
+  border: 1px solid rgba(250, 204, 21, .2);
+}
+
+.user-info-rating span,
+.user-info-cell span {
+  display: block;
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.user-info-rating strong {
+  color: #fde68a;
+  font-size: 24px;
+}
+
+.user-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.user-info-cell {
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .06);
+}
+
+.user-info-cell strong {
+  display: block;
+  color: #fff;
+  font-size: 15px;
+}
+
+.user-info-cell em {
+  display: block;
+  margin-top: 3px;
+  color: #93c5fd;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+@media (max-width: 520px) {
+  .user-info-rating,
+  .user-info-grid {
+    grid-template-columns: 1fr;
+  }
+}
