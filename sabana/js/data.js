@@ -696,10 +696,10 @@ const AUGMENTS = [
   id: "blood_furnace",
   name: "피의 화로",
   grade: "legendary",
-  attrs: { 火: 1, 惡: 1 },
-  desc: "체력이 계속 소모되지만, 모든 피해에 흡혈이 붙습니다.",
-  detail:
-    "초당 현재 HP의 0.6% 소모\n모든 직접 피해의 3% 회복\n화상 피해의 8% 회복\nHP 30% 이하일 때 흡혈량 2배\n속성: 火 +1, 惡 +1",
+  attrs: { 火: 2, 惡: 2 },
+desc: "체력이 계속 소모되지만, 피해 일부를 흡혈합니다.",
+detail:
+  "초당 현재 HP의 0.5% 소모\n모든 직접 피해의 1% 회복\n화상 피해의 2.5% 회복\nHP 30% 이하일 때 흡혈량 1.5배\n속성: 火 +2, 惡 +2",
   apply(s) {
     s.perks.bloodFurnace = true;
   },
