@@ -255,9 +255,45 @@ function calcRatingChange(myRating, opponentRating, result) {
   const expected = getExpectedScore(myRating, opponentRating);
   return Math.round(K_FACTOR * (result - expected));
 }
+
 function applyRating(rating, change) {
   return Math.max(MIN_RATING, Math.round((rating || DEFAULT_RATING) + change));
 }
+async function getUserRating(nickname) {
+  if (!nickname) return DEFAULT_RATING;
+
+  try {
+    const snap = await userRef(nickname).get();
+    const stats = normalizeStats(snap.exists ? snap.data() : null, nickname);
+    return Math.round(stats.rating || DEFAULT_RATING);
+  } catch (err) {
+    console.warn("레이팅 조회 실패:", nickname, err);
+    return DEFAULT_RATING;
+  }
+}
+
+async function arrangeSeatsByRating(nicknameA, nicknameB) {
+  const ratingA = await getUserRating(nicknameA);
+  const ratingB = await getUserRating(nicknameB);
+
+  // 낮은 레이팅에게 흑 선공 부여
+  if (ratingA <= ratingB) {
+    return {
+      black: nicknameA,
+      white: nicknameB,
+      blackRating: ratingA,
+      whiteRating: ratingB
+    };
+  }
+
+  return {
+    black: nicknameB,
+    white: nicknameA,
+    blackRating: ratingB,
+    whiteRating: ratingA
+  };
+}
+
 function setView(name) {
   lobbyView.classList.toggle("show", name === "lobby");
   roomView.classList.toggle("show", name === "room");
@@ -836,7 +872,9 @@ function renderSpectatorList() {
       <div class="spectator-item">
         <div class="spectator-main">
           ${renderNicknameButton(s.nickname)}
-          ${wants ? `<button class="wait-hand" type="button" onclick="promoteWaitingPlayer('${escapeHtml(s.nickname)}')" title="대국자로 올리기">🖐️</button>` : ""}
+${wants ? `
+  <button class="wait-hand" type="button" onclick="promoteWaitingPlayer('${escapeHtml(s.nickname)}')" title="내려가고 대국자로 올리기">🖐️</button>
+` : ""}
         </div>
         <span class="${connected ? "online-dot" : "offline-dot"}">${connected ? "접속" : "이탈"}</span>
       </div>
@@ -852,49 +890,66 @@ window.promoteWaitingPlayer = async function promoteWaitingPlayer(nickname) {
     return;
   }
 
+  if (!isPlayer()) {
+    showToast("현재 대국자만 대기자를 올릴 수 있습니다.");
+    return;
+  }
+
+  if (room.status !== "betweenRounds") {
+    showToast("판 종료 후에만 대기자를 올릴 수 있습니다.");
+    return;
+  }
+
   try {
-    // 방장이 혼자 기다리는 방이면 바로 백돌로 참가 처리
-    if (room.status === "waiting" && room.black === linkedUser && !room.white) {
-      const stats = await ensureUserStats(nickname);
+    const myColor = myRole();
+    const otherColor = opponentColor(myColor);
 
-      await roomRef().update({
-        white: nickname,
-        whiteRatingBefore: Math.round(stats.rating || DEFAULT_RATING),
-        status: "playing",
-        startedAt: FV.serverTimestamp(),
-        turnStartedAt: FV.serverTimestamp(),
-        [`players.${nickname}.role`]: "white",
-        [`players.${nickname}.connected`]: true,
-        [`players.${nickname}.lastSeenAt`]: FV.serverTimestamp(),
-        [`playerRequests.${nickname}`]: FV.delete(),
+    const leavingPlayer = linkedUser;
+    const remainingPlayer =
+      room.nextSeats?.[otherColor] ||
+      room[otherColor];
+
+    if (!remainingPlayer) {
+      showToast("남은 대국자를 확인할 수 없습니다.");
+      return;
+    }
+
+    const seats = await arrangeSeatsByRating(remainingPlayer, nickname);
+
+    await roomRef().update({
+      "nextSeats.black": seats.black,
+      "nextSeats.white": seats.white,
+
+      [`players.${seats.black}.role`]: "black",
+      [`players.${seats.black}.connected`]: true,
+      [`players.${seats.black}.lastSeenAt`]: FV.serverTimestamp(),
+
+      [`players.${seats.white}.role`]: "white",
+      [`players.${seats.white}.connected`]: true,
+      [`players.${seats.white}.lastSeenAt`]: FV.serverTimestamp(),
+
+      [`players.${leavingPlayer}.role`]: "spectator",
+      [`playerRequests.${nickname}`]: FV.delete(),
+
+      updatedAt: FV.serverTimestamp()
+    });
+
+    await roomRef()
+      .collection("spectators")
+      .doc(nickname)
+      .set({
+        nickname,
+        wantsToPlay: false,
+        lastSeenAt: FV.serverTimestamp(),
         updatedAt: FV.serverTimestamp()
-      });
+      }, { merge: true });
 
-      await roomRef()
-        .collection("spectators")
-        .doc(nickname)
-        .set({
-          nickname,
-          wantsToPlay: false,
-          lastSeenAt: FV.serverTimestamp(),
-          updatedAt: FV.serverTimestamp()
-        }, { merge: true });
+    await addSystemChat(
+      currentRoomId,
+      `${leavingPlayer}님이 내려가고 ${nickname}님이 다음 판 대국자로 올라왔습니다. 레이팅 기준으로 ${seats.black}님이 흑, ${seats.white}님이 백입니다.`
+    );
 
-      await addSystemChat(currentRoomId, `${nickname}님이 백돌로 참가했습니다.`);
-      return;
-    }
-
-    // 판 종료 후에는 현재 대국자가 자기 자리만 넘길 수 있음
-    if (
-      room.status === "betweenRounds" &&
-      isPlayer() &&
-      room.nextSeats?.[myRole()] === linkedUser
-    ) {
-      await transferSeat(nickname);
-      return;
-    }
-
-    showToast("판 종료 후 본인 자리만 넘길 수 있습니다.");
+    showToast(`${nickname}님을 다음 판 대국자로 올렸습니다.`);
   } catch (err) {
     console.error(err);
     showToast("대국자 올리기 실패");
@@ -1679,19 +1734,7 @@ async function toggleWantPlay() {
 
   await addSystemChat(currentRoomId, `${linkedUser}님이 대국 참여를 희망합니다.`);
 }
-window.transferSeat = async function transferSeat(name) {
-  if (!room || room.status !== "betweenRounds" || !isPlayer()) return;
-  const role = myRole();
-  if (room.nextSeats?.[role] !== linkedUser) return;
-  await roomRef().update({
-    [`nextSeats.${role}`]: name,
-    [`playerRequests.${name}`]: FV.delete(),
-    [`players.${name}.role`]: role,
-    [`players.${linkedUser}.role`]: "spectator",
-    updatedAt: FV.serverTimestamp()
-  });
-  await addSystemChat(currentRoomId, `${linkedUser}님이 다음 판 자리를 ${name}님에게 넘겼습니다.`);
-};
+
 async function leaveRoomLocal() {
 if (roomUnsub) roomUnsub();
 if (chatUnsub) chatUnsub();
@@ -1730,8 +1773,10 @@ async function leaveRoom() {
     } catch (_) {}
   }
 
-  leaveRoomLocal();
-}async function sendChat() {
+leaveRoomLocal();
+}
+
+async function sendChat() {
   const text = sanitizeText(els.chatInput.value);
   if (!text || !room) return;
   const canChat = isPlayer() || !!room.settings?.allowAdvice;
