@@ -1566,11 +1566,12 @@ function spawnEnemy(wave = null) {
       exp: 26,
       r: 12,
       from: 180,
-      weight: 16,
+      weight: 3,
       kb: 0.15,
       ai: "ranged",
-      shootCd: 1.8,
-      bulletSpeed: 210,
+      shootCd: 2.8,
+      bulletSpeed: 150,
+      bulletColor: "#ef4444",
       bulletRadius: 5,
       bulletDamage: 8,
       range: 260
@@ -1585,11 +1586,12 @@ function spawnEnemy(wave = null) {
       exp: 42,
       r: 14,
       from: 420,
-      weight: 10,
+      weight: 2,
       kb: 0.25,
       ai: "ranged",
-      shootCd: 2.6,
-      bulletSpeed: 150,
+      shootCd: 4.0,
+      bulletSpeed: 110,
+      bulletColor: "#fca5a5",
       bulletRadius: 6,
       bulletDamage: 10,
       range: 320,
@@ -1605,11 +1607,12 @@ function spawnEnemy(wave = null) {
       exp: 34,
       r: 13,
       from: 540,
-      weight: 9,
+      weight: 1,
       kb: 0.2,
       ai: "ranged",
-      shootCd: 3.2,
-      bulletSpeed: 170,
+      shootCd: 4.8,
+      bulletSpeed: 125,
+      bulletColor: "#fb7185",
       bulletRadius: 4,
       bulletDamage: 7,
       range: 280,
@@ -1638,7 +1641,7 @@ function spawnEnemy(wave = null) {
     Math.max(0, t - 360) / 720 +
     pressure * 0.08;
 
-  const speedScale = Math.min(1.68, 1 + t / 850 + pressure * 0.025);
+  const speedScale = Math.min(1.25, 1 + t / 1200 + pressure * 0.015);
 
   const hp = picked.hp * hpScale * (elite ? 3.45 : 1);
 
@@ -1672,22 +1675,26 @@ function spawnEnemy(wave = null) {
 function updateTimedBossSpawns() {
   const t = state.timeMs / 1000;
 
+  // 5분 보스는 별도 웨이브가 없으므로 기존처럼 5:00 등장
   if (t >= 300 && !state.bossFlags.mid5) {
     state.bossFlags.mid5 = true;
     spawnBossEnemy("mid_guardian", "중간보스", 1);
   }
 
-  if (t >= 600 && !state.bossFlags.mid10) {
+  // 10:00 ~ 11:00 웨이브의 중간인 10:30에 투입
+  if (t >= 630 && !state.bossFlags.mid10) {
     state.bossFlags.mid10 = true;
     spawnBossEnemy("wave_brute", "웨이브 중간보스", 1.35);
   }
 
-  if (t >= 900 && !state.bossFlags.mid15) {
+  // 15:00 ~ 16:00 웨이브의 중간인 15:30에 투입
+  if (t >= 930 && !state.bossFlags.mid15) {
     state.bossFlags.mid15 = true;
     spawnBossEnemy("dark_knight", "암흑 기사", 1.7);
   }
 
-  if (t >= 1080 && !state.bossFlags.final18) {
+  // 18:00 ~ 20:00 최종 웨이브의 중간인 19:00에 투입
+  if (t >= 1140 && !state.bossFlags.final18) {
     state.bossFlags.final18 = true;
     spawnBossEnemy("sabana_lord", "사바나 군주", 2.4, true);
   }
@@ -1707,7 +1714,7 @@ function spawnBossEnemy(id, name, scale = 1, finalBoss = false) {
     color: finalBoss ? "#ef4444" : "#facc15",
     hp: baseHp * diff * scale,
     maxHp: baseHp * diff * scale,
-    speed: finalBoss ? 54 : 62,
+    speed: finalBoss ? 42 : 48,
     damage: baseDamage * scale,
     exp: finalBoss ? 600 : 220,
     r: finalBoss ? 30 : 24,
@@ -1825,18 +1832,20 @@ function updateEnemyShooting(e, dt) {
   if (e.shootTimer > 0) return;
 
   if (e.ai === "boss") {
-    e.shootTimer = 1.25;
+    e.shootTimer = 1.9;
     shootBossPattern(e);
     return;
   }
 
   if (e.ai === "midboss") {
-    e.shootTimer = 1.8;
-    shootSpreadEnemyBullet(e, 5, e.damage * 0.75, 190, 5, "#facc15");
+    e.shootTimer = 2.8;
+    shootSpreadEnemyBullet(e, 5, e.damage * 0.65, 135, 5, "#f87171");
     return;
   }
 
   e.shootTimer = e.shootCd || 2;
+
+  const bulletColor = e.bulletColor || "#ef4444";
 
   if (e.spread) {
     shootSpreadEnemyBullet(
@@ -1845,7 +1854,7 @@ function updateEnemyShooting(e, dt) {
       e.bulletDamage,
       e.bulletSpeed,
       e.bulletRadius,
-      e.color
+      bulletColor
     );
   } else {
     shootEnemyBullet(
@@ -1853,7 +1862,7 @@ function updateEnemyShooting(e, dt) {
       e.bulletDamage,
       e.bulletSpeed,
       e.bulletRadius,
-      e.color,
+      bulletColor,
       !!e.homing
     );
   }
@@ -1872,7 +1881,7 @@ function shootEnemyBullet(e, damage, speed, radius, color, homing = false) {
     color,
     life: 4,
     homing,
-    turnRate: homing ? 0.035 : 0
+    turnRate: homing ? 0.022 : 0
   });
 }
 
@@ -1903,16 +1912,16 @@ function shootBossPattern(e) {
   e.patternTimer = (e.patternTimer || 0) + 1;
 
   if (e.patternTimer % 3 === 0) {
-    shootRadialEnemyBullet(e, 14, e.damage * 0.55, 150, 5, "#ef4444");
+    shootRadialEnemyBullet(e, 14, e.damage * 0.45, 110, 5, "#dc2626");
     return;
   }
 
   if (e.patternTimer % 2 === 0) {
-    shootSpreadEnemyBullet(e, 7, e.damage * 0.7, 210, 5, "#fb7185");
+    shootSpreadEnemyBullet(e, 7, e.damage * 0.55, 150, 5, "#fb7185");
     return;
   }
 
-  shootEnemyBullet(e, e.damage * 0.9, 190, 7, "#fca5a5", true);
+  shootEnemyBullet(e, e.damage * 0.7, 135, 7, "#fca5a5", true);
 }
 
 function shootRadialEnemyBullet(e, count, damage, speed, radius, color) {
