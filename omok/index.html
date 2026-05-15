@@ -13,10 +13,12 @@
         <div class="eyebrow">970KOR MINI GAME</div>
         <h1>오목</h1>
       </div>
-      <div class="top-actions">
-        <button id="soundBtn" class="secondary">소리 ON</button>
-        <button id="backHomeBtn" class="secondary">메인으로</button>
-      </div>
+<div class="top-actions">
+  <button id="homeBrandBtn" class="brand-home-btn" type="button">970KOR</button>
+  <button id="roomSettingsBtn" class="secondary top-room-btn" type="button">방 설정</button>
+  <button id="soundBtn" class="secondary">소리 ON</button>
+  <button id="topLeaveRoomBtn" class="secondary top-room-btn" type="button">방 나가기</button>
+</div>
     </header>
 
     <main id="lobbyView" class="view show">
@@ -130,40 +132,22 @@
           </div>
         </div>
 
-        <aside class="side-card">
-          <div class="side-section side-match-section">
-  <h3>대국 정보</h3>
-  <div id="sideMatchBox" class="side-match-box"></div>
-  <div id="sideMessageBar" class="message-bar side-message">대국 정보를 불러오는 중입니다.</div>
-</div>
-<div class="side-section">
-  <details class="room-info-details">
-    <summary>방 정보</summary>
-    <div id="roomInfo" class="info-list"></div>
-  </details>
-  <button id="leaveRoomBtn" class="secondary full">방 나가기</button>
-</div>
+<aside class="side-card">
+  <div class="side-section side-match-section">
+    <h3>대국 정보</h3>
+    <div id="sideMatchBox" class="side-match-box"></div>
+  </div>
 
-          <div class="side-section">
-  <h3>방 설정</h3>
-  <div id="roomSettingsBox" class="settings-box"></div>
-</div>
+  <div class="side-section">
+    <h3>착수 제한시간</h3>
+    <div id="connectionPanel" class="connection-panel"></div>
+  </div>
 
-<div class="side-section">
-  <h3>관전자 목록</h3>
-  <div id="spectatorList" class="spectator-list small-list"></div>
-</div>
-          <div class="side-section">
-  <h3>착수 제한시간</h3>
-  <div id="connectionPanel" class="connection-panel"></div>
-</div>
-          <div class="side-section" id="requestPanel"></div>
-
-          <div class="side-section">
-            <h3>참여 희망자</h3>
-            <div id="playerRequests" class="chip-list small-list"></div>
-            <button id="wantPlayBtn" class="secondary full">대국자로 참여하기</button>
-          </div>
+  <div class="side-section">
+    <h3>대기자 목록</h3>
+    <div id="spectatorList" class="spectator-list small-list"></div>
+    <button id="wantPlayBtn" class="secondary full">대국자로 참여하기</button>
+  </div>
 
           <div class="side-section">
             <h3>채팅</h3>
@@ -179,6 +163,38 @@
     </main>
   </div>
 
+<div id="requestOverlay" class="info-modal-overlay">
+  <div class="info-modal request-modal">
+    <div class="info-modal-head">
+      <div>
+        <div class="eyebrow">REQUEST</div>
+        <h2 id="requestModalTitle">요청</h2>
+      </div>
+    </div>
+
+    <div id="requestModalBody" class="request-modal-body"></div>
+
+    <div class="modal-action-row">
+      <button id="requestAcceptBtn" type="button">예</button>
+      <button id="requestRejectBtn" class="secondary" type="button">아니오</button>
+    </div>
+  </div>
+</div>
+
+<div id="settingsOverlay" class="info-modal-overlay">
+  <div class="info-modal settings-modal">
+    <div class="info-modal-head">
+      <div>
+        <div class="eyebrow">ROOM SETTINGS</div>
+        <h2>방 설정</h2>
+      </div>
+      <button id="settingsCloseBtn" class="secondary mini" type="button">닫기</button>
+    </div>
+
+    <div id="roomSettingsBox" class="settings-box"></div>
+  </div>
+</div>
+  
   <div id="userInfoOverlay" class="info-modal-overlay">
   <div class="info-modal">
     <div class="info-modal-head">
