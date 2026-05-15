@@ -175,8 +175,8 @@ function updateUi() {
   }
   ui.time.textContent = formatTime(state.timeMs);
   ui.hp.textContent = `${Math.max(0, Math.ceil(state.player.hp))}/${Math.ceil(state.player.maxHp)}${state.player.shield > 0 ? ` +${Math.ceil(state.player.shield)}` : ""}`;
-  ui.level.textContent = state.level >= MAX_LEVEL ? "MAX" : state.level;
-  ui.exp.textContent = state.level >= MAX_LEVEL ? `${Math.floor(state.overExp)}/${OVER_EXP_REWARD}` : `${Math.floor(state.exp)}/${EXP_TO_NEXT[state.level]}`;
+  ui.level.textContent = state.level;
+  ui.exp.textContent = `${Math.floor(state.exp)}/${getExpToNext(state.level)}`;
   ui.augCount.textContent = `${state.augments.length}/${MAX_AUGMENTS}`;
   ui.kills.textContent = state.kills;
   ui.runCoins.textContent = state.runCoins;
