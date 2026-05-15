@@ -154,13 +154,17 @@ function getSeatPlayers(source = room) {
   };
 }
 
-function myRole() {
-  const seats = getSeatPlayers();
+function getRoleOf(nickname, source = room) {
+  const seats = getSeatPlayers(source);
 
-  if (seats.black === linkedUser) return "black";
-  if (seats.white === linkedUser) return "white";
+  if (seats.black === nickname) return "black";
+  if (seats.white === nickname) return "white";
 
   return "spectator";
+}
+
+function myRole() {
+  return getRoleOf(linkedUser, room);
 }
 
 function isPlayer() {
@@ -1514,8 +1518,11 @@ async function tryPlace(row, col) {
       const snap = await tx.get(ref);
       const r = snap.data();
       if (!r || r.status !== "playing") throw new Error("대국 중이 아닙니다.");
-      const role = r.black === linkedUser ? "black" : r.white === linkedUser ? "white" : "spectator";
-      if (role !== r.turn) throw new Error("내 차례가 아닙니다.");
+const role = getRoleOf(linkedUser, r);
+
+if (role !== r.turn) {
+  throw new Error("내 차례가 아닙니다.");
+}
       const board = [...(r.board || emptyBoard())];
       if (board[idx(row, col)]) throw new Error("이미 돌이 있습니다.");
       if (isDoubleThree(board, row, col, r.turn)) throw new Error("33 금지 위치입니다.");
@@ -1658,12 +1665,7 @@ async function passTurn() {
       const snap = await tx.get(ref);
       const r = snap.data();
 
-      const role =
-        r.black === linkedUser
-          ? "black"
-          : r.white === linkedUser
-            ? "white"
-            : "spectator";
+const role = getRoleOf(linkedUser, r);
 
       if (r.status !== "playing" || role !== r.turn) {
         throw new Error("한 수 쉼 불가");
