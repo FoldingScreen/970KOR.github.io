@@ -49,6 +49,7 @@ const els = {
   roomList: $("roomList"),
   allowSpectatorsInput: $("allowSpectatorsInput"),
   allowAdviceInput: $("allowAdviceInput"),
+  turnLimitInput: $("turnLimitInput"),
   roomStateText: $("roomStateText"),
   roomTitle: $("roomTitle"),
   turnPill: $("turnPill"),
@@ -362,10 +363,11 @@ async function createRoom() {
           disconnectedAt: null
         }
       },
-      settings: {
-        allowSpectators: !!els.allowSpectatorsInput.checked,
-        allowAdvice: !!els.allowAdviceInput.checked
-      },
+settings: {
+  allowSpectators: !!els.allowSpectatorsInput.checked,
+  allowAdvice: !!els.allowAdviceInput.checked,
+  turnLimitSec: Number(els.turnLimitInput?.value || 60)
+},
       requestLocks: { undo: {}, draw: {} },
       undoRequest: null,
       drawRequest: null,
@@ -394,9 +396,10 @@ window.joinRoomAsWhite = async function joinRoomAsWhite(id) {
       tx.update(ref, {
         white: linkedUser,
         whiteRatingBefore: Math.round(stats.rating || DEFAULT_RATING),
-        status: "playing",
-        startedAt: FV.serverTimestamp(),
-        updatedAt: FV.serverTimestamp(),
+status: "playing",
+startedAt: FV.serverTimestamp(),
+turnStartedAt: FV.serverTimestamp(),
+updatedAt: FV.serverTimestamp(),
         [`players.${linkedUser}`]: {
           role: "white",
           connected: true,
@@ -548,116 +551,115 @@ async function updatePresence() {
 function checkStaleOpponent() {
   if (!room || room.status !== "playing" || !isPlayer()) return;
 
-  const opponent = getOpponentNickname();
-  if (!opponent || !room.players?.[opponent]?.lastSeenAt) return;
-
   renderConnectionPanel();
 
-  const last = nowMsFromTs(room.players[opponent].lastSeenAt);
-  if (!last) return;
+  const timer = getTurnTimerInfo();
 
-  const diff = Date.now() - last;
+  if (!timer) return;
 
-  if (diff > RECONNECT_GRACE_MS) {
-    setMessage(`${opponent}님 재접속 제한시간이 지났습니다. 내보내기 처리할 수 있습니다.`, true);
-    return;
-  }
-
-  if (diff > 3000) {
-    const remain = Math.max(0, Math.ceil((RECONNECT_GRACE_MS - diff) / 1000));
-    setMessage(`${opponent}님 재접속 대기 중... ${remain}초`, true);
+  if (timer.expired) {
+    if (myRole() !== room.turn) {
+      setMessage(`${colorName(room.turn)} 제한시간 초과`, true);
+    }
     return;
   }
 
   if (isMyTurn()) {
-    setMessage("내 차례입니다.");
+    setMessage(`내 차례입니다. 남은 시간 ${timer.remainSec}초`);
   } else {
-    setMessage("상대 차례입니다.");
+    setMessage(`상대 차례입니다. 남은 시간 ${timer.remainSec}초`);
   }
 }
 
-function getOpponentStaleInfo() {
-  if (!room || room.status !== "playing" || !isPlayer()) {
-    return null;
+function getTurnTimerInfo() {
+  if (!room || room.status !== "playing") return null;
+
+  const limitSec = Number(room.settings?.turnLimitSec || 60);
+  const startedAt = nowMsFromTs(room.turnStartedAt);
+
+  if (!startedAt) {
+    return {
+      limitSec,
+      elapsedMs: 0,
+      remainSec: limitSec,
+      expired: false
+    };
   }
 
-  const opponent = getOpponentNickname();
-
-  if (!opponent || !room.players?.[opponent]?.lastSeenAt) {
-    return null;
-  }
-
-  const last = nowMsFromTs(room.players[opponent].lastSeenAt);
-
-  if (!last) {
-    return null;
-  }
-
-  const diff = Date.now() - last;
-  const remainMs = Math.max(0, RECONNECT_GRACE_MS - diff);
+  const elapsedMs = Math.max(0, Date.now() - startedAt);
+  const remainMs = Math.max(0, limitSec * 1000 - elapsedMs);
 
   return {
-    opponent,
-    diff,
+    limitSec,
+    elapsedMs,
     remainSec: Math.ceil(remainMs / 1000),
-    expired: diff >= RECONNECT_GRACE_MS
+    expired: elapsedMs >= limitSec * 1000
   };
 }
 
 function renderConnectionPanel() {
   if (!els.connectionPanel) return;
 
-  if (!room || room.status !== "playing" || !isPlayer()) {
-    els.connectionPanel.innerHTML = `<div class="small">대국 중에만 접속 상태를 확인합니다.</div>`;
+  if (!room || room.status !== "playing") {
+    els.connectionPanel.innerHTML = `<div class="small">대국 중에만 제한시간을 표시합니다.</div>`;
     return;
   }
 
-  const info = getOpponentStaleInfo();
+  const timer = getTurnTimerInfo();
 
-  if (!info) {
-    els.connectionPanel.innerHTML = `<div class="small">상대 접속 상태를 확인 중입니다.</div>`;
+  if (!timer) {
+    els.connectionPanel.innerHTML = `<div class="small">제한시간 정보를 확인 중입니다.</div>`;
     return;
   }
 
-  if (!info.expired) {
-    els.connectionPanel.innerHTML = `
-      <div class="connection-box ${info.diff > 3000 ? "warn" : ""}">
-        <div>
-          <strong>${escapeHtml(info.opponent)}</strong>
-          <span>${info.diff > 3000 ? `재접속 대기 ${info.remainSec}초` : "접속 중"}</span>
-        </div>
-        <button class="secondary mini" type="button" disabled>내보내기</button>
-      </div>
-    `;
-    return;
-  }
+  const currentPlayer =
+    room.turn === "black"
+      ? room.black
+      : room.white;
+
+  const canClaimTimeWin =
+    isPlayer() &&
+    myRole() !== room.turn &&
+    timer.expired;
 
   els.connectionPanel.innerHTML = `
-    <div class="connection-box danger">
+    <div class="connection-box ${timer.expired ? "danger" : timer.remainSec <= 10 ? "warn" : ""}">
       <div>
-        <strong>${escapeHtml(info.opponent)}</strong>
-        <span>재접속 제한시간 초과</span>
+        <strong>${escapeHtml(currentPlayer || colorName(room.turn))}</strong>
+        <span>
+          ${timer.expired ? "시간 초과" : `남은 시간 ${timer.remainSec}초 / ${timer.limitSec}초`}
+        </span>
       </div>
-      <button class="danger mini" type="button" onclick="kickDisconnectedOpponent()">내보내기</button>
+      <button
+        class="danger mini"
+        type="button"
+        onclick="claimTimeWin()"
+        ${canClaimTimeWin ? "" : "disabled"}
+      >시간패 처리</button>
     </div>
   `;
 }
 
-window.kickDisconnectedOpponent = async function kickDisconnectedOpponent() {
+window.claimTimeWin = async function claimTimeWin() {
   if (!room || room.status !== "playing" || !isPlayer()) return;
 
-  const info = getOpponentStaleInfo();
+  const timer = getTurnTimerInfo();
 
-  if (!info || !info.expired) {
-    showToast("아직 재접속 대기 시간이 남아 있습니다.");
+  if (!timer || !timer.expired) {
+    showToast("아직 제한시간이 남아 있습니다.");
     return;
   }
 
-  const opponent = info.opponent;
-  const winnerColor = myRole();
-  const loserColor = opponentColor(winnerColor);
+  if (myRole() === room.turn) {
+    showToast("본인 시간패는 직접 처리할 수 없습니다.");
+    return;
+  }
 
-  if (!confirm(`${opponent}님을 시간초과 패배 처리하고 방에서 내보낼까요?`)) return;
+  const timedOutColor = room.turn;
+  const timedOutName = timedOutColor === "black" ? room.black : room.white;
+  const winnerColor = myRole();
+
+  if (!confirm(`${timedOutName}님을 시간패 처리할까요?`)) return;
 
   try {
     await finishRound({
@@ -665,24 +667,15 @@ window.kickDisconnectedOpponent = async function kickDisconnectedOpponent() {
       reason: "timeout"
     });
 
-    await roomRef().update({
-      [`players.${opponent}`]: FV.delete(),
-      [`playerRequests.${opponent}`]: FV.delete(),
-      [`nextSeats.${winnerColor}`]: linkedUser,
-      [`nextSeats.${loserColor}`]: null,
-      [loserColor]: null,
-      updatedAt: FV.serverTimestamp()
-    });
-
     await addSystemChat(
       currentRoomId,
-      `${opponent}님이 재접속 제한시간을 초과하여 시간초과 패배 처리되었습니다.`
+      `${timedOutName}님이 착수 제한시간을 초과하여 시간패 처리되었습니다.`
     );
 
-    showToast("시간초과 승리 처리했습니다.");
+    showToast("시간패 처리 완료");
   } catch (err) {
     console.error(err);
-    showToast("내보내기 처리 실패");
+    showToast("시간패 처리 실패");
   }
 };
 
@@ -785,6 +778,7 @@ function renderRoomSettings() {
   const isHost = room?.host === linkedUser;
   const allowSpectators = room?.settings?.allowSpectators !== false;
   const allowAdvice = !!room?.settings?.allowAdvice;
+  const turnLimitSec = Number(room?.settings?.turnLimitSec || 60);
 
   els.roomSettingsBox.innerHTML = `
     <label class="check-row room-setting-row">
@@ -796,6 +790,16 @@ function renderRoomSettings() {
       <input id="roomAllowAdvice" type="checkbox" ${allowAdvice ? "checked" : ""} ${isHost ? "" : "disabled"} />
       <span>훈수 허용 관전자 채팅 가능</span>
     </label>
+
+    <div class="room-setting-row setting-select-row">
+      <label for="roomTurnLimitSec">착수 제한시간</label>
+      <select id="roomTurnLimitSec" ${isHost ? "" : "disabled"}>
+        <option value="30" ${turnLimitSec === 30 ? "selected" : ""}>30초</option>
+        <option value="60" ${turnLimitSec === 60 ? "selected" : ""}>60초</option>
+        <option value="120" ${turnLimitSec === 120 ? "selected" : ""}>120초</option>
+        <option value="180" ${turnLimitSec === 180 ? "selected" : ""}>180초</option>
+      </select>
+    </div>
 
     ${
       isHost
@@ -844,19 +848,21 @@ async function updateRoomSettings() {
     return;
   }
 
-  const allowSpectators = !!document.getElementById("roomAllowSpectators")?.checked;
-  const allowAdvice = !!document.getElementById("roomAllowAdvice")?.checked;
+const allowSpectators = !!document.getElementById("roomAllowSpectators")?.checked;
+const allowAdvice = !!document.getElementById("roomAllowAdvice")?.checked;
+const turnLimitSec = Number(document.getElementById("roomTurnLimitSec")?.value || 60);
 
   try {
-    await roomRef().update({
-      "settings.allowSpectators": allowSpectators,
-      "settings.allowAdvice": allowAdvice,
-      updatedAt: FV.serverTimestamp()
-    });
-
+await roomRef().update({
+  "settings.allowSpectators": allowSpectators,
+  "settings.allowAdvice": allowAdvice,
+  "settings.turnLimitSec": turnLimitSec,
+  turnStartedAt: FV.serverTimestamp(),
+  updatedAt: FV.serverTimestamp()
+});
     await addSystemChat(
       currentRoomId,
-      `방 설정이 변경되었습니다. 관전: ${allowSpectators ? "허용" : "불가"} / 훈수: ${allowAdvice ? "허용" : "금지"}`
+     `방 설정이 변경되었습니다. 관전: ${allowSpectators ? "허용" : "불가"} / 훈수: ${allowAdvice ? "허용" : "금지"} / 제한시간: ${turnLimitSec}초`
     );
 
     showToast("방 설정을 저장했습니다.");
@@ -1215,8 +1221,9 @@ async function tryPlace(row, col) {
       if (win.win) {
         Object.assign(updates, buildFinishUpdates(r, r.turn, "five", win.line));
       } else {
-        updates.turn = opponentColor(r.turn);
-        updates.turnSeq = (r.turnSeq || 1) + 1;
+updates.turn = opponentColor(r.turn);
+updates.turnSeq = (r.turnSeq || 1) + 1;
+updates.turnStartedAt = FV.serverTimestamp();
       }
       tx.update(ref, updates);
     });
@@ -1339,9 +1346,10 @@ async function passTurn() {
       if (nextPass >= 2) {
         tx.update(ref, {
           ...buildFinishUpdates(r, null, "doublePass", []),
-          consecutivePasses: nextPass,
-          turnSeq: (r.turnSeq || 1) + 1,
-          updatedAt: FV.serverTimestamp()
+turn: opponentColor(r.turn),
+turnSeq: (r.turnSeq || 1) + 1,
+turnStartedAt: FV.serverTimestamp(),
+consecutivePasses: nextPass,
         });
       } else {
         tx.update(ref, {
@@ -1425,9 +1433,10 @@ async function acceptUndo() {
       moveHistory: history,
       lastMove: history.length ? history[history.length - 1] : null,
       moveCount: Math.max(0, (r.moveCount || 0) - 1),
-      turn: last.color,
-      turnSeq: (r.turnSeq || 1) + 1,
-      winLine: [],
+turn: last.color,
+turnSeq: (r.turnSeq || 1) + 1,
+turnStartedAt: FV.serverTimestamp(),
+winLine: [],
       undoRequest: null,
       drawRequest: null,
       updatedAt: FV.serverTimestamp()
@@ -1463,9 +1472,10 @@ async function startNextRound() {
       status: "playing",
       black,
       white,
-      turn: "black",
-      turnSeq: (r.turnSeq || 1) + 1,
-      round: (r.round || 1) + 1,
+turn: "black",
+turnSeq: (r.turnSeq || 1) + 1,
+turnStartedAt: FV.serverTimestamp(),
+round: (r.round || 1) + 1,
       board: emptyBoard(),
       moveCount: 0,
       moveHistory: [],
