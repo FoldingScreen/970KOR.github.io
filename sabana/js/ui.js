@@ -365,7 +365,13 @@ ui.sideSynergies.innerHTML = `
         <div class="compact-name-list">
           ${active.map(key => {
             const info = SYNERGY_INFO[key] || { name: key };
-            return `<span class="compact-name">${info.name}</span>`;
+            return `
+              <span
+                class="compact-name detail-hover-chip"
+                data-detail-kind="synergy"
+                data-detail-key="${key}"
+              >${info.name}</span>
+            `;
           }).join("")}
         </div>
       `
@@ -375,17 +381,21 @@ ui.sideSynergies.innerHTML = `
   <div class="small" style="margin:10px 0 6px;">연계 가능</div>
   ${renderPotentialSynergiesCompact()}
 
-  <button type="button" class="mini-btn secondary detail-btn build-detail-trigger">상세설명</button>
+  <button type="button" class="mini-btn secondary detail-btn build-detail-trigger" onclick="openBuildDetail()">상세설명</button>
 `;
 
 ui.sideAugments.innerHTML = state.augments.length
   ? `
     <div class="compact-name-list">
       ${state.augments.map(a => `
-        <span class="compact-name ${GRADE_CLASS[a.grade]}">${a.name}</span>
+        <span
+          class="compact-name ${GRADE_CLASS[a.grade]} detail-hover-chip"
+          data-detail-kind="augment"
+          data-detail-key="${a.id}"
+        >${a.name}</span>
       `).join("")}
     </div>
-    <button type="button" class="mini-btn secondary detail-btn build-detail-trigger">상세설명</button>
+    <button type="button" class="mini-btn secondary detail-btn build-detail-trigger" onclick="openBuildDetail()">상세설명</button>
   `
   : `<div class="small">없음</div>`;
 
@@ -530,6 +540,122 @@ function backToTitleFromWeapon() {
   updateUi();
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function getAugmentDetailHtml(id) {
+  const aug =
+    state?.augments?.find(a => a.id === id) ||
+    AUGMENTS.find(a => a.id === id);
+
+  if (!aug) {
+    return `
+      <h3>증강 정보 없음</h3>
+      <div class="effect">해당 증강 정보를 찾지 못했습니다.</div>
+    `;
+  }
+
+  return `
+    <h3 class="${GRADE_CLASS[aug.grade] || ""}">
+      ${escapeHtml(aug.name)} ${renderAttrInline(aug.attrs)}
+    </h3>
+    <div class="effect">${escapeHtml(aug.detail || aug.desc).replaceAll("\n", "<br>")}</div>
+  `;
+}
+
+function getSynergyDetailHtml(key) {
+  const info = SYNERGY_INFO[key];
+
+  if (!info) {
+    return `
+      <h3>시너지 정보 없음</h3>
+      <div class="effect">${escapeHtml(key)}</div>
+    `;
+  }
+
+  return `
+    <h3>${escapeHtml(info.name)}</h3>
+    <div class="effect">
+      조건: ${escapeHtml(info.cond || "-")}<br><br>
+      효과:<br>${escapeHtml(info.detail || info.short || "").replaceAll("\n", "<br>")}
+    </div>
+  `;
+}
+
+function getDetailChipHtml(kind, key) {
+  if (kind === "augment") return getAugmentDetailHtml(key);
+  if (kind === "synergy") return getSynergyDetailHtml(key);
+
+  return `
+    <h3>상세 정보 없음</h3>
+    <div class="effect">알 수 없는 항목입니다.</div>
+  `;
+}
+
+function ensureBuildHoverTooltip() {
+  let tooltip = document.getElementById("buildHoverTooltip");
+
+  if (!tooltip) {
+    tooltip = document.createElement("div");
+    tooltip.id = "buildHoverTooltip";
+    tooltip.className = "build-hover-tooltip";
+    document.body.appendChild(tooltip);
+  }
+
+  return tooltip;
+}
+
+function canUseHoverTooltip() {
+  return window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+}
+
+function moveBuildHoverTooltip(x, y) {
+  const tooltip = ensureBuildHoverTooltip();
+
+  const margin = 14;
+  const rect = tooltip.getBoundingClientRect();
+
+  let left = x + 16;
+  let top = y + 16;
+
+  if (left + rect.width + margin > window.innerWidth) {
+    left = x - rect.width - 16;
+  }
+
+  if (top + rect.height + margin > window.innerHeight) {
+    top = y - rect.height - 16;
+  }
+
+  tooltip.style.left = `${Math.max(margin, left)}px`;
+  tooltip.style.top = `${Math.max(margin, top)}px`;
+}
+
+function openBuildHoverTooltip(target, x, y) {
+  if (!canUseHoverTooltip()) return;
+
+  const kind = target.dataset.detailKind;
+  const key = target.dataset.detailKey;
+
+  if (!kind || !key) return;
+
+  const tooltip = ensureBuildHoverTooltip();
+  tooltip.innerHTML = getDetailChipHtml(kind, key);
+  tooltip.classList.add("show");
+
+  moveBuildHoverTooltip(x, y);
+}
+
+function closeBuildHoverTooltip() {
+  const tooltip = document.getElementById("buildHoverTooltip");
+  if (tooltip) tooltip.classList.remove("show");
+}
+
 function openBuildDetail() {
   if (!state) {
     showToast("진행 중인 빌드가 없습니다.");
@@ -538,38 +664,36 @@ function openBuildDetail() {
 
   if (!buildDetailOverlay || !buildDetailContent) {
     console.error("buildDetailOverlay 또는 buildDetailContent DOM을 찾지 못했습니다.");
+    showToast("상세설명 창을 찾지 못했습니다.");
     return;
   }
+
+  closeBuildHoverTooltip();
 
   const augHtml = state.augments.length
     ? state.augments.map(a => `
       <div class="codex-item">
-        <h3 class="${GRADE_CLASS[a.grade]}">${a.name} ${renderAttrInline(a.attrs)}</h3>
-        <div class="effect">${a.detail || a.desc}</div>
+        ${getAugmentDetailHtml(a.id)}
       </div>
     `).join("")
     : `<div class="codex-item"><h3>보유 증강 없음</h3></div>`;
 
   const synergyHtml = Array.from(state.activeSynergies).length
-    ? Array.from(state.activeSynergies).map(key => {
-        const info = SYNERGY_INFO[key] || { name: key, detail: "" };
-        return `
-          <div class="codex-item">
-            <h3>${info.name}</h3>
-            <div class="effect">조건: ${info.cond || "-"}\n\n효과:\n${info.detail || info.short || ""}</div>
-          </div>
-        `;
-      }).join("")
+    ? Array.from(state.activeSynergies).map(key => `
+      <div class="codex-item">
+        ${getSynergyDetailHtml(key)}
+      </div>
+    `).join("")
     : `<div class="codex-item"><h3>활성 시너지 없음</h3></div>`;
 
   buildDetailContent.innerHTML = `
     <div class="codex-item">
       <h3>최종 계산 스탯</h3>
-      <div class="effect">공격력 배율: x${statDamageMul().toFixed(2)}
-공격속도: x${statAttackSpeedMul().toFixed(2)}
-공격범위: x${statAreaMul().toFixed(2)}
-이동속도: x${(state.player.speed / 220).toFixed(2)}
-방어율: ${Math.round(state.base.defense * 100)}%
+      <div class="effect">공격력 배율: x${statDamageMul().toFixed(2)}<br>
+공격속도: x${statAttackSpeedMul().toFixed(2)}<br>
+공격범위: x${statAreaMul().toFixed(2)}<br>
+이동속도: x${(state.player.speed / 220).toFixed(2)}<br>
+방어율: ${Math.round(state.base.defense * 100)}%<br>
 자석범위: ${Math.round(state.player.magnetRange)}</div>
     </div>
 
@@ -585,6 +709,9 @@ function openBuildDetail() {
   `;
 
   buildDetailOverlay.classList.add("show");
+
+  const modal = buildDetailOverlay.querySelector(".modal");
+  if (modal) modal.scrollTop = 0;
 }
 
 function closeBuildDetail() {
@@ -601,6 +728,28 @@ document.addEventListener("click", e => {
   e.preventDefault();
   e.stopPropagation();
   openBuildDetail();
+}, true);
+
+document.addEventListener("pointerover", e => {
+  const chip = e.target.closest(".detail-hover-chip");
+  if (!chip) return;
+
+  openBuildHoverTooltip(chip, e.clientX, e.clientY);
+});
+
+document.addEventListener("pointermove", e => {
+  const chip = e.target.closest(".detail-hover-chip");
+  if (!chip) return;
+  if (!canUseHoverTooltip()) return;
+
+  moveBuildHoverTooltip(e.clientX, e.clientY);
+});
+
+document.addEventListener("pointerout", e => {
+  const chip = e.target.closest(".detail-hover-chip");
+  if (!chip) return;
+
+  closeBuildHoverTooltip();
 });
 
 function showBigAlert(main, sub) {
