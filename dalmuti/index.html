@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>970KOR 사바나 달무티</title>
+  <link rel="stylesheet" href="./dalmuti.css?v=1" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">970KOR MINI GAME</div>
+        <h1>사바나 달무티</h1>
+      </div>
+      <div class="top-actions">
+        <button id="homeBtn" class="secondary" type="button">970KOR</button>
+        <button id="leaveRoomBtn" class="secondary hidden" type="button">방 나가기</button>
+      </div>
+    </header>
+
+    <main id="lobbyView" class="view show">
+      <section class="card hero-card">
+        <div>
+          <h2>조선풍 계급 카드게임</h2>
+          <p>같은 계급 카드를 여러 장 내고, 더 높은 계급으로 받아칩니다. 가장 먼저 손패를 털면 높은 신분을 차지합니다.</p>
+        </div>
+        <div class="profile-box">
+          <div class="small">접속 닉네임</div>
+          <strong id="myNickname">-</strong>
+        </div>
+      </section>
+
+      <section class="grid-two">
+        <div class="card">
+          <h3>방 만들기</h3>
+          <div class="form-row">
+            <label for="roomTitleInput">방 이름</label>
+            <input id="roomTitleInput" type="text" maxlength="24" placeholder="예: 사바나 한 판" />
+          </div>
+          <button id="createRoomBtn" type="button">방 만들기</button>
+        </div>
+
+        <div class="card rule-card">
+          <h3>카드 서열</h3>
+          <p class="small">강함 → 약함</p>
+          <div id="rankPreview" class="rank-preview"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-head">
+          <h3>대기방 목록</h3>
+          <button id="refreshRoomsBtn" class="secondary mini" type="button">새로고침</button>
+        </div>
+        <div id="roomList" class="room-list"></div>
+      </section>
+    </main>
+
+    <main id="roomView" class="view">
+      <section class="room-layout">
+        <div class="card table-card">
+          <div class="room-head">
+            <div>
+              <div id="roomStateText" class="eyebrow">대기 중</div>
+              <h2 id="roomTitle">-</h2>
+            </div>
+            <div id="turnBadge" class="turn-badge">-</div>
+          </div>
+
+          <div id="messageBar" class="message-bar">방 정보를 불러오는 중입니다.</div>
+          <div id="playersArea" class="players-area"></div>
+
+          <div id="currentComboBox" class="combo-box"></div>
+
+          <div class="my-hand-head">
+            <div>
+              <h3>내 손패</h3>
+              <p id="handHelp" class="small">같은 계급 카드만 선택할 수 있습니다. 홍길동은 와일드카드입니다.</p>
+            </div>
+            <div id="selectedSummary" class="selected-summary">선택 없음</div>
+          </div>
+          <div id="handArea" class="hand-area"></div>
+
+          <div class="action-row">
+            <button id="playBtn" type="button">선택 카드 내기</button>
+            <button id="passBtn" class="secondary" type="button">패스</button>
+            <button id="readyBtn" class="secondary" type="button">준비</button>
+            <button id="startBtn" class="secondary" type="button">게임 시작</button>
+            <button id="nextRoundBtn" class="secondary" type="button">다음 판 시작</button>
+          </div>
+        </div>
+
+        <aside class="card side-card">
+          <section>
+            <h3>계급표</h3>
+            <div id="rankList" class="rank-list"></div>
+          </section>
+          <section>
+            <h3>진행 로그</h3>
+            <div id="logList" class="log-list"></div>
+          </section>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="./dalmuti.js?v=1"></script>
+</body>
+</html>
