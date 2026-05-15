@@ -549,283 +549,87 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
-function formatPct(value, digits = 0) {
-  return `${(value * 100).toFixed(digits)}%`;
+function getAugmentDetailNote(id) {
+  const notes = {
+    cold_edge: "3초마다, 현재 무기 피해의 80%, 氷 4 이상 2발 / 氷 6 이상 3발",
+    small_flame: "4.5초마다, 현재 무기 피해의 140%, 火 4 이상 범위 95 / 火 6 이상 2회 낙하",
+    light_breeze: "기본 4방향, 현재 무기 피해의 55%, 風 4 이상 6방향 / 風 6 이상 8방향",
+    shimmer: "5.5초마다, 현재 무기 피해의 120%, 공격범위 증가 효과 적용",
+    shadow_cut: "3.8초마다, 현재 무기 피해의 130%, 체력 비율이 가장 낮은 적 추적",
+    holy_seed: "5초마다, 현재 무기 피해의 220%, 가장 체력이 높은 적 대상",
+    evil_drop: "4초마다 2마리, 현재 무기 피해의 70%, 적중 피해의 8% 회복, 惡 4 이상 3마리",
+
+    frostfire_core: "빙결 파편과 유성 불씨를 동시에 활성화",
+    burning_wind: "칼날 난무와 유성 불씨를 동시에 활성화",
+    radiant_wind: "칼날 난무와 신성 폭발을 동시에 활성화",
+    eclipse_mark: "신성 폭발과 그림자 추적자를 동시에 활성화",
+    fallen_sanctuary: "성검 낙하와 흡혈 박쥐를 동시에 활성화",
+
+    perfect_focus: "타격마다 공격력 x1.005, 최대 80중첩, 피격 시 초기화",
+    glass_sanctuary: "보호막 보유 중 피해 x1.6, 보호막이 없으면 받는 피해 +20%",
+    chain_reaction: "투사체 적중 시 22% 확률, 연쇄탄은 현재 무기 피해의 45%",
+    star_tuning: "투사체 적중 시 22% 확률 별빛 폭발, 6초마다 최대 5명 별무리 폭격",
+    curse_crown: "최대 HP -30, 회복량 -50%, 여러 보조 공격 활성화",
+
+    overheat_heart: "공격속도 x1.55, 기본 공격마다 현재 무기 피해의 35% 화염 보조탄, HP 소모 없음",
+    blood_furnace: "초당 현재 HP 0.6% 소모, 직접 피해 3% 회복, 화상 피해 8% 회복, HP 30% 이하 회복량 2배",
+    void_feast: "그림자 추적자와 흡혈 박쥐 활성화",
+
+    demon_gate: "鬼 +2, 6초마다 귀참, 처치 시 鬼 중첩 추가 +1, 피격 시 현재 HP 8% 추가 피해",
+    demon_mark: "鬼 +2, 6초마다 귀참, 鬼 중첩 기반 공격력 강화",
+    blood_flame_demon: "鬼 +1, 유성 불씨 + 그림자 추적자 + 귀참 활성화",
+    holy_demon_scar: "鬼 +1, 성검 낙하 + 귀참 활성화, 보호막 보유 중 鬼 중첩 손실 완화",
+    evil_demon_feast: "惡 +1, 鬼 +1, 흡혈 박쥐 + 귀참 활성화, 회복 시 鬼 중첩 증가"
+  };
+
+  return notes[id] || "";
 }
 
-function getCurrentWeaponBaseDamage() {
-  if (!state || !state.weapon) return 0;
-  const w = getWeaponStats();
-  return w.damage || 0;
-}
+function getSynergyDetailNote(key) {
+  const notes = {
+    ice2: "둔화 확률 25%, 둔화 강도 30%",
+    ice4: "둔화 확률 35%, 둔화 강도 36%, 광역 피해 x1.10",
+    ice6: "둔화 확률 45%, 둔화 강도 42%, 광역 피해 x1.18, 발현 시 화면 내 적 2초 빙결",
 
-function getAugmentLiveDetail(id) {
-  if (!state) return "";
+    fire2: "화상 확률 25%, 화상 피해 적중 피해의 20%/초, 지속 2.5초",
+    fire4: "화상 확률 34%, 화상 피해 적중 피해의 34%/초, 지속 3.6초",
+    fire6: "화상 확률 42%, 화상 피해 적중 피해의 48%/초, 지속 4.5초, 화상 처치 폭발",
 
-  const baseDamage = getCurrentWeaponBaseDamage();
-  const attrs = getAttrCounts();
+    wind2: "공격속도 x1.15, 이동속도 x1.05",
+    wind4: "공격속도 x1.26, 이동속도 x1.06, 5번째 타격마다 추가타",
+    wind6: "공격속도 x1.42, 이동속도 x1.08, 3번째 타격마다 추가타, 발현 시 10초간 공격속도 x2.0",
 
-  const lines = [];
+    light2: "공격범위 x1.15",
+    light4: "공격범위 x1.26, 광역 피해 x1.18",
+    light6: "공격범위 x1.42, 광역 피해 x1.28, 발현 시 화면 전체 피해",
 
-  if (id === "cold_edge" || id === "frostfire_core" || id === "curse_crown") {
-    const count = attrs["氷"] >= 6 ? 3 : attrs["氷"] >= 4 ? 2 : 1;
-    lines.push(`빙결 파편 현재 발사 수: ${count}개`);
-    lines.push(`빙결 파편 현재 피해: ${Math.round(baseDamage * 0.8).toLocaleString()}`);
-    lines.push(`발동 주기: 3.0초`);
-    lines.push(`둔화 부여: 적중 시 2.2초`);
-  }
+    dark2: "HP 20% 이하 적 타격 시 8% 확률 처형",
+    dark4: "HP 28% 이하 적 타격 시 11% 확률 처형",
+    dark6: "HP 35% 이하 적 타격 시 15% 확률 처형, 발현 시 HP 35% 이하 일반 적 즉시 처형",
 
-  if (id === "small_flame" || id === "frostfire_core" || id === "burning_wind" || id === "curse_crown" || id === "overheat_heart") {
-    const radius = attrs["火"] >= 4 ? 95 : 70;
-    const times = attrs["火"] >= 6 ? 2 : 1;
-    lines.push(`유성 불씨 현재 낙하 수: ${times}회`);
-    lines.push(`유성 불씨 현재 피해: ${Math.round(baseDamage * 1.4).toLocaleString()}`);
-    lines.push(`범위: ${radius}`);
-    lines.push(`발동 주기: 4.5초`);
-  }
+    holy2: "처치 시 15% 확률로 보호막 +6",
+    holy4: "처치 시 23% 확률로 보호막 +9",
+    holy6: "처치 시 32% 확률로 보호막 +13, 발현 시 최대 HP 40% 보호막",
 
-  if (id === "light_breeze" || id === "burning_wind" || id === "radiant_wind" || id === "perfect_focus" || id === "chain_reaction" || id === "curse_crown") {
-    const count = attrs["風"] >= 6 ? 8 : attrs["風"] >= 4 ? 6 : 4;
-    const interval = Math.max(0.7, 3.5 / Math.max(0.1, statAttackSpeedMul()));
-    lines.push(`칼날 난무 현재 발사 수: ${count}개`);
-    lines.push(`칼날 난무 현재 피해: ${Math.round(baseDamage * 0.55).toLocaleString()}`);
-    lines.push(`현재 발동 주기: ${interval.toFixed(2)}초`);
-  }
+    evil2: "처치 시 15% 확률로 HP 4 회복",
+    evil4: "처치 시 23% 확률로 HP 6 회복",
+    evil6: "처치 시 32% 확률로 HP 9 회복, 발현 시 HP 100% 회복 및 8초간 공격력 x1.5",
 
-  if (id === "shimmer" || id === "radiant_wind" || id === "eclipse_mark" || id === "glass_sanctuary" || id === "curse_crown") {
-    const radius = 110 * statAreaMul();
-    lines.push(`신성 폭발 현재 피해: ${Math.round(baseDamage * 1.2).toLocaleString()}`);
-    lines.push(`현재 범위: ${Math.round(radius)}`);
-    lines.push(`발동 주기: 5.5초`);
-  }
+    demon2: "처치 시 공격력 +0.5% 중첩, 최대 80중첩, 피격 시 50% 감소",
+    demon3: "처치 시 공격력 +0.8% 중첩, 최대 130중첩, 피격 시 30% 감소",
+    demon4: "처치 시 공격력 +1.0% 중첩, 최대 200중첩, 피격 시 15% 감소, 발현 시 중첩 +50",
 
-  if (id === "shadow_cut" || id === "eclipse_mark" || id === "void_feast" || id === "blood_flame_demon") {
-    lines.push(`그림자 추적자 현재 피해: ${Math.round(baseDamage * 1.3).toLocaleString()}`);
-    lines.push(`발동 주기: 3.8초`);
-    lines.push(`대상: 체력 비율이 가장 낮은 적`);
-  }
+    frostfire: "둔화 + 화상 상태 적에게 피해 x1.65",
+    firestorm: "화상 중인 적 타격 시 16% 확률로 주변 최대 2명에게 화상 전이",
+    radiantwind: "공격속도 증가분 일부가 공격범위 증가로 전환",
+    voidfeast: "처형 성공 시 회복 및 공격력 버프와 연계",
+    fallenholy: "회복과 보호막 획득이 서로 보조",
+    bloodflamedemon: "화상 중인 적 처치 시 鬼 중첩 추가",
+    holydemon: "보호막 보유 중 鬼 중첩 증가량 상승, 피격 시 중첩 감소 완화",
+    evildemon: "회복 발생 시 鬼 중첩 +1, 초과 회복 시 추가 +1"
+  };
 
-  if (id === "holy_seed" || id === "fallen_sanctuary" || id === "holy_demon_scar") {
-    lines.push(`성검 낙하 현재 피해: ${Math.round(baseDamage * 2.2).toLocaleString()}`);
-    lines.push(`범위: 52`);
-    lines.push(`발동 주기: 5.0초`);
-    lines.push(`대상: 현재 체력이 가장 높은 적`);
-  }
-
-  if (id === "evil_drop" || id === "fallen_sanctuary" || id === "void_feast" || id === "evil_demon_feast") {
-    const count = attrs["惡"] >= 4 ? 3 : 2;
-    lines.push(`흡혈 박쥐 현재 발사 수: ${count}개`);
-    lines.push(`흡혈 박쥐 현재 피해: ${Math.round(baseDamage * 0.7).toLocaleString()}`);
-    lines.push(`적중 시 회복: 피해량의 8%`);
-    lines.push(`발동 주기: 4.0초`);
-  }
-
-  if (id === "star_tuning") {
-    lines.push(`별빛 폭발 확률: 투사체 적중 시 22%`);
-    lines.push(`별빛 폭발 현재 피해: ${Math.round(baseDamage * 0.35).toLocaleString()}`);
-    lines.push(`별무리 폭격 현재 피해: ${Math.round(baseDamage * 0.75).toLocaleString()}`);
-    lines.push(`별무리 폭격 대상 수: 최대 5명`);
-    lines.push(`별무리 폭격 주기: 6.0초`);
-  }
-
-  if (id === "chain_reaction") {
-    lines.push(`연쇄 탄환 생성 확률: 22%`);
-    lines.push(`연쇄 탄환 현재 피해: ${Math.round(baseDamage * 0.45).toLocaleString()}`);
-    lines.push(`연쇄 탄환은 재연쇄 불가`);
-  }
-
-  if (id === "perfect_focus") {
-    const stack = state.stacks.focus || 0;
-    const mul = Math.pow(1.005, stack);
-    lines.push(`현재 집중 중첩: ${stack} / 80`);
-    lines.push(`중첩당 공격력 증가: 0.5% 곱연산`);
-    lines.push(`현재 집중 공격력 배율: x${mul.toFixed(3)}`);
-    lines.push(`최대 중첩 시 공격력 배율: x${Math.pow(1.005, 80).toFixed(3)}`);
-    lines.push(`피격 시 집중 중첩 초기화`);
-  }
-
-  if (id === "glass_sanctuary") {
-    lines.push(`보호막 보유 중 피해 배율: x1.6`);
-    lines.push(`보호막이 없을 때 받는 피해: +20%`);
-    lines.push(`현재 보호막: ${Math.round(state.player.shield || 0)}`);
-  }
-
-  if (id === "overheat_heart") {
-    lines.push(`공격속도 배율: x1.55`);
-    lines.push(`화염 보조탄 현재 피해: ${Math.round(baseDamage * 0.35).toLocaleString()}`);
-    lines.push(`화염 보조탄 발동: 기본 공격마다 1발`);
-    lines.push(`HP 소모 없음`);
-  }
-
-  if (id === "blood_furnace") {
-    lines.push(`초당 HP 소모: 현재 HP의 0.6%`);
-    lines.push(`직접 피해 회복: 피해량의 3%`);
-    lines.push(`화상 피해 회복: 피해량의 8%`);
-    lines.push(`HP 30% 이하일 때 회복량 2배`);
-  }
-
-  if (id === "demon_gate" || id === "demon_mark" || id === "blood_flame_demon" || id === "holy_demon_scar" || id === "evil_demon_feast") {
-    const bonus = 1 + (state.stacks.demon || 0) * 0.01;
-    const radius = 130 + (state.stacks.demon || 0) * 0.4;
-    lines.push(`귀참 현재 피해: ${Math.round(baseDamage * 2.5 * bonus).toLocaleString()}`);
-    lines.push(`귀참 현재 범위: ${Math.round(radius)}`);
-    lines.push(`귀참 발동 주기: 6.0초`);
-    lines.push(`현재 鬼 중첩: ${state.stacks.demon || 0}`);
-  }
-
-  if (!lines.length) return "";
-
-  return `
-    <hr class="detail-divider">
-    <div class="effect">
-      <strong>현재 계산값</strong><br>
-      ${lines.map(line => escapeHtml(line)).join("<br>")}
-    </div>
-  `;
-}
-
-function getSynergyLiveDetail(key) {
-  if (!state) return "";
-
-  const s = state.synergy || {};
-  const lines = [];
-
-  if (key === "ice2" || key === "ice4" || key === "ice6") {
-    lines.push(`현재 둔화 확률: ${formatPct(s.slowChance || 0)}`);
-    lines.push(`현재 둔화 강도: ${formatPct(s.slowPower || 0)}`);
-    if (key === "ice4" || key === "ice6") {
-      lines.push(`현재 광역 피해 배율: x${(s.areaDamageMul || 1).toFixed(2)}`);
-    }
-    if (key === "ice6") {
-      lines.push(`발현 순간: 화면 내 적 2초 빙결`);
-    }
-  }
-
-  if (key === "fire2" || key === "fire4" || key === "fire6") {
-    lines.push(`현재 화상 확률: ${formatPct(s.burnChance || 0)}`);
-    lines.push(`현재 화상 DPS: 적중 피해의 ${formatPct(s.burnDpsRatio || 0)}/초`);
-    lines.push(`현재 화상 지속시간: ${(s.burnDuration || 0).toFixed(1)}초`);
-    if (key === "fire6") {
-      lines.push(`화상 중인 적 처치 시 폭발: 적 최대 HP의 25%`);
-      lines.push(`화상 전이 피해: 적 최대 HP의 4%`);
-    }
-  }
-
-  if (key === "wind2" || key === "wind4" || key === "wind6") {
-    lines.push(`현재 시너지 공격속도 배율: x${(s.attackSpeedMul || 1).toFixed(2)}`);
-    lines.push(`현재 시너지 이동속도 배율: x${(s.moveMul || 1).toFixed(2)}`);
-    if (s.extraHitEvery) {
-      lines.push(`추가타: ${s.extraHitEvery}번째 타격마다 기본 피해의 50%`);
-    }
-    if (key === "wind6") {
-      lines.push(`발현 순간: 10초간 공격속도 x2.0`);
-    }
-  }
-
-  if (key === "light2" || key === "light4" || key === "light6") {
-    lines.push(`현재 시너지 공격범위 배율: x${(s.areaMul || 1).toFixed(2)}`);
-    lines.push(`현재 광역 피해 배율: x${(s.areaDamageMul || 1).toFixed(2)}`);
-    if (key === "light6") {
-      lines.push(`발현 순간: 화면 전체 180 피해`);
-      lines.push(`광역 처치 연계: 광역 피해로 처치 시 25% 확률 빛 폭발`);
-    }
-  }
-
-  if (key === "dark2" || key === "dark4" || key === "dark6") {
-    lines.push(`현재 처형 기준: HP ${formatPct(s.executeThreshold || 0)} 이하`);
-    lines.push(`현재 처형 확률: ${formatPct(s.executeChance || 0)}`);
-    lines.push(`정예 처형 실패 시 추가 피해: 적 최대 HP의 8%`);
-    if (key === "dark6") {
-      lines.push(`발현 순간: HP 35% 이하 일반 적 즉시 처형`);
-      lines.push(`그 외 적: 최대 HP의 12% 피해`);
-    }
-  }
-
-  if (key === "holy2" || key === "holy4" || key === "holy6") {
-    lines.push(`처치 시 보호막 획득 확률: ${formatPct(s.shieldOnKillChance || 0)}`);
-    lines.push(`처치 시 보호막 획득량: ${s.shieldOnKill || 0}`);
-    if (key === "holy6") {
-      lines.push(`발현 순간: 최대 HP의 40% 보호막 획득`);
-    }
-  }
-
-  if (key === "evil2" || key === "evil4" || key === "evil6") {
-    lines.push(`처치 시 회복 확률: ${formatPct(s.healOnKillChance || 0)}`);
-    lines.push(`처치 시 회복량: ${s.healOnKill || 0}`);
-    if (key === "evil6") {
-      lines.push(`발현 순간: HP 100% 회복`);
-      lines.push(`발현 순간: 8초간 공격력 x1.5`);
-      lines.push(`초과 회복 시 5초간 공격력 버프`);
-    }
-  }
-
-  if (key === "demon2" || key === "demon3" || key === "demon4") {
-    const perStack = s.demonKillStack || 0;
-    const stack = state.stacks.demon || 0;
-    const mul = 1 + stack * perStack;
-
-    lines.push(`처치 시 鬼 중첩 증가량: 기본 +1`);
-    lines.push(`중첩당 공격력 증가: ${formatPct(perStack, 1)}`);
-    lines.push(`현재 鬼 중첩: ${stack} / ${s.demonMax || 0}`);
-    lines.push(`현재 鬼 공격력 배율: x${mul.toFixed(3)}`);
-    lines.push(`피격 시 중첩 감소율: ${formatPct(s.demonLoss || 0)}`);
-    if (key === "demon4") {
-      lines.push(`발현 순간: 鬼 중첩 +50`);
-      lines.push(`발현 순간: 10초간 중첩 감소 면역`);
-    }
-  }
-
-  if (key === "frostfire") {
-    lines.push(`둔화 + 화상 상태 적 피해 배율: x${(1.65 + (state.perks.frostfireBonus || 0)).toFixed(2)}`);
-    lines.push(`화상 중 둔화 발생 시 즉시 화상 피해 1회`);
-  }
-
-  if (key === "firestorm") {
-    lines.push(`화상 중인 적 타격 시 화상 전이 확률: 16%`);
-    lines.push(`전이 대상: 주변 최대 2명`);
-    lines.push(`전이 피해: 기준 피해의 25%/초`);
-  }
-
-  if (key === "radiantwind") {
-    lines.push(`공격속도 증가분 일부를 공격범위로 전환`);
-    lines.push(`현재 공격속도 배율: x${statAttackSpeedMul().toFixed(2)}`);
-    lines.push(`현재 공격범위 배율: x${statAreaMul().toFixed(2)}`);
-  }
-
-  if (key === "voidfeast") {
-    lines.push(`처형/회복 연계형 시너지`);
-    lines.push(`초과 회복 발생 시 공격력 버프와 연결`);
-  }
-
-  if (key === "fallenholy") {
-    lines.push(`보호막 획득 시 회복 보조`);
-    lines.push(`회복 발생 시 보호막 보조`);
-  }
-
-  if (key === "bloodflamedemon") {
-    lines.push(`화상 중인 적 처치 시 鬼 중첩 추가 +2`);
-    lines.push(`demonGate 보유 시 처치 鬼 중첩 추가 +1`);
-  }
-
-  if (key === "holydemon") {
-    lines.push(`보호막 보유 중 鬼 중첩 증가량 +1`);
-    lines.push(`보호막 보유 중 피격 시 鬼 중첩 감소량 50% 완화`);
-  }
-
-  if (key === "evildemon") {
-    lines.push(`회복 발생 시 鬼 중첩 +1`);
-    lines.push(`초과 회복 발생 시 鬼 중첩 추가 +1`);
-  }
-
-  if (!lines.length) return "";
-
-  return `
-    <hr class="detail-divider">
-    <div class="effect">
-      <strong>현재 계산값</strong><br>
-      ${lines.map(line => escapeHtml(line)).join("<br>")}
-    </div>
-  `;
+  return notes[key] || "";
 }
 
 function getAugmentDetailHtml(id) {
@@ -840,12 +644,16 @@ function getAugmentDetailHtml(id) {
     `;
   }
 
+  const note = getAugmentDetailNote(id);
+
   return `
     <h3 class="${GRADE_CLASS[aug.grade] || ""}">
       ${escapeHtml(aug.name)} ${renderAttrInline(aug.attrs)}
     </h3>
-    <div class="effect">${escapeHtml(aug.detail || aug.desc).replaceAll("\n", "<br>")}</div>
-    ${getAugmentLiveDetail(id)}
+    <div class="effect">
+      ${escapeHtml(aug.detail || aug.desc).replaceAll("\n", "<br>")}
+      ${note ? `<br><br><span class="small">(${escapeHtml(note)})</span>` : ""}
+    </div>
   `;
 }
 
@@ -859,13 +667,15 @@ function getSynergyDetailHtml(key) {
     `;
   }
 
+  const note = getSynergyDetailNote(key);
+
   return `
     <h3>${escapeHtml(info.name)}</h3>
     <div class="effect">
       조건: ${escapeHtml(info.cond || "-")}<br><br>
-      기본 설명:<br>${escapeHtml(info.detail || info.short || "").replaceAll("\n", "<br>")}
+      ${escapeHtml(info.detail || info.short || "").replaceAll("\n", "<br>")}
+      ${note ? `<br><br><span class="small">(${escapeHtml(note)})</span>` : ""}
     </div>
-    ${getSynergyLiveDetail(key)}
   `;
 }
 
