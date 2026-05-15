@@ -408,6 +408,8 @@ window.joinRoomAsWhite = async function joinRoomAsWhite(id) {
 };
 window.enterRoom = function enterRoom(id) {
   currentRoomId = id;
+  localStorage.setItem("omokCurrentRoomId", id);
+
   setView("room");
   selectedCell = null;
   hoverCell = null;
@@ -1322,6 +1324,7 @@ async function leaveRoomLocal() {
   stopHeartbeat();
   roomUnsub = null;
   chatUnsub = null;
+  localStorage.removeItem("omokCurrentRoomId");
   currentRoomId = null;
   room = null;
   selectedCell = null;
@@ -1550,14 +1553,50 @@ window.addEventListener("beforeunload", () => {
 
 async function init() {
   linkedUser = String(localStorage.getItem("partyAppUser") || "").trim();
+
   if (!linkedUser) {
     alert("970KOR 로그인 후 이용할 수 있습니다.");
     location.href = "../";
     return;
   }
+
   setSoundButton();
   await refreshMyStats();
   startRoomListListener();
+
+  const savedRoomId = localStorage.getItem("omokCurrentRoomId");
+
+  if (savedRoomId) {
+    try {
+      const snap = await roomRef(savedRoomId).get();
+
+      if (snap.exists) {
+        const savedRoom = snap.data();
+        const players = savedRoom.players || {};
+        const isInRoom =
+          savedRoom.black === linkedUser ||
+          savedRoom.white === linkedUser ||
+          !!players[linkedUser] ||
+          !!savedRoom.playerRequests?.[linkedUser];
+
+        const canSpectate =
+          savedRoom.settings?.allowSpectators !== false &&
+          savedRoom.status !== "finished";
+
+        if (isInRoom || canSpectate) {
+          enterRoom(savedRoomId);
+          showToast("대국방으로 복귀했습니다.");
+          return;
+        }
+      }
+
+      localStorage.removeItem("omokCurrentRoomId");
+    } catch (err) {
+      console.error(err);
+      localStorage.removeItem("omokCurrentRoomId");
+    }
+  }
+
   setView("lobby");
   drawBoard();
 }
