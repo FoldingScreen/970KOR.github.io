@@ -1480,18 +1480,6 @@ function updateSpawns(dt) {
   }
 }
 
-  const baseInterval = Math.max(300, 850 - t * 1.65);
-  const interval = baseInterval * wave.intervalMul;
-
-  if (state.spawnMs <= 0) {
-    state.spawnMs = interval;
-
-    for (let i = 0; i < wave.spawnCount; i++) {
-      spawnEnemy(wave);
-    }
-  }
-}
-
 function spawnEnemy(wave = null) {
   const t = state.timeMs / 1000;
 
