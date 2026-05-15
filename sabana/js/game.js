@@ -357,28 +357,40 @@ function recalcSynergies() {
 function onSynergyFirstActivated(key) {
   const info = SYNERGY_INFO[key] || { name: key };
   const burst = key.endsWith("6") || key === "demon4";
-  if (key === "ice6")
-    for (const e of state.enemies)
-      e.freezeTime = Math.max(e.freezeTime || 0, 2);
-  if (key === "fire6") for (const e of state.enemies) applyBurn(e, 18, 4);
-  if (key === "wind6") addTimedBuff("attackSpeed", 2.0, 10);
-  if (key === "light6")
-damageArea(
-  state.player.x,
-  state.player.y,
-  w.radius,
-  w.damage,
-  w.knockback,
-  w.tags,
-  false,
-  "#fb7185",
-  { id: state.weapon.id, name: state.weapon.name }
-);
-  if (key === "dark6")
+
+  if (key === "ice6") {
+    for (const e of state.enemies) e.freezeTime = Math.max(e.freezeTime || 0, 2);
+  }
+
+  if (key === "fire6") {
+    for (const e of state.enemies) applyBurn(e, 18, 4);
+  }
+
+  if (key === "wind6") {
+    addTimedBuff("attackSpeed", 2.0, 10);
+  }
+
+  if (key === "light6") {
+    damageArea(
+      state.player.x,
+      state.player.y,
+      999,
+      180,
+      40,
+      ["light", "area"],
+      true,
+      "#fde68a",
+      { id: "light6", name: "光 6 태양광휘" }
+    );
+  }
+
+  if (key === "dark6") {
     for (const e of state.enemies) {
       if (e.hp / e.maxHp <= 0.35 && !e.elite) e.hp = 0;
       else e.hp -= e.maxHp * 0.12;
     }
+  }
+
   if (key === "holy6") {
     addShield(state.player.maxHp * 0.4);
     damageArea(
@@ -390,18 +402,21 @@ damageArea(
       ["holy", "area"],
       true,
       "#bfdbfe",
+      { id: "holy6", name: "聖 6 성역강림" }
     );
   }
+
   if (key === "evil6") {
     healPlayer(state.player.maxHp);
     addTimedBuff("damage", 1.5, 8);
   }
+
   if (key === "demon4") {
     state.stacks.demon = Math.min(200, state.stacks.demon + 50);
     state.stacks.demonNoLossMs = 10000;
-    for (const e of state.enemies)
-      applyEnemyKnockback(e, state.player.x, state.player.y, 60);
+    for (const e of state.enemies) applyEnemyKnockback(e, state.player.x, state.player.y, 60);
   }
+
   if (burst) showBigAlert(info.name, "궁극 시너지 발현!");
   else showToast(`시너지 발현: ${info.name}`);
 }
@@ -974,76 +989,60 @@ function updatePlayer(dt) {
 }
 function updateWeapon(dt) {
   if (!state.weapon) return;
+
   if (state.weapon.id === "magic_staff") {
     state.attackMs -= dt * 1000;
     const w = getWeaponStats();
     if (state.attackMs <= 0) {
       state.attackMs = w.intervalMs;
-      //if (state.perks.overheat) damagePlayerRaw(0.2);
       fireProjectiles(w);
       if (state.perks.overheatBolt) fireOverheatBolt(w);
     }
   }
+
   if (state.weapon.id === "flame_heart") {
     state.auraMs -= dt * 1000;
     const w = getWeaponStats();
+    const source = { id: state.weapon.id, name: state.weapon.name };
+
     if (state.auraMs <= 0) {
       state.auraMs = w.tickMs;
-      damageArea(
-        state.player.x,
-        state.player.y,
-        w.radius,
-        w.damage,
-        w.knockback,
-        w.tags,
-        false,
-      );
-      //if (state.perks.overheat) damagePlayerRaw(0.2);
+      damageArea(state.player.x, state.player.y, w.radius, w.damage, w.knockback, w.tags, false, "#fb7185", source);
     }
+
     if (w.pulse) {
       state.attackMs -= dt * 1000;
       if (state.attackMs <= 0) {
         state.attackMs = 2000;
-        damageArea(
-          state.player.x,
-          state.player.y,
-          w.radius * 1.2,
-          w.damage * 1.4,
-          28,
-          w.tags,
-          true,
-          "#fb7185",
-        );
+        damageArea(state.player.x, state.player.y, w.radius * 1.2, w.damage * 1.4, 28, w.tags, true, "#fb7185", source);
       }
     }
   }
+
   if (state.weapon.id === "orbit_axe") {
     const w = getWeaponStats();
+    const source = { id: state.weapon.id, name: state.weapon.name };
     state.orbitAngle = (state.orbitAngle || 0) + w.orbitSpeed * dt;
+
     for (let i = 0; i < w.count; i++) {
       const a = state.orbitAngle + (Math.PI * 2 * i) / w.count;
       const ox = state.player.x + Math.cos(a) * w.orbitRadius;
       const oy = state.player.y + Math.sin(a) * w.orbitRadius;
-      for (const e of state.enemies)
-        if (
-          e.hitCd <= 0 &&
-          Math.hypot(e.x - ox, e.y - oy) < e.r + w.axeRadius
-        ) {
+
+      for (const e of state.enemies) {
+        if (e.hitCd > 0) continue;
+        if (Math.hypot(e.x - ox, e.y - oy) < e.r + w.axeRadius) {
           e.hitCd = 0.25;
-          hitEnemy(
-          e,
-  w.damage,
-  w.tags,
-  w.knockback,
-  ox,
-  oy,
-  0,
-  null,
-  { id: state.weapon.id, name: state.weapon.name }
-);
+          hitEnemy(e, w.damage, w.tags, w.knockback, ox, oy, 0, null, source);
         }
+      }
     }
   }
+}
+
+function getAugmentSource(id) {
+  const found = AUGMENTS.find(a => a.id === id);
+  return { id, name: found?.name || id };
 }
 
 function updateAugmentAttacks(dt) {
@@ -1058,146 +1057,74 @@ function updateAugmentAttacks(dt) {
   if (state.perks.iceShard) {
     tickAugmentTimer("iceShard", 3.0, dt, () => {
       const count = attrs["氷"] >= 6 ? 3 : attrs["氷"] >= 4 ? 2 : 1;
-      fireAugmentProjectiles(
-        count,
-        baseDamage * 0.8,
-        "#7dd3fc",
-        ["projectile", "ice"],
-        520,
-        5,
-        0,
-      );
+      fireAugmentProjectiles(count, baseDamage * 0.8, "#7dd3fc", ["projectile", "ice"], 520, 5, 0, getAugmentSource("cold_edge"));
     });
   }
 
   if (state.perks.fireMeteor) {
     tickAugmentTimer("fireMeteor", 4.5, dt, () => {
-      const target = randomItem(state.enemies.filter((e) => e.hp > 0));
+      const target = randomItem(state.enemies.filter(e => e.hp > 0));
       if (!target) return;
 
       const radius = attrs["火"] >= 4 ? 95 : 70;
       const times = attrs["火"] >= 6 ? 2 : 1;
+      const source = getAugmentSource("small_flame");
 
       for (let i = 0; i < times; i++) {
         const x = target.x + (Math.random() - 0.5) * 70;
         const y = target.y + (Math.random() - 0.5) * 70;
-        damageArea(
-          x,
-          y,
-          radius,
-          baseDamage * 1.4,
-          28,
-          ["fire", "area"],
-          true,
-          "#fb7185",
-        );
+        damageArea(x, y, radius, baseDamage * 1.4, 28, ["fire", "area"], true, "#fb7185", source);
       }
     });
   }
 
   if (state.perks.windBlade) {
-    tickAugmentTimer(
-      "windBlade",
-      Math.max(0.7, 3.5 / Math.max(0.1, statAttackSpeedMul())),
-      dt,
-      () => {
-        const count = attrs["風"] >= 6 ? 8 : attrs["風"] >= 4 ? 6 : 4;
-        fireRadialProjectiles(
-          count,
-          baseDamage * 0.55,
-          "#86efac",
-          ["projectile", "wind"],
-          620,
-          4,
-          0,
-        );
-      },
-    );
+    tickAugmentTimer("windBlade", Math.max(0.7, 3.5 / Math.max(0.1, statAttackSpeedMul())), dt, () => {
+      const count = attrs["風"] >= 6 ? 8 : attrs["風"] >= 4 ? 6 : 4;
+      fireRadialProjectiles(count, baseDamage * 0.55, "#86efac", ["projectile", "wind"], 620, 4, 0, getAugmentSource("light_breeze"));
+    });
   }
 
   if (state.perks.lightBurst) {
     tickAugmentTimer("lightBurst", 5.5, dt, () => {
       const radius = 110 * statAreaMul();
-      damageArea(
-        state.player.x,
-        state.player.y,
-        radius,
-        baseDamage * 1.2,
-        38,
-        ["light", "area"],
-        true,
-        "#fde68a",
-      );
+      damageArea(state.player.x, state.player.y, radius, baseDamage * 1.2, 38, ["light", "area"], true, "#fde68a", getAugmentSource("shimmer"));
     });
   }
 
   if (state.perks.shadowSeeker) {
     tickAugmentTimer("shadowSeeker", 3.8, dt, () => {
       const target = [...state.enemies]
-        .filter((e) => e.hp > 0)
+        .filter(e => e.hp > 0)
         .sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0];
-
       if (!target) return;
-      fireHomingProjectile(
-        target,
-        baseDamage * 1.3,
-        "#a78bfa",
-        ["projectile", "dark"],
-        500,
-        6,
-      );
+      fireHomingProjectile(target, baseDamage * 1.3, "#a78bfa", ["projectile", "dark"], 500, 6, getAugmentSource("shadow_cut"));
     });
   }
 
   if (state.perks.holySword) {
     tickAugmentTimer("holySword", 5.0, dt, () => {
       const target = [...state.enemies]
-        .filter((e) => e.hp > 0)
+        .filter(e => e.hp > 0)
         .sort((a, b) => b.hp - a.hp)[0];
-
       if (!target) return;
-      damageArea(
-        target.x,
-        target.y,
-        52,
-        baseDamage * 2.2,
-        45,
-        ["holy", "area"],
-        true,
-        "#bfdbfe",
-      );
+      damageArea(target.x, target.y, 52, baseDamage * 2.2, 45, ["holy", "area"], true, "#bfdbfe", getAugmentSource("holy_seed"));
     });
   }
 
   if (state.perks.bloodBat) {
     tickAugmentTimer("bloodBat", 4.0, dt, () => {
       const count = attrs["惡"] >= 4 ? 3 : 2;
-      fireAugmentProjectiles(
-        count,
-        baseDamage * 0.7,
-        "#fda4af",
-        ["projectile", "evil", "lifesteal"],
-        560,
-        5,
-        0,
-      );
+      fireAugmentProjectiles(count, baseDamage * 0.7, "#fda4af", ["projectile", "evil", "lifesteal"], 560, 5, 0, getAugmentSource("evil_drop"));
     });
   }
 
   if (state.perks.starBarrage) {
     tickAugmentTimer("starBarrage", 6.0, dt, () => {
       const targets = getEnemiesSortedByDistance().slice(0, 5);
+      const source = getAugmentSource("star_tuning");
       for (const target of targets) {
-        damageArea(
-          target.x,
-          target.y,
-          46,
-          baseDamage * 0.75,
-          20,
-          ["light", "area"],
-          true,
-          "#c4b5fd",
-        );
+        damageArea(target.x, target.y, 46, baseDamage * 0.75, 20, ["light", "area"], true, "#c4b5fd", source);
       }
     });
   }
@@ -1206,16 +1133,7 @@ function updateAugmentAttacks(dt) {
     tickAugmentTimer("demonSlash", 6.0, dt, () => {
       const bonus = 1 + state.stacks.demon * 0.01;
       const radius = 130 + state.stacks.demon * 0.4;
-      damageArea(
-        state.player.x,
-        state.player.y,
-        radius,
-        baseDamage * 2.5 * bonus,
-        60,
-        ["demon", "area"],
-        true,
-        "#facc15",
-      );
+      damageArea(state.player.x, state.player.y, radius, baseDamage * 2.5 * bonus, 60, ["demon", "area"], true, "#facc15", getAugmentSource("demon_gate"));
     });
   }
 }
@@ -1228,24 +1146,13 @@ function tickAugmentTimer(key, intervalSec, dt, callback) {
   }
 }
 
-function fireAugmentProjectiles(
-  count,
-  damage,
-  color,
-  tags,
-  speed,
-  radius,
-  pierce = 0,
-) {
+function fireAugmentProjectiles(count, damage, color, tags, speed, radius, pierce = 0, source = null) {
   const targets = getEnemiesSortedByDistance();
   if (!targets.length) return;
 
   for (let i = 0; i < count; i++) {
     const target = targets[i % targets.length];
-    const angle = Math.atan2(
-      target.y - state.player.y,
-      target.x - state.player.x,
-    );
+    const angle = Math.atan2(target.y - state.player.y, target.x - state.player.x);
 
     state.projectiles.push({
       x: state.player.x,
@@ -1261,23 +1168,12 @@ function fireAugmentProjectiles(
       life: 2.2,
       allowChain: true,
       depth: 0,
-      source: {
-  id: state.weapon.id,
-  name: state.weapon.name
-},
+      source,
     });
   }
 }
 
-function fireRadialProjectiles(
-  count,
-  damage,
-  color,
-  tags,
-  speed,
-  radius,
-  pierce = 0,
-) {
+function fireRadialProjectiles(count, damage, color, tags, speed, radius, pierce = 0, source = null) {
   for (let i = 0; i < count; i++) {
     const angle = (Math.PI * 2 * i) / count;
 
@@ -1295,15 +1191,13 @@ function fireRadialProjectiles(
       life: 1.6,
       allowChain: false,
       depth: 0,
+      source,
     });
   }
 }
 
-function fireHomingProjectile(target, damage, color, tags, speed, radius) {
-  const angle = Math.atan2(
-    target.y - state.player.y,
-    target.x - state.player.x,
-  );
+function fireHomingProjectile(target, damage, color, tags, speed, radius, source = null) {
+  const angle = Math.atan2(target.y - state.player.y, target.x - state.player.x);
 
   state.projectiles.push({
     x: state.player.x,
@@ -1321,6 +1215,7 @@ function fireHomingProjectile(target, damage, color, tags, speed, radius) {
     target,
     allowChain: true,
     depth: 0,
+    source,
   });
 }
 
@@ -1328,10 +1223,7 @@ function fireOverheatBolt(w) {
   const target = getNearestEnemy();
   if (!target) return;
 
-  const angle = Math.atan2(
-    target.y - state.player.y,
-    target.x - state.player.x,
-  );
+  const angle = Math.atan2(target.y - state.player.y, target.x - state.player.x);
   state.projectiles.push({
     x: state.player.x,
     y: state.player.y,
@@ -1346,18 +1238,20 @@ function fireOverheatBolt(w) {
     life: 1.8,
     allowChain: false,
     depth: 0,
+    source: getAugmentSource("overheat_heart"),
   });
 }
 
 function fireProjectiles(w) {
   const targets = getEnemiesSortedByDistance();
   if (!targets.length) return;
+  const source = { id: state.weapon.id, name: state.weapon.name };
+
   for (let i = 0; i < w.count; i++) {
     const target = targets[i % targets.length];
-    const spread =
-      targets.length < w.count ? (i - (w.count - 1) / 2) * 0.08 : 0;
-    const angle =
-      Math.atan2(target.y - state.player.y, target.x - state.player.x) + spread;
+    const spread = targets.length < w.count ? (i - (w.count - 1) / 2) * 0.08 : 0;
+    const angle = Math.atan2(target.y - state.player.y, target.x - state.player.x) + spread;
+
     state.projectiles.push({
       x: state.player.x,
       y: state.player.y,
@@ -1371,9 +1265,11 @@ function fireProjectiles(w) {
       life: w.life || 2.4,
       allowChain: true,
       depth: 0,
+      source,
     });
   }
 }
+
 function getMonsterWave(t) {
   if (t >= 1080 && t < 1200) {
     return {
@@ -2072,6 +1968,7 @@ function applyOnHitEffects(e, baseDamage, tags, depth, projectile) {
           life: 1.5,
           allowChain: false,
           depth: depth + 1,
+          source: projectile.source || { id: state.weapon?.id || "unknown", name: state.weapon?.name || "기타 피해" },
         });
       }
     }
@@ -3035,6 +2932,7 @@ function restartRun() {
   pauseOverlay.classList.remove("show");
   resultOverlay.classList.remove("show");
   choiceOverlay.classList.remove("show");
+  buildDetailOverlay?.classList.remove("show");
   cancelAnimationFrame(loopId);
   state = null;
   openWeaponSelect();
@@ -3047,6 +2945,7 @@ function exitToMain() {
   weaponOverlay.classList.remove("show");
   labOverlay.classList.remove("show");
   codexOverlay.classList.remove("show");
+  buildDetailOverlay?.classList.remove("show");
   cancelAnimationFrame(loopId);
   resetTouchMove();
   state = null;
