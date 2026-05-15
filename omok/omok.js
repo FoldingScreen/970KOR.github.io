@@ -304,6 +304,16 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+function renderNicknameButton(nickname) {
+  return `
+    <button
+      type="button"
+      class="nickname-link"
+      onclick="openUserInfo('${escapeHtml(nickname)}')"
+    >${escapeHtml(nickname)}</button>
+  `;
+}
+
 async function createRoom() {
   try {
     const stats = await ensureUserStats(linkedUser);
@@ -497,8 +507,8 @@ function renderRoom() {
 
   els.roomStateText.textContent = `ROUND ${room.round || 1} · ${statusText(room.status)}`;
   els.roomTitle.textContent = `${room.host || "오목"}님의 방`;
-  els.blackName.textContent = room.black || "대기 중";
-  els.whiteName.textContent = room.white || "대기 중";
+els.blackName.innerHTML = room.black ? renderNicknameButton(room.black) : "대기 중";
+els.whiteName.innerHTML = room.white ? renderNicknameButton(room.white) : "대기 중";
   els.blackRating.textContent = room.blackRatingBefore ? `${room.blackRatingBefore}점` : "-";
   els.whiteRating.textContent = room.whiteRatingBefore ? `${room.whiteRatingBefore}점` : "-";
   els.turnPill.textContent = room.status === "playing" ? `${colorName(room.turn)} 차례` : statusText(room.status);
@@ -591,7 +601,7 @@ function renderSpectatorList() {
     return `
       <div class="spectator-item">
         <div>
-          <strong>${escapeHtml(name)}</strong>
+          ${renderNicknameButton(name)}
           ${wants ? `<span class="spectator-want">🎮 참여 희망</span>` : ""}
         </div>
         <span class="${connected ? "online-dot" : "offline-dot"}">${connected ? "접속" : "이탈"}</span>
@@ -1362,6 +1372,104 @@ async function addSystemChat(id, text) {
     });
   } catch (_) {}
 }
+
+window.openUserInfo = async function openUserInfo(nickname) {
+  nickname = String(nickname || "").trim();
+  if (!nickname) return;
+
+  const overlay = document.getElementById("userInfoOverlay");
+  const nameEl = document.getElementById("userInfoName");
+  const bodyEl = document.getElementById("userInfoBody");
+
+  nameEl.textContent = nickname;
+  bodyEl.innerHTML = `<div class="small">전적을 불러오는 중입니다...</div>`;
+  overlay.classList.add("show");
+
+  try {
+    const snap = await userRef(nickname).get();
+    const s = normalizeStats(snap.exists ? snap.data() : null, nickname);
+
+    const games = Number(s.games || 0);
+    const wins = Number(s.wins || 0);
+    const losses = Number(s.losses || 0);
+    const draws = Number(s.draws || 0);
+    const winRate = games ? ((wins / games) * 100).toFixed(1) : "0.0";
+
+    const blackGames = Number(s.blackGames || 0);
+    const whiteGames = Number(s.whiteGames || 0);
+    const blackWins = Number(s.blackWins || 0);
+    const whiteWins = Number(s.whiteWins || 0);
+
+    const blackRate = blackGames ? ((blackWins / blackGames) * 100).toFixed(1) : "0.0";
+    const whiteRate = whiteGames ? ((whiteWins / whiteGames) * 100).toFixed(1) : "0.0";
+
+    bodyEl.innerHTML = `
+      <div class="user-info-rating">
+        <div>
+          <span>현재 승점</span>
+          <strong>${Math.round(s.rating || DEFAULT_RATING)}</strong>
+        </div>
+        <div>
+          <span>최고 승점</span>
+          <strong>${Math.round(s.peakRating || DEFAULT_RATING)}</strong>
+        </div>
+      </div>
+
+      <div class="user-info-grid">
+        <div class="user-info-cell">
+          <span>전체 전적</span>
+          <strong>${wins}승 ${losses}패 ${draws}무</strong>
+        </div>
+        <div class="user-info-cell">
+          <span>승률</span>
+          <strong>${winRate}%</strong>
+        </div>
+        <div class="user-info-cell">
+          <span>현재 연승</span>
+          <strong>${s.currentStreak || 0}</strong>
+        </div>
+        <div class="user-info-cell">
+          <span>최고 연승</span>
+          <strong>${s.bestStreak || 0}</strong>
+        </div>
+        <div class="user-info-cell">
+          <span>흑돌 전적</span>
+          <strong>${blackWins}승 / ${blackGames}전</strong>
+          <em>승률 ${blackRate}%</em>
+        </div>
+        <div class="user-info-cell">
+          <span>백돌 전적</span>
+          <strong>${whiteWins}승 / ${whiteGames}전</strong>
+          <em>승률 ${whiteRate}%</em>
+        </div>
+        <div class="user-info-cell">
+          <span>기권 승/패</span>
+          <strong>${s.resignWins || 0}승 / ${s.resignLosses || 0}패</strong>
+        </div>
+        <div class="user-info-cell">
+          <span>시간초과 승/패</span>
+          <strong>${s.timeoutWins || 0}승 / ${s.timeoutLosses || 0}패</strong>
+        </div>
+        <div class="user-info-cell">
+          <span>총 수순</span>
+          <strong>${s.totalMoves || 0}</strong>
+        </div>
+        <div class="user-info-cell">
+          <span>총 대국 수</span>
+          <strong>${games}</strong>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    console.error(err);
+    bodyEl.innerHTML = `<div class="small">전적 정보를 불러오지 못했습니다.</div>`;
+  }
+};
+
+function closeUserInfo() {
+  document.getElementById("userInfoOverlay")?.classList.remove("show");
+}
+
 function renderChat(messages) {
   if (!messages.length) {
     els.chatList.innerHTML = `<div class="small">채팅 없음</div>`;
@@ -1423,6 +1531,11 @@ buttons.leaveSeat.addEventListener("click", leaveSeat);
 buttons.leaveRoom.addEventListener("click", leaveRoom);
 buttons.wantPlay.addEventListener("click", toggleWantPlay);
 buttons.sendChat.addEventListener("click", sendChat);
+$("userInfoCloseBtn").addEventListener("click", closeUserInfo);
+
+$("userInfoOverlay").addEventListener("click", e => {
+  if (e.target.id === "userInfoOverlay") closeUserInfo();
+});
 els.chatInput.addEventListener("keydown", e => { if (e.key === "Enter") sendChat(); });
 window.addEventListener("beforeunload", () => {
   if (!currentRoomId || !linkedUser) return;
