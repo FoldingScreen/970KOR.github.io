@@ -80,7 +80,8 @@ const els = {
 const buttons = {
   homeBrand: $("homeBrandBtn"),
   roomSettings: $("roomSettingsBtn"),
-  topLeaveRoom: $("topLeaveRoomBtn"),  sound: $("soundBtn"),
+  topLeaveRoom: $("topLeaveRoomBtn"),
+  sound: $("soundBtn"),
   createRoom: $("createRoomBtn"),
   refreshRooms: $("refreshRoomsBtn"),
   place: $("placeBtn"),
@@ -91,11 +92,11 @@ const buttons = {
   resign: $("resignBtn"),
   ready: $("readyBtn"),
   leaveSeat: $("leaveSeatBtn"),
+  wantPlay: $("wantPlayBtn"),
   sendChat: $("sendChatBtn"),
   requestAccept: $("requestAcceptBtn"),
   requestReject: $("requestRejectBtn"),
-  settingsClose: $("settingsCloseBtn")  wantPlay: $("wantPlayBtn"),
-  sendChat: $("sendChatBtn")
+  settingsClose: $("settingsCloseBtn")
 };
 
 const sounds = {
@@ -981,22 +982,6 @@ function closeRequestModal() {
   els.requestOverlay?.classList.remove("show");
 }
 
-function renderPlayerRequests() {
-  const requests = room.playerRequests || {};
-  const names = Object.keys(requests).sort((a, b) => (requests[a].requestedAt?.seconds || 0) - (requests[b].requestedAt?.seconds || 0));
-  if (!names.length) {
-    els.playerRequests.innerHTML = `<span class="small">참여 희망자 없음</span>`;
-  } else {
-    els.playerRequests.innerHTML = names.map(name => {
-      const canTransfer = room.status === "betweenRounds" && isPlayer() && room.nextSeats?.[myRole()] === linkedUser && name !== linkedUser;
-      return `<span class="chip">🎮 ${escapeHtml(name)}${canTransfer ? ` <button onclick="transferSeat('${name}')">내 자리 넘기기</button>` : ""}</span>`;
-    }).join("");
-  }
-  const wants = !!requests[linkedUser];
-  buttons.wantPlay.textContent = wants ? "참여 희망 취소" : "대국자로 참여하기";
-  buttons.wantPlay.style.display = isPlayer() ? "none" : "block";
-  buttons.wantPlay.disabled = room.status === "finished" || room.settings?.allowSpectators === false;
-}
 function renderButtons() {
   const playing = room.status === "playing";
   const between = room.status === "betweenRounds";
@@ -1908,6 +1893,15 @@ $("userInfoCloseBtn").addEventListener("click", closeUserInfo);
 
 $("userInfoOverlay").addEventListener("click", e => {
   if (e.target.id === "userInfoOverlay") closeUserInfo();
+});
+$("settingsOverlay").addEventListener("click", e => {
+  if (e.target.id === "settingsOverlay") {
+    els.settingsOverlay?.classList.remove("show");
+  }
+});
+
+$("requestOverlay").addEventListener("click", e => {
+  // 요청 모달은 실수로 닫히면 애매하니까 바깥 클릭으로는 닫지 않음
 });
 els.chatInput.addEventListener("keydown", e => { if (e.key === "Enter") sendChat(); });
 window.addEventListener("beforeunload", () => {
