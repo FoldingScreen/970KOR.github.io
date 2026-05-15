@@ -493,3 +493,181 @@ input[type="text"]:focus { border-color: #60a5fa; }
   font-size: 13px;
   font-weight: 900;
 }
+
+/* ===== 오목 UI 정리 패치 ===== */
+
+.brand-home-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1d4ed8, #0f172a);
+  color: #fff;
+  border: 1px solid rgba(147,197,253,.35);
+  font-weight: 1000;
+  letter-spacing: .03em;
+}
+
+.brand-home-btn:hover {
+  background: linear-gradient(135deg, #2563eb, #1e293b);
+}
+
+.top-room-btn {
+  display: none;
+}
+
+.side-match-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.match-row-players {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.match-player-card {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 9px;
+  border-radius: 14px;
+  background: rgba(255,255,255,.055);
+  border: 2px solid rgba(255,255,255,.08);
+  transition: border-color .16s, box-shadow .16s, background .16s;
+}
+
+.match-player-card.active-turn.black {
+  border-color: #111827;
+  box-shadow: 0 0 0 2px rgba(250,204,21,.45), 0 0 18px rgba(250,204,21,.2);
+}
+
+.match-player-card.active-turn.white {
+  border-color: #e5e7eb;
+  box-shadow: 0 0 0 2px rgba(250,204,21,.45), 0 0 18px rgba(250,204,21,.2);
+}
+
+.match-player-card small {
+  display: block;
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.match-player-card strong {
+  display: block;
+  min-width: 0;
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.match-player-card em {
+  display: block;
+  margin-top: 2px;
+  color: #facc15;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.spectator-main {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.wait-hand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 999px;
+  background: rgba(250,204,21,.16);
+  border: 1px solid rgba(250,204,21,.34);
+  font-size: 13px;
+  line-height: 1;
+  animation: waitHandBlink 1s infinite;
+}
+
+.wait-hand:hover {
+  background: rgba(250,204,21,.28);
+}
+
+@keyframes waitHandBlink {
+  0%, 100% {
+    opacity: .45;
+    transform: scale(.96);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+.modal-action-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.request-modal-body p {
+  margin: 0 0 8px;
+  line-height: 1.5;
+}
+
+.settings-modal .settings-box {
+  margin-top: 6px;
+}
+
+/* 기존 사이드 방정보/요청/참여희망 UI 제거 후 여백 압축 */
+.side-card {
+  padding: 12px;
+}
+
+.side-section {
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+}
+
+@media (min-width: 1001px) {
+  .top-room-btn {
+    display: none;
+  }
+
+  .top-room-btn[style*="inline-flex"] {
+    display: inline-flex !important;
+  }
+
+  .game-layout {
+    grid-template-columns: minmax(0, 1fr) 320px;
+  }
+
+  .canvas-shell {
+    width: min(100%, calc(100vh - 190px));
+  }
+}
+
+@media (max-width: 1000px) {
+  .top-actions {
+    gap: 6px;
+  }
+
+  .top-actions button {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .match-row-players {
+    grid-template-columns: 1fr 1fr;
+  }
+}
