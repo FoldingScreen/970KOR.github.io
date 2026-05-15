@@ -773,20 +773,6 @@ canvas {
   display: flex;
 }
 
-.build-detail-trigger {
-  position: relative;
-  z-index: 2;
-}
-
-
-#buildDetailOverlay {
-  z-index: 90;
-}
-
-#buildDetailOverlay.show {
-  display: flex;
-}
-
 #buildDetailOverlay .modal {
   text-align: left;
 }
