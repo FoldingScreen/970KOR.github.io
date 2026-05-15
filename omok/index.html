@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>970KOR 오목</title>
+  <link rel="stylesheet" href="./omok.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">970KOR MINI GAME</div>
+        <h1>오목</h1>
+      </div>
+      <div class="top-actions">
+        <button id="soundBtn" class="secondary">소리 ON</button>
+        <button id="backHomeBtn" class="secondary">메인으로</button>
+      </div>
+    </header>
+
+    <main id="lobbyView" class="view show">
+      <section class="card hero-card">
+        <div>
+          <h2>온라인 캐주얼 33금지 오목</h2>
+          <p>
+            15x15 판에서 5개 이상 연결하면 승리합니다. 단, 한 번의 착수로 열린 3이 두 개 이상 만들어지는 33은 금지됩니다.
+          </p>
+        </div>
+        <div class="profile-box">
+          <div class="small">접속 닉네임</div>
+          <strong id="myNickname">-</strong>
+          <div id="myRating" class="rating">1000점</div>
+        </div>
+      </section>
+
+      <section class="grid-two">
+        <div class="card">
+          <h3>내 전적</h3>
+          <div id="myStats" class="stats-grid"></div>
+        </div>
+
+        <div class="card">
+          <h3>방 만들기</h3>
+          <label class="check-row">
+            <input id="allowSpectatorsInput" type="checkbox" checked />
+            <span>관전 허용</span>
+          </label>
+          <label class="check-row">
+            <input id="allowAdviceInput" type="checkbox" />
+            <span>훈수 허용 관전자 채팅 가능</span>
+          </label>
+          <button id="createRoomBtn">방 만들기</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-head">
+          <h3>대국방 목록</h3>
+          <button id="refreshRoomsBtn" class="secondary mini">새로고침</button>
+        </div>
+        <div id="roomList" class="room-list"></div>
+      </section>
+    </main>
+
+    <main id="roomView" class="view">
+      <section class="game-layout">
+        <div class="board-card">
+          <div class="game-head">
+            <div>
+              <div class="eyebrow" id="roomStateText">대국방</div>
+              <h2 id="roomTitle">오목방</h2>
+            </div>
+            <div class="turn-pill" id="turnPill">-</div>
+          </div>
+
+          <div class="players-row">
+            <div class="player-pill black">
+              <span class="stone-dot black"></span>
+              <div>
+                <small>흑</small>
+                <strong id="blackName">-</strong>
+                <em id="blackRating">-</em>
+              </div>
+            </div>
+            <div class="player-pill white">
+              <span class="stone-dot white"></span>
+              <div>
+                <small>백</small>
+                <strong id="whiteName">대기 중</strong>
+                <em id="whiteRating">-</em>
+              </div>
+            </div>
+          </div>
+
+          <div class="message-bar" id="messageBar">대국 정보를 불러오는 중입니다.</div>
+
+          <div class="canvas-shell">
+            <canvas id="omokCanvas" width="720" height="720"></canvas>
+          </div>
+
+          <div class="mobile-selected" id="selectedInfo">선택 위치 없음</div>
+
+          <div class="action-row">
+            <button id="placeBtn">착수</button>
+            <button id="cancelSelectBtn" class="secondary">선택 취소</button>
+            <button id="passBtn" class="secondary">한 수 쉼</button>
+            <button id="undoBtn" class="secondary">무르기 요청</button>
+            <button id="drawBtn" class="secondary">무승부 요청</button>
+            <button id="resignBtn" class="danger">기권</button>
+          </div>
+
+          <div class="round-row" id="betweenRoundBox">
+            <div id="roundResultText">다음 판 대기 중</div>
+            <div class="action-row compact">
+              <button id="readyBtn">다음 판 준비</button>
+              <button id="leaveSeatBtn" class="secondary">관전자로 내려가기</button>
+            </div>
+          </div>
+        </div>
+
+        <aside class="side-card">
+          <div class="side-section">
+            <h3>방 정보</h3>
+            <div id="roomInfo" class="info-list"></div>
+            <button id="leaveRoomBtn" class="secondary full">방 나가기</button>
+          </div>
+
+          <div class="side-section" id="requestPanel"></div>
+
+          <div class="side-section">
+            <h3>참여 희망자</h3>
+            <div id="playerRequests" class="chip-list small-list"></div>
+            <button id="wantPlayBtn" class="secondary full">대국자로 참여하기</button>
+          </div>
+
+          <div class="side-section">
+            <h3>채팅</h3>
+            <div id="chatList" class="chat-list"></div>
+            <div class="chat-input-row">
+              <input id="chatInput" type="text" maxlength="120" placeholder="메시지 입력" />
+              <button id="sendChatBtn" class="mini">전송</button>
+            </div>
+            <div id="chatNotice" class="small"></div>
+          </div>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="./omok.js"></script>
+</body>
+</html>
