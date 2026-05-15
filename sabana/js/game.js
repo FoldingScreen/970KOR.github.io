@@ -3162,12 +3162,26 @@ function closeLab() {
 function getLabCost(item) {
   const [id, , max, base, growth] = item;
   const level = meta.upgrades[id] || 0;
+
   if (level >= max) return null;
-  const discount = 1 - (meta.upgrades.research_discount || 0) * 0.03;
-  return Math.max(
-    1,
-    Math.round((base * Math.pow(growth, level) * discount) / 10) * 10,
-  );
+
+  const discount = 1 - (meta.upgrades.research_discount || 0) * 0.02;
+
+  // 초반은 기존 비용과 거의 비슷하게,
+  // 후반 레벨일수록 추가 배율이 붙도록 처리
+  let lateMultiplier = 1;
+
+  if (max > 1) {
+    const progress = level / (max - 1);
+
+    // progress가 낮을 때는 거의 영향 없음
+    // 후반으로 갈수록 비용이 가파르게 증가
+    lateMultiplier = 1 + Math.pow(progress, 2.4) * 1.4;
+  }
+
+  const rawCost = base * Math.pow(growth, level) * lateMultiplier * discount;
+
+  return Math.max(1, Math.round(rawCost / 10) * 10);
 }
 async function buyLab(id) {
   const item = Object.values(LABS)
