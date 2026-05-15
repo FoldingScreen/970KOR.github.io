@@ -375,7 +375,7 @@ ui.sideSynergies.innerHTML = `
   <div class="small" style="margin:10px 0 6px;">연계 가능</div>
   ${renderPotentialSynergiesCompact()}
 
-  <button class="mini-btn secondary detail-btn" onclick="openBuildDetail()">상세설명</button>
+  <button type="button" class="mini-btn secondary detail-btn build-detail-trigger">상세설명</button>
 `;
 
 ui.sideAugments.innerHTML = state.augments.length
@@ -385,7 +385,7 @@ ui.sideAugments.innerHTML = state.augments.length
         <span class="compact-name ${GRADE_CLASS[a.grade]}">${a.name}</span>
       `).join("")}
     </div>
-    <button class="mini-btn secondary detail-btn" onclick="openBuildDetail()">상세설명</button>
+    <button type="button" class="mini-btn secondary detail-btn build-detail-trigger">상세설명</button>
   `
   : `<div class="small">없음</div>`;
 
@@ -531,7 +531,15 @@ function backToTitleFromWeapon() {
 }
 
 function openBuildDetail() {
-  if (!state || !buildDetailOverlay || !buildDetailContent) return;
+  if (!state) {
+    showToast("진행 중인 빌드가 없습니다.");
+    return;
+  }
+
+  if (!buildDetailOverlay || !buildDetailContent) {
+    console.error("buildDetailOverlay 또는 buildDetailContent DOM을 찾지 못했습니다.");
+    return;
+  }
 
   const augHtml = state.augments.length
     ? state.augments.map(a => `
@@ -548,7 +556,7 @@ function openBuildDetail() {
         return `
           <div class="codex-item">
             <h3>${info.name}</h3>
-            <div class="effect">조건: ${info.cond || "-"}\n\n${info.detail || info.short || ""}</div>
+            <div class="effect">조건: ${info.cond || "-"}\n\n효과:\n${info.detail || info.short || ""}</div>
           </div>
         `;
       }).join("")
@@ -557,9 +565,22 @@ function openBuildDetail() {
   buildDetailContent.innerHTML = `
     <div class="codex-item">
       <h3>최종 계산 스탯</h3>
-      <div class="effect">공격력 배율: x${statDamageMul().toFixed(2)}\n공격속도: x${statAttackSpeedMul().toFixed(2)}\n공격범위: x${statAreaMul().toFixed(2)}\n이동속도: x${(state.player.speed / 220).toFixed(2)}\n방어율: ${Math.round(state.base.defense * 100)}%\n자석범위: ${Math.round(state.player.magnetRange)}</div>
+      <div class="effect">공격력 배율: x${statDamageMul().toFixed(2)}
+공격속도: x${statAttackSpeedMul().toFixed(2)}
+공격범위: x${statAreaMul().toFixed(2)}
+이동속도: x${(state.player.speed / 220).toFixed(2)}
+방어율: ${Math.round(state.base.defense * 100)}%
+자석범위: ${Math.round(state.player.magnetRange)}</div>
+    </div>
+
+    <div class="codex-item">
+      <h3>보유 증강</h3>
     </div>
     ${augHtml}
+
+    <div class="codex-item">
+      <h3>활성 시너지</h3>
+    </div>
     ${synergyHtml}
   `;
 
@@ -569,6 +590,18 @@ function openBuildDetail() {
 function closeBuildDetail() {
   if (buildDetailOverlay) buildDetailOverlay.classList.remove("show");
 }
+
+window.openBuildDetail = openBuildDetail;
+window.closeBuildDetail = closeBuildDetail;
+
+document.addEventListener("click", e => {
+  const trigger = e.target.closest(".build-detail-trigger");
+  if (!trigger) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+  openBuildDetail();
+});
 
 function showBigAlert(main, sub) {
   bigAlertMain.textContent = main;
