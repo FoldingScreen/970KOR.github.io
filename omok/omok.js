@@ -60,13 +60,12 @@ const els = {
   selectedInfo: $("selectedInfo"),
   betweenRoundBox: $("betweenRoundBox"),
   roundResultText: $("roundResultText"),
-  roomInfo: $("roomInfo"),
+    roomInfo: $("roomInfo"),
   sideMatchBox: $("sideMatchBox"),
-sideMessageBar: $("sideMessageBar"),
-spectatorList: $("spectatorList"),
+  sideMessageBar: $("sideMessageBar"),
   connectionPanel: $("connectionPanel"),
   roomSettingsBox: $("roomSettingsBox"),
-spectatorList: $("spectatorList"),
+  spectatorList: $("spectatorList"),
   requestPanel: $("requestPanel"),
   playerRequests: $("playerRequests"),
   chatList: $("chatList"),
@@ -1510,40 +1509,47 @@ async function leaveSeat() {
 }
 async function toggleWantPlay() {
   if (!room || isPlayer()) return;
-  const wants = !!room.playerRequests?.[linkedUser];
-  if (wants) {
-await roomRef().update({
-  [`playerRequests.${linkedUser}`]: FV.delete(),
-  updatedAt: FV.serverTimestamp()
-});
 
-await roomRef().collection("spectators").doc(linkedUser).set({
-  nickname: linkedUser,
-  wantsToPlay: false,
-  lastSeenAt: FV.serverTimestamp(),
-  updatedAt: FV.serverTimestamp()
-}, { merge: true });
-    await addSystemChat(currentRoomId, `${linkedUser}님이 참여 희망을 취소했습니다.`);
-  } else {
-    await roomRef().set({
-      playerRequests: {
-        [linkedUser]: {
-          nickname: linkedUser,
-          requestedAt: FV.serverTimestamp()
-        }
-      },
-      await roomRef().collection("spectators").doc(linkedUser).set({
-  nickname: linkedUser,
-  wantsToPlay: true,
-  lastSeenAt: FV.serverTimestamp(),
-  updatedAt: FV.serverTimestamp()
-}, { merge: true });
-      [`players.${linkedUser}.role`]: "spectator",
-      [`players.${linkedUser}.lastSeenAt`]: FV.serverTimestamp(),
+  const wants = !!room.playerRequests?.[linkedUser];
+  const spectatorRef = roomRef().collection("spectators").doc(linkedUser);
+
+  if (wants) {
+    await roomRef().update({
+      [`playerRequests.${linkedUser}`]: FV.delete(),
+      updatedAt: FV.serverTimestamp()
+    });
+
+    await spectatorRef.set({
+      nickname: linkedUser,
+      wantsToPlay: false,
+      lastSeenAt: FV.serverTimestamp(),
       updatedAt: FV.serverTimestamp()
     }, { merge: true });
-    await addSystemChat(currentRoomId, `${linkedUser}님이 대국 참여를 희망합니다.`);
+
+    await addSystemChat(currentRoomId, `${linkedUser}님이 참여 희망을 취소했습니다.`);
+    return;
   }
+
+  await roomRef().set({
+    playerRequests: {
+      [linkedUser]: {
+        nickname: linkedUser,
+        requestedAt: FV.serverTimestamp()
+      }
+    },
+    [`players.${linkedUser}.role`]: "spectator",
+    [`players.${linkedUser}.lastSeenAt`]: FV.serverTimestamp(),
+    updatedAt: FV.serverTimestamp()
+  }, { merge: true });
+
+  await spectatorRef.set({
+    nickname: linkedUser,
+    wantsToPlay: true,
+    lastSeenAt: FV.serverTimestamp(),
+    updatedAt: FV.serverTimestamp()
+  }, { merge: true });
+
+  await addSystemChat(currentRoomId, `${linkedUser}님이 대국 참여를 희망합니다.`);
 }
 window.transferSeat = async function transferSeat(name) {
   if (!room || room.status !== "betweenRounds" || !isPlayer()) return;
@@ -1584,14 +1590,20 @@ async function leaveRoom() {
         [`players.${linkedUser}.disconnectedAt`]: FV.serverTimestamp(),
         [`playerRequests.${linkedUser}`]: FV.delete(),
         updatedAt: FV.serverTimestamp()
-        await roomRef().collection("spectators").doc(linkedUser).delete().catch(() => {});
       }, { merge: true });
+
+      await roomRef()
+        .collection("spectators")
+        .doc(linkedUser)
+        .delete()
+        .catch(() => {});
+
       await addSystemChat(currentRoomId, `${linkedUser}님이 방을 나갔습니다.`);
     } catch (_) {}
   }
+
   leaveRoomLocal();
-}
-async function sendChat() {
+}async function sendChat() {
   const text = sanitizeText(els.chatInput.value);
   if (!text || !room) return;
   const canChat = isPlayer() || !!room.settings?.allowAdvice;
