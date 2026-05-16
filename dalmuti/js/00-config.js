@@ -870,9 +870,17 @@ async function toggleReady() {
     const hands = Object.fromEntries(ps.map(p => [p.uid, []]));
     deck.forEach((card, i) => hands[ps[i % ps.length].uid].push(card));
     Object.keys(hands).forEach(uid => { hands[uid] = sortHand(hands[uid]); });
-    if (forceRebellion && ps.length >= 3) forceHongForRebellion(hands, ps[ps.length - 1].uid);
-    const lowUids = ps.length === 3 ? [ps[1]?.uid, ps[2]?.uid] : [ps[ps.length - 2]?.uid, ps[ps.length - 1]?.uid];
-    const rebellionUid = round > 1 ? lowUids.find(uid => uid && hasTwoHong(hands[uid])) : null;
+const lowUids = ps.length === 3
+  ? [ps[1]?.uid, ps[2]?.uid]
+  : [ps[ps.length - 2]?.uid, ps[ps.length - 1]?.uid];
+
+const rebellionUid = round > 1
+  ? (
+      forceRebellion
+        ? ps[ps.length - 1]?.uid
+        : lowUids.find(uid => uid && hasTwoHong(hands[uid]))
+    )
+  : null;
     const rebellionPlayer = ps.find(p => p.uid === rebellionUid);
     if (rebellionUid) ps = ps.slice().reverse();
     const pairs = round > 1 ? makeTributePairs(ps, hands) : [];
