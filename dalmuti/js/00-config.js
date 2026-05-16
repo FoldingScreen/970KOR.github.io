@@ -274,28 +274,40 @@
     }).join("") : `<div class="muted">생성된 방이 없습니다.</div>`;
   }
 
-  function renderEverything() {
-    if (!S.room) return;
-    if (S.room.status === "closed" || S.room.closed) {
-      alert("방이 삭제되었습니다.");
-      leaveLocal();
-      return;
-    }
-    setView("room");
-    renderHeader();
-    renderPlayers();
-    renderPile();
-    renderHand();
-    renderControls();
-    renderScores();
-    renderChat();
-    renderSide();
-    renderTribute();
-    maybeRebellionModal();
-    maybeStartModal();
-    maybeResultModal();
-    maybeClientTasks().catch(console.error);
+function safeRender(name, fn) {
+  try {
+    fn();
+  } catch (err) {
+    console.error(`[dalmuti] ${name} render failed`, err);
   }
+}
+
+function renderEverything() {
+  if (!S.room) return;
+
+  if (S.room.status === "closed" || S.room.closed) {
+    alert("방이 삭제되었습니다.");
+    leaveLocal();
+    return;
+  }
+
+  setView("room");
+
+  safeRender("header", renderHeader);
+  safeRender("players", renderPlayers);
+  safeRender("pile", renderPile);
+  safeRender("hand", renderHand);
+  safeRender("controls", renderControls);
+  safeRender("scores", renderScores);
+  safeRender("chat", renderChat);
+  safeRender("side", renderSide);
+  safeRender("tribute", renderTribute);
+  safeRender("rebellion", maybeRebellionModal);
+  safeRender("startModal", maybeStartModal);
+  safeRender("resultModal", maybeResultModal);
+
+  maybeClientTasks().catch(console.error);
+}
 
   function renderHeader() {
     const room = S.room;
@@ -313,41 +325,113 @@
     }
   }
 
-  function positions() {
-    const ps = allPlayers();
-    const myIndex = Math.max(0, ps.findIndex(p => p.uid === S.user));
-    const rotated = myIndex >= 0 ? ps.slice(myIndex).concat(ps.slice(0, myIndex)) : ps;
-    const mine = rotated[0];
-    const others = rotated.slice(1);
-    let left = [], top = [], right = [];
-    if (others.length === 1) top = others;
-    else if (others.length === 2) { left = [others[0]]; right = [others[1]]; }
-    else if (others.length === 3) { left = [others[0]]; top = [others[1]]; right = [others[2]]; }
-    else if (others.length === 4) { left = [others[0]]; top = [others[1], others[2]]; right = [others[3]]; }
-    else if (others.length === 5) { left = [others[0], others[1]]; top = [others[2], others[3]]; right = [others[4]]; }
-    else if (others.length === 6) { left = [others[0], others[1]]; top = [others[2], others[3]]; right = [others[4], others[5]]; }
-    else { left = [others[0], others[1]]; top = [others[2], others[3], others[4]]; right = [others[5], others[6]]; }
-    return [
-      ...(mine ? [{ p: mine, cls: "seat-bottom" }] : []),
-      ...left.map((p, i) => ({ p, cls: `seat-left-${left.length === 1 ? 0 : i + 1}` })),
-      ...top.map((p, i) => ({ p, cls: `seat-top-${top.length === 1 ? 0 : i}` })),
-      ...right.map((p, i) => ({ p, cls: `seat-right-${right.length === 1 ? 0 : i + 1}` }))
-    ];
+ function positions() {
+  const ps = allPlayers().filter(p => p && p.uid);
+
+  const myIndexRaw = ps.findIndex(p => p.uid === S.user);
+  const myIndex = myIndexRaw >= 0 ? myIndexRaw : 0;
+
+  const rotated = ps.length
+    ? ps.slice(myIndex).concat(ps.slice(0, myIndex))
+    : [];
+
+  const mine = rotated[0] || null;
+  const others = rotated.slice(1).filter(p => p && p.uid);
+
+  let left = [];
+  let top = [];
+  let right = [];
+
+  if (others.length === 1) {
+    top = others;
+  } else if (others.length === 2) {
+    left = [others[0]];
+    right = [others[1]];
+  } else if (others.length === 3) {
+    left = [others[0]];
+    top = [others[1]];
+    right = [others[2]];
+  } else if (others.length === 4) {
+    left = [others[0]];
+    top = [others[1], others[2]];
+    right = [others[3]];
+  } else if (others.length === 5) {
+    left = [others[0], others[1]];
+    top = [others[2], others[3]];
+    right = [others[4]];
+  } else if (others.length === 6) {
+    left = [others[0], others[1]];
+    top = [others[2], others[3]];
+    right = [others[4], others[5]];
+  } else if (others.length >= 7) {
+    left = [others[0], others[1]];
+    top = [others[2], others[3], others[4]];
+    right = [others[5], others[6]];
   }
 
-  function renderPlayers() {
-    if (!E.playersArea) return;
-    E.playersArea.innerHTML = positions().map(({ p, cls }) => {
-      const submitted = S.room?.currentSet?.uid === p.uid;
-      const state = p.finished ? `${p.finishedRank || ""}등 완료` : p.passed ? "패스" : `${Number(p.cardCount || 0)}장`;
-      let badge = p.isAI ? `<div class="badge ai">AI</div>` : "";
-      if (submitted) badge += `<div class="badge submit">제출</div>`;
-      else if (p.passed) badge += `<div class="badge pass">패스</div>`;
-      else if (S.room?.currentTurnUid === p.uid) badge += `<div class="badge turn">차례</div>`;
-      const kick = isHost() && p.uid !== S.user ? `<button class="kick-btn" type="button" onclick="Dalmuti.kick('${p.uid}')">강퇴</button>` : "";
-      return `<div class="player-box ${cls} ${p.uid === S.user ? "me" : ""} ${S.room?.currentTurnUid === p.uid ? "turn" : ""} ${p.passed ? "passed" : ""} ${p.finished ? "finished" : ""} ${submitted ? "submitted" : ""} ${p.forfeited ? "forfeited" : ""}">${kick}<div class="player-role">${esc(p.role || "참가자")}</div><div class="player-name">${esc(p.nickname || p.uid)}</div><div class="player-meta">${state}${p.isReady ? " · 준비" : ""}</div>${badge}</div>`;
-    }).join("");
+  return [
+    ...(mine ? [{ p: mine, cls: "seat-bottom" }] : []),
+    ...left.map((p, i) => ({ p, cls: `seat-left-${left.length === 1 ? 0 : i + 1}` })),
+    ...top.map((p, i) => ({ p, cls: `seat-top-${top.length === 1 ? 0 : i}` })),
+    ...right.map((p, i) => ({ p, cls: `seat-right-${right.length === 1 ? 0 : i + 1}` }))
+  ].filter(item => item && item.p && item.p.uid);
+}
+
+function renderPlayers() {
+  if (!E.playersArea) return;
+
+  const seated = positions();
+
+  if (!seated.length) {
+    E.playersArea.innerHTML = `
+      <div class="muted" style="position:absolute;left:16px;top:16px">
+        참가자 정보를 불러오는 중입니다.
+      </div>
+    `;
+    return;
   }
+
+  E.playersArea.innerHTML = seated.map(({ p, cls }) => {
+    if (!p || !p.uid) return "";
+
+    const submitted = S.room?.currentSet?.uid === p.uid;
+    const state = p.finished
+      ? `${p.finishedRank || ""}등 완료`
+      : p.passed
+        ? "패스"
+        : `${Number(p.cardCount || 0)}장`;
+
+    let badge = p.isAI ? `<div class="badge ai">AI</div>` : "";
+
+    if (submitted) {
+      badge += `<div class="badge submit">제출</div>`;
+    } else if (p.passed) {
+      badge += `<div class="badge pass">패스</div>`;
+    } else if (S.room?.currentTurnUid === p.uid) {
+      badge += `<div class="badge turn">차례</div>`;
+    }
+
+    const kick = isHost() && p.uid !== S.user
+      ? `<button class="kick-btn" type="button" onclick="Dalmuti.kick('${p.uid}')">강퇴</button>`
+      : "";
+
+    return `
+      <div class="player-box ${cls}
+        ${p.uid === S.user ? "me" : ""}
+        ${S.room?.currentTurnUid === p.uid ? "turn" : ""}
+        ${p.passed ? "passed" : ""}
+        ${p.finished ? "finished" : ""}
+        ${submitted ? "submitted" : ""}
+        ${p.forfeited ? "forfeited" : ""}">
+        ${kick}
+        <div class="player-role">${esc(p.role || "참가자")}</div>
+        <div class="player-name">${esc(p.nickname || p.uid)}</div>
+        <div class="player-meta">${state}${p.isReady ? " · 준비" : ""}</div>
+        ${badge}
+      </div>
+    `;
+  }).join("");
+}
 
   function renderPile() {
     if (!E.centerPile) return;
