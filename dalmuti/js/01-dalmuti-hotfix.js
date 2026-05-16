@@ -8,15 +8,9 @@
   const roomRef = (id = currentRoomId()) => id ? roomCol().doc(id) : null;
   const handRef = (roomId, uid) => roomCol().doc(roomId).collection("hands").doc(uid);
   const ts = () => firebase.firestore.Timestamp.now();
-  const cleanMap = obj => Object.fromEntries(Object.entries(obj || {}).filter(([, v]) => v));
-  const playersOf = room => Object.values(cleanMap(room.players)).filter(p => p && !p.removedFromRoom).sort((a, b) => (a.seatOrder ?? 999) - (b.seatOrder ?? 999));
+  const cleanMap = obj => Object.fromEntries(Object.entries(obj || {}).filter(([, v]) => v && typeof v === "object"));
+  const playersOf = room => Object.values(cleanMap(room.players)).filter(p => !p.removedFromRoom).sort((a, b) => (a.seatOrder ?? 999) - (b.seatOrder ?? 999));
   const activePlayersOf = room => playersOf(room).filter(p => !p.finished && !p.forfeited);
-  const nextAfter = (room, uid) => {
-    const list = activePlayersOf(room);
-    if (!list.length) return "";
-    const idx = Math.max(0, list.findIndex(p => p.uid === uid));
-    return list[(idx + 1) % list.length]?.uid || list[0]?.uid || "";
-  };
   const sortHand = hand => (hand || []).slice().sort((a, b) => a.rank - b.rank || String(a.id).localeCompare(String(b.id)));
   const groupHand = hand => {
     const m = new Map();
@@ -28,21 +22,26 @@
   };
   const rankName = rank => ({1:"사바나",2:"세자",3:"영의정",4:"관찰사",5:"암행어사",6:"사또",7:"이방",8:"포졸",9:"선비",10:"상인",11:"농민",12:"노비",13:"홍길동"})[Number(rank)] || "카드";
 
+  function nextAfter(room, uid) {
+    const list = activePlayersOf(room);
+    if (!list.length) return "";
+    const idx = list.findIndex(p => p.uid === uid);
+    if (idx < 0) return list[0]?.uid || "";
+    return list[(idx + 1) % list.length]?.uid || list[0]?.uid || "";
+  }
+
   function chooseAiCards(room, hand) {
     hand = sortHand(hand || []);
     const cur = room.currentSet;
     if (!hand.length) return [];
-
     if (!cur) {
-      const normalGroups = groupHand(hand.filter(c => !c.joker && c.rank !== 13)).sort((a, b) => b.rank - a.rank);
-      if (normalGroups.length) return normalGroups[0].items.slice(0, 1);
+      const groups = groupHand(hand.filter(c => !c.joker && c.rank !== 13)).sort((a, b) => b.rank - a.rank);
+      if (groups.length) return groups[0].items.slice(0, 1);
       return hand.slice(0, 1);
     }
-
     const need = Number(cur.count || 1);
     const jokers = hand.filter(c => c.joker || c.rank === 13);
     const groups = groupHand(hand.filter(c => !c.joker && c.rank !== 13)).sort((a, b) => b.rank - a.rank);
-
     for (const g of groups) {
       if (g.rank < cur.effectiveRank && g.items.length + jokers.length >= need) {
         const normal = g.items.slice(0, Math.min(g.items.length, need));
@@ -74,7 +73,8 @@
         lastRoundRank: i + 1,
         seatOrder: i,
         finished: true,
-        finishedRank: i + 1
+        finishedRank: i + 1,
+        passed: false
       };
     });
     await roomRef(roomId).set({
@@ -91,10 +91,61 @@
     await appendSystem(roomId, { ...room, chatPreview: room.chatPreview || [] }, `${room.round}라운드가 종료되었습니다.`);
   }
 
+  async function reconcileRoom(roomId, sourceRoom = null) {
+    const ref = roomRef(roomId);
+    if (!ref) return null;
+    const snap = sourceRoom ? null : await ref.get().catch(() => null);
+    const room = sourceRoom || (snap && snap.exists ? snap.data() : null);
+    if (!room || !["playing", "tributeReturn"].includes(room.status)) return room;
+
+    const players = cleanMap(room.players);
+    const ids = Object.keys(players);
+    if (!ids.length) return room;
+
+    const handSnaps = await Promise.all(ids.map(uid => handRef(roomId, uid).get().catch(() => null)));
+    let changed = false;
+    const order = (room.finishOrder || []).slice();
+    const ranked = new Set(order.map(x => x.uid));
+
+    ids.forEach((uid, i) => {
+      const hand = handSnaps[i] && handSnaps[i].exists ? (handSnaps[i].data().hand || []) : [];
+      const count = hand.length;
+      if ((players[uid].cardCount || 0) !== count) {
+        players[uid] = { ...players[uid], cardCount: count };
+        changed = true;
+      }
+      if (room.status === "playing" && count === 0 && !players[uid].finished && !players[uid].forfeited) {
+        const rank = order.length + 1;
+        players[uid] = { ...players[uid], finished: true, finishedRank: rank, passed: false, cardCount: 0 };
+        if (!ranked.has(uid)) order.push({ uid, nickname: players[uid].nickname, rank, finishedAt: ts() });
+        changed = true;
+      }
+    });
+
+    const active = Object.values(players).filter(p => p && !p.finished && !p.forfeited);
+    if (room.status === "playing" && active.length <= 1 && order.length) {
+      if (active[0]) order.push({ uid: active[0].uid, nickname: active[0].nickname, rank: order.length + 1, finishedAt: ts() });
+      await finishRound(roomId, { ...room, players }, order, room.currentSet || null);
+      return null;
+    }
+
+    let currentTurnUid = room.currentTurnUid;
+    if (room.status === "playing" && (!players[currentTurnUid] || players[currentTurnUid].finished || players[currentTurnUid].forfeited)) {
+      const base = currentTurnUid || room.currentSet?.uid || active[0]?.uid;
+      currentTurnUid = nextAfter({ ...room, players }, base);
+      changed = true;
+    }
+
+    if (changed) {
+      await ref.set({ players, finishOrder: order, currentTurnUid, updatedAt: FV.serverTimestamp() }, { merge: true });
+      return { ...room, players, finishOrder: order, currentTurnUid };
+    }
+    return room;
+  }
+
   async function aiPlay(roomId, room, ai, hand, cards) {
     const players = cleanMap(room.players);
     if (!players[ai.uid]) return;
-
     const ids = new Set(cards.map(c => c.id));
     const newHand = (hand || []).filter(c => !ids.has(c.id));
     const order = (room.finishOrder || []).slice();
@@ -110,30 +161,15 @@
       if (uid !== ai.uid) players[uid] = { ...players[uid], passed: false };
     });
 
-    const effectiveNormals = cards.filter(c => !c.joker && c.rank !== 13);
-    const effectiveRank = effectiveNormals.length ? effectiveNormals[0].rank : 13;
-    const set = {
-      uid: ai.uid,
-      nickname: ai.nickname,
-      effectiveRank,
-      effectiveName: rankName(effectiveRank),
-      count: cards.length,
-      cards,
-      createdAt: ts()
-    };
+    const normals = cards.filter(c => !c.joker && c.rank !== 13);
+    const effectiveRank = normals.length ? normals[0].rank : 13;
+    const set = { uid: ai.uid, nickname: ai.nickname, effectiveRank, effectiveName: rankName(effectiveRank), count: cards.length, cards, createdAt: ts() };
 
-    players[ai.uid] = {
-      ...players[ai.uid],
-      cardCount: newHand.length,
-      passed: false,
-      finished: isFinished,
-      finishedRank
-    };
-
-    const remaining = Object.values(players).filter(p => p && !p.finished && !p.forfeited).length;
+    players[ai.uid] = { ...players[ai.uid], cardCount: newHand.length, passed: false, finished: isFinished, finishedRank };
     await handRef(roomId, ai.uid).set({ hand: newHand });
 
-    if (remaining <= 1) {
+    const activeCount = Object.values(players).filter(p => p && !p.finished && !p.forfeited).length;
+    if (activeCount <= 1) {
       const last = Object.values(players).find(p => p && !p.finished && !p.forfeited);
       const finalOrder = order.slice();
       if (last) finalOrder.push({ uid: last.uid, nickname: last.nickname, rank: finalOrder.length + 1, finishedAt: ts() });
@@ -167,22 +203,16 @@
       Object.keys(players).forEach(uid => players[uid] = { ...players[uid], passed: false });
       const starter = room.currentSet.uid;
       const starterAlive = players[starter] && !players[starter].finished && !players[starter].forfeited;
-      update = {
-        players,
-        currentTurnUid: starterAlive ? starter : nextAfter({ ...room, players }, starter),
-        previousSet: room.currentSet,
-        currentSet: null,
-        updatedAt: FV.serverTimestamp()
-      };
+      update = { players, currentTurnUid: starterAlive ? starter : nextAfter({ ...room, players }, starter), previousSet: room.currentSet, currentSet: null, updatedAt: FV.serverTimestamp() };
     } else {
       update.currentTurnUid = nextAfter({ ...room, players }, ai.uid);
     }
-
     await roomRef(roomId).set(update, { merge: true });
   }
 
   let lastAiKey = "";
   let aiBusy = false;
+  let reconcileBusy = false;
 
   async function checkAiTurn() {
     if (aiBusy) return;
@@ -192,7 +222,11 @@
     const ref = roomRef(roomId);
     const snap = await ref.get().catch(() => null);
     if (!snap || !snap.exists) return;
-    const room = snap.data();
+    let room = snap.data();
+    if (!reconcileBusy) {
+      reconcileBusy = true;
+      try { room = await reconcileRoom(roomId, room) || room; } finally { reconcileBusy = false; }
+    }
     if (room.hostUid !== me || room.status !== "playing" || !room.currentTurnUid) return;
     const ai = cleanMap(room.players)[room.currentTurnUid];
     if (!ai || !ai.isAI || ai.finished || ai.forfeited) return;
@@ -224,7 +258,8 @@
     const snap = await ref.get();
     if (!snap.exists) return;
     const room = snap.data();
-    if (room.hostUid !== me || uid === me) return;
+    if (room.hostUid !== me && me !== "병풍") return alert("방장만 강퇴할 수 있습니다.");
+    if (uid === me) return;
 
     const players = cleanMap(room.players);
     const spectators = cleanMap(room.spectators);
@@ -238,21 +273,53 @@
     }
     if (spectators[uid]) delete spectators[uid];
 
-    await ref.set({
-      players,
-      spectators,
-      playerCount: Object.values(players).length,
-      spectatorCount: Object.values(spectators).length,
-      kickNotice: { uid, nickname: target.nickname, at: ts() },
-      updatedAt: FV.serverTimestamp()
-    }, { merge: true });
+    let currentTurnUid = room.currentTurnUid;
+    if (currentTurnUid === uid) currentTurnUid = nextAfter({ ...room, players }, uid);
+    const finishOrder = (room.finishOrder || []).filter(x => x.uid !== uid);
+
+    await ref.set({ players, spectators, playerCount: Object.values(players).length, spectatorCount: Object.values(spectators).length, currentTurnUid, finishOrder, kickNotice: { uid, nickname: target.nickname, at: ts() }, updatedAt: FV.serverTimestamp() }, { merge: true });
     await appendSystem(roomId, room, `${target.nickname}님이 방장에 의해 강퇴되었습니다.`);
   }
 
-  function bindHotfix() {
-    if (window.Dalmuti) window.Dalmuti.kick = patchedKick;
+  async function patchedBecomePlayer() {
+    const roomId = currentRoomId();
+    const me = currentUser();
+    const ref = roomRef(roomId);
+    if (!roomId || !me || !ref) return;
+    const snap = await ref.get();
+    if (!snap.exists) return;
+    const room = snap.data();
+    if (room.status !== "waiting") return alert("대기 중에만 참가할 수 있습니다.");
+    const players = cleanMap(room.players);
+    const spectators = cleanMap(room.spectators);
+    if (players[me]) return;
+    if (Object.values(players).length >= MAX_PLAYERS) return alert("최대 8명까지 참가할 수 있습니다.");
+    delete spectators[me];
+    players[me] = { uid: me, nickname: me, type: "player", isReady: false, isAI: false, seatOrder: Object.values(players).length, role: null, score: 0, lastRoundScore: 0, lastRoundRank: null, cardCount: 0, passed: false, finished: false, finishedRank: null, forfeited: false, removedFromRoom: false };
+    await ref.set({ players, spectators, playerCount: Object.values(players).length, spectatorCount: Object.values(spectators).length, updatedAt: FV.serverTimestamp() }, { merge: true });
+    await handRef(roomId, me).set({ hand: [] }, { merge: true });
   }
 
+  function bindHotfix() {
+    if (window.Dalmuti) {
+      window.Dalmuti.kick = patchedKick;
+      window.Dalmuti.becomePlayer = patchedBecomePlayer;
+    }
+    const join = document.getElementById("joinAsPlayerBtn");
+    if (join) join.onclick = patchedBecomePlayer;
+  }
+
+  document.addEventListener("click", e => {
+    const btn = e.target.closest && e.target.closest(".kick-btn");
+    if (!btn) return;
+    const raw = btn.getAttribute("onclick") || "";
+    const m = raw.match(/Dalmuti\.kick\('([^']+)'\)/);
+    if (!m) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    patchedKick(m[1]);
+  }, true);
+
   window.addEventListener("DOMContentLoaded", bindHotfix);
-  setInterval(() => { bindHotfix(); checkAiTurn(); }, 1000);
+  setInterval(() => { bindHotfix(); checkAiTurn(); }, 900);
 })();
