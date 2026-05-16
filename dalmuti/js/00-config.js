@@ -329,29 +329,62 @@ function roundOrderPlayers(round, players) {
     }
   }
 
-  function positions() {
-    const ps = allPlayers().filter(p => p && p.uid);
-    const myIndexRaw = ps.findIndex(p => p.uid === S.user);
-    const myIndex = myIndexRaw >= 0 ? myIndexRaw : 0;
-    const rotated = ps.length ? ps.slice(myIndex).concat(ps.slice(0, myIndex)) : [];
-    const mine = rotated[0] || null;
-    const others = rotated.slice(1).filter(p => p && p.uid);
-    let left = [], top = [], right = [];
-    if (others.length === 1) top = others;
-    else if (others.length === 2) { left = [others[0]]; right = [others[1]]; }
-    else if (others.length === 3) { left = [others[0]]; top = [others[1]]; right = [others[2]]; }
-    else if (others.length === 4) { left = [others[0]]; top = [others[1], others[2]]; right = [others[3]]; }
-    else if (others.length === 5) { left = [others[0], others[1]]; top = [others[2], others[3]]; right = [others[4]]; }
-    else if (others.length === 6) { left = [others[0], others[1]]; top = [others[2], others[3]]; right = [others[4], others[5]]; }
-    else if (others.length >= 7) { left = [others[0], others[1]]; top = [others[2], others[3], others[4]]; right = [others[5], others[6]]; }
-    return [
-      ...(mine ? [{ p: mine, cls: "seat-bottom" }] : []),
-      ...left.map((p, i) => ({ p, cls: `seat-left-${left.length === 1 ? 0 : i + 1}` })),
-      ...top.map((p, i) => ({ p, cls: `seat-top-${top.length === 1 ? 0 : i}` })),
-      ...right.map((p, i) => ({ p, cls: `seat-right-${right.length === 1 ? 0 : i + 1}` }))
-    ].filter(item => item && item.p && item.p.uid);
+function topSeatClass(index, total) {
+  if (total === 1) return "seat-top-0";
+  if (total === 2) return index === 0 ? "seat-top-1" : "seat-top-2";
+  if (total >= 3) {
+    if (index === 0) return "seat-top-1";
+    if (index === 1) return "seat-top-0";
+    return "seat-top-2";
   }
+  return "seat-top-0";
+}
 
+function positions() {
+  const ps = allPlayers().filter(p => p && p.uid);
+
+  const myIndexRaw = ps.findIndex(p => p.uid === S.user);
+  const myIndex = myIndexRaw >= 0 ? myIndexRaw : 0;
+
+  const rotated = ps.length
+    ? ps.slice(myIndex).concat(ps.slice(0, myIndex))
+    : [];
+
+  const count = rotated.length;
+
+  /*
+    화면상 계급 진행 순서 고정표
+
+    2명: 내 자리 → 위
+    3명: 내 자리 → 왼쪽 → 오른쪽
+    4명: 내 자리 → 왼쪽 → 위 → 오른쪽
+    5명: 내 자리 → 왼쪽 → 상단왼쪽 → 상단오른쪽 → 오른쪽
+    6명: 내 자리 → 왼쪽아래 → 왼쪽위 → 상단왼쪽 → 상단오른쪽 → 오른쪽
+    7명: 내 자리 → 왼쪽아래 → 왼쪽위 → 상단왼쪽 → 상단가운데 → 상단오른쪽 → 오른쪽
+    8명: 내 자리 → 왼쪽아래 → 왼쪽위 → 상단왼쪽 → 상단가운데 → 상단오른쪽 → 오른쪽위 → 오른쪽아래
+  */
+  const seatMapByCount = {
+    1: ["seat-bottom"],
+    2: ["seat-bottom", "seat-top-0"],
+    3: ["seat-bottom", "seat-left-0", "seat-right-0"],
+    4: ["seat-bottom", "seat-left-0", "seat-top-0", "seat-right-0"],
+    5: ["seat-bottom", "seat-left-0", "seat-top-1", "seat-top-2", "seat-right-0"],
+    6: ["seat-bottom", "seat-left-2", "seat-left-1", "seat-top-1", "seat-top-2", "seat-right-0"],
+    7: ["seat-bottom", "seat-left-2", "seat-left-1", "seat-top-1", "seat-top-0", "seat-top-2", "seat-right-0"],
+    8: ["seat-bottom", "seat-left-2", "seat-left-1", "seat-top-1", "seat-top-0", "seat-top-2", "seat-right-1", "seat-right-2"]
+  };
+
+  const seatMap = seatMapByCount[count] || seatMapByCount[8];
+
+  return rotated
+    .slice(0, seatMap.length)
+    .map((p, i) => ({
+      p,
+      cls: seatMap[i]
+    }))
+    .filter(item => item && item.p && item.p.uid);
+}
+  
   function renderPlayers() {
     if (!E.playersArea) return;
     const seated = positions();
