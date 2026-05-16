@@ -137,6 +137,27 @@
     return (map[count] || [])[index] || `${index + 1}등`;
   }
 
+function roundOrderPlayers(round, players) {
+  const list = (players || []).filter(p => p && p.uid);
+
+  if (round <= 1) {
+    return list
+      .slice()
+      .sort((a, b) =>
+        (a.seatOrder ?? 999) - (b.seatOrder ?? 999) ||
+        String(a.nickname || "").localeCompare(String(b.nickname || ""), "ko")
+      );
+  }
+
+  return list
+    .slice()
+    .sort((a, b) =>
+      (a.lastRoundRank ?? 999) - (b.lastRoundRank ?? 999) ||
+      (a.seatOrder ?? 999) - (b.seatOrder ?? 999) ||
+      String(a.nickname || "").localeCompare(String(b.nickname || ""), "ko")
+    );
+}
+  
   function nextAfter(room, uid) {
     const list = activePlayers(room);
     if (!list.length) return null;
@@ -807,7 +828,7 @@ async function toggleReady() {
   }
 
   async function startRound(round, resetScores, forceRebellion) {
-    let ps = allPlayers().slice().sort((a, b) => (a.lastRoundRank ?? a.seatOrder ?? 999) - (b.lastRoundRank ?? b.seatOrder ?? 999));
+    let ps = roundOrderPlayers(round, allPlayers());
     const deck = makeDeck(ps.length);
     const hands = Object.fromEntries(ps.map(p => [p.uid, []]));
     deck.forEach((card, i) => hands[ps[i % ps.length].uid].push(card));
@@ -825,7 +846,13 @@ async function toggleReady() {
     });
     const first = ps[0]?.uid || null;
     const batch = db.batch();
-    batch.set(roomRef(), { players: playerMap, playerCount: countMap(playerMap), status: hasTribute ? "tributeReturn" : "playing", round, currentTurnUid: hasTribute ? null : first, currentSet: null, previousSet: null, finishOrder: [], turnOrder: ps.map(p => p.uid), tribute: hasTribute ? { phase: "return", pairs, reversed: !!rebellionUid, returnStartedAt: ts() } : null, rebellionNotice: rebellionUid ? { uid: rebellionUid, nickname: rebellionPlayer?.nickname || "누군가", round, createdAt: ts() } : null, updatedAt: serverNow() }, { merge: true });
+    batch.set(roomRef(), {
+  players: playerMap,
+  playerCount: countMap(playerMap),
+  status: hasTribute ? "tributeReturn" : "playing",
+  round,
+  roundKey: `${round}-${Date.now()}`,
+  currentTurnUid: hasTribute ? null : first, currentSet: null, previousSet: null, finishOrder: [], turnOrder: ps.map(p => p.uid), tribute: hasTribute ? { phase: "return", pairs, reversed: !!rebellionUid, returnStartedAt: ts() } : null, rebellionNotice: rebellionUid ? { uid: rebellionUid, nickname: rebellionPlayer?.nickname || "누군가", round, createdAt: ts() } : null, updatedAt: serverNow() }, { merge: true });
     Object.keys(hands).forEach(uid => batch.set(handRef(uid), { hand: hands[uid] }));
     await batch.commit();
     await addSystem(rebellionUid ? `${rebellionPlayer?.nickname || "누군가"}님의 홍길동이 민란을 일으켰습니다.` : (hasTribute ? `${round}라운드 상납 반환을 시작합니다.` : `${round}라운드가 시작되었습니다.`));
@@ -1194,7 +1221,7 @@ async function toggleReady() {
   function maybeStartModal() {
     const room = S.room;
     if (!room || !["playing", "tributeReturn"].includes(room.status) || !room.round) return;
-    const key = `dalmuti:${S.roomId}:start:${room.round}`;
+    const key = `dalmuti:${S.roomId}:start:${room.roundKey || room.round}`;
     if (markSeen(S.seenStart, key)) return;
     const show = () => showModal(`${room.round}라운드 시작`, `<p class="muted">이번 라운드 배정 계급과 현재 점수입니다.</p>${modalRows(allPlayers(), "start")}${room.status === "tributeReturn" ? `<p class="muted">상납 단계가 진행됩니다.</p>` : ""}`);
     if (room.rebellionNotice?.round === room.round) setTimeout(show, 5100);
