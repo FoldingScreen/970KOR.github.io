@@ -322,7 +322,11 @@ function roundOrderPlayers(round, players) {
     if (E.turnBadge) E.turnBadge.textContent = room.status === "playing" ? `차례: ${turnName}` : statusText;
     if (E.messageBar) {
       if (room.status === "waiting") E.messageBar.textContent = "참가자는 준비를 눌러야 게임을 시작할 수 있습니다.";
-      else if (room.status === "tributeReturn") E.messageBar.textContent = "상납받은 사람이 같은 장수만큼 카드를 돌려줘야 합니다.";
+      else if (room.status === "tributeReturn") {
+  E.messageBar.textContent = room.currentTurnUid
+    ? `${turnName}님이 상납받은 카드 수만큼 반환할 차례입니다.`
+    : "상납받은 사람이 같은 장수만큼 카드를 돌려줘야 합니다.";
+}
       else if (room.status === "playing") E.messageBar.textContent = room.currentTurnUid === S.user ? "내 차례입니다." : `${turnName}님의 차례입니다.`;
       else if (room.status === "betweenRounds") E.messageBar.textContent = "라운드가 종료되었습니다.";
       else E.messageBar.textContent = "게임이 종료되었습니다.";
@@ -885,7 +889,7 @@ async function toggleReady() {
   status: hasTribute ? "tributeReturn" : "playing",
   round,
   roundKey: `${round}-${Date.now()}`,
-  currentTurnUid: hasTribute ? null : first, currentSet: null, previousSet: null, finishOrder: [], turnOrder: ps.map(p => p.uid), tribute: hasTribute ? { phase: "return", pairs, reversed: !!rebellionUid, returnStartedAt: ts() } : null, rebellionNotice: rebellionUid ? { uid: rebellionUid, nickname: rebellionPlayer?.nickname || "누군가", round, createdAt: ts() } : null, updatedAt: serverNow() }, { merge: true });
+ currentTurnUid: hasTribute ? (pairs.find(p => !p.returned)?.toUid || null) : first, currentSet: null, previousSet: null, finishOrder: [], turnOrder: ps.map(p => p.uid), tribute: hasTribute ? { phase: "return", pairs, reversed: !!rebellionUid, returnStartedAt: ts() } : null, rebellionNotice: rebellionUid ? { uid: rebellionUid, nickname: rebellionPlayer?.nickname || "누군가", round, createdAt: ts() } : null, updatedAt: serverNow() }, { merge: true });
     Object.keys(hands).forEach(uid => batch.set(handRef(uid), { hand: hands[uid] }));
     await batch.commit();
     await addSystem(rebellionUid ? `${rebellionPlayer?.nickname || "누군가"}님의 홍길동이 민란을 일으켰습니다.` : (hasTribute ? `${round}라운드 상납 반환을 시작합니다.` : `${round}라운드가 시작되었습니다.`));
@@ -1030,31 +1034,99 @@ renderHand();
     await roomRef().set({ players, currentTurnUid: next, previousSet: everyoneElsePassed ? room.currentSet : room.previousSet || null, currentSet: everyoneElsePassed ? null : room.currentSet, updatedAt: serverNow() }, { merge: true });
   }
 
-  async function returnTribute(uid, cards, hand) {
-    const room = S.room;
-    if (!room || room.status !== "tributeReturn") return;
-    const pair = (room.tribute?.pairs || []).find(p => p.toUid === uid && !p.returned);
-    if (!pair) return;
-    if (cards.length !== pair.count) { if (uid === S.user) toast(`${pair.count}장을 선택해야 합니다.`); return; }
-    const fromSnap = await handRef(pair.fromUid).get();
-    const fromHand = fromSnap.exists ? (fromSnap.data().hand || []) : [];
-    const ids = new Set(cards.map(c => c.id));
-    const myHand = sortHand((hand || []).filter(c => !ids.has(c.id)));
-    const newFrom = sortHand(fromHand.concat(cards));
-    const pairs = (room.tribute?.pairs || []).map(p => p.id === pair.id ? { ...p, returned: true, returnedCards: cards } : p);
-    const done = pairs.every(p => p.returned);
-    const players = playersMap(room);
-    if (players[uid]) players[uid] = { ...players[uid], cardCount: myHand.length };
-    if (players[pair.fromUid]) players[pair.fromUid] = { ...players[pair.fromUid], cardCount: newFrom.length };
-    const first = allPlayers({ ...room, players })[0]?.uid || null;
-    const batch = db.batch();
-    batch.set(handRef(uid), { hand: myHand });
-    batch.set(handRef(pair.fromUid), { hand: newFrom });
-    batch.set(roomRef(), { players, tribute: { ...(room.tribute || {}), pairs }, status: done ? "playing" : "tributeReturn", currentTurnUid: done ? first : null, updatedAt: serverNow() }, { merge: true });
-    if (uid === S.user) S.selected.clear();
-    await batch.commit();
-    if (done) await addSystem(`${room.round}라운드가 시작되었습니다.`);
+async function returnTribute(uid, cards, hand) {
+  const latestSnap = await roomRef().get();
+  if (!latestSnap.exists) return;
+
+  const room = latestSnap.data();
+  if (!room || room.status !== "tributeReturn") return;
+
+  const pair = (room.tribute?.pairs || []).find(p => p.toUid === uid && !p.returned);
+  if (!pair) return;
+
+  const selectedIds = new Set((cards || []).map(c => c.id));
+
+  const toSnap = await handRef(uid).get();
+  const toHand = sortHand(toSnap.exists ? (toSnap.data().hand || []) : []);
+
+  const returnCards = toHand.filter(c => selectedIds.has(c.id));
+
+  if (returnCards.length !== pair.count) {
+    if (uid === S.user) {
+      toast(`${pair.count}장을 선택해야 합니다.`);
+    }
+    return;
   }
+
+  const fromSnap = await handRef(pair.fromUid).get();
+  const fromHand = sortHand(fromSnap.exists ? (fromSnap.data().hand || []) : []);
+
+  const returnIds = new Set(returnCards.map(c => c.id));
+  const newToHand = sortHand(toHand.filter(c => !returnIds.has(c.id)));
+  const newFromHand = sortHand(fromHand.concat(returnCards));
+
+  const pairs = (room.tribute?.pairs || []).map(p => {
+    if (p.id !== pair.id) return p;
+
+    return {
+      ...p,
+      returned: true,
+      returnedCards: returnCards
+    };
+  });
+
+  const done = pairs.every(p => p.returned);
+  const nextPair = pairs.find(p => !p.returned) || null;
+
+  const players = playersMap(room);
+
+  if (players[uid]) {
+    players[uid] = {
+      ...players[uid],
+      cardCount: newToHand.length
+    };
+  }
+
+  if (players[pair.fromUid]) {
+    players[pair.fromUid] = {
+      ...players[pair.fromUid],
+      cardCount: newFromHand.length
+    };
+  }
+
+  const first = allPlayers({ ...room, players })[0]?.uid || null;
+
+  const batch = db.batch();
+
+  batch.set(handRef(uid), {
+    hand: newToHand
+  });
+
+  batch.set(handRef(pair.fromUid), {
+    hand: newFromHand
+  });
+
+  batch.set(roomRef(), {
+    players,
+    tribute: {
+      ...(room.tribute || {}),
+      pairs
+    },
+    status: done ? "playing" : "tributeReturn",
+    currentTurnUid: done ? first : nextPair.toUid,
+    updatedAt: serverNow()
+  }, { merge: true });
+
+  if (uid === S.user) {
+    S.selected.clear();
+  }
+
+  await batch.commit();
+
+  if (done) {
+    await addSystem(`${room.round}라운드가 시작되었습니다.`);
+  }
+}
 
   function weakestCards(hand, count) {
     const normal = sortHand(hand || []).filter(c => !(c.joker || Number(c.rank) === 13)).reverse();
