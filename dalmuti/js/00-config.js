@@ -738,29 +738,50 @@ function positions() {
     loadRooms();
   }
 
-  async function leaveRoom() {
-    if (!S.roomId || !S.room) return leaveLocal();
-    if (S.room.status !== "waiting") {
-      toast("게임 중에는 화면에서만 나갑니다. 재참여는 제한될 수 있습니다.");
-      leaveLocal();
-      return;
-    }
-    const players = playersMap();
-    const specs = spectatorsMap();
-    if (players[S.user]) {
-      delete players[S.user];
-      await handRef().delete().catch(() => null);
-    }
-    if (specs[S.user]) delete specs[S.user];
-    const update = { players, spectators: specs, playerCount: countMap(players), spectatorCount: countMap(specs), updatedAt: serverNow() };
-    if (S.room.hostUid === S.user) {
-      const next = Object.values(players)[0] || Object.values(specs)[0];
-      if (next) { update.hostUid = next.uid; update.hostNickname = next.nickname; }
-      else { update.closed = true; update.status = "closed"; }
-    }
-    await roomRef().set(update, { merge: true });
+async function leaveRoom() {
+  if (!S.roomId || !S.room) return leaveLocal();
+
+  if (S.room.status !== "waiting") {
+    toast("게임 중에는 화면에서만 나갑니다. 재참여는 제한될 수 있습니다.");
     leaveLocal();
+    return;
   }
+
+  const players = playersMap();
+  const specs = spectatorsMap();
+
+  if (players[S.user]) {
+    delete players[S.user];
+    await handRef().delete().catch(() => null);
+  }
+
+  if (specs[S.user]) {
+    delete specs[S.user];
+  }
+
+  const update = {
+    players,
+    spectators: specs,
+    playerCount: countMap(players),
+    spectatorCount: countMap(specs),
+    updatedAt: serverNow()
+  };
+
+  if (S.room.hostUid === S.user) {
+    const next = Object.values(players)[0] || Object.values(specs)[0];
+
+    if (next) {
+      update.hostUid = next.uid;
+      update.hostNickname = next.nickname;
+    } else {
+      update.closed = true;
+      update.status = "closed";
+    }
+  }
+
+  await roomRef().update(update);
+  leaveLocal();
+}
 
 async function toggleReady() {
   if (!S.room || S.room.status !== "waiting") return;
@@ -789,29 +810,85 @@ async function toggleReady() {
   }, { merge: true });
 }
 
-  async function becomeSpectator() {
-    if (!S.room || S.room.status !== "waiting" || kickedMap()[S.user]) return;
-    const players = playersMap();
-    const specs = spectatorsMap();
-    if (!players[S.user]) return;
-    delete players[S.user];
-    specs[S.user] = baseSpectator(S.user, S.user);
-    await handRef().delete().catch(() => null);
-    await roomRef().set({ players, spectators: specs, playerCount: countMap(players), spectatorCount: countMap(specs), updatedAt: serverNow() }, { merge: true });
+async function becomeSpectator() {
+  if (!S.room || S.room.status !== "waiting" || kickedMap()[S.user]) return;
+
+  const players = playersMap();
+  const specs = spectatorsMap();
+
+  if (!players[S.user]) {
+    if (!specs[S.user]) {
+      specs[S.user] = baseSpectator(S.user, S.user);
+    }
+
+    await roomRef().update({
+      players,
+      spectators: specs,
+      playerCount: countMap(players),
+      spectatorCount: countMap(specs),
+      updatedAt: serverNow()
+    });
+
+    return;
   }
 
-  async function becomePlayer() {
-    if (!S.room || S.room.status !== "waiting") return toast("대기 중에만 참가할 수 있습니다.");
-    if (kickedMap()[S.user]) return toast("로비에서 다시 입장해 주세요.");
-    const players = playersMap();
-    const specs = spectatorsMap();
-    if (players[S.user]) return;
-    if (countMap(players) >= MAX_PLAYERS) return toast("최대 8명까지 참가할 수 있습니다.");
-    delete specs[S.user];
-    players[S.user] = basePlayer(S.user, S.user, countMap(players), false);
-    await roomRef().set({ players, spectators: specs, playerCount: countMap(players), spectatorCount: countMap(specs), updatedAt: serverNow() }, { merge: true });
-    await handRef().set({ hand: [] }, { merge: true });
+  delete players[S.user];
+
+  specs[S.user] = {
+    ...baseSpectator(S.user, S.user),
+    uid: S.user,
+    nickname: S.user,
+    type: "spectator"
+  };
+
+  await handRef().delete().catch(() => null);
+
+  await roomRef().update({
+    players,
+    spectators: specs,
+    playerCount: countMap(players),
+    spectatorCount: countMap(specs),
+    updatedAt: serverNow()
+  });
+}
+
+async function becomePlayer() {
+  if (!S.room || S.room.status !== "waiting") {
+    return toast("대기 중에만 참가할 수 있습니다.");
   }
+
+  if (kickedMap()[S.user]) {
+    return toast("로비에서 다시 입장해 주세요.");
+  }
+
+  const players = playersMap();
+  const specs = spectatorsMap();
+
+  if (players[S.user]) return;
+
+  if (countMap(players) >= MAX_PLAYERS) {
+    return toast("최대 8명까지 참가할 수 있습니다.");
+  }
+
+  delete specs[S.user];
+
+  players[S.user] = {
+    ...basePlayer(S.user, S.user, countMap(players), false),
+    uid: S.user,
+    nickname: S.user,
+    type: "player"
+  };
+
+  await roomRef().update({
+    players,
+    spectators: specs,
+    playerCount: countMap(players),
+    spectatorCount: countMap(specs),
+    updatedAt: serverNow()
+  });
+
+  await handRef().set({ hand: [] }, { merge: true });
+}
 
   async function addAI() {
     if (!isHost() || S.room?.status !== "waiting") return;
