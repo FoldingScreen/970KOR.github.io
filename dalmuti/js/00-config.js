@@ -90,10 +90,128 @@
   function enterRoom(id){ S.roomId=id; view("room"); S.selected.clear(); Object.values(S.unsub).forEach(fn=>typeof fn==="function"&&fn()); S.unsub={}; S.unsub.room=roomRef(id).onSnapshot(s=>{ if(!s.exists)return leaveLocal(); S.room={id:s.id,...s.data()}; if(S.room.kickNotice?.uid===S.user){alert("방장에 의해 방에서 내보내졌습니다.");leaveLocal();return;} render(); },console.error); S.unsub.hand=handRef(S.user,id).onSnapshot(s=>{ S.hand=sortHand(s.exists?(s.data().hand||[]):[]); render();},console.error); }
   async function leaveRoom(write=true){ if(!S.roomId||!S.room)return; const old=S.roomId, r=S.room, inP=!!playersMap()[S.user], inS=!!spectatorsMap()[S.user], updates={updatedAt:FV.serverTimestamp()}; if(inP){updates[`players.${S.user}`]=FV.delete();updates.playerCount=Math.max(0,(r.playerCount||0)-1);} if(inS){updates[`spectators.${S.user}`]=FV.delete();updates.spectatorCount=Math.max(0,(r.spectatorCount||0)-1);} if(r.hostUid===S.user){ const next=Object.values(r.players||{}).filter(p=>p.uid!==S.user&&!p.isAI)[0]||Object.values(r.spectators||{}).filter(p=>p.uid!==S.user)[0]; if(next){updates.hostUid=next.uid;updates.hostNickname=next.nickname;} } await roomRef(old).set(updates,{merge:true}).catch(()=>null); await handRef(S.user,old).delete().catch(()=>null); if(write)await appendChat({type:"system",text:`${S.user}님이 방을 나갔습니다.`}).catch(()=>null); leaveLocal(); }
   function leaveLocal(){ Object.values(S.unsub).forEach(fn=>typeof fn==="function"&&fn()); S.unsub={}; S.roomId=""; S.room=null; S.hand=[]; S.selected.clear(); localStorage.removeItem("dalmutiCurrentRoomId"); view("lobby"); loadRooms(); }
-  async function toggleReady(){ const m=me(); if(m?.type==="player"&&S.room?.status==="waiting")await roomRef().set({[`players.${S.user}.isReady`]:!m.isReady,updatedAt:FV.serverTimestamp()},{merge:true}); }
-  async function becomeSpectator(){ if(S.room?.status!=="waiting")return; const p=playersMap()[S.user]; if(!p)return; await roomRef().set({[`players.${S.user}`]:FV.delete(),[`spectators.${S.user}`]:baseSpectator(),playerCount:Math.max(0,(S.room.playerCount||0)-1),spectatorCount:(S.room.spectatorCount||0)+1,updatedAt:FV.serverTimestamp()},{merge:true}); }
-  async function becomePlayer(){ if(S.room?.status!=="waiting")return; if(allPlayers().length>=MAX_PLAYERS)return toast("최대 8명까지 참가할 수 있습니다."); await roomRef().set({[`spectators.${S.user}`]:FV.delete(),[`players.${S.user}`]:basePlayer({seatOrder:allPlayers().length}),playerCount:(S.room.playerCount||0)+1,spectatorCount:Math.max(0,(S.room.spectatorCount||0)-1),updatedAt:FV.serverTimestamp()},{merge:true}); }
-  async function addAI(){ if(!isHost()||S.room?.status!=="waiting")return; if(allPlayers().length>=MAX_PLAYERS)return toast("최대 8명까지 참가할 수 있습니다."); const n=allPlayers().filter(p=>p.isAI).length+1, uid=`ai_${Date.now()}_${Math.random().toString(36).slice(2,6)}`; await roomRef().set({[`players.${uid}`]:{uid,nickname:`AI ${n}`,type:"player",isAI:true,isReady:true,seatOrder:allPlayers().length,role:null,score:0,lastRoundScore:0,lastRoundRank:null,cardCount:0,passed:false,finished:false,finishedRank:null,forfeited:false,removedFromRoom:false},playerCount:(S.room.playerCount||0)+1,updatedAt:FV.serverTimestamp()},{merge:true}); await handRef(uid).set({hand:[]}); }
+  async function toggleReady(){
+  const m = me();
+  if(!m || m.type !== "player" || S.room?.status !== "waiting") return;
+
+  const players = { ...(S.room.players || {}) };
+  if(!players[S.user]) return;
+
+  players[S.user] = {
+    ...players[S.user],
+    isReady: !players[S.user].isReady
+  };
+
+  await roomRef().set({
+    players,
+    updatedAt: FV.serverTimestamp()
+  }, { merge: true });
+}
+
+async function becomeSpectator(){
+  if(S.room?.status !== "waiting") return;
+
+  const players = { ...(S.room.players || {}) };
+  const spectators = { ...(S.room.spectators || {}) };
+
+  if(!players[S.user]) return;
+
+  spectators[S.user] = {
+    uid: S.user,
+    nickname: S.user,
+    type: "spectator",
+    isAI: false,
+    removedFromRoom: false
+  };
+
+  delete players[S.user];
+
+  await roomRef().set({
+    players,
+    spectators,
+    playerCount: Object.values(players).filter(Boolean).length,
+    spectatorCount: Object.values(spectators).filter(Boolean).length,
+    updatedAt: FV.serverTimestamp()
+  }, { merge: true });
+}
+
+async function becomePlayer(){
+  if(S.room?.status !== "waiting") return;
+
+  const players = { ...(S.room.players || {}) };
+  const spectators = { ...(S.room.spectators || {}) };
+
+  if(Object.values(players).filter(Boolean).length >= MAX_PLAYERS) {
+    return toast("최대 8명까지 참가할 수 있습니다.");
+  }
+
+  delete spectators[S.user];
+
+  players[S.user] = {
+    uid: S.user,
+    nickname: S.user,
+    type: "player",
+    isReady: false,
+    isAI: false,
+    seatOrder: Object.values(players).filter(Boolean).length,
+    role: null,
+    score: 0,
+    lastRoundScore: 0,
+    lastRoundRank: null,
+    cardCount: 0,
+    passed: false,
+    finished: false,
+    finishedRank: null,
+    forfeited: false,
+    removedFromRoom: false
+  };
+
+  await roomRef().set({
+    players,
+    spectators,
+    playerCount: Object.values(players).filter(Boolean).length,
+    spectatorCount: Object.values(spectators).filter(Boolean).length,
+    updatedAt: FV.serverTimestamp()
+  }, { merge: true });
+}
+  async function addAI(){
+  if(!isHost() || S.room?.status !== "waiting") return;
+
+  const players = { ...(S.room.players || {}) };
+  const currentCount = Object.values(players).filter(Boolean).length;
+
+  if(currentCount >= MAX_PLAYERS) return toast("최대 8명까지 참가할 수 있습니다.");
+
+  const n = Object.values(players).filter(p => p && p.isAI).length + 1;
+  const uid = `ai_${Date.now()}_${Math.random().toString(36).slice(2,6)}`;
+
+  players[uid] = {
+    uid,
+    nickname: `AI ${n}`,
+    type: "player",
+    isAI: true,
+    isReady: true,
+    seatOrder: currentCount,
+    role: null,
+    score: 0,
+    lastRoundScore: 0,
+    lastRoundRank: null,
+    cardCount: 0,
+    passed: false,
+    finished: false,
+    finishedRank: null,
+    forfeited: false,
+    removedFromRoom: false
+  };
+
+  await roomRef().set({
+    players,
+    playerCount: Object.values(players).filter(Boolean).length,
+    updatedAt: FV.serverTimestamp()
+  }, { merge: true });
+
+  await handRef(uid).set({ hand: [] });
+}
   async function startGame(){ if(!isHost()||S.room?.status!=="waiting")return; const ps=allPlayers(); if(ps.length<2)return toast("2명 이상 필요합니다."); if(!ps.every(p=>p.isReady||p.isAI))return toast("아직 준비하지 않은 인원이 있습니다."); await startRound(1,true,false); }
   function hasHong2(h=[]){return h.filter(c=>c.joker||c.rank===13).length>=2;} function forceHong(hands,uid){let js=[];Object.keys(hands).forEach(u=>{const keep=[];hands[u].forEach(c=>{if((c.joker||c.rank===13)&&js.length<2)js.push(c);else keep.push(c)});hands[u]=keep});while(js.length<2)js.push({id:`j-force-${js.length}-${Math.random().toString(36).slice(2,8)}`,rank:13,name:"홍길동",joker:true});const out=(hands[uid]||[]).filter(c=>!(c.joker||c.rank===13)).sort((a,b)=>b.rank-a.rank).slice(0,2),ids=new Set(out.map(c=>c.id));hands[uid]=(hands[uid]||[]).filter(c=>!ids.has(c.id)).concat(js.slice(0,2));const donors=Object.keys(hands).filter(u=>u!==uid);out.forEach((c,i)=>{if(donors[i%donors.length])hands[donors[i%donors.length]].push(c)});Object.keys(hands).forEach(u=>hands[u]=sortHand(hands[u]));}
   function makePairs(ps,hands){ if(ps.length<3)return[]; const specs=ps.length===3?[{from:ps[2],to:ps[0],count:1}]:[{from:ps[ps.length-1],to:ps[0],count:2},{from:ps[ps.length-2],to:ps[1],count:1}]; return specs.map((x,i)=>{const cards=bestTribute(hands[x.from.uid],x.count),ids=new Set(cards.map(c=>c.id));hands[x.from.uid]=sortHand(hands[x.from.uid].filter(c=>!ids.has(c.id)));hands[x.to.uid]=sortHand(hands[x.to.uid].concat(cards));return{id:`tribute-${i}`,fromUid:x.from.uid,fromNickname:x.from.nickname,toUid:x.to.uid,toNickname:x.to.nickname,count:cards.length,cards,returned:cards.length===0,returnedCards:[]}}).filter(p=>p.count>0); }
