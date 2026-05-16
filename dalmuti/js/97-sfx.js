@@ -32,102 +32,150 @@
     unlocked = true;
   }
 
-  function tone(freq, start, duration, gain, type = "sine", dest = null) {
+  function tone(freq, start, duration, gain, type = "sine", endFreq = null) {
     const audio = ensureAudio();
     if (!audio || isMuted()) return;
 
     const osc = audio.createOscillator();
     const g = audio.createGain();
+    const t = audio.currentTime + start;
 
     osc.type = type;
-    osc.frequency.setValueAtTime(freq, audio.currentTime + start);
-    g.gain.setValueAtTime(0.0001, audio.currentTime + start);
-    g.gain.exponentialRampToValueAtTime(Math.max(0.0001, gain), audio.currentTime + start + 0.012);
-    g.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + start + duration);
+    osc.frequency.setValueAtTime(freq, t);
+    if (endFreq) osc.frequency.exponentialRampToValueAtTime(Math.max(30, endFreq), t + duration);
+
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0001, gain), t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + duration);
 
     osc.connect(g);
-    g.connect(dest || audio.destination);
+    g.connect(audio.destination);
 
-    osc.start(audio.currentTime + start);
-    osc.stop(audio.currentTime + start + duration + 0.02);
+    osc.start(t);
+    osc.stop(t + duration + 0.02);
   }
 
-  function noise(start, duration, gain) {
+  function noise(start, duration, gain, opts = {}) {
     const audio = ensureAudio();
     if (!audio || isMuted()) return;
 
     const bufferSize = Math.max(1, Math.floor(audio.sampleRate * duration));
     const buffer = audio.createBuffer(1, bufferSize, audio.sampleRate);
     const data = buffer.getChannelData(0);
+    let prev = 0;
+    let prev2 = 0;
+    const smooth = opts.smooth ?? 0.78;
+    const decay = opts.decay ?? 2.2;
 
     for (let i = 0; i < bufferSize; i++) {
-      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
+      const x = i / bufferSize;
+      const white = Math.random() * 2 - 1;
+      const low = smooth * prev + (1 - smooth) * white;
+      const hp = low - prev2 * (opts.hp ?? 0.72);
+      prev = low;
+      prev2 = low;
+      data[i] = hp * Math.pow(1 - x, decay);
     }
 
     const src = audio.createBufferSource();
     const g = audio.createGain();
     const filter = audio.createBiquadFilter();
+    const t = audio.currentTime + start;
 
-    filter.type = "highpass";
-    filter.frequency.value = 900;
-    g.gain.setValueAtTime(gain, audio.currentTime + start);
-    g.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + start + duration);
+    filter.type = opts.type || "bandpass";
+    filter.frequency.value = opts.freq || 1200;
+    filter.Q.value = opts.q || 0.7;
+
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0001, gain), t + 0.002);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + duration);
 
     src.buffer = buffer;
     src.connect(filter);
     filter.connect(g);
     g.connect(audio.destination);
-    src.start(audio.currentTime + start);
-    src.stop(audio.currentTime + start + duration + 0.02);
+    src.start(t);
+    src.stop(t + duration + 0.02);
+  }
+
+  function paper(start, duration, gain = 0.04, smooth = 0.88) {
+    noise(start, duration, gain, { smooth, freq: 1600, q: 0.55, decay: 1.7 });
+  }
+
+  function thump(start, freq = 120, gain = 0.025) {
+    tone(freq, start, 0.075, gain, "sine", freq * 0.75);
   }
 
   const SFX = {
+    // 후보 1. 나무 버튼 톡
     click() {
-      tone(640, 0, 0.045, 0.035, "triangle");
+      thump(0, 180, 0.025);
+      noise(0.005, 0.035, 0.035, { freq: 900, smooth: 0.82 });
     },
+
+    // 후보 5. 낮은 준비 완료음
     ready() {
-      tone(520, 0, 0.055, 0.04, "triangle");
-      tone(780, 0.045, 0.075, 0.035, "triangle");
+      tone(330, 0, 0.08, 0.028, "sine");
+      tone(495, 0.065, 0.09, 0.026, "sine");
     },
+
+    // 후보 3. 가벼운 팡파르
     start() {
-      tone(392, 0, 0.08, 0.045, "triangle");
-      tone(523, 0.07, 0.08, 0.045, "triangle");
-      tone(784, 0.14, 0.12, 0.045, "triangle");
+      tone(392, 0, 0.08, 0.035, "triangle");
+      tone(587, 0.07, 0.08, 0.033, "triangle");
+      tone(880, 0.14, 0.10, 0.032, "triangle");
     },
-    play() {
-      tone(720, 0, 0.045, 0.04, "square");
-      tone(980, 0.035, 0.055, 0.035, "triangle");
-    },
-    pass() {
-      tone(360, 0, 0.07, 0.035, "sawtooth");
-      tone(240, 0.055, 0.09, 0.025, "sine");
-    },
+
+    // 현재 적용 유지
     select() {
       tone(480, 0, 0.035, 0.025, "triangle");
     },
+
+    // 후보 5. 묵직한 카드 더미 탁
+    play() {
+      paper(0, 0.06, 0.08, 0.80);
+      thump(0.018, 90, 0.04);
+      noise(0.045, 0.08, 0.04, { freq: 900, smooth: 0.84 });
+    },
+
+    // 후보 3. 낮은 톡
+    pass() {
+      thump(0, 145, 0.030);
+      noise(0.012, 0.045, 0.025, { freq: 750, smooth: 0.88 });
+    },
+
+    // 후보 4. 종이 두 장 이동
     tribute() {
-      tone(660, 0, 0.06, 0.035, "triangle");
-      tone(520, 0.06, 0.06, 0.035, "triangle");
-      tone(740, 0.12, 0.08, 0.03, "triangle");
+      paper(0, 0.055, 0.045, 0.86);
+      paper(0.045, 0.055, 0.045, 0.86);
+      thump(0.10, 115, 0.020);
     },
+
+    // 후보 2. 완료 종소리
     roundEnd() {
-      tone(784, 0, 0.08, 0.04, "triangle");
-      tone(587, 0.075, 0.09, 0.04, "triangle");
-      tone(440, 0.16, 0.13, 0.035, "triangle");
+      tone(880, 0, 0.08, 0.03, "triangle");
+      tone(660, 0.08, 0.08, 0.03, "triangle");
+      tone(990, 0.16, 0.13, 0.025, "triangle");
     },
+
+    // 민란은 임시 기존 유지
     rebellion() {
-      noise(0, 0.22, 0.045);
+      noise(0, 0.22, 0.045, { freq: 1100, smooth: 0.72 });
       tone(160, 0, 0.28, 0.055, "sawtooth");
       tone(220, 0.08, 0.22, 0.045, "sawtooth");
       tone(330, 0.18, 0.24, 0.04, "square");
     },
+
+    // 후보 3. 짧은 퇴장음
     kick() {
-      tone(190, 0, 0.08, 0.05, "square");
-      noise(0.03, 0.12, 0.035);
+      tone(280, 0, 0.06, 0.035, "triangle");
+      tone(180, 0.05, 0.08, 0.03, "sine");
     },
+
+    // 후보 5. 불가 처리음
     error() {
-      tone(180, 0, 0.08, 0.04, "sawtooth");
-      tone(160, 0.075, 0.1, 0.035, "sawtooth");
+      tone(440, 0, 0.05, 0.020, "sine");
+      tone(330, 0.04, 0.07, 0.018, "sine");
     }
   };
 
