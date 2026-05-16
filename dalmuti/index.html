@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>970KOR 사바나 달무티</title>
-  <link rel="stylesheet" href="./dalmuti.css?v=20260516-2" />
+  <link rel="stylesheet" href="./dalmuti.css?v=20260516-3" />
 </head>
 <body>
   <div class="dalmuti-app">
@@ -171,27 +171,6 @@
       measurementId: "G-EV2SN61VJZ"
     });
   </script>
-  <script>
-    (function () {
-      var originalValues = Object.values;
-      Object.values = function (obj) {
-        return originalValues(obj || {}).filter(function (v) {
-          return v !== undefined && v !== null;
-        });
-      };
-
-      var originalMap = Array.prototype.map;
-      Array.prototype.map = function (callback, thisArg) {
-        var arr = this;
-        if (Array.isArray(arr) && arr.some(function (v) { return v && Object.prototype.hasOwnProperty.call(v, "p") && !v.p; })) {
-          arr = arr.filter(function (v) { return !(v && Object.prototype.hasOwnProperty.call(v, "p") && !v.p); });
-        }
-        return originalMap.call(arr, callback, thisArg);
-      };
-    })();
-  </script>
-  <script src="./js/00-config.js?v=20260516-testdb6"></script>
-  <script src="./js/01-dalmuti-hotfix.js?v=20260516-hotfix1"></script>
-  <script src="./js/02-dalmuti-state-guard.js?v=20260516-guard1"></script>
+  <script src="./js/00-config.js?v=20260516-single1"></script>
 </body>
 </html>
