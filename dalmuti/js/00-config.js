@@ -229,11 +229,70 @@ async function becomePlayer(){
   async function sendChat(){ const text=E.chatInput.value.trim(); if(!text||!S.roomId)return; const m=me(); if(m?.type==="spectator"&&S.room?.spectatorChatEnabled===false)return toast("관전자 채팅이 차단되어 있습니다."); E.chatInput.value=""; await appendChat({type:"chat",uid:S.user,nickname:m?.nickname||S.user,text}); }
   async function saveSettings(){ if(!isHost()||S.room?.status!=="waiting")return; const raw=Number($("setRounds")?.value||5); await roomRef().set({title:($("setTitle")?.value||"사바나 달무티").trim(),totalRounds:raw===0?null:raw,updatedAt:FV.serverTimestamp()},{merge:true}); await addSystem("방 설정이 변경되었습니다."); }
   async function toggleSpectatorChat(){ if(isHost())await roomRef().set({spectatorChatEnabled:S.room?.spectatorChatEnabled===false,updatedAt:FV.serverTimestamp()},{merge:true}); }
-  async function kick(uid){ if(!isHost()||uid===S.user)return; const t=playersMap()[uid]||spectatorsMap()[uid]; if(!t||!confirm(`${t.nickname}님을 방에서 내보낼까요?`))return; const updates={kickNotice:{uid,nickname:t.nickname,at:ts()},updatedAt:FV.serverTimestamp()}; if(playersMap()[uid]){updates[`players.${uid}`]=FV.delete();updates.playerCount=Math.max(0,(S.room.playerCount||0)-1); await handRef(uid).delete().catch(()=>null);} if(spectatorsMap()[uid]){updates[`spectators.${uid}`]=FV.delete();updates.spectatorCount=Math.max(0,(S.room.spectatorCount||0)-1);} await roomRef().set(updates,{merge:true}); await addSystem(`${t.nickname}님이 방장에 의해 강퇴되었습니다.`); }
+  async function kick(uid){
+  if(!isHost() || uid === S.user) return;
+
+  const players = { ...(S.room.players || {}) };
+  const spectators = { ...(S.room.spectators || {}) };
+  const target = players[uid] || spectators[uid];
+
+  if(!target) return;
+  if(!confirm(`${target.nickname}님을 방에서 내보낼까요?`)) return;
+
+  if(players[uid]) {
+    delete players[uid];
+    await handRef(uid).delete().catch(() => null);
+  }
+
+  if(spectators[uid]) {
+    delete spectators[uid];
+  }
+
+  await roomRef().set({
+    players,
+    spectators,
+    playerCount: Object.values(players).filter(Boolean).length,
+    spectatorCount: Object.values(spectators).filter(Boolean).length,
+    kickNotice: {
+      uid,
+      nickname: target.nickname,
+      at: ts()
+    },
+    updatedAt: FV.serverTimestamp()
+  }, { merge: true });
+
+  await addSystem(`${target.nickname}님이 방장에 의해 강퇴되었습니다.`);
+}
   async function clearSub(col){ while(true){const s=await col.limit(300).get(); if(s.empty)return; const b=db.batch(); s.docs.forEach(d=>b.delete(d.ref)); await b.commit();} }
   async function deleteRoom(){ if(!canAdmin())return toast("방장 또는 병풍만 방을 삭제할 수 있습니다."); if(!confirm("방을 완전히 삭제할까요? 참가자, 채팅, 진행 상황이 모두 삭제됩니다."))return; const id=S.roomId, ref=roomRef(id); await clearSub(ref.collection("hands")); await ref.delete(); localStorage.removeItem("dalmutiCurrentRoomId"); alert("방이 완전히 삭제되었습니다."); leaveLocal(); }
   function aiCards(ai,hand){ hand=sortHand(hand||[]); const cur=S.room?.currentSet; if(!cur){const non=hand.filter(c=>!c.joker);return(non.length?non:hand).slice(-1);} const jokers=hand.filter(c=>c.joker), groups=groupHand(hand.filter(c=>!c.joker)).sort((a,b)=>b.rank-a.rank); for(const g of groups){ if(g.rank<cur.effectiveRank&&g.items.length+jokers.length>=cur.count)return g.items.slice(0,Math.min(g.items.length,cur.count)).concat(jokers.slice(0,Math.max(0,cur.count-g.items.length))); } return []; }
-  function maybeAI(){ if(!isHost()||S.room?.status!=="playing"||!S.room.currentTurnUid)return; const ai=playersMap()[S.room.currentTurnUid]; if(!ai?.isAI||ai.finished||ai.forfeited)return; const key=`${S.roomId}:${S.room.round}:${ai.uid}:${S.room.currentSet?.uid||"new"}:${S.room.currentSet?.createdAt?.seconds||0}`; if(S.aiKeys.has(key))return; S.aiKeys.add(key); setTimeout(async()=>{const snap=await handRef(ai.uid).get(); const hand=snap.exists?(snap.data().hand||[]):[]; const cards=aiCards(ai,hand); if(cards.length)await applyPlay(ai.uid,cards,hand);else await passAs(ai.uid);},700); }
+ function maybeAI(){
+  if(!isHost() || S.room?.status !== "playing" || !S.room.currentTurnUid) return;
+
+  const ai = playersMap()[S.room.currentTurnUid];
+  if(!ai?.isAI || ai.finished || ai.forfeited) return;
+
+  const currentSetKey = S.room.currentSet
+    ? `${S.room.currentSet.uid}_${S.room.currentSet.createdAt?.seconds || 0}_${S.room.currentSet.count || 0}_${S.room.currentSet.effectiveRank || 0}`
+    : `new_${S.room.previousSet?.uid || "none"}_${S.room.previousSet?.createdAt?.seconds || 0}_${S.room.updatedAt?.seconds || 0}_${S.room.updatedAt?.nanoseconds || 0}`;
+
+  const key = `${S.roomId}:${S.room.round}:${ai.uid}:${currentSetKey}`;
+
+  if(S.aiKeys.has(key)) return;
+  S.aiKeys.add(key);
+
+  setTimeout(async () => {
+    const snap = await handRef(ai.uid).get();
+    const hand = snap.exists ? (snap.data().hand || []) : [];
+    const cards = aiCards(ai, hand);
+
+    if(cards.length) {
+      await applyPlay(ai.uid, cards, hand);
+    } else {
+      await passAs(ai.uid);
+    }
+  }, 700);
+}
   function showModal(title,body,actions=`<button class="btn primary" onclick="Dalmuti.closeModal()">확인</button>`){ $("gameModalCard").innerHTML=`<div class="modal-head"><h2>${title}</h2></div>${body}<div class="modal-actions">${actions}</div>`; $("gameModal").classList.add("show"); }
   function closeModal(){$("gameModal").classList.remove("show");}
   function rows(list,mode){return`<div class="modal-table"><div class="modal-row header"><span>순위</span><span>닉네임</span><span>${mode==="start"?"점수":"획득"}</span><span>계급</span></div>${list.map((p,i)=>`<div class="modal-row"><span>${mode==="start"?i+1:(p.lastRoundRank||i+1)}등</span><span>${esc(p.nickname)}</span><strong>${mode==="start"?(p.score||0):`+${p.lastRoundScore||0}`}</strong><span>${esc(p.role||"-")}</span></div>`).join("")}</div>`;}
