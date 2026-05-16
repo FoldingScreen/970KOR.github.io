@@ -925,15 +925,34 @@ async function toggleReady() {
       renderHand();
       return;
     }
-    if (S.selected.has(group.rank)) S.selected.delete(group.rank);
-    else if (Number(group.rank) === 13) S.selected.set(group.rank, group.items.slice());
-    else {
-      const jokers = S.selected.get(13) || [];
-      S.selected.clear();
-      S.selected.set(group.rank, group.items.slice());
-      if (jokers.length) S.selected.set(13, jokers);
-    }
-    renderHand();
+const currentSelected = S.selected.get(group.rank) || [];
+
+if (Number(group.rank) === 13) {
+  if (!currentSelected.length) {
+    S.selected.set(group.rank, group.items.slice());
+  } else if (currentSelected.length > 1) {
+    S.selected.set(group.rank, group.items.slice(0, currentSelected.length - 1));
+  } else {
+    S.selected.delete(group.rank);
+  }
+
+  renderHand();
+  return;
+}
+
+const jokers = S.selected.get(13) || [];
+
+if (!currentSelected.length) {
+  S.selected.clear();
+  S.selected.set(group.rank, group.items.slice());
+  if (jokers.length) S.selected.set(13, jokers);
+} else if (currentSelected.length > 1) {
+  S.selected.set(group.rank, group.items.slice(0, currentSelected.length - 1));
+} else {
+  S.selected.delete(group.rank);
+}
+
+renderHand();
   }
 
   async function playSelected() {
