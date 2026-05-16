@@ -179,8 +179,17 @@
           return v !== undefined && v !== null;
         });
       };
+
+      var originalMap = Array.prototype.map;
+      Array.prototype.map = function (callback, thisArg) {
+        var arr = this;
+        if (Array.isArray(arr) && arr.some(function (v) { return v && Object.prototype.hasOwnProperty.call(v, "p") && !v.p; })) {
+          arr = arr.filter(function (v) { return !(v && Object.prototype.hasOwnProperty.call(v, "p") && !v.p); });
+        }
+        return originalMap.call(arr, callback, thisArg);
+      };
     })();
   </script>
-  <script src="./js/00-config.js?v=20260516-testdb2"></script>
+  <script src="./js/00-config.js?v=20260516-testdb3"></script>
 </body>
 </html>
