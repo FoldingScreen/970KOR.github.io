@@ -171,6 +171,16 @@
       measurementId: "G-EV2SN61VJZ"
     });
   </script>
-  <script src="./js/00-config.js?v=20260516-testdb1"></script>
+  <script>
+    (function () {
+      var originalValues = Object.values;
+      Object.values = function (obj) {
+        return originalValues(obj || {}).filter(function (v) {
+          return v !== undefined && v !== null;
+        });
+      };
+    })();
+  </script>
+  <script src="./js/00-config.js?v=20260516-testdb2"></script>
 </body>
 </html>
