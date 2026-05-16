@@ -704,11 +704,32 @@
     leaveLocal();
   }
 
-  async function toggleReady() {
-    const mine = me();
-    if (!S.room || mine?.type !== "player" || mine.isAI || S.room.status !== "waiting") return;
-    await roomRef().set({ [`players.${S.user}.isReady`]: !mine.isReady, updatedAt: serverNow() }, { merge: true });
+async function toggleReady() {
+  if (!S.room || S.room.status !== "waiting") return;
+
+  const players = playersMap();
+  const player = players[S.user];
+
+  if (!player) {
+    toast("참가자 상태가 아닙니다. 관전 중이면 참가하기를 먼저 눌러주세요.");
+    return;
   }
+
+  if (player.isAI) return;
+
+  players[S.user] = {
+    ...player,
+    uid: player.uid || S.user,
+    nickname: player.nickname || S.user,
+    type: "player",
+    isReady: !player.isReady
+  };
+
+  await roomRef().set({
+    players,
+    updatedAt: serverNow()
+  }, { merge: true });
+}
 
   async function becomeSpectator() {
     if (!S.room || S.room.status !== "waiting" || kickedMap()[S.user]) return;
