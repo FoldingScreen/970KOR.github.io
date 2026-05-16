@@ -50,7 +50,8 @@
     aiLocks: new Set(),
     tributeAnimKeys: new Set(),
     actionBusy: false,
-    hostAssigning: false
+    hostAssigning: false,
+    leavingByKick: false
   };
 
   const E = {};
@@ -67,9 +68,10 @@
   const cardImg = rank => CARD_BASE + rankInfo(rank).image;
   const playersMap = (room = S.room) => cleanMap(room?.players);
   const spectatorsMap = (room = S.room) => cleanMap(room?.spectators);
-  const allPlayers = (room = S.room) => Object.values(playersMap(room)).filter(p => p && !p.removedFromRoom).sort((a, b) => (a.seatOrder ?? 999) - (b.seatOrder ?? 999));
+  const kickedMap = (room = S.room) => cleanMap(room?.kicked);
+  const allPlayers = (room = S.room) => Object.values(playersMap(room)).filter(p => p && p.uid && !p.removedFromRoom).sort((a, b) => (a.seatOrder ?? 999) - (b.seatOrder ?? 999));
   const activePlayers = (room = S.room) => allPlayers(room).filter(p => !p.finished && !p.forfeited && !p.removedFromRoom);
-  const spectators = (room = S.room) => Object.values(spectatorsMap(room)).filter(p => p && !p.removedFromRoom).sort((a, b) => String(a.nickname || "").localeCompare(String(b.nickname || ""), "ko"));
+  const spectators = (room = S.room) => Object.values(spectatorsMap(room)).filter(p => p && p.uid && !p.removedFromRoom).sort((a, b) => String(a.nickname || "").localeCompare(String(b.nickname || ""), "ko"));
   const me = (room = S.room) => playersMap(room)[S.user] || spectatorsMap(room)[S.user] || null;
   const isHost = (room = S.room) => room?.hostUid === S.user;
   const isMaster = () => S.user === MASTER;
@@ -143,25 +145,22 @@
     return list[(idx + 1) % list.length]?.uid || list[0]?.uid || null;
   }
 
+  function nextAfterKick(oldRoom, kickedUid, nextPlayers) {
+    const oldList = allPlayers(oldRoom).filter(p => p && p.uid);
+    const idx = oldList.findIndex(p => p.uid === kickedUid);
+    if (idx >= 0) {
+      for (let i = 1; i <= oldList.length; i++) {
+        const cand = oldList[(idx + i) % oldList.length];
+        const p = nextPlayers[cand.uid];
+        if (p && !p.finished && !p.forfeited && !p.removedFromRoom) return cand.uid;
+      }
+    }
+    const fallback = Object.values(nextPlayers).find(p => p && !p.finished && !p.forfeited && !p.removedFromRoom);
+    return fallback?.uid || null;
+  }
+
   function basePlayer(uid, nickname, seatOrder, isAI) {
-    return {
-      uid,
-      nickname,
-      type: "player",
-      isReady: !!isAI,
-      isAI: !!isAI,
-      seatOrder,
-      role: null,
-      score: 0,
-      lastRoundScore: 0,
-      lastRoundRank: null,
-      cardCount: 0,
-      passed: false,
-      finished: false,
-      finishedRank: null,
-      forfeited: false,
-      removedFromRoom: false
-    };
+    return { uid, nickname, type: "player", isReady: !!isAI, isAI: !!isAI, seatOrder, role: null, score: 0, lastRoundScore: 0, lastRoundRank: null, cardCount: 0, passed: false, finished: false, finishedRank: null, forfeited: false, removedFromRoom: false };
   }
 
   const baseSpectator = (uid, nickname) => ({ uid, nickname, type: "spectator", isAI: false, removedFromRoom: false });
@@ -200,14 +199,7 @@
   }
 
   function collectElements() {
-    [
-      "lobbyView", "roomView", "myNickname", "roomTitleInput", "totalRoundsSelect", "turnLimitSelect",
-      "roomList", "rankPreview", "roomStateText", "roomTitle", "turnBadge", "messageBar",
-      "lobbyControls", "readyBtn", "watchBtn", "joinAsPlayerBtn", "startBtn", "betweenControls",
-      "nextRoundBtn", "resetGameBtn", "playersArea", "centerPile", "handArea", "selectedSummary",
-      "playControls", "playBtn", "passBtn", "scoreList", "chatList", "chatInput", "sendChatBtn",
-      "toggleSpectatorChatBtn", "homeBtn", "leaveRoomBtn", "createRoomBtn", "refreshRoomsBtn", "toast"
-    ].forEach(id => { E[id] = $(id); });
+    ["lobbyView", "roomView", "myNickname", "roomTitleInput", "totalRoundsSelect", "turnLimitSelect", "roomList", "rankPreview", "roomStateText", "roomTitle", "turnBadge", "messageBar", "lobbyControls", "readyBtn", "watchBtn", "joinAsPlayerBtn", "startBtn", "betweenControls", "nextRoundBtn", "resetGameBtn", "playersArea", "centerPile", "handArea", "selectedSummary", "playControls", "playBtn", "passBtn", "scoreList", "chatList", "chatInput", "sendChatBtn", "toggleSpectatorChatBtn", "homeBtn", "leaveRoomBtn", "createRoomBtn", "refreshRoomsBtn", "toast"].forEach(id => { E[id] = $(id); });
   }
 
   function injectCss() {
@@ -215,13 +207,12 @@
     const style = document.createElement("style");
     style.id = "dalmutiSingleCss";
     style.textContent = `
-      @media(min-width:881px){
-        .dalmuti-app{width:min(1380px,100%);padding:10px 14px}.dalmuti-topbar{margin-bottom:8px}.dalmuti-topbar h1{font-size:23px;margin:0}.eyebrow{font-size:10px}.room-shell{grid-template-columns:minmax(0,1fr) 300px!important;gap:10px;align-items:start}.panel{padding:12px;border-radius:18px}.game-panel{min-height:calc(100vh - 78px)!important;display:flex;flex-direction:column}.room-head{display:none!important}.message-bar{margin:0 0 8px;padding:8px 10px;font-size:13px}.table-wrap{height:calc(100vh - 300px)!important;min-height:540px!important;max-height:620px!important;margin-top:6px;flex:1}.hand-header{margin-top:8px}.hand-header h3{font-size:17px;margin:0}.hand-header .muted{display:none}.hand-area{min-height:142px!important;padding:10px;margin:6px 0;gap:8px}.hand-stack{width:74px!important}.hand-stack img{width:74px!important;border-radius:8px}.selected-summary{font-size:13px;padding:6px 10px}.action-row .btn{padding:8px 11px}.player-box{width:116px;min-height:68px;padding:7px;border-radius:14px;position:absolute}.player-role{font-size:11px}.player-name{font-size:13px}.player-meta{font-size:11px}.seat-bottom{bottom:6px!important}.seat-top-0,.seat-top-1,.seat-top-2{top:6px!important}.seat-left-0,.seat-left-1,.seat-left-2{left:8px!important}.seat-right-0,.seat-right-1,.seat-right-2{right:8px!important}.seat-top-0{left:50%!important;transform:translateX(-50%)!important}.seat-top-1{left:30%!important;transform:translateX(-50%)!important}.seat-top-2{left:70%!important;transform:translateX(-50%)!important}.center-pile{width:720px!important;max-width:72%!important;height:360px!important;min-height:360px!important;padding:0!important;overflow:visible!important;text-align:left!important}.side-panel{gap:9px;max-height:calc(100vh - 92px);overflow:auto}.side-panel>section:first-child{display:none}.chat-list{height:200px}}
-      .player-box.submitted{border-color:#7ee2a8!important;box-shadow:0 0 0 2px rgba(126,226,168,.55),0 12px 24px rgba(0,0,0,.28)!important}.player-box.passed{opacity:.8!important;border-color:#8792a7!important;background:rgba(35,39,51,.92)!important}.player-box.forfeited{opacity:.45!important;filter:grayscale(.9)}.badge{display:inline-block;margin-top:3px;padding:2px 7px;border-radius:999px;font-size:10px;font-weight:900}.badge.submit{background:rgba(126,226,168,.16);border:1px solid rgba(126,226,168,.75);color:#9ff0bd}.badge.pass{background:rgba(135,146,167,.16);border:1px solid rgba(135,146,167,.75);color:#d2d8e4}.badge.turn{background:rgba(243,210,129,.16);border:1px solid rgba(243,210,129,.75);color:#f3d281}.badge.ai{background:rgba(111,179,255,.16);border:1px solid rgba(111,179,255,.75);color:#9fcaff}.kick-btn{position:absolute;right:5px;top:5px;border:0;border-radius:999px;background:rgba(215,101,101,.92);color:#fff;font-size:10px;font-weight:900;padding:3px 6px;cursor:pointer;z-index:3}
+      @media(min-width:881px){.dalmuti-app{width:min(1380px,100%);padding:10px 14px}.dalmuti-topbar{margin-bottom:8px}.dalmuti-topbar h1{font-size:23px;margin:0}.eyebrow{font-size:10px}.room-shell{grid-template-columns:minmax(0,1fr) 300px!important;gap:10px;align-items:start}.panel{padding:12px;border-radius:18px}.game-panel{min-height:calc(100vh - 78px)!important;display:flex;flex-direction:column}.room-head{display:none!important}.message-bar{margin:0 0 8px;padding:8px 10px;font-size:13px}.table-wrap{height:calc(100vh - 300px)!important;min-height:540px!important;max-height:620px!important;margin-top:6px;flex:1}.hand-header{margin-top:8px}.hand-header h3{font-size:17px;margin:0}.hand-header .muted{display:none}.hand-area{min-height:142px!important;padding:10px;margin:6px 0;gap:8px}.hand-stack{width:74px!important}.hand-stack img{width:74px!important;border-radius:8px}.selected-summary{font-size:13px;padding:6px 10px}.action-row .btn{padding:8px 11px}.player-box{width:116px;min-height:68px;padding:7px;border-radius:14px;position:absolute}.player-role{font-size:11px}.player-name{font-size:13px}.player-meta{font-size:11px}.seat-bottom{bottom:6px!important}.seat-top-0,.seat-top-1,.seat-top-2{top:6px!important}.seat-left-0,.seat-left-1,.seat-left-2{left:8px!important}.seat-right-0,.seat-right-1,.seat-right-2{right:8px!important}.seat-top-0{left:50%!important;transform:translateX(-50%)!important}.seat-top-1{left:30%!important;transform:translateX(-50%)!important}.seat-top-2{left:70%!important;transform:translateX(-50%)!important}.center-pile{width:720px!important;max-width:72%!important;height:360px!important;min-height:360px!important;padding:0!important;overflow:visible!important;text-align:left!important}.side-panel{gap:9px;max-height:calc(100vh - 92px);overflow:auto}.side-panel>section:first-child{display:none}.chat-list{height:200px}}
+      .player-box.submitted{border-color:#7ee2a8!important;box-shadow:0 0 0 2px rgba(126,226,168,.55),0 12px 24px rgba(0,0,0,.28)!important}.player-box.passed{opacity:.8!important;border-color:#8792a7!important;background:rgba(35,39,51,.92)!important}.badge{display:inline-block;margin-top:3px;padding:2px 7px;border-radius:999px;font-size:10px;font-weight:900}.badge.submit{background:rgba(126,226,168,.16);border:1px solid rgba(126,226,168,.75);color:#9ff0bd}.badge.pass{background:rgba(135,146,167,.16);border:1px solid rgba(135,146,167,.75);color:#d2d8e4}.badge.turn{background:rgba(243,210,129,.16);border:1px solid rgba(243,210,129,.75);color:#f3d281}.badge.ai{background:rgba(111,179,255,.16);border:1px solid rgba(111,179,255,.75);color:#9fcaff}.kick-btn{position:absolute;right:5px;top:5px;border:0;border-radius:999px;background:rgba(215,101,101,.92);color:#fff;font-size:10px;font-weight:900;padding:3px 6px;cursor:pointer;z-index:3}.score-list{display:none!important}
       .pile-board{position:relative;width:100%;height:100%}.pile-empty{height:100%;display:flex;align-items:center;justify-content:center;color:#aeb5c3;font-weight:900;font-size:18px}.prev-pile{position:absolute;left:14px;top:14px;width:160px;min-height:158px;border:1px solid rgba(255,255,255,.09);border-radius:14px;background:rgba(0,0,0,.24);padding:10px;display:flex;flex-direction:column;align-items:center}.prev-pile-title{font-size:12px;font-weight:900;color:#aeb5c3;margin-bottom:8px}.prev-pile img{width:82px;border-radius:10px}.cur-pile{position:absolute;left:205px;right:18px;top:20px;bottom:18px;display:flex;flex-direction:column;align-items:center;justify-content:center}.cur-pile-title{font-size:14px;font-weight:900;color:#f3d281;margin-bottom:12px}.cur-cards{display:flex;align-items:center;justify-content:center}.cur-cards img{width:132px;object-fit:cover;border-radius:12px;box-shadow:0 12px 28px rgba(0,0,0,.42);margin-left:-38px}.cur-cards img:first-child{margin-left:0}
-      .side-box,.result-box{margin-top:8px;border:1px solid rgba(243,210,129,.28);background:rgba(13,19,32,.72);border-radius:16px;padding:10px}.side-title,.result-title{font-weight:900;color:#f3d281;margin-bottom:7px}.side-btns{display:flex;gap:6px;flex-wrap:wrap}.side-btns .btn{padding:6px 8px;font-size:12px}.chip{display:inline-block;font-size:11px;padding:4px 7px;border-radius:999px;border:1px solid rgba(174,181,195,.28);background:rgba(255,255,255,.045);margin:2px}.score-row.compact{font-size:12px;padding:4px 0}.room-setting-grid{display:grid;grid-template-columns:1fr;gap:6px}.room-setting-grid .input{height:32px;font-size:12px}.score-list{display:none!important}
-      .game-modal{position:fixed;inset:0;z-index:180;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.62);padding:24px}.game-modal.show{display:flex}.modal-card{width:min(760px,96vw);max-height:86vh;overflow:auto;background:#121827;border:1px solid rgba(243,210,129,.4);border-radius:24px;padding:22px;box-shadow:0 24px 80px rgba(0,0,0,.58);color:#f4f1e8}.modal-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}.modal-head h2{margin:0;color:#f3d281}.modal-table{display:grid;gap:7px}.modal-row{display:grid;grid-template-columns:54px minmax(0,1fr) 74px 82px;gap:8px;align-items:center;padding:9px;border-radius:13px;background:rgba(255,255,255,.055);font-size:14px}.modal-row.header{background:transparent;color:#aeb5c3;font-size:12px;font-weight:900}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.rebellion-card{text-align:center}.rebellion-card img{width:180px;border-radius:18px;box-shadow:0 18px 55px rgba(0,0,0,.6);margin-bottom:16px}.rebellion-card h2{color:#f3d281;margin:4px 0 8px}.rebellion-card p{font-size:18px;font-weight:900;margin:6px 0}.help-section{border-top:1px solid rgba(255,255,255,.09);padding-top:12px;margin-top:12px;line-height:1.55;color:#d8deea;font-size:14px}.help-section strong{color:#f3d281}
-      #tributePanel{position:fixed;right:326px;bottom:12px;z-index:95;display:none;width:260px;padding:10px;border-radius:18px;border:1px solid rgba(243,210,129,.45);background:rgba(13,19,32,.96);box-shadow:0 16px 42px rgba(0,0,0,.42);color:#f4f1e8}.tribute-title{font-weight:900;color:#f3d281}.tribute-line{font-size:12px;color:#aeb5c3;margin:6px 0}.tribute-cards{display:flex;gap:7px;flex-wrap:wrap}.tribute-cards img{width:40px;border-radius:7px}.tribute-fly-card{position:fixed;width:54px;height:81px;object-fit:cover;border-radius:8px;z-index:220;pointer-events:none;box-shadow:0 12px 28px rgba(0,0,0,.48);transition:transform ${TRIBUTE_ANIM_MS}ms cubic-bezier(.2,.85,.18,1),opacity ${TRIBUTE_ANIM_MS}ms ease}.result-row{display:grid;grid-template-columns:40px minmax(0,1fr) 48px 62px;gap:6px;padding:6px 7px;border-radius:12px;background:rgba(255,255,255,.045);font-size:12px;margin-top:5px}.result-row.header{background:transparent;color:#aeb5c3;font-weight:900}
+      .side-box{margin-top:8px;border:1px solid rgba(243,210,129,.28);background:rgba(13,19,32,.72);border-radius:16px;padding:10px}.side-title,.result-title{font-weight:900;color:#f3d281;margin-bottom:7px}.side-btns{display:flex;gap:6px;flex-wrap:wrap}.side-btns .btn{padding:6px 8px;font-size:12px}.chip{display:inline-block;font-size:11px;padding:4px 7px;border-radius:999px;border:1px solid rgba(174,181,195,.28);background:rgba(255,255,255,.045);margin:2px}.score-row.compact{font-size:12px;padding:4px 0}.room-setting-grid{display:grid;grid-template-columns:1fr;gap:6px}.room-setting-grid .input{height:32px;font-size:12px}.result-row{display:grid;grid-template-columns:40px minmax(0,1fr) 48px 62px;gap:6px;padding:6px 7px;border-radius:12px;background:rgba(255,255,255,.045);font-size:12px;margin-top:5px}.result-row.header{background:transparent;color:#aeb5c3;font-weight:900}
+      .game-modal{position:fixed;inset:0;z-index:180;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.62);padding:24px}.game-modal.show{display:flex}.modal-card{width:min(760px,96vw);max-height:86vh;overflow:auto;background:#121827;border:1px solid rgba(243,210,129,.4);border-radius:24px;padding:22px;box-shadow:0 24px 80px rgba(0,0,0,.58);color:#f4f1e8}.modal-head h2{margin:0;color:#f3d281}.modal-table{display:grid;gap:7px}.modal-row{display:grid;grid-template-columns:54px minmax(0,1fr) 74px 82px;gap:8px;align-items:center;padding:9px;border-radius:13px;background:rgba(255,255,255,.055);font-size:14px}.modal-row.header{background:transparent;color:#aeb5c3;font-size:12px;font-weight:900}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.rebellion-card{text-align:center}.rebellion-card img{width:180px;border-radius:18px;box-shadow:0 18px 55px rgba(0,0,0,.6);margin-bottom:16px}.rebellion-card h2{color:#f3d281;margin:4px 0 8px}.rebellion-card p{font-size:18px;font-weight:900;margin:6px 0}.help-section{border-top:1px solid rgba(255,255,255,.09);padding-top:12px;margin-top:12px;line-height:1.55;color:#d8deea;font-size:14px}.help-section strong{color:#f3d281}
+      #tributePanel{position:fixed;right:326px;bottom:12px;z-index:95;display:none;width:260px;padding:10px;border-radius:18px;border:1px solid rgba(243,210,129,.45);background:rgba(13,19,32,.96);box-shadow:0 16px 42px rgba(0,0,0,.42);color:#f4f1e8}.tribute-title{font-weight:900;color:#f3d281}.tribute-line{font-size:12px;color:#aeb5c3;margin:6px 0}.tribute-cards{display:flex;gap:7px;flex-wrap:wrap}.tribute-cards img{width:40px;border-radius:7px}.tribute-fly-card{position:fixed;width:54px;height:81px;object-fit:cover;border-radius:8px;z-index:220;pointer-events:none;box-shadow:0 12px 28px rgba(0,0,0,.48);transition:transform ${TRIBUTE_ANIM_MS}ms cubic-bezier(.2,.85,.18,1),opacity ${TRIBUTE_ANIM_MS}ms ease}
     `;
     document.head.appendChild(style);
   }
@@ -254,17 +245,44 @@
     E.leaveRoomBtn?.classList.toggle("hidden", name !== "room");
   }
 
+  function safeRender(name, fn) {
+    try { fn(); } catch (err) { console.error(`[dalmuti] ${name} render failed`, err); }
+  }
+
+  function renderEverything() {
+    if (!S.room) return;
+    if (S.room.status === "closed" || S.room.closed) {
+      alert("방이 삭제되었습니다.");
+      leaveLocal();
+      return;
+    }
+    if (kickedMap()[S.user]) {
+      handleKicked();
+      return;
+    }
+    setView("room");
+    safeRender("header", renderHeader);
+    safeRender("players", renderPlayers);
+    safeRender("pile", renderPile);
+    safeRender("hand", renderHand);
+    safeRender("controls", renderControls);
+    safeRender("scores", renderScores);
+    safeRender("chat", renderChat);
+    safeRender("side", renderSide);
+    safeRender("tribute", renderTribute);
+    safeRender("rebellion", maybeRebellionModal);
+    safeRender("startModal", maybeStartModal);
+    safeRender("resultModal", maybeResultModal);
+    maybeClientTasks().catch(console.error);
+  }
+
   function renderRankPreview() {
     if (E.rankPreview) E.rankPreview.innerHTML = RANKS.map(r => `<span class="rank-chip">${r.code}. ${esc(r.name)}</span>`).join("");
   }
 
   async function loadRooms() {
     if (!E.roomList) return;
-    const snap = await roomCol().orderBy("updatedAt", "desc").limit(30).get().catch(err => {
-      console.error(err);
-      toast("방 목록을 불러오지 못했습니다.");
-      return null;
-    });
+    const snap = await roomCol().orderBy("updatedAt", "desc").limit(30).get().catch(err => { console.error(err); toast("방 목록을 불러오지 못했습니다."); return null; });
     if (!snap) return;
     const docs = snap.docs.filter(d => !d.data().closed && d.data().status !== "closed");
     E.roomList.innerHTML = docs.length ? docs.map(d => {
@@ -273,41 +291,6 @@
       return `<div class="room-item"><div><strong>${esc(r.title || "사바나 달무티")}</strong><div class="room-meta">${status} · 플레이어 ${r.playerCount || 0}/${MAX_PLAYERS} · 관전자 ${r.spectatorCount || 0} · ${r.totalRounds ? `${r.totalRounds}판` : "무제한"}</div></div><button class="btn primary" type="button" onclick="Dalmuti.joinRoom('${d.id}')">입장</button></div>`;
     }).join("") : `<div class="muted">생성된 방이 없습니다.</div>`;
   }
-
-function safeRender(name, fn) {
-  try {
-    fn();
-  } catch (err) {
-    console.error(`[dalmuti] ${name} render failed`, err);
-  }
-}
-
-function renderEverything() {
-  if (!S.room) return;
-
-  if (S.room.status === "closed" || S.room.closed) {
-    alert("방이 삭제되었습니다.");
-    leaveLocal();
-    return;
-  }
-
-  setView("room");
-
-  safeRender("header", renderHeader);
-  safeRender("players", renderPlayers);
-  safeRender("pile", renderPile);
-  safeRender("hand", renderHand);
-  safeRender("controls", renderControls);
-  safeRender("scores", renderScores);
-  safeRender("chat", renderChat);
-  safeRender("side", renderSide);
-  safeRender("tribute", renderTribute);
-  safeRender("rebellion", maybeRebellionModal);
-  safeRender("startModal", maybeStartModal);
-  safeRender("resultModal", maybeResultModal);
-
-  maybeClientTasks().catch(console.error);
-}
 
   function renderHeader() {
     const room = S.room;
@@ -325,113 +308,47 @@ function renderEverything() {
     }
   }
 
- function positions() {
-  const ps = allPlayers().filter(p => p && p.uid);
-
-  const myIndexRaw = ps.findIndex(p => p.uid === S.user);
-  const myIndex = myIndexRaw >= 0 ? myIndexRaw : 0;
-
-  const rotated = ps.length
-    ? ps.slice(myIndex).concat(ps.slice(0, myIndex))
-    : [];
-
-  const mine = rotated[0] || null;
-  const others = rotated.slice(1).filter(p => p && p.uid);
-
-  let left = [];
-  let top = [];
-  let right = [];
-
-  if (others.length === 1) {
-    top = others;
-  } else if (others.length === 2) {
-    left = [others[0]];
-    right = [others[1]];
-  } else if (others.length === 3) {
-    left = [others[0]];
-    top = [others[1]];
-    right = [others[2]];
-  } else if (others.length === 4) {
-    left = [others[0]];
-    top = [others[1], others[2]];
-    right = [others[3]];
-  } else if (others.length === 5) {
-    left = [others[0], others[1]];
-    top = [others[2], others[3]];
-    right = [others[4]];
-  } else if (others.length === 6) {
-    left = [others[0], others[1]];
-    top = [others[2], others[3]];
-    right = [others[4], others[5]];
-  } else if (others.length >= 7) {
-    left = [others[0], others[1]];
-    top = [others[2], others[3], others[4]];
-    right = [others[5], others[6]];
+  function positions() {
+    const ps = allPlayers().filter(p => p && p.uid);
+    const myIndexRaw = ps.findIndex(p => p.uid === S.user);
+    const myIndex = myIndexRaw >= 0 ? myIndexRaw : 0;
+    const rotated = ps.length ? ps.slice(myIndex).concat(ps.slice(0, myIndex)) : [];
+    const mine = rotated[0] || null;
+    const others = rotated.slice(1).filter(p => p && p.uid);
+    let left = [], top = [], right = [];
+    if (others.length === 1) top = others;
+    else if (others.length === 2) { left = [others[0]]; right = [others[1]]; }
+    else if (others.length === 3) { left = [others[0]]; top = [others[1]]; right = [others[2]]; }
+    else if (others.length === 4) { left = [others[0]]; top = [others[1], others[2]]; right = [others[3]]; }
+    else if (others.length === 5) { left = [others[0], others[1]]; top = [others[2], others[3]]; right = [others[4]]; }
+    else if (others.length === 6) { left = [others[0], others[1]]; top = [others[2], others[3]]; right = [others[4], others[5]]; }
+    else if (others.length >= 7) { left = [others[0], others[1]]; top = [others[2], others[3], others[4]]; right = [others[5], others[6]]; }
+    return [
+      ...(mine ? [{ p: mine, cls: "seat-bottom" }] : []),
+      ...left.map((p, i) => ({ p, cls: `seat-left-${left.length === 1 ? 0 : i + 1}` })),
+      ...top.map((p, i) => ({ p, cls: `seat-top-${top.length === 1 ? 0 : i}` })),
+      ...right.map((p, i) => ({ p, cls: `seat-right-${right.length === 1 ? 0 : i + 1}` }))
+    ].filter(item => item && item.p && item.p.uid);
   }
 
-  return [
-    ...(mine ? [{ p: mine, cls: "seat-bottom" }] : []),
-    ...left.map((p, i) => ({ p, cls: `seat-left-${left.length === 1 ? 0 : i + 1}` })),
-    ...top.map((p, i) => ({ p, cls: `seat-top-${top.length === 1 ? 0 : i}` })),
-    ...right.map((p, i) => ({ p, cls: `seat-right-${right.length === 1 ? 0 : i + 1}` }))
-  ].filter(item => item && item.p && item.p.uid);
-}
-
-function renderPlayers() {
-  if (!E.playersArea) return;
-
-  const seated = positions();
-
-  if (!seated.length) {
-    E.playersArea.innerHTML = `
-      <div class="muted" style="position:absolute;left:16px;top:16px">
-        참가자 정보를 불러오는 중입니다.
-      </div>
-    `;
-    return;
-  }
-
-  E.playersArea.innerHTML = seated.map(({ p, cls }) => {
-    if (!p || !p.uid) return "";
-
-    const submitted = S.room?.currentSet?.uid === p.uid;
-    const state = p.finished
-      ? `${p.finishedRank || ""}등 완료`
-      : p.passed
-        ? "패스"
-        : `${Number(p.cardCount || 0)}장`;
-
-    let badge = p.isAI ? `<div class="badge ai">AI</div>` : "";
-
-    if (submitted) {
-      badge += `<div class="badge submit">제출</div>`;
-    } else if (p.passed) {
-      badge += `<div class="badge pass">패스</div>`;
-    } else if (S.room?.currentTurnUid === p.uid) {
-      badge += `<div class="badge turn">차례</div>`;
+  function renderPlayers() {
+    if (!E.playersArea) return;
+    const seated = positions();
+    if (!seated.length) {
+      E.playersArea.innerHTML = `<div class="muted" style="position:absolute;left:16px;top:16px">참가자 정보를 불러오는 중입니다.</div>`;
+      return;
     }
-
-    const kick = isHost() && p.uid !== S.user
-      ? `<button class="kick-btn" type="button" onclick="Dalmuti.kick('${p.uid}')">강퇴</button>`
-      : "";
-
-    return `
-      <div class="player-box ${cls}
-        ${p.uid === S.user ? "me" : ""}
-        ${S.room?.currentTurnUid === p.uid ? "turn" : ""}
-        ${p.passed ? "passed" : ""}
-        ${p.finished ? "finished" : ""}
-        ${submitted ? "submitted" : ""}
-        ${p.forfeited ? "forfeited" : ""}">
-        ${kick}
-        <div class="player-role">${esc(p.role || "참가자")}</div>
-        <div class="player-name">${esc(p.nickname || p.uid)}</div>
-        <div class="player-meta">${state}${p.isReady ? " · 준비" : ""}</div>
-        ${badge}
-      </div>
-    `;
-  }).join("");
-}
+    E.playersArea.innerHTML = seated.map(({ p, cls }) => {
+      const submitted = S.room?.currentSet?.uid === p.uid;
+      const state = p.finished ? `${p.finishedRank || ""}등 완료` : p.passed ? "패스" : `${Number(p.cardCount || 0)}장`;
+      let badge = p.isAI ? `<div class="badge ai">AI</div>` : "";
+      if (submitted) badge += `<div class="badge submit">제출</div>`;
+      else if (p.passed) badge += `<div class="badge pass">패스</div>`;
+      else if (S.room?.currentTurnUid === p.uid) badge += `<div class="badge turn">차례</div>`;
+      const kick = isHost() && p.uid !== S.user ? `<button class="kick-btn" type="button" onclick="Dalmuti.kick('${p.uid}')">강퇴</button>` : "";
+      return `<div class="player-box ${cls} ${p.uid === S.user ? "me" : ""} ${S.room?.currentTurnUid === p.uid ? "turn" : ""} ${p.passed ? "passed" : ""} ${p.finished ? "finished" : ""} ${submitted ? "submitted" : ""}">${kick}<div class="player-role">${esc(p.role || "참가자")}</div><div class="player-name">${esc(p.nickname || p.uid)}</div><div class="player-meta">${state}${p.isReady ? " · 준비" : ""}</div>${badge}</div>`;
+    }).join("");
+  }
 
   function renderPile() {
     if (!E.centerPile) return;
@@ -478,7 +395,6 @@ function renderPlayers() {
       const selected = S.selected.get(g.rank)?.length || 0;
       return `<div class="hand-stack${selected ? " selected" : ""}${selectableGroup(g) ? "" : " disabled"}" onclick="Dalmuti.toggleRank(${g.rank})">${selected ? `<span class="stack-selected">${selected}</span>` : ""}<img src="${cardImg(g.rank)}"><span class="stack-count">x${g.items.length}</span></div>`;
     }).join("") : `<div class="muted">손패가 없습니다.</div>`;
-
     const cards = selectedCards();
     if (S.room?.status === "tributeReturn") {
       const pair = currentTributePairForMe();
@@ -495,7 +411,6 @@ function renderPlayers() {
     const between = S.room?.status === "betweenRounds" || S.room?.status === "finished";
     const myTurn = S.room?.status === "playing" && S.room.currentTurnUid === S.user && mine?.type === "player" && !mine.finished && !mine.forfeited;
     const tributeTurn = S.room?.status === "tributeReturn" && !!currentTributePairForMe();
-
     E.lobbyControls?.classList.toggle("hidden", !waiting);
     E.betweenControls?.classList.toggle("hidden", !between);
     E.playControls?.classList.toggle("hidden", !(myTurn || tributeTurn));
@@ -511,8 +426,7 @@ function renderPlayers() {
   }
 
   function renderScores() {
-    if (!E.scoreList) return;
-    E.scoreList.innerHTML = "";
+    if (E.scoreList) E.scoreList.innerHTML = "";
   }
 
   function renderChat() {
@@ -543,26 +457,21 @@ function renderPlayers() {
     const turn = S.room.currentTurnUid ? (playersMap()[S.room.currentTurnUid]?.nickname || "-") : "-";
     const status = ({ waiting: "대기 중", playing: `${S.room.round || 1}라운드`, tributeReturn: "상납 반환", betweenRounds: "라운드 종료", finished: "게임 종료" })[S.room.status] || S.room.status;
     sideBox("roomInfo").innerHTML = `<div class="side-title">방 정보</div><div class="score-row compact"><span>방제</span><strong>${esc(S.room.title || "-")}</strong></div><div class="score-row compact"><span>상태</span><strong>${esc(status)}</strong></div><div class="score-row compact"><span>차례</span><strong>${esc(turn)}</strong></div>`;
-
     const settings = sideBox("roomSettings", $("roomInfo"));
     settings.style.display = isHost() && S.room.status === "waiting" ? "block" : "none";
     if (settings.style.display !== "none") {
       settings.innerHTML = `<div class="side-title">방 설정</div><div class="room-setting-grid"><input id="setTitle" class="input" maxlength="24" value="${esc(S.room.title || "")}"><select id="setRounds" class="input"><option value="3">3판</option><option value="5">5판</option><option value="10">10판</option><option value="0">무제한</option></select></div><div class="side-btns" style="margin-top:8px"><button class="btn primary small" onclick="Dalmuti.saveSettings()">저장</button><button class="btn ghost small" onclick="Dalmuti.toggleSpectatorChat()">관전자 채팅 ${S.room.spectatorChatEnabled === false ? "차단" : "허용"}</button></div>`;
       if ($("setRounds")) $("setRounds").value = String(S.room.totalRounds || 0);
     }
-
     const spectatorPanel = sideBox("spectatorPanel", E.scoreList?.parentElement);
     const specList = spectators();
     spectatorPanel.innerHTML = `<div class="side-title">관전자</div>${specList.length ? specList.map(p => `<span class="chip">${esc(p.nickname)}</span>`).join(" ") : `<div class="muted">관전자가 없습니다.</div>`}`;
-
     const roundPanel = sideBox("roundResultPanel", spectatorPanel);
     roundPanel.style.display = S.room.lastRoundResult && ["betweenRounds", "finished"].includes(S.room.status) ? "block" : "none";
     if (roundPanel.style.display !== "none") roundPanel.innerHTML = `<div class="result-title">라운드 결과</div>${resultRows(allPlayers().slice().sort((a, b) => (a.lastRoundRank ?? 999) - (b.lastRoundRank ?? 999)), "round")}`;
-
     const finalPanel = sideBox("finalResultPanel", roundPanel);
     finalPanel.style.display = S.room.status === "finished" ? "block" : "none";
     if (finalPanel.style.display !== "none") finalPanel.innerHTML = `<div class="result-title">최종 결과</div>${resultRows(allPlayers().slice().sort((a, b) => (b.score || 0) - (a.score || 0)), "final")}`;
-
     const admin = sideBox("adminPanel", finalPanel);
     const aiBtn = isHost() && S.room.status === "waiting" ? `<button class="btn ghost small" onclick="Dalmuti.addAI()">AI 추가</button>` : "";
     const forceBtn = isHost() && S.room.status === "betweenRounds" ? `<button class="btn ghost small" onclick="Dalmuti.forceRebellion()">민란 강제</button>` : "";
@@ -657,6 +566,12 @@ function renderPlayers() {
     await roomRef().set({ chatPreview: chat, updatedAt: serverNow() }, { merge: true });
   }
 
+  async function appendSystemFrom(room, text) {
+    const chat = (room.chatPreview || []).slice(-CHAT_LIMIT + 1);
+    chat.push({ type: "system", uid: "system", nickname: "", text, createdAt: Date.now() });
+    await roomRef().set({ chatPreview: chat, updatedAt: serverNow() }, { merge: true });
+  }
+
   const addSystem = text => appendChat({ type: "system", text });
 
   async function createRoom() {
@@ -664,31 +579,7 @@ function renderPlayers() {
     const rawRounds = Number(E.totalRoundsSelect?.value || 5);
     const ref = roomCol().doc();
     const player = basePlayer(S.user, S.user, 0, false);
-    await ref.set({
-      title,
-      hostUid: S.user,
-      hostNickname: S.user,
-      status: "waiting",
-      round: 0,
-      totalRounds: rawRounds === 0 ? null : rawRounds,
-      players: { [S.user]: player },
-      spectators: {},
-      playerCount: 1,
-      spectatorCount: 0,
-      currentTurnUid: null,
-      currentSet: null,
-      previousSet: null,
-      finishOrder: [],
-      lastRoundResult: null,
-      tribute: null,
-      chatPreview: [],
-      spectatorChatEnabled: true,
-      kickNotice: null,
-      rebellionNotice: null,
-      closed: false,
-      updatedAt: serverNow(),
-      createdAt: serverNow()
-    });
+    await ref.set({ title, hostUid: S.user, hostNickname: S.user, status: "waiting", round: 0, totalRounds: rawRounds === 0 ? null : rawRounds, players: { [S.user]: player }, spectators: {}, kicked: {}, playerCount: 1, spectatorCount: 0, currentTurnUid: null, currentSet: null, previousSet: null, finishOrder: [], lastRoundResult: null, tribute: null, chatPreview: [], spectatorChatEnabled: true, rebellionNotice: null, closed: false, updatedAt: serverNow(), createdAt: serverNow() });
     await ref.collection("hands").doc(S.user).set({ hand: [] });
     enterRoom(ref.id);
   }
@@ -700,15 +591,19 @@ function renderPlayers() {
     const room = snap.data();
     const players = playersMap(room);
     const specs = spectatorsMap(room);
+    const kicked = kickedMap(room);
+    if (kicked[S.user]) delete kicked[S.user];
     if (!players[S.user] && !specs[S.user]) {
       if (room.status === "waiting" && countMap(players) < MAX_PLAYERS) {
         players[S.user] = basePlayer(S.user, S.user, countMap(players), false);
-        await roomRef(roomId).set({ players, playerCount: countMap(players), updatedAt: serverNow() }, { merge: true });
+        await roomRef(roomId).set({ players, kicked, playerCount: countMap(players), updatedAt: serverNow() }, { merge: true });
         await handRef(S.user, roomId).set({ hand: [] }, { merge: true });
       } else {
         specs[S.user] = baseSpectator(S.user, S.user);
-        await roomRef(roomId).set({ spectators: specs, spectatorCount: countMap(specs), updatedAt: serverNow() }, { merge: true });
+        await roomRef(roomId).set({ spectators: specs, kicked, spectatorCount: countMap(specs), updatedAt: serverNow() }, { merge: true });
       }
+    } else if (room.kicked?.[S.user]) {
+      await roomRef(roomId).set({ kicked, updatedAt: serverNow() }, { merge: true });
     }
     enterRoom(roomId);
   }
@@ -725,18 +620,29 @@ function renderPlayers() {
         return;
       }
       S.room = snap.data();
-      const myData = me();
-      if (S.room.kickNotice?.uid === S.user || myData?.removedFromRoom) {
-        alert("방장에 의해 방에서 내보내졌습니다.");
-        leaveLocal();
+      if (kickedMap()[S.user]) {
+        handleKicked();
         return;
       }
       renderEverything();
       ensureMyHandSubscription();
-    }, err => {
-      console.error(err);
-      toast("방 정보를 읽지 못했습니다.");
-    });
+    }, err => { console.error(err); toast("방 정보를 읽지 못했습니다."); });
+  }
+
+  function handleKicked() {
+    if (S.leavingByKick) return;
+    S.leavingByKick = true;
+    const roomId = S.roomId;
+    leaveSubscriptions();
+    S.room = null;
+    S.hand = [];
+    S.selected.clear();
+    localStorage.removeItem("dalmutiCurrentRoomId");
+    S.roomId = "";
+    setView("lobby");
+    loadRooms();
+    alert("방장에 의해 방에서 내보내졌습니다. 로비에서 다시 입장할 수 있습니다.");
+    setTimeout(() => { S.leavingByKick = false; }, 500);
   }
 
   function ensureMyHandSubscription() {
@@ -753,11 +659,7 @@ function renderPlayers() {
     if (S.handUnsub && ensureMyHandSubscription.key === key) return;
     if (S.handUnsub) S.handUnsub();
     ensureMyHandSubscription.key = key;
-    S.handUnsub = handRef().onSnapshot(snap => {
-      S.hand = snap.exists ? sortHand(snap.data().hand || []) : [];
-      renderHand();
-      renderTribute();
-    }, console.error);
+    S.handUnsub = handRef().onSnapshot(snap => { S.hand = snap.exists ? sortHand(snap.data().hand || []) : []; renderHand(); renderTribute(); }, console.error);
   }
 
   function leaveSubscriptions() {
@@ -795,13 +697,8 @@ function renderPlayers() {
     const update = { players, spectators: specs, playerCount: countMap(players), spectatorCount: countMap(specs), updatedAt: serverNow() };
     if (S.room.hostUid === S.user) {
       const next = Object.values(players)[0] || Object.values(specs)[0];
-      if (next) {
-        update.hostUid = next.uid;
-        update.hostNickname = next.nickname;
-      } else {
-        update.closed = true;
-        update.status = "closed";
-      }
+      if (next) { update.hostUid = next.uid; update.hostNickname = next.nickname; }
+      else { update.closed = true; update.status = "closed"; }
     }
     await roomRef().set(update, { merge: true });
     leaveLocal();
@@ -814,7 +711,7 @@ function renderPlayers() {
   }
 
   async function becomeSpectator() {
-    if (!S.room || S.room.status !== "waiting") return;
+    if (!S.room || S.room.status !== "waiting" || kickedMap()[S.user]) return;
     const players = playersMap();
     const specs = spectatorsMap();
     if (!players[S.user]) return;
@@ -826,6 +723,7 @@ function renderPlayers() {
 
   async function becomePlayer() {
     if (!S.room || S.room.status !== "waiting") return toast("대기 중에만 참가할 수 있습니다.");
+    if (kickedMap()[S.user]) return toast("로비에서 다시 입장해 주세요.");
     const players = playersMap();
     const specs = spectatorsMap();
     if (players[S.user]) return;
@@ -847,18 +745,13 @@ function renderPlayers() {
     await handRef(uid).set({ hand: [] });
   }
 
-  function hasTwoHong(hand = []) {
-    return hand.filter(c => c.joker || Number(c.rank) === 13).length >= 2;
-  }
+  function hasTwoHong(hand = []) { return hand.filter(c => c.joker || Number(c.rank) === 13).length >= 2; }
 
   function forceHongForRebellion(hands, uid) {
     let jokers = [];
     Object.keys(hands).forEach(owner => {
       const keep = [];
-      hands[owner].forEach(card => {
-        if ((card.joker || Number(card.rank) === 13) && jokers.length < 2) jokers.push(card);
-        else keep.push(card);
-      });
+      hands[owner].forEach(card => { if ((card.joker || Number(card.rank) === 13) && jokers.length < 2) jokers.push(card); else keep.push(card); });
       hands[owner] = keep;
     });
     while (jokers.length < 2) jokers.push({ id: `j-force-${jokers.length}-${Math.random().toString(36).slice(2, 8)}`, rank: 13, name: "홍길동", joker: true });
@@ -866,22 +759,15 @@ function renderPlayers() {
     const ids = new Set(takeOut.map(c => c.id));
     hands[uid] = (hands[uid] || []).filter(c => !ids.has(c.id)).concat(jokers.slice(0, 2));
     const donors = Object.keys(hands).filter(k => k !== uid);
-    takeOut.forEach((card, i) => {
-      const donor = donors[i % donors.length];
-      if (donor) hands[donor].push(card);
-    });
+    takeOut.forEach((card, i) => { const donor = donors[i % donors.length]; if (donor) hands[donor].push(card); });
     Object.keys(hands).forEach(owner => { hands[owner] = sortHand(hands[owner]); });
   }
 
-  function bestTributeCards(hand, count) {
-    return sortHand(hand).filter(c => !(c.joker || Number(c.rank) === 13)).slice(0, count);
-  }
+  function bestTributeCards(hand, count) { return sortHand(hand).filter(c => !(c.joker || Number(c.rank) === 13)).slice(0, count); }
 
   function makeTributePairs(players, hands) {
     if (players.length < 3) return [];
-    const specs = players.length === 3
-      ? [{ from: players[2], to: players[0], count: 1 }]
-      : [{ from: players[players.length - 1], to: players[0], count: 2 }, { from: players[players.length - 2], to: players[1], count: 1 }];
+    const specs = players.length === 3 ? [{ from: players[2], to: players[0], count: 1 }] : [{ from: players[players.length - 1], to: players[0], count: 2 }, { from: players[players.length - 2], to: players[1], count: 1 }];
     return specs.map((spec, i) => {
       const cards = bestTributeCards(hands[spec.from.uid] || [], spec.count);
       const ids = new Set(cards.map(c => c.id));
@@ -905,52 +791,20 @@ function renderPlayers() {
     const hands = Object.fromEntries(ps.map(p => [p.uid, []]));
     deck.forEach((card, i) => hands[ps[i % ps.length].uid].push(card));
     Object.keys(hands).forEach(uid => { hands[uid] = sortHand(hands[uid]); });
-
     if (forceRebellion && ps.length >= 3) forceHongForRebellion(hands, ps[ps.length - 1].uid);
-
     const lowUids = ps.length === 3 ? [ps[1]?.uid, ps[2]?.uid] : [ps[ps.length - 2]?.uid, ps[ps.length - 1]?.uid];
     const rebellionUid = round > 1 ? lowUids.find(uid => uid && hasTwoHong(hands[uid])) : null;
     const rebellionPlayer = ps.find(p => p.uid === rebellionUid);
     if (rebellionUid) ps = ps.slice().reverse();
-
     const pairs = round > 1 ? makeTributePairs(ps, hands) : [];
     const hasTribute = pairs.some(p => !p.returned);
     const playerMap = {};
     ps.forEach((p, i) => {
-      playerMap[p.uid] = {
-        ...p,
-        type: "player",
-        seatOrder: i,
-        role: roleByIndex(i, ps.length),
-        score: resetScores ? 0 : (p.score || 0),
-        lastRoundScore: 0,
-        lastRoundRank: resetScores ? null : p.lastRoundRank,
-        cardCount: hands[p.uid].length,
-        isReady: !!p.isAI,
-        passed: false,
-        finished: false,
-        finishedRank: null,
-        forfeited: false,
-        removedFromRoom: false
-      };
+      playerMap[p.uid] = { ...p, type: "player", seatOrder: i, role: roleByIndex(i, ps.length), score: resetScores ? 0 : (p.score || 0), lastRoundScore: 0, lastRoundRank: resetScores ? null : p.lastRoundRank, cardCount: hands[p.uid].length, isReady: !!p.isAI, passed: false, finished: false, finishedRank: null, forfeited: false, removedFromRoom: false };
     });
-
     const first = ps[0]?.uid || null;
     const batch = db.batch();
-    batch.set(roomRef(), {
-      players: playerMap,
-      playerCount: countMap(playerMap),
-      status: hasTribute ? "tributeReturn" : "playing",
-      round,
-      currentTurnUid: hasTribute ? null : first,
-      currentSet: null,
-      previousSet: null,
-      finishOrder: [],
-      turnOrder: ps.map(p => p.uid),
-      tribute: hasTribute ? { phase: "return", pairs, reversed: !!rebellionUid, returnStartedAt: ts() } : null,
-      rebellionNotice: rebellionUid ? { uid: rebellionUid, nickname: rebellionPlayer?.nickname || "누군가", round, createdAt: ts() } : null,
-      updatedAt: serverNow()
-    }, { merge: true });
+    batch.set(roomRef(), { players: playerMap, playerCount: countMap(playerMap), status: hasTribute ? "tributeReturn" : "playing", round, currentTurnUid: hasTribute ? null : first, currentSet: null, previousSet: null, finishOrder: [], turnOrder: ps.map(p => p.uid), tribute: hasTribute ? { phase: "return", pairs, reversed: !!rebellionUid, returnStartedAt: ts() } : null, rebellionNotice: rebellionUid ? { uid: rebellionUid, nickname: rebellionPlayer?.nickname || "누군가", round, createdAt: ts() } : null, updatedAt: serverNow() }, { merge: true });
     Object.keys(hands).forEach(uid => batch.set(handRef(uid), { hand: hands[uid] }));
     await batch.commit();
     await addSystem(rebellionUid ? `${rebellionPlayer?.nickname || "누군가"}님의 홍길동이 민란을 일으켰습니다.` : (hasTribute ? `${round}라운드 상납 반환을 시작합니다.` : `${round}라운드가 시작되었습니다.`));
@@ -966,7 +820,6 @@ function renderPlayers() {
     if (!mine || mine.type !== "player") return;
     const group = groupHand(S.hand).find(g => Number(g.rank) === Number(rank));
     if (!group) return;
-
     if (S.room?.status === "tributeReturn") {
       const pair = currentTributePairForMe();
       if (!pair) return toast("반환할 차례가 아닙니다.");
@@ -980,7 +833,6 @@ function renderPlayers() {
       renderHand();
       return;
     }
-
     if (S.room?.status !== "playing" || S.room.currentTurnUid !== S.user) return;
     if (S.room.currentSet) {
       if (!selectableGroup(group)) return toast("낼 수 없는 계급입니다.");
@@ -992,7 +844,6 @@ function renderPlayers() {
       renderHand();
       return;
     }
-
     if (S.selected.has(group.rank)) S.selected.delete(group.rank);
     else if (Number(group.rank) === 13) S.selected.set(group.rank, group.items.slice());
     else {
@@ -1020,31 +871,23 @@ function renderPlayers() {
     const player = playersMap(room)[uid];
     if (!room || !player || room.status !== "playing") return;
     const combo = canPlayCombo(cards, room);
-    if (!combo.ok) {
-      if (uid === S.user) toast(combo.reason);
-      return;
-    }
-
+    if (!combo.ok) { if (uid === S.user) toast(combo.reason); return; }
     const ids = new Set(cards.map(c => c.id));
     const newHand = sortHand((hand || []).filter(c => !ids.has(c.id)));
     const players = playersMap(room);
     const order = (room.finishOrder || []).slice();
     const finished = newHand.length === 0;
     let finishedRank = players[uid].finishedRank || null;
-
     if (finished && !players[uid].finished) {
       finishedRank = order.length + 1;
       order.push({ uid, nickname: players[uid].nickname, rank: finishedRank, finishedAt: ts() });
     }
-
     Object.keys(players).forEach(pid => { players[pid] = { ...players[pid], passed: false }; });
     players[uid] = { ...players[uid], cardCount: newHand.length, finished, finishedRank, passed: false };
-
     const set = { uid, nickname: player.nickname, effectiveRank: combo.effectiveRank, effectiveName: combo.effectiveName, count: combo.count, cards, createdAt: ts() };
     const activeCount = Object.values(players).filter(p => p && !p.finished && !p.forfeited).length;
     const batch = db.batch();
     batch.set(handRef(uid), { hand: newHand });
-
     if (activeCount <= 1) {
       const final = order.slice();
       const last = Object.values(players).find(p => p && !p.finished && !p.forfeited);
@@ -1055,7 +898,6 @@ function renderPlayers() {
       await addSystem((room.totalRounds && room.round >= room.totalRounds) ? "게임이 종료되었습니다." : `${room.round}라운드가 종료되었습니다.`);
       return;
     }
-
     const next = nextAfter({ ...room, players }, uid);
     batch.set(roomRef(), { players, previousSet: room.currentSet || null, currentSet: set, currentTurnUid: next, finishOrder: order, updatedAt: serverNow() }, { merge: true });
     if (uid === S.user) S.selected.clear();
@@ -1065,16 +907,12 @@ function renderPlayers() {
   function finishRoundUpdate(room, players, final) {
     final.forEach((r, i) => {
       const score = Object.keys(players).length - i;
-      if (players[r.uid]) {
-        players[r.uid] = { ...players[r.uid], score: Number(players[r.uid].score || 0) + score, lastRoundScore: score, lastRoundRank: i + 1, seatOrder: i, role: roleByIndex(i, Object.keys(players).length), finished: true, finishedRank: i + 1, passed: false };
-      }
+      if (players[r.uid]) players[r.uid] = { ...players[r.uid], score: Number(players[r.uid].score || 0) + score, lastRoundScore: score, lastRoundRank: i + 1, seatOrder: i, role: roleByIndex(i, Object.keys(players).length), finished: true, finishedRank: i + 1, passed: false };
     });
     return { players, status: (room.totalRounds && room.round >= room.totalRounds) ? "finished" : "betweenRounds", currentTurnUid: null, previousSet: null, currentSet: null, tribute: null, finishOrder: final, lastRoundResult: { round: room.round, results: final, endedAt: ts() }, updatedAt: serverNow() };
   }
 
-  async function passTurn() {
-    await passAs(S.user);
-  }
+  async function passTurn() { await passAs(S.user); }
 
   async function passAs(uid) {
     const room = S.room;
@@ -1082,16 +920,13 @@ function renderPlayers() {
     const players = playersMap(room);
     if (!players[uid]) return;
     players[uid] = { ...players[uid], passed: true };
-
     const owner = room.currentSet.uid;
     const active = Object.values(players).filter(p => p && !p.finished && !p.forfeited).map(p => p.uid);
     const opponents = active.filter(id => id !== owner);
     const passed = new Set(Object.values(players).filter(p => p && p.passed).map(p => p.uid));
     const everyoneElsePassed = opponents.every(id => passed.has(id));
     const next = everyoneElsePassed ? ((players[owner] && !players[owner].finished && !players[owner].forfeited) ? owner : nextAfter({ ...room, players }, owner)) : nextAfter({ ...room, players }, uid);
-
     if (everyoneElsePassed) Object.keys(players).forEach(pid => { players[pid] = { ...players[pid], passed: false }; });
-
     await roomRef().set({ players, currentTurnUid: next, previousSet: everyoneElsePassed ? room.currentSet : room.previousSet || null, currentSet: everyoneElsePassed ? null : room.currentSet, updatedAt: serverNow() }, { merge: true });
   }
 
@@ -1100,11 +935,7 @@ function renderPlayers() {
     if (!room || room.status !== "tributeReturn") return;
     const pair = (room.tribute?.pairs || []).find(p => p.toUid === uid && !p.returned);
     if (!pair) return;
-    if (cards.length !== pair.count) {
-      if (uid === S.user) toast(`${pair.count}장을 선택해야 합니다.`);
-      return;
-    }
-
+    if (cards.length !== pair.count) { if (uid === S.user) toast(`${pair.count}장을 선택해야 합니다.`); return; }
     const fromSnap = await handRef(pair.fromUid).get();
     const fromHand = fromSnap.exists ? (fromSnap.data().hand || []) : [];
     const ids = new Set(cards.map(c => c.id));
@@ -1116,7 +947,6 @@ function renderPlayers() {
     if (players[uid]) players[uid] = { ...players[uid], cardCount: myHand.length };
     if (players[pair.fromUid]) players[pair.fromUid] = { ...players[pair.fromUid], cardCount: newFrom.length };
     const first = allPlayers({ ...room, players })[0]?.uid || null;
-
     const batch = db.batch();
     batch.set(handRef(uid), { hand: myHand });
     batch.set(handRef(pair.fromUid), { hand: newFrom });
@@ -1149,9 +979,7 @@ function renderPlayers() {
     return [];
   }
 
-  function chooseReturnCards(hand, count) {
-    return sortHand(hand || []).slice(-count);
-  }
+  const chooseReturnCards = (hand, count) => sortHand(hand || []).slice(-count);
 
   async function maybeClientTasks() {
     await maybeAssignHostIfNeeded();
@@ -1178,12 +1006,10 @@ function renderPlayers() {
         const hand = hs.exists ? (hs.data().hand || []) : [];
         const old = S.room;
         S.room = latest;
-        try { await returnTribute(pair.toUid, chooseReturnCards(hand, pair.count), hand); }
-        finally { S.room = old; }
+        try { await returnTribute(pair.toUid, chooseReturnCards(hand, pair.count), hand); } finally { S.room = old; }
       }, AI_DELAY);
       return;
     }
-
     if (room.status !== "playing" || !room.currentTurnUid) return;
     const ai = playersMap(room)[room.currentTurnUid];
     if (!ai?.isAI || ai.finished || ai.forfeited) return;
@@ -1202,12 +1028,7 @@ function renderPlayers() {
       const cards = chooseAiCards(latest, hand);
       const old = S.room;
       S.room = latest;
-      try {
-        if (cards.length) await applyPlay(ai.uid, cards, hand);
-        else await passAs(ai.uid);
-      } finally {
-        S.room = old;
-      }
+      try { if (cards.length) await applyPlay(ai.uid, cards, hand); else await passAs(ai.uid); } finally { S.room = old; }
     }, AI_DELAY);
   }
 
@@ -1224,9 +1045,7 @@ function renderPlayers() {
       const next = allPlayers(latest)[0] || spectators(latest)[0];
       if (next) await roomRef().set({ hostUid: next.uid, hostNickname: next.nickname, updatedAt: serverNow() }, { merge: true });
       else await roomRef().set({ closed: true, status: "closed", updatedAt: serverNow() }, { merge: true });
-    } finally {
-      S.hostAssigning = false;
-    }
+    } finally { S.hostAssigning = false; }
   }
 
   async function sendChat() {
@@ -1252,21 +1071,56 @@ function renderPlayers() {
   }
 
   async function kick(uid) {
-    if (!isHost() || uid === S.user || !S.room) return;
-    const players = playersMap();
-    const specs = spectatorsMap();
+    if (uid === S.user || !S.roomId) return;
+    const latestSnap = await roomRef().get();
+    if (!latestSnap.exists) return toast("방 정보를 찾을 수 없습니다.");
+    const room = latestSnap.data();
+    if (!(room.hostUid === S.user || isMaster())) return toast("방장만 강퇴할 수 있습니다.");
+
+    const players = playersMap(room);
+    const specs = spectatorsMap(room);
+    const kicked = kickedMap(room);
     const target = players[uid] || specs[uid];
-    if (!target) return;
-    if (!confirm(`${target.nickname}님을 방에서 내보낼까요?`)) return;
-    if (players[uid]) {
-      delete players[uid];
-      await handRef(uid).delete().catch(() => null);
-    }
+    if (!target) return toast("이미 방에 없는 대상입니다.");
+    if (!confirm(`${target.nickname || uid}님을 방에서 내보낼까요?`)) return;
+
+    const oldRoom = { ...room, players: { ...players }, spectators: { ...specs } };
+    if (players[uid]) delete players[uid];
     if (specs[uid]) delete specs[uid];
-    let currentTurnUid = S.room.currentTurnUid;
-    if (currentTurnUid === uid) currentTurnUid = nextAfter({ ...S.room, players }, uid);
-    await roomRef().set({ players, spectators: specs, playerCount: countMap(players), spectatorCount: countMap(specs), currentTurnUid, finishOrder: (S.room.finishOrder || []).filter(x => x.uid !== uid), kickNotice: { uid, nickname: target.nickname, at: ts() }, updatedAt: serverNow() }, { merge: true });
-    await addSystem(`${target.nickname}님이 방장에 의해 강퇴되었습니다.`);
+    kicked[uid] = { uid, nickname: target.nickname || uid, by: S.user, at: Date.now() };
+
+    let currentTurnUid = room.currentTurnUid;
+    let currentSet = room.currentSet || null;
+    let previousSet = room.previousSet || null;
+    let tribute = room.tribute || null;
+
+    if (currentTurnUid === uid) currentTurnUid = nextAfterKick(oldRoom, uid, players);
+    if (currentSet?.uid === uid) {
+      previousSet = currentSet;
+      currentSet = null;
+      currentTurnUid = nextAfterKick(oldRoom, uid, players);
+    }
+    if (tribute?.pairs) {
+      const pairs = tribute.pairs
+        .filter(p => p.fromUid !== uid && p.toUid !== uid)
+        .map(p => ({ ...p }));
+      tribute = pairs.length ? { ...tribute, pairs } : null;
+    }
+
+    const finishOrder = (room.finishOrder || []).filter(x => x.uid !== uid);
+    const update = { players, spectators: specs, kicked, playerCount: countMap(players), spectatorCount: countMap(specs), currentTurnUid, currentSet, previousSet, tribute, finishOrder, updatedAt: serverNow() };
+    const alive = Object.values(players).filter(p => p && !p.finished && !p.forfeited && !p.removedFromRoom);
+    if (["playing", "tributeReturn"].includes(room.status) && alive.length <= 1) {
+      const final = finishOrder.slice();
+      if (alive[0]) final.push({ uid: alive[0].uid, nickname: alive[0].nickname, rank: final.length + 1, finishedAt: ts() });
+      Object.assign(update, finishRoundUpdate({ ...room, tribute }, players, final));
+    }
+
+    const batch = db.batch();
+    batch.set(roomRef(), update, { merge: true });
+    batch.delete(handRef(uid));
+    await batch.commit();
+    await appendSystemFrom({ ...room, chatPreview: room.chatPreview || [] }, `${target.nickname || uid}님이 방장에 의해 강퇴되었습니다.`);
   }
 
   async function clearSubcollection(col) {
@@ -1294,9 +1148,7 @@ function renderPlayers() {
     if (!isHost()) return;
     if (!confirm("현재 게임을 중지할까요? 진행 중인 라운드, 손패, 점수, 계급 정보가 초기화되고 대기방으로 돌아갑니다.")) return;
     const players = {};
-    allPlayers().forEach((p, i) => {
-      players[p.uid] = { ...p, isReady: !!p.isAI, seatOrder: i, role: null, score: 0, lastRoundScore: 0, lastRoundRank: null, cardCount: 0, passed: false, finished: false, finishedRank: null, forfeited: false };
-    });
+    allPlayers().forEach((p, i) => { players[p.uid] = { ...p, isReady: !!p.isAI, seatOrder: i, role: null, score: 0, lastRoundScore: 0, lastRoundRank: null, cardCount: 0, passed: false, finished: false, finishedRank: null, forfeited: false }; });
     const batch = db.batch();
     batch.set(roomRef(), { players, status: "waiting", round: 0, currentTurnUid: null, currentSet: null, previousSet: null, tribute: null, finishOrder: [], lastRoundResult: null, rebellionNotice: null, updatedAt: serverNow() }, { merge: true });
     Object.keys(players).forEach(uid => batch.set(handRef(uid), { hand: [] }));
@@ -1312,9 +1164,7 @@ function renderPlayers() {
     modal.classList.add("show");
   }
 
-  function closeModal() {
-    $("gameModal")?.classList.remove("show");
-  }
+  function closeModal() { $("gameModal")?.classList.remove("show"); }
 
   function modalRows(players, mode) {
     return `<div class="modal-table"><div class="modal-row header"><span>순위</span><span>닉네임</span><span>${mode === "start" ? "점수" : "획득"}</span><span>계급</span></div>${players.map((p, i) => `<div class="modal-row"><span>${mode === "start" ? i + 1 : (p.lastRoundRank || i + 1)}등</span><span>${esc(p.nickname)}</span><strong>${mode === "start" ? (p.score || 0) : `+${p.lastRoundScore || 0}`}</strong><span>${esc(p.role || "-")}</span></div>`).join("")}</div>`;
@@ -1387,26 +1237,12 @@ function renderPlayers() {
     if (S.roomId) {
       const snap = await roomRef(S.roomId).get().catch(() => null);
       const data = snap?.exists ? snap.data() : null;
-      if (data && !data.closed && (playersMap(data)[S.user] || spectatorsMap(data)[S.user])) enterRoom(S.roomId);
+      if (data && !data.closed && !kickedMap(data)[S.user] && (playersMap(data)[S.user] || spectatorsMap(data)[S.user])) enterRoom(S.roomId);
       else localStorage.removeItem("dalmutiCurrentRoomId");
     }
   }
 
-  window.Dalmuti = {
-    joinRoom,
-    toggleRank,
-    saveSettings,
-    toggleSpectatorChat,
-    kick,
-    deleteRoom,
-    stopGame,
-    addAI,
-    nextRound: () => nextRound(false),
-    forceRebellion: () => nextRound(true),
-    closeModal,
-    showHelp,
-    becomePlayer
-  };
+  window.Dalmuti = { joinRoom, toggleRank, saveSettings, toggleSpectatorChat, kick, deleteRoom, stopGame, addAI, nextRound: () => nextRound(false), forceRebellion: () => nextRound(true), closeModal, showHelp, becomePlayer };
 
   window.addEventListener("DOMContentLoaded", init);
 })();
