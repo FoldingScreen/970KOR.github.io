@@ -22,15 +22,6 @@
   const handRef = (rid, user) => roomRef(rid).collection("hands").doc(user);
   const cleanMap = obj => Object.fromEntries(Object.entries(obj || {}).filter(([, v]) => v && typeof v === "object"));
   const sortHand = hand => (hand || []).slice().sort((a, b) => Number(a.rank) - Number(b.rank) || String(a.id).localeCompare(String(b.id)));
-  const groupHand = hand => {
-    const map = new Map();
-    sortHand(hand).forEach(card => {
-      const rank = Number(card.rank);
-      if (!map.has(rank)) map.set(rank, []);
-      map.get(rank).push(card);
-    });
-    return map;
-  };
 
   function isReturnUi() {
     const playText = String(document.getElementById("playBtn")?.textContent || "");
@@ -43,6 +34,24 @@
     const onclick = String(stack?.getAttribute("onclick") || "");
     const match = onclick.match(/toggleRank\((\d+)\)/);
     return match ? Number(match[1]) : null;
+  }
+
+  function stackCount(stack) {
+    const text = String(stack.querySelector(".stack-count")?.textContent || "");
+    const match = text.match(/x(\d+)/);
+    return match ? Number(match[1]) : 0;
+  }
+
+  function selectedTotal() {
+    return Array.from(state.counts.values()).reduce((sum, n) => sum + Number(n || 0), 0);
+  }
+
+  function resetIfNeeded(pair, rid) {
+    if (state.roomId === rid && state.pairId === pair.id) return;
+    state.roomId = rid;
+    state.pairId = pair.id;
+    state.required = Number(pair.count || 0);
+    state.counts.clear();
   }
 
   async function currentPair() {
@@ -58,18 +67,8 @@
     const pair = (room.tribute?.pairs || []).find(p => p.toUid === user && !p.returned);
     if (!pair) return null;
 
-    if (state.roomId !== rid || state.pairId !== pair.id) {
-      state.roomId = rid;
-      state.pairId = pair.id;
-      state.required = Number(pair.count || 0);
-      state.counts.clear();
-    }
-
+    resetIfNeeded(pair, rid);
     return { rid, user, room, pair };
-  }
-
-  function selectedTotal() {
-    return Array.from(state.counts.values()).reduce((sum, n) => sum + Number(n || 0), 0);
   }
 
   function setStackSelected(stack, count) {
@@ -90,7 +89,7 @@
   function applySelectionToDom() {
     if (!isReturnUi()) return;
 
-    document.querySelectorAll(".hand-stack").forEach(stack => {
+    document.querySelectorAll("#handArea .hand-stack").forEach(stack => {
       const rank = rankFromStack(stack);
       if (!rank) return;
       setStackSelected(stack, Number(state.counts.get(rank) || 0));
@@ -100,7 +99,7 @@
     if (summary && state.required) summary.textContent = `${selectedTotal()}/${state.required}장 반환 선택`;
   }
 
-  async function onStackClick(event, stack) {
+  function onStackClick(event, stack) {
     if (!isReturnUi()) return;
     const rank = rankFromStack(stack);
     if (!rank) return;
@@ -109,29 +108,35 @@
     event.stopPropagation();
     event.stopImmediatePropagation();
 
-    const ctx = await currentPair();
-    if (!ctx) return;
-
-    const handSnap = await handRef(ctx.rid, ctx.user).get();
-    const hand = sortHand(handSnap.exists ? (handSnap.data().hand || []) : []);
-    const groups = groupHand(hand);
-    const group = groups.get(rank) || [];
-    if (!group.length) return;
+    const required = state.required || Number(String(document.getElementById("selectedSummary")?.textContent || "").match(/\/(\d+)장/)?.[1] || 0);
+    if (!required) return;
+    state.required = required;
 
     const cur = Number(state.counts.get(rank) || 0);
     const total = selectedTotal();
+    const maxInStack = stackCount(stack);
 
-    if (total < state.required && cur < group.length) {
+    if (total < required && cur < maxInStack) {
       state.counts.set(rank, cur + 1);
     } else if (cur > 0) {
       const next = cur - 1;
       if (next > 0) state.counts.set(rank, next);
       else state.counts.delete(rank);
     } else {
-      alert(`${state.required}장만 선택할 수 있습니다.`);
+      alert(`${required}장만 선택할 수 있습니다.`);
     }
 
     applySelectionToDom();
+  }
+
+  function groupHand(hand) {
+    const map = new Map();
+    sortHand(hand).forEach(card => {
+      const rank = Number(card.rank);
+      if (!map.has(rank)) map.set(rank, []);
+      map.get(rank).push(card);
+    });
+    return map;
   }
 
   function selectedCardsFromHand(hand) {
@@ -149,7 +154,12 @@
     await ref.set({ chatPreview: chat, updatedAt: FV.serverTimestamp() }, { merge: true });
   }
 
-  async function submitReturn() {
+  async function submitReturn(event) {
+    if (!isReturnUi()) return;
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+
     if (state.busy) return;
     state.busy = true;
 
@@ -172,10 +182,7 @@
       const newToHand = sortHand(toHand.filter(c => !returnIds.has(c.id)));
       const newFromHand = sortHand(fromHand.concat(returnCards));
 
-      const pairs = (ctx.room.tribute?.pairs || []).map(p => {
-        if (p.id !== ctx.pair.id) return p;
-        return { ...p, returned: true, returnedCards: returnCards };
-      });
+      const pairs = (ctx.room.tribute?.pairs || []).map(p => p.id === ctx.pair.id ? { ...p, returned: true, returnedCards: returnCards } : p);
       const done = pairs.every(p => p.returned);
       const nextPair = pairs.find(p => !p.returned) || null;
 
@@ -214,27 +221,21 @@
     document.__dalmutiTributeIndividualBound = true;
 
     document.addEventListener("click", event => {
-      const stack = event.target.closest?.(".hand-stack");
-      if (stack && isReturnUi()) {
-        onStackClick(event, stack).catch(console.error);
-        return;
-      }
+      const stack = event.target.closest?.("#handArea .hand-stack");
+      if (stack && isReturnUi()) return onStackClick(event, stack);
 
       const play = event.target.closest?.("#playBtn");
-      if (play && isReturnUi()) {
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
-        submitReturn().catch(console.error);
-      }
+      if (play && isReturnUi()) return submitReturn(event).catch(console.error);
     }, true);
+
+    document.addEventListener("click", event => {
+      if (event.target.closest?.("#playBtn") || event.target.closest?.("#handArea .hand-stack")) return;
+      if (!isReturnUi() && state.counts.size) state.counts.clear();
+    }, false);
   }
 
   function init() {
     bind();
-    applySelectionToDom();
-    const observer = new MutationObserver(applySelectionToDom);
-    observer.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["class"] });
   }
 
   if (document.readyState === "loading") window.addEventListener("DOMContentLoaded", init);
