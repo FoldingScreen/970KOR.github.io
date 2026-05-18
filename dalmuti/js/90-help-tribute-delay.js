@@ -6,10 +6,10 @@
   const db = firebase.firestore();
   const FV = firebase.firestore.FieldValue;
   const EVENT_ID = "dalmuti";
-  const MAX_PLAYERS = 8;
   const CHAT_LIMIT = 12;
   const PREVIEW_DELAY_MS = 2800;
-  const REBELLION_DELAY_MS = 5400;
+  const HONG_HIGHLIGHT_MS = 1700;
+  const REBELLION_MODAL_MS = 5200;
 
   const RANKS = [
     [1, "01", "임금", "card-01-imguem.png", 1],
@@ -39,6 +39,40 @@
   const countMap = obj => Object.values(cleanMap(obj)).length;
   const sortHand = hand => (hand || []).slice().sort((a, b) => Number(a.rank) - Number(b.rank) || String(a.id).localeCompare(String(b.id)));
   const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+  function injectExtraCss() {
+    if (document.getElementById("dalmutiTributeDelayCss")) return;
+    const style = document.createElement("style");
+    style.id = "dalmutiTributeDelayCss";
+    style.textContent = `
+      button[onclick*="forceRebellion"] { display: none !important; }
+      body.hong-rebellion-hint .hand-stack[onclick*="toggleRank(13)"] {
+        position: relative !important;
+        box-shadow: 0 0 0 3px rgba(243,210,129,.95), 0 0 28px rgba(243,210,129,.85) !important;
+        animation: hongRebellionPulse .42s ease-in-out infinite alternate !important;
+      }
+      body.hong-rebellion-hint .hand-stack[onclick*="toggleRank(13)"]::after {
+        content: "민란";
+        position: absolute;
+        left: 50%;
+        top: -10px;
+        transform: translateX(-50%);
+        z-index: 4;
+        padding: 2px 7px;
+        border-radius: 999px;
+        background: rgba(215, 72, 72, .96);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 900;
+        pointer-events: none;
+      }
+      @keyframes hongRebellionPulse {
+        from { transform: translateY(0) scale(1); filter: brightness(1); }
+        to { transform: translateY(-5px) scale(1.045); filter: brightness(1.2); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
 
   function allPlayers(room) {
     return Object.values(playersMap(room))
@@ -70,9 +104,7 @@
   function makeDeck(playerCount) {
     const deck = [];
     RANKS.filter(r => r.rank <= maxRankByPlayers(playerCount)).forEach(r => {
-      for (let i = 1; i <= r.count; i++) {
-        deck.push({ id: `r${r.rank}-${i}-${Math.random().toString(36).slice(2, 8)}`, rank: r.rank, name: r.name, joker: false });
-      }
+      for (let i = 1; i <= r.count; i++) deck.push({ id: `r${r.rank}-${i}-${Math.random().toString(36).slice(2, 8)}`, rank: r.rank, name: r.name, joker: false });
     });
     for (let i = 1; i <= 2; i++) deck.push({ id: `j-${i}-${Math.random().toString(36).slice(2, 8)}`, rank: 13, name: "홍길동", joker: true });
     for (let i = deck.length - 1; i > 0; i--) {
@@ -99,6 +131,10 @@
     return hand.filter(c => c.joker || Number(c.rank) === 13).length >= 2;
   }
 
+  function hongCards(hand = []) {
+    return sortHand(hand).filter(c => c.joker || Number(c.rank) === 13).slice(0, 2);
+  }
+
   function bestTributeCards(hand, count) {
     return sortHand(hand).filter(c => !(c.joker || Number(c.rank) === 13)).slice(0, count);
   }
@@ -117,17 +153,7 @@
       const ids = new Set(cards.map(c => c.id));
       hands[spec.from.uid] = sortHand((hands[spec.from.uid] || []).filter(c => !ids.has(c.id)));
       hands[spec.to.uid] = sortHand((hands[spec.to.uid] || []).concat(cards));
-      return {
-        id: `tribute-${i}`,
-        fromUid: spec.from.uid,
-        fromNickname: spec.from.nickname,
-        toUid: spec.to.uid,
-        toNickname: spec.to.nickname,
-        count: cards.length,
-        cards,
-        returned: cards.length === 0,
-        returnedCards: []
-      };
+      return { id: `tribute-${i}`, fromUid: spec.from.uid, fromNickname: spec.from.nickname, toUid: spec.to.uid, toNickname: spec.to.nickname, count: cards.length, cards, returned: cards.length === 0, returnedCards: [] };
     }).filter(pair => pair.count > 0);
   }
 
@@ -164,7 +190,15 @@
     return playerMap;
   }
 
-  async function startRoundWithPreview(round, resetScores, forceRebellion) {
+  async function safeCheck(roomId, roundKey, phase) {
+    const checkSnap = await roomRef(roomId).get().catch(() => null);
+    const check = checkSnap?.exists ? checkSnap.data() : null;
+    if (!check || check.roundKey !== roundKey || check.status !== "tributeReturn") return false;
+    if (phase && check.tribute?.phase !== phase) return false;
+    return true;
+  }
+
+  async function startRoundWithPreview(round, resetScores, forceRebellion = false) {
     const roomId = currentRoomId();
     const user = currentUser();
     if (!roomId || !user) return;
@@ -174,33 +208,31 @@
     const room = latestSnap.data();
     if (room.hostUid !== user || room.status !== "betweenRounds") return;
 
-    let ps = roundOrderPlayers(round, allPlayers(room));
-    const deck = makeDeck(ps.length);
-    const hands = Object.fromEntries(ps.map(p => [p.uid, []]));
-    deck.forEach((card, i) => hands[ps[i % ps.length].uid].push(card));
+    const originalPs = roundOrderPlayers(round, allPlayers(room));
+    const deck = makeDeck(originalPs.length);
+    const hands = Object.fromEntries(originalPs.map(p => [p.uid, []]));
+    deck.forEach((card, i) => hands[originalPs[i % originalPs.length].uid].push(card));
     Object.keys(hands).forEach(uid => { hands[uid] = sortHand(hands[uid]); });
 
-    const lowUids = ps.length === 3
-      ? [ps[1]?.uid, ps[2]?.uid]
-      : [ps[ps.length - 2]?.uid, ps[ps.length - 1]?.uid];
+    const lowUids = originalPs.length === 3
+      ? [originalPs[1]?.uid, originalPs[2]?.uid]
+      : [originalPs[originalPs.length - 2]?.uid, originalPs[originalPs.length - 1]?.uid];
 
     const rebellionUid = round > 1
-      ? (forceRebellion ? ps[ps.length - 1]?.uid : lowUids.find(uid => uid && hasTwoHong(hands[uid])))
+      ? (forceRebellion ? originalPs[originalPs.length - 1]?.uid : lowUids.find(uid => uid && hasTwoHong(hands[uid])))
       : null;
-
-    const rebellionPlayer = ps.find(p => p.uid === rebellionUid);
-    if (rebellionUid) ps = ps.slice().reverse();
+    const rebellionPlayer = originalPs.find(p => p.uid === rebellionUid);
 
     const previewHands = Object.fromEntries(Object.entries(hands).map(([uid, hand]) => [uid, sortHand(hand)]));
-    const previewPlayers = makePlayerMap(ps, previewHands, resetScores);
     const roundKey = `${round}-${Date.now()}`;
-    const first = ps[0]?.uid || null;
 
-    if (round <= 1 || ps.length < 3) {
+    if (round <= 1 || originalPs.length < 3) {
+      const first = originalPs[0]?.uid || null;
+      const playerMap = makePlayerMap(originalPs, previewHands, resetScores);
       const batch = db.batch();
       batch.set(roomRef(roomId), {
-        players: previewPlayers,
-        playerCount: countMap(previewPlayers),
+        players: playerMap,
+        playerCount: countMap(playerMap),
         status: "playing",
         round,
         roundKey,
@@ -208,9 +240,9 @@
         currentSet: null,
         previousSet: null,
         finishOrder: [],
-        turnOrder: ps.map(p => p.uid),
+        turnOrder: originalPs.map(p => p.uid),
         tribute: null,
-        rebellionNotice: rebellionUid ? { uid: rebellionUid, nickname: rebellionPlayer?.nickname || "누군가", round, createdAt: now() } : null,
+        rebellionNotice: null,
         updatedAt: serverNow()
       }, { merge: true });
       Object.keys(previewHands).forEach(uid => batch.set(handRef(roomId, uid), { hand: previewHands[uid] }));
@@ -219,8 +251,52 @@
       return;
     }
 
-    const previewBatch = db.batch();
-    previewBatch.set(roomRef(roomId), {
+    if (rebellionUid) {
+      const previewPlayers = makePlayerMap(originalPs, previewHands, resetScores);
+      const batch = db.batch();
+      batch.set(roomRef(roomId), {
+        players: previewPlayers,
+        playerCount: countMap(previewPlayers),
+        status: "tributeReturn",
+        round,
+        roundKey,
+        currentTurnUid: null,
+        currentSet: null,
+        previousSet: null,
+        finishOrder: [],
+        turnOrder: originalPs.map(p => p.uid),
+        tribute: { phase: "rebellionPreview", pairs: [], reversed: false, rebellionUid, rebellionCards: hongCards(previewHands[rebellionUid]), previewStartedAt: now() },
+        rebellionNotice: null,
+        updatedAt: serverNow()
+      }, { merge: true });
+      Object.keys(previewHands).forEach(uid => batch.set(handRef(roomId, uid), { hand: previewHands[uid] }));
+      await batch.commit();
+
+      await appendSystem(roomId, `카드 분배 완료. ${rebellionPlayer?.nickname || "누군가"}님의 손패에서 홍길동 2장이 모습을 드러냅니다.`);
+      await sleep(HONG_HIGHLIGHT_MS);
+      if (!(await safeCheck(roomId, roundKey, "rebellionPreview"))) return;
+
+      const reversedPs = originalPs.slice().reverse();
+      const reversedPlayers = makePlayerMap(reversedPs, previewHands, resetScores);
+      await roomRef(roomId).set({
+        players: reversedPlayers,
+        turnOrder: reversedPs.map(p => p.uid),
+        tribute: { phase: "preview", pairs: [], reversed: true, rebellionUid, rebellionCards: hongCards(previewHands[rebellionUid]), previewStartedAt: now() },
+        rebellionNotice: { uid: rebellionUid, nickname: rebellionPlayer?.nickname || "누군가", round, createdAt: now() },
+        updatedAt: serverNow()
+      }, { merge: true });
+
+      await appendSystem(roomId, `${rebellionPlayer?.nickname || "누군가"}님의 홍길동이 민란을 일으켰습니다.`);
+      await sleep(REBELLION_MODAL_MS);
+      if (!(await safeCheck(roomId, roundKey, "preview"))) return;
+
+      await beginTribute(roomId, round, roundKey, reversedPs, previewHands, resetScores, true);
+      return;
+    }
+
+    const previewPlayers = makePlayerMap(originalPs, previewHands, resetScores);
+    const batch = db.batch();
+    batch.set(roomRef(roomId), {
       players: previewPlayers,
       playerCount: countMap(previewPlayers),
       status: "tributeReturn",
@@ -230,24 +306,23 @@
       currentSet: null,
       previousSet: null,
       finishOrder: [],
-      turnOrder: ps.map(p => p.uid),
-      tribute: { phase: "preview", pairs: [], reversed: !!rebellionUid, previewStartedAt: now() },
-      rebellionNotice: rebellionUid ? { uid: rebellionUid, nickname: rebellionPlayer?.nickname || "누군가", round, createdAt: now() } : null,
+      turnOrder: originalPs.map(p => p.uid),
+      tribute: { phase: "preview", pairs: [], reversed: false, previewStartedAt: now() },
+      rebellionNotice: null,
       updatedAt: serverNow()
     }, { merge: true });
-    Object.keys(previewHands).forEach(uid => previewBatch.set(handRef(roomId, uid), { hand: previewHands[uid] }));
-    await previewBatch.commit();
+    Object.keys(previewHands).forEach(uid => batch.set(handRef(roomId, uid), { hand: previewHands[uid] }));
+    await batch.commit();
 
-    await appendSystem(roomId, rebellionUid
-      ? `${rebellionPlayer?.nickname || "누군가"}님의 홍길동이 민란을 일으켰습니다.`
-      : `${round}라운드 카드 분배가 완료되었습니다. 잠시 후 상납이 시작됩니다.`);
+    await appendSystem(roomId, `${round}라운드 카드 분배가 완료되었습니다. 잠시 후 상납이 시작됩니다.`);
+    await sleep(PREVIEW_DELAY_MS);
+    if (!(await safeCheck(roomId, roundKey, "preview"))) return;
 
-    await sleep(rebellionUid ? REBELLION_DELAY_MS : PREVIEW_DELAY_MS);
+    await beginTribute(roomId, round, roundKey, originalPs, previewHands, resetScores, false);
+  }
 
-    const checkSnap = await roomRef(roomId).get().catch(() => null);
-    const check = checkSnap?.exists ? checkSnap.data() : null;
-    if (!check || check.roundKey !== roundKey || check.status !== "tributeReturn" || check.tribute?.phase !== "preview") return;
-
+  async function beginTribute(roomId, round, roundKey, ps, previewHands, resetScores, reversed) {
+    const first = ps[0]?.uid || null;
     const tributeHands = Object.fromEntries(Object.entries(previewHands).map(([uid, hand]) => [uid, sortHand(hand)]));
     const pairs = makeTributePairs(ps, tributeHands);
     const hasTribute = pairs.some(p => !p.returned);
@@ -258,7 +333,7 @@
       players: tributePlayers,
       status: hasTribute ? "tributeReturn" : "playing",
       currentTurnUid: hasTribute ? (pairs.find(p => !p.returned)?.toUid || null) : first,
-      tribute: hasTribute ? { phase: "return", pairs, reversed: !!rebellionUid, returnStartedAt: now() } : null,
+      tribute: hasTribute ? { phase: "return", pairs, reversed: !!reversed, returnStartedAt: now() } : null,
       updatedAt: serverNow()
     }, { merge: true });
     Object.keys(tributeHands).forEach(uid => batch.set(handRef(roomId, uid), { hand: tributeHands[uid] }));
@@ -271,8 +346,17 @@
     const bar = document.getElementById("messageBar");
     if (!bar) return;
     const text = bar.textContent || "";
+    const chatText = document.getElementById("chatList")?.textContent || "";
+
+    if (chatText.includes("홍길동 2장이 모습을 드러냅니다")) {
+      document.body.classList.add("hong-rebellion-hint");
+      clearTimeout(patchMessageForPreview.hongTimer);
+      patchMessageForPreview.hongTimer = setTimeout(() => document.body.classList.remove("hong-rebellion-hint"), HONG_HIGHLIGHT_MS + 700);
+    }
+
     if (text.includes("상납받은 사람이 같은 장수만큼")) {
-      bar.textContent = "카드 분배 완료. 잠시 후 상납이 시작됩니다.";
+      if (chatText.includes("홍길동 2장이 모습을 드러냅니다")) bar.textContent = "홍길동 2장이 모습을 드러냈습니다. 민란이 일어납니다.";
+      else bar.textContent = "카드 분배 완료. 잠시 후 상납이 시작됩니다.";
     }
   }
 
@@ -295,12 +379,14 @@
       }, 0);
     };
 
-    const originalNext = window.Dalmuti.nextRound;
-    window.Dalmuti.nextRound = function patchedNextRound() {
-      return startRoundWithPreview(Number(getCurrentRound()) + 1, false, false).catch(console.error) || originalNext?.apply(this, arguments);
+    window.Dalmuti.nextRound = async function patchedNextRound() {
+      const round = await getCurrentRound();
+      return startRoundWithPreview(round + 1, false, false).catch(console.error);
     };
-    window.Dalmuti.forceRebellion = function patchedForceRebellion() {
-      return startRoundWithPreview(Number(getCurrentRound()) + 1, false, true).catch(console.error);
+
+    window.Dalmuti.forceRebellion = async function patchedForceRebellion() {
+      const round = await getCurrentRound();
+      return startRoundWithPreview(round + 1, false, true).catch(console.error);
     };
 
     window.Dalmuti.__helpTributePatched = true;
@@ -328,13 +414,26 @@
     }, true);
   }
 
+  function hideForceRebellionButtons() {
+    document.querySelectorAll("button").forEach(btn => {
+      const text = (btn.textContent || "").trim();
+      const onclick = btn.getAttribute("onclick") || "";
+      if (text.includes("민란 강제") || onclick.includes("forceRebellion")) btn.style.display = "none";
+    });
+  }
+
   function tick() {
+    injectExtraCss();
     patchHelp();
     interceptNextButtons();
     patchMessageForPreview();
+    hideForceRebellionButtons();
   }
 
   if (document.readyState === "loading") window.addEventListener("DOMContentLoaded", tick);
   else tick();
-  setInterval(tick, 250);
+
+  const observer = new MutationObserver(tick);
+  if (document.body) observer.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["class", "style"] });
+  setTimeout(tick, 250);
 })();
