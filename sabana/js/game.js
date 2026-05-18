@@ -1086,10 +1086,10 @@ function update(dt) {
     0,
     state.stacks.demonNoLossMs - dt * 1000,
   );
-  if (state.timeMs >= GAME_LIMIT_MS) {
-    endGame(true);
-    return;
-  }
+if (state.timeMs >= GAME_LIMIT_MS) {
+  endGame(false);
+  return;
+}
   updateBuffs(dt);
   updatePassiveRegen(dt);
   updateBloodFurnace(dt);
@@ -1470,6 +1470,8 @@ function getMonsterWave(t) {
 }
 
 function updateSpawns(dt) {
+    if (isBossBattleActive()) return;
+  
   state.spawnMs -= dt * 1000;
 
   const t = state.timeMs / 1000;
@@ -1483,7 +1485,11 @@ function updateSpawns(dt) {
       showBigAlert(wave.title, wave.desc);
     }
   }
-
+  
+function isBossBattleActive() {
+  return state.enemies.some(e => e.boss || e.midBoss);
+}
+  
   const baseInterval = Math.max(260, 850 - t * 1.65 - pressure * 18);
   const interval = baseInterval * wave.intervalMul;
 
@@ -1691,36 +1697,69 @@ function spawnEnemy(wave = null) {
 function updateTimedBossSpawns() {
   const t = state.timeMs / 1000;
 
-  // 5분 보스는 별도 웨이브가 없으므로 기존처럼 5:00 등장
   if (t >= 300 && !state.bossFlags.mid5) {
     state.bossFlags.mid5 = true;
     spawnBossEnemy("mid_guardian", "중간보스", 1);
   }
 
-  // 10:00 ~ 11:00 웨이브의 중간인 10:30에 투입
+  // 10:00~11:00 웨이브 중간 10:30
   if (t >= 630 && !state.bossFlags.mid10) {
     state.bossFlags.mid10 = true;
     spawnBossEnemy("wave_brute", "웨이브 중간보스", 1.35);
   }
 
-  // 15:00 ~ 16:00 웨이브의 중간인 15:30에 투입
+  // 15:00~16:00 웨이브 중간 15:30
   if (t >= 930 && !state.bossFlags.mid15) {
     state.bossFlags.mid15 = true;
     spawnBossEnemy("dark_knight", "암흑 기사", 1.7);
   }
 
-  // 18:00 ~ 20:00 최종 웨이브의 중간인 19:00에 투입
-  if (t >= 1140 && !state.bossFlags.final18) {
-    state.bossFlags.final18 = true;
+  // 20:00 최종보스 등장
+  if (t >= FINAL_BOSS_SPAWN_SEC && !state.bossFlags.final20) {
+    state.bossFlags.final20 = true;
     spawnBossEnemy("sabana_lord", "사바나 군주", 2.4, true);
   }
 }
 
+function enterBossBattleMode(finalBoss = false) {
+  if (!state) return;
+
+  // 1. 바닥 경험치 전부 즉시 획득
+  for (const g of state.gems || []) {
+    gainExp(g.exp || 0);
+  }
+  state.gems = [];
+
+  // 2. 바닥 아이템 전부 즉시 획득
+  for (const d of state.drops || []) {
+    applyDrop(d);
+  }
+  state.drops = [];
+
+  // 3. 보스가 아닌 잡몹 제거
+  state.enemies = state.enemies.filter(e => e.boss || e.midBoss);
+
+  // 4. 잡몹 투사체 제거
+  state.enemyProjectiles = [];
+
+  // 5. 플레이어 투사체도 정리해서 보스전 시작 화면 깔끔하게
+  state.projectiles = [];
+
+  // 6. 보스전 시작 시 짧은 안전시간
+  state.player.invuln = Math.max(state.player.invuln || 0, finalBoss ? 2.0 : 1.2);
+
+  showBigAlert(
+    finalBoss ? "최종 보스전" : "보스전",
+    "전장 정리 · 보상 자동 회수"
+  );
+}
+
 function spawnBossEnemy(id, name, scale = 1, finalBoss = false) {
+  enterBossBattleMode(finalBoss);
+
   const t = state.timeMs / 1000;
   const pos = getSpawnPosition();
   const diff = 1 + t / 360;
-
   const baseHp = finalBoss ? 1800 : 620;
   const baseDamage = finalBoss ? 22 : 16;
 
@@ -2302,6 +2341,11 @@ function killEnemy(e, tags = []) {
   }
 
   maybeDropItem(e);
+
+  if (e.boss) {
+  showBigAlert("사바나 군주 격파", "클리어!");
+  endGame(true);
+}
 }
 
 function maybeDropItem(e) {
@@ -3126,7 +3170,7 @@ earned = Math.round(earned);
   meta.bestKills = Math.max(meta.bestKills || 0, state.kills);
   state.rewardClaimed = true;
   await saveMeta();
-  resultTitle.textContent = success ? "20분 생존 성공!" : "사망";
+  resultTitle.textContent = success ? "최종보스 처치 성공!" : "실패";
   resultDesc.innerHTML = `생존 시간: <strong>${formatTime(state.timeMs)}</strong><br>레벨: <strong>${state.level}</strong><br>처치 수: <strong>${state.kills}</strong><br>증강 수: <strong>${state.augments.length}</strong><br>발현 시너지 수: <strong>${state.activeSynergies.size}</strong><br>획득 아이템: <strong>${state.itemStats.total}</strong><br>획득 보석: <strong>${state.itemStats.gems}</strong><br>전투 중 코인: <strong>${state.runCoins}</strong><br>정산 코인: <strong>${earned - state.runCoins}</strong><br>${jackpot ? `<strong style="color:#facc15;">대박 보상 2배 발동!</strong><br>` : ""}총 획득 코인: <strong>${earned}</strong><br>보유 코인: <strong>${Math.floor(meta.coins)}</strong>
   ${renderRunSummaryHtml()}
   `;
