@@ -126,13 +126,13 @@
 
   function roleByIndex(index, count) {
     const map = {
-      2: ["사바나", "노비"],
-      3: ["사바나", "농민", "노비"],
-      4: ["사바나", "세자", "농민", "노비"],
-      5: ["사바나", "세자", "사또", "농민", "노비"],
-      6: ["사바나", "세자", "암행어사", "사또", "농민", "노비"],
-      7: ["사바나", "세자", "관찰사", "암행어사", "사또", "농민", "노비"],
-      8: ["사바나", "세자", "영의정", "관찰사", "암행어사", "사또", "농민", "노비"]
+      2: ["임금", "노비"],
+      3: ["임금", "농민", "노비"],
+      4: ["임금", "세자", "농민", "노비"],
+      5: ["임금", "세자", "사또", "농민", "노비"],
+      6: ["임금", "세자", "암행어사", "사또", "농민", "노비"],
+      7: ["임금", "세자", "관찰사", "암행어사", "사또", "농민", "노비"],
+      8: ["임금", "세자", "영의정", "관찰사", "암행어사", "사또", "농민", "노비"]
     };
     return (map[count] || [])[index] || `${index + 1}등`;
   }
@@ -309,7 +309,7 @@ function roundOrderPlayers(round, players) {
     E.roomList.innerHTML = docs.length ? docs.map(d => {
       const r = d.data();
       const status = ({ waiting: "대기 중", playing: "진행 중", tributeReturn: "상납 반환", betweenRounds: "라운드 종료", finished: "게임 종료" })[r.status] || r.status || "-";
-      return `<div class="room-item"><div><strong>${esc(r.title || "사바나 달무티")}</strong><div class="room-meta">${status} · 플레이어 ${r.playerCount || 0}/${MAX_PLAYERS} · 관전자 ${r.spectatorCount || 0} · ${r.totalRounds ? `${r.totalRounds}판` : "무제한"}</div></div><button class="btn primary" type="button" onclick="Dalmuti.joinRoom('${d.id}')">입장</button></div>`;
+      return `<div class="room-item"><div><strong>${esc(r.title || "달무티 in 조선")}</strong><div class="room-meta">${status} · 플레이어 ${r.playerCount || 0}/${MAX_PLAYERS} · 관전자 ${r.spectatorCount || 0} · ${r.totalRounds ? `${r.totalRounds}판` : "무제한"}</div></div><button class="btn primary" type="button" onclick="Dalmuti.joinRoom('${d.id}')">입장</button></div>`;
     }).join("") : `<div class="muted">생성된 방이 없습니다.</div>`;
   }
 
@@ -317,7 +317,7 @@ function roundOrderPlayers(round, players) {
     const room = S.room;
     const statusText = ({ waiting: "대기 중", playing: `${room.round || 1}라운드`, tributeReturn: "상납 반환", betweenRounds: "라운드 종료", finished: "게임 종료" })[room.status] || room.status || "-";
     if (E.roomStateText) E.roomStateText.textContent = statusText;
-    if (E.roomTitle) E.roomTitle.textContent = room.title || "사바나 달무티";
+    if (E.roomTitle) E.roomTitle.textContent = room.title || "달무티 in 조선";
     const turnName = room.currentTurnUid ? (playersMap(room)[room.currentTurnUid]?.nickname || "-") : "-";
     if (E.turnBadge) E.turnBadge.textContent = room.status === "playing" ? `차례: ${turnName}` : statusText;
     if (E.messageBar) {
@@ -633,7 +633,7 @@ function positions() {
   const addSystem = text => appendChat({ type: "system", text });
 
   async function createRoom() {
-    const title = (E.roomTitleInput?.value || "").trim() || "사바나 달무티";
+    const title = (E.roomTitleInput?.value || "").trim() || "달무티 in 조선";
     const rawRounds = Number(E.totalRoundsSelect?.value || 5);
     const ref = roomCol().doc();
     const player = basePlayer(S.user, S.user, 0, false);
@@ -1316,7 +1316,7 @@ async function returnTribute(uid, cards, hand) {
 
   async function saveSettings() {
     if (!isHost() || S.room?.status !== "waiting") return;
-    const title = ($("setTitle")?.value || "사바나 달무티").trim();
+    const title = ($("setTitle")?.value || "달무티 in 조선").trim();
     const raw = Number($("setRounds")?.value || 5);
     await roomRef().set({ title, totalRounds: raw === 0 ? null : raw, updatedAt: serverNow() }, { merge: true });
     await addSystem("방 설정이 변경되었습니다.");
