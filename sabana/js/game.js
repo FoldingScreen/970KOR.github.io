@@ -1422,50 +1422,66 @@ function getLateGamePressure(t) {
 }
 
 function getMonsterWave(t) {
-  const pressure = getLateGamePressure(t);
+  // 04:30 ~ 05:00
+  if (t >= 270 && t < 300) {
+    return {
+      active: true,
+      name: "1차 몬스터웨이브",
+      spawnMul: 1.8,
+      hpMul: 1.08,
+      speedMul: 1.04,
+      coinMul: 1.0,
+      pressure: 1
+    };
+  }
 
+  // 09:00 ~ 10:00
+  if (t >= 540 && t < 600) {
+    return {
+      active: true,
+      name: "2차 몬스터웨이브",
+      spawnMul: 2.1,
+      hpMul: 1.13,
+      speedMul: 1.06,
+      coinMul: 1.0,
+      pressure: 2
+    };
+  }
+
+  // 13:30 ~ 15:00
+  if (t >= 810 && t < 900) {
+    return {
+      active: true,
+      name: "3차 몬스터웨이브",
+      spawnMul: 2.35,
+      hpMul: 1.18,
+      speedMul: 1.08,
+      coinMul: 1.0,
+      pressure: 3
+    };
+  }
+
+  // 18:00 ~ 20:00
   if (t >= 1080 && t < 1200) {
     return {
-      key: "wave_18",
       active: true,
-      title: "최종 웨이브",
-      desc: "18:00 ~ 20:00 몬스터 대공세",
-      intervalMul: 0.48,
-      spawnCount: 4,
-      eliteBonus: 0.08,
-    };
-  }
-
-  if (t >= 900 && t < 960) {
-    return {
-      key: "wave_15",
-      active: true,
-      title: "후반 공세",
-      desc: "15:00 ~ 16:00 강화 몬스터 공세",
-      intervalMul: 0.58,
-      spawnCount: 3,
-      eliteBonus: 0.06,
-    };
-  }
-
-  if (t >= 600 && t < 660) {
-    return {
-      key: "wave_10",
-      active: true,
-      title: "몬스터 웨이브",
-      desc: "10:00 ~ 11:00 몬스터 공세",
-      intervalMul: 0.62,
-      spawnCount: 2,
-      eliteBonus: 0.04,
+      name: "최종 몬스터웨이브",
+      spawnMul: 2.7,
+      hpMul: 1.24,
+      speedMul: 1.1,
+      coinMul: 1.0,
+      pressure: 4
     };
   }
 
   return {
-    key: "normal",
     active: false,
-    intervalMul: 1,
-    spawnCount: pressure >= 5 ? 3 : pressure >= 3 ? 2 : 1,
-    eliteBonus: pressure * 0.012,
+    name: "",
+    spawnMul: 1,
+    hpMul: 1,
+    speedMul: 1,
+    coinMul: 1,
+    pressure: 0
   };
 }
 
@@ -1697,24 +1713,25 @@ function spawnEnemy(wave = null) {
 function updateTimedBossSpawns() {
   const t = state.timeMs / 1000;
 
+  // 04:30 ~ 05:00 웨이브 종료 후 05:00 중간보스
   if (t >= 300 && !state.bossFlags.mid5) {
     state.bossFlags.mid5 = true;
     spawnBossEnemy("mid_guardian", "중간보스", 1);
   }
 
-  // 10:00~11:00 웨이브 중간 10:30
-  if (t >= 630 && !state.bossFlags.mid10) {
+  // 09:00 ~ 10:00 웨이브 종료 후 10:00 중간보스
+  if (t >= 600 && !state.bossFlags.mid10) {
     state.bossFlags.mid10 = true;
     spawnBossEnemy("wave_brute", "웨이브 중간보스", 1.35);
   }
 
-  // 15:00~16:00 웨이브 중간 15:30
-  if (t >= 930 && !state.bossFlags.mid15) {
+  // 13:30 ~ 15:00 웨이브 종료 후 15:00 중간보스
+  if (t >= 900 && !state.bossFlags.mid15) {
     state.bossFlags.mid15 = true;
     spawnBossEnemy("dark_knight", "암흑 기사", 1.7);
   }
 
-  // 20:00 최종보스 등장
+  // 18:00 ~ 20:00 웨이브 종료 후 20:00 최종보스
   if (t >= FINAL_BOSS_SPAWN_SEC && !state.bossFlags.final20) {
     state.bossFlags.final20 = true;
     spawnBossEnemy("sabana_lord", "사바나 군주", 2.4, true);
