@@ -1464,7 +1464,6 @@ async function returnTribute(uid, cards, hand) {
   }
 
   function bindEvents() {
-    if (E.homeBtn) E.homeBtn.onclick = () => { location.href = "../"; };
     if (E.leaveRoomBtn) E.leaveRoomBtn.onclick = leaveRoom;
     if (E.createRoomBtn) E.createRoomBtn.onclick = createRoom;
     if (E.refreshRoomsBtn) E.refreshRoomsBtn.onclick = loadRooms;
