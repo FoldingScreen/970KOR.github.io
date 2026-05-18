@@ -7,44 +7,54 @@
     return String(box.querySelector(".player-name")?.textContent || "").trim();
   }
 
+  function metaText(box) {
+    return String(box.querySelector(".player-meta")?.textContent || "").trim();
+  }
+
+  function isPassedBox(box) {
+    return box.classList.contains("passed") || /^패스/.test(metaText(box)) || !!box.querySelector(".badge.pass");
+  }
+
   function rememberCounts() {
     document.querySelectorAll(".player-box").forEach(box => {
       const name = cleanName(box);
-      const meta = box.querySelector(".player-meta");
-      const text = String(meta?.textContent || "").trim();
+      const text = metaText(box);
       const match = text.match(/(\d+)장/);
       if (name && match) lastCardCountByName.set(name, `${match[1]}장`);
     });
   }
 
   function ensurePassBadge(box) {
-    if (!box.classList.contains("passed")) return;
-    if (box.querySelector(".badge.pass")) return;
+    if (!isPassedBox(box)) return;
+    box.classList.add("passed");
 
-    const badge = document.createElement("div");
-    badge.className = "badge pass";
-    badge.textContent = "패스";
-    box.appendChild(badge);
+    let badge = box.querySelector(".badge.pass");
+    if (!badge) {
+      badge = document.createElement("div");
+      badge.className = "badge pass";
+      badge.textContent = "패스";
+      box.appendChild(badge);
+    }
+
+    badge.style.display = "inline-block";
+    badge.style.visibility = "visible";
+    badge.style.opacity = "1";
   }
 
   function restorePassedCounts() {
-    document.querySelectorAll(".player-box.passed").forEach(box => {
+    document.querySelectorAll(".player-box").forEach(box => {
+      if (!isPassedBox(box)) return;
       ensurePassBadge(box);
 
       const name = cleanName(box);
       const meta = box.querySelector(".player-meta");
       if (!name || !meta) return;
 
-      const text = String(meta.textContent || "").trim();
+      const text = metaText(box);
       const countText = lastCardCountByName.get(name);
       if (!countText) return;
 
-      if (text.startsWith("패스")) {
-        meta.textContent = text.includes("준비") ? `${countText} · 준비` : countText;
-        return;
-      }
-
-      if (!/(\d+)장/.test(text)) {
+      if (text.startsWith("패스") || !/(\d+)장/.test(text)) {
         meta.textContent = text.includes("준비") ? `${countText} · 준비` : countText;
       }
     });
@@ -63,7 +73,7 @@
       subtree: true,
       characterData: true,
       attributes: true,
-      attributeFilter: ["class"]
+      attributeFilter: ["class", "style"]
     });
   }
 
