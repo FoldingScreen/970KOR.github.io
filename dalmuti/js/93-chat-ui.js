@@ -9,17 +9,17 @@
     .chat-list {
       display: flex !important;
       flex-direction: column !important;
-      gap: 7px !important;
-      padding: 8px !important;
+      gap: 4px !important;
+      padding: 6px 4px !important;
     }
 
     .chat-msg {
       display: block !important;
       width: 100% !important;
-      padding: 8px 10px !important;
-      border-radius: 12px !important;
-      background: rgba(255,255,255,.055) !important;
-      border: 1px solid rgba(255,255,255,.08) !important;
+      padding: 3px 2px !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      border: 0 !important;
       color: #e7ecf6 !important;
       font-size: 13px !important;
       line-height: 1.45 !important;
@@ -28,29 +28,47 @@
     }
 
     .chat-msg .chat-name {
-      display: inline-flex !important;
-      align-items: center !important;
-      max-width: 100% !important;
-      margin: 0 7px 3px 0 !important;
-      padding: 2px 7px !important;
-      border-radius: 999px !important;
-      background: rgba(243,210,129,.14) !important;
-      border: 1px solid rgba(243,210,129,.38) !important;
+      display: inline !important;
+      margin: 0 6px 0 0 !important;
+      padding: 0 !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      border: 0 !important;
       color: #f3d281 !important;
       font-weight: 900 !important;
-      font-size: 11px !important;
-      line-height: 1.25 !important;
-      vertical-align: baseline !important;
+      font-size: 12px !important;
+      line-height: inherit !important;
       white-space: nowrap !important;
+    }
+
+    .chat-msg .chat-name::before {
+      content: "[";
+      color: #8f98aa;
+      font-weight: 700;
+    }
+
+    .chat-msg .chat-name::after {
+      content: "]";
+      color: #8f98aa;
+      font-weight: 700;
     }
 
     .chat-msg.system {
       text-align: center !important;
       color: #aeb8c9 !important;
-      background: rgba(111,179,255,.07) !important;
-      border: 1px dashed rgba(111,179,255,.24) !important;
+      background: transparent !important;
+      border: 0 !important;
       font-size: 12px !important;
       font-weight: 800 !important;
+      opacity: .9 !important;
+    }
+
+    .chat-msg.system::before,
+    .chat-msg.system::after {
+      content: "─";
+      margin: 0 6px;
+      color: #566174;
+      font-weight: 400;
     }
 
     .chat-input-row {
