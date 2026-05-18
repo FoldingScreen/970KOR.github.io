@@ -17,19 +17,36 @@
     });
   }
 
+  function ensurePassBadge(box) {
+    if (!box.classList.contains("passed")) return;
+    if (box.querySelector(".badge.pass")) return;
+
+    const badge = document.createElement("div");
+    badge.className = "badge pass";
+    badge.textContent = "패스";
+    box.appendChild(badge);
+  }
+
   function restorePassedCounts() {
     document.querySelectorAll(".player-box.passed").forEach(box => {
+      ensurePassBadge(box);
+
       const name = cleanName(box);
       const meta = box.querySelector(".player-meta");
       if (!name || !meta) return;
 
       const text = String(meta.textContent || "").trim();
-      if (!text.startsWith("패스")) return;
-
       const countText = lastCardCountByName.get(name);
       if (!countText) return;
 
-      meta.textContent = text.includes("준비") ? `${countText} · 준비` : countText;
+      if (text.startsWith("패스")) {
+        meta.textContent = text.includes("준비") ? `${countText} · 준비` : countText;
+        return;
+      }
+
+      if (!/(\d+)장/.test(text)) {
+        meta.textContent = text.includes("준비") ? `${countText} · 준비` : countText;
+      }
     });
   }
 
