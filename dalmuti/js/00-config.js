@@ -21,7 +21,7 @@
   const TRIBUTE_ANIM_MS = 3000;
 
   const RANKS = [
-    [1, "01", "사바나", "card-01-sabana.png", 1],
+    [1, "01", "임금", "card-01-king.png", 1],
     [2, "02", "세자", "card-02-prince.png", 2],
     [3, "03", "영의정", "card-03-yeonguijeong.png", 3],
     [4, "04", "관찰사", "card-04-governor.png", 4],
