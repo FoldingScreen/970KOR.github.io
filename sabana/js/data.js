@@ -1,6 +1,7 @@
 const MAX_LEVEL = 30;
 const MAX_AUGMENTS = 6;
-const GAME_LIMIT_MS = 20 * 60 * 1000;
+const FINAL_BOSS_SPAWN_SEC = 20 * 60;
+const GAME_LIMIT_MS = 30 * 60 * 1000;
 const OVER_EXP_REWARD = 1000;
 const SPECIAL_LEVELS = new Set([5, 10, 15, 20, 25, 30]);
 const NORMAL_ATTRS = ["氷", "火", "風", "光", "暗", "聖", "惡"];
