@@ -158,13 +158,33 @@ function roundOrderPlayers(round, players) {
     );
 }
   
-  function nextAfter(room, uid) {
-    const list = activePlayers(room);
-    if (!list.length) return null;
-    const idx = list.findIndex(p => p.uid === uid);
-    if (idx < 0) return list[0]?.uid || null;
-    return list[(idx + 1) % list.length]?.uid || list[0]?.uid || null;
+function nextAfter(room, uid) {
+  const players = playersMap(room);
+
+  const order = Array.isArray(room.turnOrder) && room.turnOrder.length
+    ? room.turnOrder.filter(id => players[id])
+    : allPlayers(room).map(p => p.uid);
+
+  if (!order.length) return null;
+
+  const idx = order.indexOf(uid);
+
+  const isAlive = id => {
+    const p = players[id];
+    return p && !p.finished && !p.forfeited && !p.removedFromRoom;
+  };
+
+  if (idx < 0) {
+    return order.find(isAlive) || null;
   }
+
+  for (let i = 1; i <= order.length; i++) {
+    const nextUid = order[(idx + i) % order.length];
+    if (isAlive(nextUid)) return nextUid;
+  }
+
+  return null;
+}
 
   function nextAfterKick(oldRoom, kickedUid, nextPlayers) {
     const oldList = allPlayers(oldRoom).filter(p => p && p.uid);
