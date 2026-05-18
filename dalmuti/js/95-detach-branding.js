@@ -32,7 +32,6 @@
 
   function cleanTree(root = document.body) {
     if (!root) return;
-
     document.title = "달무티";
 
     const homeBtn = document.getElementById("homeBtn");
@@ -43,9 +42,7 @@
     while (walker.nextNode()) nodes.push(walker.currentNode);
     nodes.forEach(cleanTextNode);
 
-    if (root.querySelectorAll) {
-      root.querySelectorAll("*").forEach(cleanAttributes);
-    }
+    root.querySelectorAll?.("*").forEach(cleanAttributes);
   }
 
   function patchCreateRoomDefault() {
@@ -63,15 +60,13 @@
     cleanTree();
     patchCreateRoomDefault();
 
-    const observer = new MutationObserver(() => {
+    // 예전 버전은 MutationObserver로 body 전체를 계속 스캔했음.
+    // 채팅/플레이어 렌더마다 전체 텍스트를 다시 훑으면서 멈춤이 생길 수 있어
+    // 이제는 초기 1회와 아주 짧은 지연 1회만 보정한다.
+    setTimeout(() => {
       cleanTree();
       patchCreateRoomDefault();
-    });
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      characterData: true
-    });
+    }, 700);
   }
 
   if (document.readyState === "loading") {
