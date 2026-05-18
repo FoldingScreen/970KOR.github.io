@@ -6,6 +6,21 @@
   const style = document.createElement("style");
   style.id = "dalmutiChatUiCss";
   style.textContent = `
+    @media (min-width: 881px) {
+      .room-shell {
+        grid-template-columns: minmax(0, 1fr) 380px !important;
+      }
+
+      .side-panel {
+        width: 380px !important;
+        max-width: 380px !important;
+      }
+
+      #tributePanel {
+        right: 406px !important;
+      }
+    }
+
     .chat-list {
       display: flex !important;
       flex-direction: column !important;
@@ -28,7 +43,8 @@
     }
 
     .chat-msg .chat-name {
-      display: inline !important;
+      display: inline-block !important;
+      max-width: 150px !important;
       margin: 0 6px 0 0 !important;
       padding: 0 !important;
       border-radius: 0 !important;
@@ -39,6 +55,9 @@
       font-size: 12px !important;
       line-height: inherit !important;
       white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      vertical-align: bottom !important;
     }
 
     .chat-msg .chat-name::before {
