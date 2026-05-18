@@ -5,7 +5,6 @@
 
   const style = document.createElement("style");
   style.textContent = `
-    .player-box .badge.pass { display: none !important; }
     .watch-force-btn {
       position: absolute;
       right: 5px;
