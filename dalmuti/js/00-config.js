@@ -21,19 +21,19 @@
   const TRIBUTE_ANIM_MS = 3000;
 
 const RANKS = [
-  [1, "01", "임금", "01. king.png", 1],
-  [2, "02", "세자", "02. prince.png", 2],
-  [3, "03", "영의정", "03. yeonguijeong.png", 3],
-  [4, "04", "관찰사", "04. governor.png", 4],
-  [5, "05", "암행어사", "05. amhaeng.png", 5],
-  [6, "06", "사또", "06. satto.png", 6],
-  [7, "07", "이방", "07. ibang.png", 7],
-  [8, "08", "선비", "08. seonbi.png", 8],
-  [9, "09", "농민", "09. farmer.png", 9],
-  [10, "10", "상인", "10. merchant.png", 10],
-  [11, "11", "백정", "11. baekjeong.png", 11],
-  [12, "12", "노비", "12. nobi.png", 12],
-  [13, "J", "홍길동", "13. hong.png", 2]
+[1, "01", "임금", "01. king.png", 1],
+[2, "02", "세자", "02. prince.png", 2],
+[3, "03", "영의정", "03. yeonguijeong.png", 3],
+[4, "04", "관찰사", "04. governor.png", 4],
+[5, "05", "암행어사", "05. amhaeng.png", 5],
+[6, "06", "사또", "06. satto.png", 6],
+[7, "07", "이방", "07. ibang.png", 7],
+[8, "08", "선비", "08. seonbi.png", 8],
+[9, "09", "농민", "09. farmer.png", 9],
+[10, "10", "상인", "10. merchant.png", 10],
+[11, "11", "백정", "11. baekjeong.png", 11],
+[12, "12", "노비", "12. nobi.png", 12],
+[13, "J", "홍길동", "13. hong.png", 2]
 ].map(([rank, code, name, image, count]) => ({ rank, code, name, image, count, joker: rank === 13 }));
 
   const S = {
