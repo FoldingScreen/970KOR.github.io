@@ -45,13 +45,36 @@
       const w = oldGetWeaponStats();
       if (!state?.weapon || !w) return w;
 
-      if (state.weapon.id === "magic_staff") {
-        // 마력탄은 잡몹 정리용 고공속 맛은 유지하되, 단일 보스 DPS가 과도하지 않게 조정.
-        w.damage *= 0.48;
-        w.intervalMs *= 1.22;
-        w.knockback *= 0.65;
-        if ((state.weaponLevel || 0) >= 10) w.count = Math.max(2, w.count - 1);
-      }
+if (state.weapon.id === "magic_staff") {
+  const lv = Number(state.weaponLevel || 0);
+  const bossAlive = state.enemies?.some(e => e.hp > 0 && (e.boss || e.midBoss));
+
+  // 초반은 "느리지만 한 발은 의미 있게" 조정.
+  // 평상시에는 잡몹 정리가 되게 피해를 회복하고,
+  // 보스전에서만 추가로 DPS를 누른다.
+  const intervalMul =
+    lv < 4 ? 1.70 :
+    lv < 7 ? 1.48 :
+    lv < 10 ? 1.32 :
+    1.22;
+
+  const damageMul =
+    lv < 4 ? 0.95 :
+    lv < 7 ? 0.88 :
+    lv < 10 ? 0.80 :
+    0.74;
+
+  w.damage *= damageMul;
+  w.intervalMs *= intervalMul;
+  w.knockback *= 0.72;
+
+  if (bossAlive) {
+    w.damage *= 0.72;
+    w.intervalMs *= 1.10;
+  }
+
+  if (lv >= 10) w.count = Math.max(2, w.count - 1);
+}
 
       return w;
     };
