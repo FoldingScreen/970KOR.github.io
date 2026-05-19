@@ -1,8 +1,8 @@
-// SABANA boss reward patch v1
-// 2차 적용: 레벨업 증강 제거 + 보스 처치 보상/증강/재정비 구간.
+// SABANA boss reward patch v2
+// 보스 처치 직후 증강 선택 + 보스 위치 아이템 드롭 + 오른쪽 다음 스테이지 포털.
 (function () {
-  if (window.__sabanaBossRewardPatchV1) return;
-  window.__sabanaBossRewardPatchV1 = true;
+  if (window.__sabanaBossRewardPatchV2) return;
+  window.__sabanaBossRewardPatchV2 = true;
 
   let bossRewardContext = null;
   let bossRewardSelecting = false;
@@ -18,6 +18,7 @@
         exp: 0,
         shield: 0,
         healRatio: 0,
+        dropGrade: "legendary",
       };
     }
 
@@ -31,6 +32,7 @@
         exp: 120,
         shield: 35,
         healRatio: 0.25,
+        dropGrade: "normal",
       };
     }
 
@@ -42,6 +44,7 @@
         exp: 220,
         shield: 55,
         healRatio: 0.3,
+        dropGrade: "advanced",
       };
     }
 
@@ -53,6 +56,7 @@
         exp: 360,
         shield: 80,
         healRatio: 0.35,
+        dropGrade: "epic",
       };
     }
 
@@ -63,26 +67,15 @@
       exp: 180,
       shield: 45,
       healRatio: 0.28,
+      dropGrade: "advanced",
     };
-  }
-
-  function collectArenaRewards() {
-    if (!state) return;
-
-    for (const g of state.gems || []) {
-      if (g && g.exp) gainExpNoChoice(g.exp);
-    }
-    state.gems = [];
-
-    for (const d of state.drops || []) {
-      if (d) applyDrop(d);
-    }
-    state.drops = [];
   }
 
   function clearBossArena() {
     if (!state) return;
-    state.enemies = state.enemies.filter(e => e.hp > 0 && !e.dead && (e.boss || e.midBoss));
+
+    // 보스전 종료 직후에는 전장만 정리하고, 바닥 경험치/아이템은 남겨둔다.
+    state.enemies = [];
     state.enemyProjectiles = [];
     state.projectiles = [];
     state.spawnMs = 900;
@@ -112,12 +105,57 @@
       state.level += 1;
       rebuildStats();
 
-      // 변경: 레벨업은 성장 카드만 지급한다. 증강은 보스 처치 보상으로만 지급.
+      // 레벨업은 성장 카드만 지급한다. 증강은 보스 처치 보상으로만 지급.
       pendingAugmentAfterGrowth = false;
       openGrowthChoice();
       break;
     }
   };
+
+  function createBossRewardDrop(reward, x, y) {
+    if (!state || reward.final) return;
+
+    const grade = reward.dropGrade || "advanced";
+    const drop = createDropItem(grade);
+    drop.x = clamp(x, 45, canvas.width - 45);
+    drop.y = clamp(y, 45, canvas.height - 45);
+    drop.r = grade === "legendary" ? 10 : grade === "epic" ? 9 : 8;
+    drop.name = `보스 보상 · ${drop.name}`;
+    drop.bossReward = true;
+
+    state.drops.push(drop);
+  }
+
+  function setStageGateActive(reward) {
+    if (!state || reward.final) return;
+
+    state.stageGate = {
+      active: true,
+      x: canvas.width - 72,
+      y: canvas.height / 2,
+      r: 42,
+      title: "다음 스테이지",
+      desc: "오른쪽 포털로 이동",
+      rewardTitle: reward.title,
+    };
+
+    state.paused = false;
+    state.spawnMs = 900;
+    state.player.invuln = Math.max(state.player.invuln || 0, 1.5);
+    showBigAlert("재정비 시간", "아이템을 줍고 오른쪽 포털로 이동하세요");
+  }
+
+  function enterNextStage() {
+    if (!state || !state.stageGate?.active) return;
+
+    state.stageGate.active = false;
+    state.stageGate = null;
+    state.spawnMs = 0;
+    state.player.invuln = Math.max(state.player.invuln || 0, 1.4);
+    bossRewardContext = null;
+    bossRewardSelecting = false;
+    showBigAlert("다음 스테이지 진입", "전투 재개");
+  }
 
   function openBossAugmentChoice(reward) {
     if (!state) return;
@@ -133,122 +171,103 @@
     rerollBtn.style.display = "inline-block";
     choiceTitle.textContent = `${reward.title} · 증강 선택`;
     choiceDesc.textContent =
-      `보스 처치 보상입니다. 증강 1개를 선택하면 재정비 구역으로 이동합니다. 이번 판 남은 새로고침: ${rerollsLeft}회`;
+      `보스 처치 보상입니다. 증강 1개를 선택하면 전장으로 돌아갑니다. 이번 판 남은 새로고침: ${rerollsLeft}회`;
 
     renderChoiceCards();
     choiceOverlay.classList.add("show");
   }
 
-  function ensureRestockOverlay() {
-    let overlay = document.getElementById("restockOverlay");
-    if (overlay) return overlay;
+  function drawStageGate() {
+    if (!state?.stageGate?.active || !ctx) return;
 
-    overlay = document.createElement("div");
-    overlay.id = "restockOverlay";
-    overlay.className = "overlay";
-    overlay.innerHTML = `
-      <div class="modal center">
-        <h2 id="restockTitle">재정비 구역</h2>
-        <p id="restockDesc"></p>
-        <div id="restockCards" class="cards"></div>
-        <div class="menu-row" style="margin-top:14px;">
-          <button id="restockContinueBtn">다음 라운드로</button>
-        </div>
-      </div>
-    `;
+    const g = state.stageGate;
+    const pulse = 1 + Math.sin(Date.now() / 180) * 0.08;
 
-    const wrap = document.querySelector(".canvas-wrap") || document.body;
-    wrap.appendChild(overlay);
+    ctx.save();
+    ctx.translate(g.x, g.y);
 
-    overlay.querySelector("#restockContinueBtn").addEventListener("click", () => {
-      overlay.classList.remove("show");
-      if (state) {
-        state.paused = false;
-        state.player.invuln = Math.max(state.player.invuln || 0, 1.0);
-      }
-      bossRewardContext = null;
-      bossRewardSelecting = false;
-      showToast("다음 라운드 시작");
-    });
+    ctx.beginPath();
+    ctx.fillStyle = "rgba(56,189,248,.14)";
+    ctx.arc(0, 0, g.r * 1.55 * pulse, 0, Math.PI * 2);
+    ctx.fill();
 
-    return overlay;
+    ctx.beginPath();
+    ctx.strokeStyle = "#38bdf8";
+    ctx.lineWidth = 5;
+    ctx.arc(0, 0, g.r * pulse, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.strokeStyle = "#facc15";
+    ctx.lineWidth = 2;
+    ctx.arc(0, 0, g.r * 0.66 * pulse, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.fillStyle = "rgba(250,204,21,.9)";
+    ctx.moveTo(-10, -16);
+    ctx.lineTo(15, 0);
+    ctx.lineTo(-10, 16);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.font = "bold 13px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#e0f2fe";
+    ctx.fillText(g.title, 0, g.r + 26);
+    ctx.font = "11px sans-serif";
+    ctx.fillStyle = "#bae6fd";
+    ctx.fillText(g.desc, 0, g.r + 42);
+
+    ctx.restore();
   }
 
-  function makeRestockOptions(reward) {
-    const stageBoost = reward.title.includes("암흑") ? 1.8 : reward.title.includes("파쇄") ? 1.35 : 1;
-    return [
-      {
-        name: "HP 회복",
-        desc: `전투 코인 ${Math.round(140 * stageBoost)} 소모\n최대 HP의 35% 회복`,
-        cost: Math.round(140 * stageBoost),
-        run() { healPlayer(state.player.maxHp * 0.35); },
-      },
-      {
-        name: "보호막 보급",
-        desc: `전투 코인 ${Math.round(170 * stageBoost)} 소모\n보호막 ${Math.round(45 * stageBoost)} 획득`,
-        cost: Math.round(170 * stageBoost),
-        run() { addShield(Math.round(45 * stageBoost)); },
-      },
-      {
-        name: "경험치 보급",
-        desc: `전투 코인 ${Math.round(220 * stageBoost)} 소모\n경험치 ${Math.round(140 * stageBoost)} 획득`,
-        cost: Math.round(220 * stageBoost),
-        run() { gainExpNoChoice(Math.round(140 * stageBoost)); },
-      },
-      {
-        name: "임시 화력 증폭",
-        desc: `전투 코인 ${Math.round(260 * stageBoost)} 소모\n다음 45초간 공격력 +20%`,
-        cost: Math.round(260 * stageBoost),
-        run() { addTimedBuff("damage", 1.2, 45); },
-      },
-    ];
+  function updateGateOnly(dt) {
+    if (!state?.stageGate?.active) return;
+
+    // 포털 대기 중에는 시간/스폰/적 패턴은 멈추고, 이동/아이템 회수만 허용한다.
+    updateBuffs(dt);
+    updatePlayer(dt);
+    updateGemsAndDrops(dt);
+    updateEffects(dt);
+    updateFloating(dt);
+
+    const g = state.stageGate;
+    const dist = Math.hypot(state.player.x - g.x, state.player.y - g.y);
+
+    if (dist < state.player.r + g.r) {
+      enterNextStage();
+    }
   }
 
-  function openRestockOverlay(reward) {
-    if (!state) return;
+  const originalUpdateSpawns = window.updateSpawns;
+  window.updateSpawns = function patchedUpdateSpawns(dt) {
+    if (state?.stageGate?.active) return;
+    return originalUpdateSpawns(dt);
+  };
 
-    const overlay = ensureRestockOverlay();
-    const title = overlay.querySelector("#restockTitle");
-    const desc = overlay.querySelector("#restockDesc");
-    const cards = overlay.querySelector("#restockCards");
-
-    title.textContent = `${reward.title} · 재정비 구역`;
-    desc.textContent = "전투 코인을 써서 다음 라운드를 준비하세요. 구매하지 않고 바로 진행할 수도 있습니다.";
-    cards.innerHTML = "";
-
-    const options = makeRestockOptions(reward);
-    for (const opt of options) {
-      const div = document.createElement("div");
-      div.className = "card";
-      div.innerHTML = `
-        <div class="type-label">재정비 보급</div>
-        <h3>${opt.name}</h3>
-        <div class="desc">${opt.desc.replace(/\n/g, "<br />")}</div>
-      `;
-      div.onclick = () => {
-        if (state.runCoins < opt.cost) {
-          showToast("전투 코인이 부족합니다.");
-          return;
-        }
-        state.runCoins -= opt.cost;
-        opt.run();
-        rebuildStats();
-        div.classList.add("disabled");
-        div.onclick = null;
-        showToast(`${opt.name} 구매 완료`);
-        updateUi();
-      };
-      cards.appendChild(div);
+  const originalUpdate = window.update;
+  window.update = function patchedUpdate(dt) {
+    if (state?.stageGate?.active) {
+      updateGateOnly(dt);
+      return;
     }
 
-    state.paused = true;
-    overlay.classList.add("show");
-  }
+    return originalUpdate(dt);
+  };
+
+  const originalDraw = window.draw;
+  window.draw = function patchedDraw() {
+    originalDraw();
+    drawStageGate();
+  };
 
   const originalKillEnemy = window.killEnemy;
   window.killEnemy = function patchedKillEnemy(e, tags = []) {
     const reward = bossRewardByEnemy(e);
     const wasBossRewardTarget = !!reward && !e.dead;
+    const deathX = e?.x || canvas.width / 2;
+    const deathY = e?.y || canvas.height / 2;
 
     originalKillEnemy(e, tags);
 
@@ -256,8 +275,8 @@
     if (state._bossRewardOpenedFor === e.id) return;
     state._bossRewardOpenedFor = e.id;
 
-    collectArenaRewards();
     clearBossArena();
+    createBossRewardDrop(reward, deathX, deathY);
 
     const bonusMul = 1 + (meta.upgrades.elite_bounty || 0) * 0.05;
     addRunCoins(Math.round(reward.coins * bonusMul));
@@ -266,14 +285,14 @@
     if (reward.healRatio) healPlayer(state.player.maxHp * reward.healRatio);
 
     rebuildStats();
-    showBigAlert(reward.title, "증강 선택 + 재정비 구역 개방");
+    showBigAlert(reward.title, "증강 선택 후 오른쪽 포털로 이동");
 
     setTimeout(() => {
       if (state && state.running) {
         bossRewardContext = reward;
         openBossAugmentChoice(reward);
       }
-    }, 50);
+    }, 30);
   };
 
   const originalSelectCurrentChoice = window.selectCurrentChoice;
@@ -282,8 +301,7 @@
     originalSelectCurrentChoice(item);
 
     if (wasBossReward && state && state.running && bossRewardContext) {
-      state.paused = true;
-      setTimeout(() => openRestockOverlay(bossRewardContext), 30);
+      setTimeout(() => setStageGateActive(bossRewardContext), 30);
     }
   };
 })();
