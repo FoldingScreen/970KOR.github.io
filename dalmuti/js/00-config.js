@@ -200,9 +200,27 @@ function nextAfter(room, uid) {
     return fallback?.uid || null;
   }
 
-  function basePlayer(uid, nickname, seatOrder, isAI) {
-    return { uid, nickname, type: return { uid, nickname, type: "player", isReady: !!isAI, isAI: !!isAI, autoPlay: false, seatOrder, role: null, score: 0, lastRoundScore: 0, lastRoundRank: null, cardCount: 0, passed: false, finished: false, finishedRank: null, forfeited: false, removedFromRoom: false };
-  }
+function basePlayer(uid, nickname, seatOrder, isAI) {
+  return {
+    uid,
+    nickname,
+    type: "player",
+    isReady: !!isAI,
+    isAI: !!isAI,
+    autoPlay: false,
+    seatOrder,
+    role: null,
+    score: 0,
+    lastRoundScore: 0,
+    lastRoundRank: null,
+    cardCount: 0,
+    passed: false,
+    finished: false,
+    finishedRank: null,
+    forfeited: false,
+    removedFromRoom: false
+  };
+}
 
   const baseSpectator = (uid, nickname) => ({ uid, nickname, type: "spectator", isAI: false, removedFromRoom: false });
 
@@ -1569,10 +1587,11 @@ async function returnTribute(uid, cards, hand) {
     if (E.startBtn) E.startBtn.onclick = startGame;
     if (E.nextRoundBtn) E.nextRoundBtn.onclick = () => nextRound(false);
     if (E.resetGameBtn) E.resetGameBtn.onclick = stopGame;
-    if (E.playBtn) E.playBtn.onclick = playSelected;
-    const autoBtn = $("autoPlayBtn");
-    if (autoBtn) autoBtn.onclick = toggleAutoPlay;
-    if (E.sendChatBtn) E.sendChatBtn.onclick = sendChat;
+if (E.playBtn) E.playBtn.onclick = playSelected;
+if (E.passBtn) E.passBtn.onclick = passTurn;
+const autoBtn = $("autoPlayBtn");
+if (autoBtn) autoBtn.onclick = toggleAutoPlay;
+if (E.sendChatBtn) E.sendChatBtn.onclick = sendChat;
     if (E.chatInput) E.chatInput.onkeydown = e => { if (e.key === "Enter") sendChat(); };
     if (E.toggleSpectatorChatBtn) E.toggleSpectatorChatBtn.onclick = toggleSpectatorChat;
   }
