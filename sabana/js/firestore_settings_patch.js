@@ -8,10 +8,11 @@
   if (typeof firebase === "undefined" || !firebase.firestore) return;
 
   try {
-    firebase.firestore().settings({
-      experimentalAutoDetectLongPolling: true,
-      merge: true,
-    });
+firebase.firestore().settings({
+  experimentalForceLongPolling: true,
+  useFetchStreams: false,
+  merge: true,
+});
   } catch (err) {
     console.warn("Firestore long polling settings skipped", err);
   }
