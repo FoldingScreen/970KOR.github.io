@@ -588,6 +588,57 @@ function positions() {
     const finalPanel = sideBox("finalResultPanel", roundPanel);
     finalPanel.style.display = S.room.status === "finished" ? "block" : "none";
     if (finalPanel.style.display !== "none") finalPanel.innerHTML = `<div class="result-title">최종 결과</div>${resultRows(allPlayers().slice().sort((a, b) => (b.score || 0) - (a.score || 0)), "final")}`;
+        const finalScorePanel = sideBox("finalScorePanel", document.querySelector(".side-panel section:last-child"));
+    const finalScorePanel = sideBox("finalScorePanel", document.querySelector(".side-panel section:last-child"));
+
+if (!S.room.finalGameResult) {
+  finalScorePanel.style.display = "none";
+  finalScorePanel.innerHTML = "";
+} else {
+  finalScorePanel.style.display = "block";
+
+  const standings = S.room.finalGameResult.standings || [];
+
+  finalScorePanel.innerHTML = `
+    <div class="result-title">최종 점수</div>
+    <div class="result-row header">
+      <span>순위</span>
+      <span>닉네임</span>
+      <span>총점</span>
+      <span>직전</span>
+    </div>
+    ${standings.map(p => `
+      <div class="result-row">
+        <span>${p.rank}등</span>
+        <span>${esc(p.nickname || "-")}</span>
+        <strong>${Number(p.score || 0)}</strong>
+        <span>${p.lastRoundRank ? `${p.lastRoundRank}등` : "-"}</span>
+      </div>
+    `).join("")}
+  `;
+}
+
+    if (finalScorePanel.style.display !== "none") {
+      const standings = S.room.finalGameResult.standings || [];
+
+      finalScorePanel.innerHTML = `
+        <div class="result-title">최종 점수</div>
+        <div class="result-row header">
+          <span>순위</span>
+          <span>닉네임</span>
+          <span>총점</span>
+          <span>직전</span>
+        </div>
+        ${standings.map(p => `
+          <div class="result-row">
+            <span>${p.rank}등</span>
+            <span>${esc(p.nickname || "-")}</span>
+            <strong>${Number(p.score || 0)}</strong>
+            <span>${p.lastRoundRank ? `${p.lastRoundRank}등` : "-"}</span>
+          </div>
+        `).join("")}
+      `;
+    }
     const admin = sideBox("adminPanel", finalPanel);
     const aiBtn = isHost() && S.room.status === "waiting" ? `<button class="btn ghost small" onclick="Dalmuti.addAI()">AI 추가</button>` : "";
     const forceBtn = isHost() && S.room.status === "betweenRounds" ? `<button class="btn ghost small" onclick="Dalmuti.forceRebellion()">민란 강제</button>` : "";
@@ -1051,13 +1102,22 @@ const rebellionUid = round > 1
     });
     const first = ps[0]?.uid || null;
     const batch = db.batch();
-    batch.set(roomRef(), {
+batch.set(roomRef(), {
   players: playerMap,
   playerCount: countMap(playerMap),
   status: hasTribute ? "tributeReturn" : "playing",
   round,
   roundKey: `${round}-${Date.now()}`,
- currentTurnUid: hasTribute ? (pairs.find(p => !p.returned)?.toUid || null) : first, currentSet: null, previousSet: null, finishOrder: [], turnOrder: ps.map(p => p.uid), tribute: hasTribute ? { phase: "return", pairs, reversed: !!rebellionUid, returnStartedAt: ts() } : null, rebellionNotice: rebellionUid ? { uid: rebellionUid, nickname: rebellionPlayer?.nickname || "누군가", round, createdAt: ts() } : null, updatedAt: serverNow() }, { merge: true });
+  finalGameResult: null,
+  currentTurnUid: hasTribute ? (pairs.find(p => !p.returned)?.toUid || null) : first,
+  currentSet: null,
+  previousSet: null,
+  finishOrder: [],
+  turnOrder: ps.map(p => p.uid),
+  tribute: hasTribute ? { phase: "return", pairs, reversed: !!rebellionUid, returnStartedAt: ts() } : null,
+  rebellionNotice: rebellionUid ? { uid: rebellionUid, nickname: rebellionPlayer?.nickname || "누군가", round, createdAt: ts() } : null,
+  updatedAt: serverNow()
+}, { merge: true });
     Object.keys(hands).forEach(uid => batch.set(handRef(uid), { hand: hands[uid] }));
     await batch.commit();
     await addSystem(rebellionUid ? `${rebellionPlayer?.nickname || "누군가"}님의 홍길동이 민란을 일으켰습니다.` : (hasTribute ? `${round}라운드 상납 반환을 시작합니다.` : `${round}라운드가 시작되었습니다.`));
@@ -1167,7 +1227,7 @@ renderHand();
       batch.set(roomRef(), finishRoundUpdate(room, players, final), { merge: true });
       if (uid === S.user) S.selected.clear();
       await batch.commit();
-      await addSystem((room.totalRounds && room.round >= room.totalRounds) ? "게임이 종료되었습니다." : `${room.round}라운드가 종료되었습니다.`);
+      await addSystem((room.totalRounds && room.round >= room.totalRounds) ? "최종라운드가 종료되었습니다. 최종 점수가 표시됩니다." : `${room.round}라운드가 종료되었습니다.`);
       return;
     }
     const next = nextAfter({ ...room, players }, uid);
@@ -1176,13 +1236,81 @@ renderHand();
     await batch.commit();
   }
 
-  function finishRoundUpdate(room, players, final) {
-    final.forEach((r, i) => {
-      const score = Object.keys(players).length - i;
-      if (players[r.uid]) players[r.uid] = { ...players[r.uid], score: Number(players[r.uid].score || 0) + score, lastRoundScore: score, lastRoundRank: i + 1, seatOrder: i, role: roleByIndex(i, Object.keys(players).length), finished: true, finishedRank: i + 1, passed: false };
+function finishRoundUpdate(room, players, final) {
+  final.forEach((r, i) => {
+    const score = Object.keys(players).length - i;
+
+    if (players[r.uid]) {
+      players[r.uid] = {
+        ...players[r.uid],
+        score: Number(players[r.uid].score || 0) + score,
+        lastRoundScore: score,
+        lastRoundRank: i + 1,
+        seatOrder: i,
+        role: roleByIndex(i, Object.keys(players).length),
+        finished: true,
+        finishedRank: i + 1,
+        passed: false
+      };
+    }
+  });
+
+  const isFinalRound = !!(room.totalRounds && room.round >= room.totalRounds);
+
+  const finalStandings = Object.values(players)
+    .filter(p => p && p.uid && !p.removedFromRoom)
+    .slice()
+    .sort((a, b) =>
+      Number(b.score || 0) - Number(a.score || 0) ||
+      Number(a.lastRoundRank || 999) - Number(b.lastRoundRank || 999)
+    )
+    .map((p, i) => ({
+      uid: p.uid,
+      nickname: p.nickname,
+      score: Number(p.score || 0),
+      rank: i + 1,
+      lastRoundRank: p.lastRoundRank || null
+    }));
+
+  if (isFinalRound) {
+    Object.keys(players).forEach(uid => {
+      players[uid] = {
+        ...players[uid],
+        isReady: !!players[uid].isAI,
+        role: null,
+        cardCount: 0,
+        passed: false,
+        finished: false,
+        finishedRank: null,
+        forfeited: false
+      };
     });
-    return { players, status: (room.totalRounds && room.round >= room.totalRounds) ? "finished" : "betweenRounds", currentTurnUid: null, previousSet: null, currentSet: null, tribute: null, finishOrder: final, lastRoundResult: { round: room.round, results: final, endedAt: ts() }, updatedAt: serverNow() };
   }
+
+  return {
+    players,
+    status: isFinalRound ? "waiting" : "betweenRounds",
+    currentTurnUid: null,
+    previousSet: null,
+    currentSet: null,
+    tribute: null,
+    finishOrder: final,
+    lastRoundResult: {
+      round: room.round,
+      results: final,
+      endedAt: ts()
+    },
+    finalGameResult: isFinalRound
+      ? {
+          round: room.round,
+          standings: finalStandings,
+          endedAt: ts()
+        }
+      : (room.finalGameResult || null),
+    round: isFinalRound ? 0 : room.round,
+    updatedAt: serverNow()
+  };
+}
 
   async function passTurn() { await passAs(S.user); }
 
