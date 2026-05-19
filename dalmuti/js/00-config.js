@@ -1350,12 +1350,54 @@ async function returnTribute(uid, cards, hand) {
 
   const chooseReturnCards = (hand, count) => sortHand(hand || []).slice(-count);
 
-  async function maybeClientTasks() {
-    await maybeAssignHostIfNeeded();
-    if (!isHost() || S.actionBusy) return;
-    maybeAiAction();
+async function maybeClientTasks() {
+  await maybeAssignHostIfNeeded();
+
+  // AI/자동 조작은 방장 클라이언트가 대신 처리
+  if (!isHost() || S.actionBusy) return;
+
+  await maybeAutoHostStart();
+  maybeAiAction();
+}
+
+async function maybeAutoHostStart() {
+  const room = S.room;
+  if (!room || !isHost(room)) return;
+
+  const host = playersMap(room)[room.hostUid];
+  if (!host?.autoPlay) return;
+
+  // 대기방 자동 시작
+  if (room.status === "waiting") {
+    const ps = allPlayers(room);
+    if (ps.length < 2) return;
+
+    const allReady = ps.every(p =>
+      p.uid === room.hostUid ||
+      p.isReady ||
+      p.isAI
+    );
+
+    if (!allReady) return;
+
+    const key = `${S.roomId}:autostart:waiting:${room.updatedAt?.seconds || 0}_${room.updatedAt?.nanoseconds || 0}:${ps.length}`;
+    if (S.aiLocks.has(key)) return;
+    S.aiLocks.add(key);
+
+    await startGame();
+    return;
   }
 
+  // 라운드 종료 후 자동 다음 라운드 시작
+  if (room.status === "betweenRounds") {
+    const key = `${S.roomId}:autostart:next:${room.round}:${room.updatedAt?.seconds || 0}_${room.updatedAt?.nanoseconds || 0}`;
+    if (S.aiLocks.has(key)) return;
+    S.aiLocks.add(key);
+
+    await nextRound(false);
+  }
+}
+  
   function maybeAiAction() {
     const room = S.room;
     if (!room || !isHost(room)) return;
