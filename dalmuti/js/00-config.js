@@ -201,7 +201,7 @@ function nextAfter(room, uid) {
   }
 
   function basePlayer(uid, nickname, seatOrder, isAI) {
-    return { uid, nickname, type: "player", isReady: !!isAI, isAI: !!isAI, seatOrder, role: null, score: 0, lastRoundScore: 0, lastRoundRank: null, cardCount: 0, passed: false, finished: false, finishedRank: null, forfeited: false, removedFromRoom: false };
+    return { uid, nickname, type: return { uid, nickname, type: "player", isReady: !!isAI, isAI: !!isAI, autoPlay: false, seatOrder, role: null, score: 0, lastRoundScore: 0, lastRoundRank: null, cardCount: 0, passed: false, finished: false, finishedRank: null, forfeited: false, removedFromRoom: false };
   }
 
   const baseSpectator = (uid, nickname) => ({ uid, nickname, type: "spectator", isAI: false, removedFromRoom: false });
@@ -277,6 +277,15 @@ function nextAfter(room, uid) {
       const p = document.createElement("div");
       p.id = "tributePanel";
       document.body.appendChild(p);
+    }
+        if (!$("autoPlayBtn") && $("selectedSummary")) {
+      const btn = document.createElement("button");
+      btn.id = "autoPlayBtn";
+      btn.type = "button";
+      btn.className = "btn ghost small hidden";
+      btn.textContent = "자동 OFF";
+      btn.style.marginLeft = "8px";
+      $("selectedSummary").insertAdjacentElement("afterend", btn);
     }
   }
 
@@ -420,6 +429,7 @@ function positions() {
       const submitted = S.room?.currentSet?.uid === p.uid;
       const state = p.finished ? `${p.finishedRank || ""}등 완료` : p.passed ? "패스" : `${Number(p.cardCount || 0)}장`;
       let badge = p.isAI ? `<div class="badge ai">AI</div>` : "";
+      if (p.autoPlay && !p.isAI) badge += `<div class="badge ai">자동</div>`;
       if (submitted) badge += `<div class="badge submit">제출</div>`;
       else if (p.passed) badge += `<div class="badge pass">패스</div>`;
       else if (S.room?.currentTurnUid === p.uid) badge += `<div class="badge turn">차례</div>`;
@@ -494,13 +504,22 @@ function positions() {
     E.playControls?.classList.toggle("hidden", !(myTurn || tributeTurn));
     E.passBtn?.classList.toggle("hidden", !myTurn);
     if (E.playBtn) E.playBtn.textContent = tributeTurn ? "반환 카드 주기" : "선택 카드 내기";
-    E.readyBtn?.classList.toggle("hidden", !(waiting && mine?.type === "player" && !mine.isAI));
+    E.readyBtn?.classList.toggle("hidden", !(waiting && mine?.type === "player" && !mine.isAI && !isHost()));
     E.watchBtn?.classList.toggle("hidden", !(waiting && mine?.type === "player" && !mine.isAI));
     E.joinAsPlayerBtn?.classList.toggle("hidden", !(waiting && mine?.type === "spectator"));
     E.startBtn?.classList.toggle("hidden", !(waiting && isHost()));
     E.nextRoundBtn?.classList.toggle("hidden", !(S.room?.status === "betweenRounds" && isHost()));
     E.resetGameBtn?.classList.add("hidden");
     if (E.readyBtn) E.readyBtn.textContent = mine?.isReady ? "준비 취소" : "준비";
+
+    const autoBtn = $("autoPlayBtn");
+    if (autoBtn) {
+      const showAuto = !!(mine?.type === "player" && !mine.isAI);
+      autoBtn.classList.toggle("hidden", !showAuto);
+      autoBtn.textContent = mine?.autoPlay ? "자동 ON" : "자동 OFF";
+      autoBtn.classList.toggle("primary", !!mine?.autoPlay);
+      autoBtn.classList.toggle("ghost", !mine?.autoPlay);
+    }
   }
 
   function renderScores() {
@@ -830,6 +849,29 @@ async function toggleReady() {
   }, { merge: true });
 }
 
+async function toggleAutoPlay() {
+  if (!S.room || !S.roomId) return;
+
+  const players = playersMap();
+  const player = players[S.user];
+
+  if (!player || player.type !== "player" || player.isAI) {
+    return toast("참가자만 자동 조작을 설정할 수 있습니다.");
+  }
+
+  players[S.user] = {
+    ...player,
+    autoPlay: !player.autoPlay
+  };
+
+  await roomRef().set({
+    players,
+    updatedAt: serverNow()
+  }, { merge: true });
+
+  toast(players[S.user].autoPlay ? "자동 조작을 켰습니다." : "자동 조작을 껐습니다.");
+}
+  
 async function becomeSpectator() {
   if (!S.room || S.room.status !== "waiting" || kickedMap()[S.user]) return;
 
@@ -957,7 +999,9 @@ async function becomePlayer() {
     if (!isHost() || S.room?.status !== "waiting") return;
     const ps = allPlayers();
     if (ps.length < 2) return toast("2명 이상 필요합니다.");
-    if (!ps.every(p => p.isReady || p.isAI)) return toast("아직 준비하지 않은 인원이 있습니다.");
+    if (!ps.every(p => p.uid === S.room.hostUid || p.isReady || p.isAI)) {
+  return toast("아직 준비하지 않은 인원이 있습니다.");
+}
     await startRound(1, true, false);
   }
 
@@ -1242,17 +1286,46 @@ async function returnTribute(uid, cards, hand) {
   function chooseAiCards(room, hand) {
     hand = sortHand(hand || []);
     if (!hand.length) return [];
-    if (!room.currentSet) return weakestCards(hand, 1);
-    const need = Number(room.currentSet.count || 1);
+
+    const normalHand = hand.filter(c => !(c.joker || Number(c.rank) === 13));
     const jokers = hand.filter(c => c.joker || Number(c.rank) === 13);
-    const groups = groupHand(hand.filter(c => !(c.joker || Number(c.rank) === 13))).sort((a, b) => b.rank - a.rank);
-    for (const g of groups) {
-      if (g.rank < Number(room.currentSet.effectiveRank) && g.items.length + jokers.length >= need) {
-        const normal = g.items.slice(0, Math.min(g.items.length, need));
-        const extra = jokers.slice(0, Math.max(0, need - normal.length));
-        return normal.concat(extra);
+    const groups = groupHand(normalHand);
+
+    // 새 판을 여는 경우: 복수 카드 조합 우선
+    if (!room.currentSet) {
+      const multiGroups = groups
+        .filter(g => g.items.length >= 2)
+        .sort((a, b) =>
+          b.items.length - a.items.length ||
+          b.rank - a.rank
+        );
+
+      if (multiGroups.length) {
+        const g = multiGroups[0];
+        return g.items.slice();
       }
+
+      const weakestNormal = normalHand.slice().sort((a, b) => Number(b.rank) - Number(a.rank))[0];
+      if (weakestNormal) return [weakestNormal];
+
+      return jokers.slice(0, 1);
     }
+
+    const need = Number(room.currentSet.count || 1);
+    const targetRank = Number(room.currentSet.effectiveRank);
+
+    // 상대가 여러 장을 냈으면, 같은 장수로 이길 수 있는 조합을 찾음
+    // 같은 장수 조건 안에서 가장 약하게 이기는 조합을 우선 사용
+    const candidates = groups
+      .filter(g => g.rank < targetRank && g.items.length + jokers.length >= need)
+      .sort((a, b) => b.rank - a.rank);
+
+    for (const g of candidates) {
+      const normal = g.items.slice(0, Math.min(g.items.length, need));
+      const extra = jokers.slice(0, Math.max(0, need - normal.length));
+      return normal.concat(extra);
+    }
+
     return [];
   }
 
@@ -1268,7 +1341,10 @@ async function returnTribute(uid, cards, hand) {
     const room = S.room;
     if (!room || !isHost(room)) return;
     if (room.status === "tributeReturn") {
-      const pair = (room.tribute?.pairs || []).find(p => !p.returned && playersMap(room)[p.toUid]?.isAI);
+      const pair = (room.tribute?.pairs || []).find(p => {
+        const target = playersMap(room)[p.toUid];
+        return !p.returned && (target?.isAI || target?.autoPlay);
+      });
       if (!pair) return;
       const key = `${S.roomId}:tribute:${room.round}:${pair.id}`;
       if (S.aiLocks.has(key)) return;
@@ -1289,7 +1365,7 @@ async function returnTribute(uid, cards, hand) {
     }
     if (room.status !== "playing" || !room.currentTurnUid) return;
     const ai = playersMap(room)[room.currentTurnUid];
-    if (!ai?.isAI || ai.finished || ai.forfeited) return;
+    if (!(ai?.isAI || ai?.autoPlay) || ai.finished || ai.forfeited) return;
     const stamp = room.updatedAt ? `${room.updatedAt.seconds || 0}_${room.updatedAt.nanoseconds || 0}` : Date.now();
     const key = `${S.roomId}:ai:${room.round}:${ai.uid}:${room.currentSet?.uid || "new"}:${stamp}`;
     if (S.aiLocks.has(key)) return;
@@ -1299,7 +1375,7 @@ async function returnTribute(uid, cards, hand) {
       if (!snap.exists) return;
       const latest = snap.data();
       const latestAi = playersMap(latest)[ai.uid];
-      if (latest.status !== "playing" || latest.currentTurnUid !== ai.uid || !latestAi?.isAI) return;
+      if (latest.status !== "playing" || latest.currentTurnUid !== ai.uid || !(latestAi?.isAI || latestAi?.autoPlay)) return;
       const hs = await handRef(ai.uid).get();
       const hand = hs.exists ? (hs.data().hand || []) : [];
       const cards = chooseAiCards(latest, hand);
@@ -1494,7 +1570,8 @@ async function returnTribute(uid, cards, hand) {
     if (E.nextRoundBtn) E.nextRoundBtn.onclick = () => nextRound(false);
     if (E.resetGameBtn) E.resetGameBtn.onclick = stopGame;
     if (E.playBtn) E.playBtn.onclick = playSelected;
-    if (E.passBtn) E.passBtn.onclick = passTurn;
+    const autoBtn = $("autoPlayBtn");
+    if (autoBtn) autoBtn.onclick = toggleAutoPlay;
     if (E.sendChatBtn) E.sendChatBtn.onclick = sendChat;
     if (E.chatInput) E.chatInput.onkeydown = e => { if (e.key === "Enter") sendChat(); };
     if (E.toggleSpectatorChatBtn) E.toggleSpectatorChatBtn.onclick = toggleSpectatorChat;
