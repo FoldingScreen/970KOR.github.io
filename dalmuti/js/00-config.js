@@ -127,12 +127,12 @@ const RANKS = [
   function roleByIndex(index, count) {
     const map = {
       2: ["임금", "노비"],
-      3: ["임금", "농민", "노비"],
-      4: ["임금", "세자", "농민", "노비"],
-      5: ["임금", "세자", "사또", "농민", "노비"],
-      6: ["임금", "세자", "암행어사", "사또", "농민", "노비"],
-      7: ["임금", "세자", "관찰사", "암행어사", "사또", "농민", "노비"],
-      8: ["임금", "세자", "영의정", "관찰사", "암행어사", "사또", "농민", "노비"]
+      3: ["임금", "백정", "노비"],
+      4: ["임금", "세자", "백정", "노비"],
+      5: ["임금", "세자", "사또", "백정", "노비"],
+      6: ["임금", "세자", "암행어사", "사또", "백정", "노비"],
+      7: ["임금", "세자", "관찰사", "암행어사", "사또", "백정", "노비"],
+      8: ["임금", "세자", "영의정", "관찰사", "암행어사", "사또", "백정", "노비"]
     };
     return (map[count] || [])[index] || `${index + 1}등`;
   }
@@ -1480,7 +1480,7 @@ async function returnTribute(uid, cards, hand) {
   }
 
   function showHelp() {
-    showModal("게임 방법", `<div class="help-section"><strong>목표</strong><br>손패를 먼저 털수록 높은 순위를 얻고, 라운드마다 승점을 얻습니다.</div><div class="help-section"><strong>제출</strong><br>같은 계급 여러 장을 낼 수 있습니다. 이미 카드가 깔려 있으면 같은 장수이면서 더 높은 계급만 낼 수 있습니다.</div><div class="help-section"><strong>홍길동</strong><br>일반 카드와 함께 내면 그 계급 카드로 취급합니다. 홍길동만 내면 최약 카드 취급입니다.</div><div class="help-section"><strong>상납</strong><br>2라운드부터 하위 계급자가 상위 계급자에게 좋은 카드를 자동 상납하고, 받은 사람은 같은 장수만큼 돌려줍니다.</div><div class="help-section"><strong>민란</strong><br>농민 또는 노비가 홍길동 2장을 들면 계급 순서가 뒤집힙니다.</div>`);
+    showModal("게임 방법", `<div class="help-section"><strong>목표</strong><br>손패를 먼저 털수록 높은 순위를 얻고, 라운드마다 승점을 얻습니다.</div><div class="help-section"><strong>제출</strong><br>같은 계급 여러 장을 낼 수 있습니다. 이미 카드가 깔려 있으면 같은 장수이면서 더 높은 계급만 낼 수 있습니다.</div><div class="help-section"><strong>홍길동</strong><br>일반 카드와 함께 내면 그 계급 카드로 취급합니다. 홍길동만 내면 최약 카드 취급입니다.</div><div class="help-section"><strong>상납</strong><br>2라운드부터 하위 계급자가 상위 계급자에게 좋은 카드를 자동 상납하고, 받은 사람은 같은 장수만큼 돌려줍니다.</div><div class="help-section"><strong>민란</strong><br>백 또는 노비가 홍길동 2장을 들면 계급 순서가 뒤집힙니다.</div>`);
   }
 
   function bindEvents() {
