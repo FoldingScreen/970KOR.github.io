@@ -588,7 +588,6 @@ function positions() {
     const finalPanel = sideBox("finalResultPanel", roundPanel);
     finalPanel.style.display = S.room.status === "finished" ? "block" : "none";
     if (finalPanel.style.display !== "none") finalPanel.innerHTML = `<div class="result-title">최종 결과</div>${resultRows(allPlayers().slice().sort((a, b) => (b.score || 0) - (a.score || 0)), "final")}`;
-        const finalScorePanel = sideBox("finalScorePanel", document.querySelector(".side-panel section:last-child"));
     const finalScorePanel = sideBox("finalScorePanel", document.querySelector(".side-panel section:last-child"));
 
 if (!S.room.finalGameResult) {
