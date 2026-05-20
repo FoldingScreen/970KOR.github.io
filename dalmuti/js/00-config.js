@@ -1114,6 +1114,324 @@ style.textContent = `
         .room-item .btn{
           width:100%;
         }
+
+        /* =========================
+           모바일 인게임 1차 시안
+        ========================= */
+        body:has(#roomView.show) .dalmuti-topbar{
+          display:none;
+        }
+
+        body:has(#roomView.show) .dalmuti-app{
+          padding:6px;
+        }
+
+        body:has(#roomView.show) .room-shell{
+          display:block;
+        }
+
+        body:has(#roomView.show) .side-panel{
+          display:none!important;
+        }
+
+        body:has(#roomView.show) .game-panel{
+          min-height:100dvh;
+          padding:8px;
+          display:flex;
+          flex-direction:column;
+          gap:6px;
+        }
+
+        body:has(#roomView.show) .room-head{
+          display:grid;
+          grid-template-columns:minmax(0,1fr) auto;
+          align-items:center;
+          gap:8px;
+          padding:6px 4px 4px;
+        }
+
+        body:has(#roomView.show) .room-head h2{
+          font-size:17px;
+          line-height:1.15;
+          margin:0;
+          white-space:nowrap;
+          overflow:hidden;
+          text-overflow:ellipsis;
+        }
+
+        body:has(#roomView.show) .room-head .eyebrow{
+          font-size:11px;
+          letter-spacing:0;
+          color:#f3d281;
+        }
+
+        body:has(#roomView.show) .turn-badge{
+          display:none;
+        }
+
+        body:has(#roomView.show) .message-bar,
+        body:has(#roomView.show) .lobby-controls,
+        body:has(#roomView.show) #betweenControls{
+          margin:0;
+        }
+
+        body:has(#roomView.show) .message-bar{
+          display:none;
+        }
+
+        body:has(#roomView.show) .table-wrap{
+          flex:1 1 auto;
+          min-height:0!important;
+          height:calc(100dvh - 292px)!important;
+          max-height:none!important;
+          margin-top:0;
+          border-radius:18px;
+          display:block;
+        }
+
+        body:has(#roomView.show) .players-area{
+          position:absolute;
+          inset:0;
+          z-index:3;
+        }
+
+        body:has(#roomView.show) .player-box{
+          width:58px!important;
+          min-height:68px!important;
+          padding:5px 4px!important;
+          border-radius:12px!important;
+          font-size:10px;
+        }
+
+        body:has(#roomView.show) .player-role{
+          font-size:10px;
+          line-height:1.1;
+          white-space:nowrap;
+          overflow:hidden;
+          text-overflow:ellipsis;
+        }
+
+        body:has(#roomView.show) .player-name{
+          font-size:11px;
+          line-height:1.15;
+        }
+
+        body:has(#roomView.show) .player-meta{
+          font-size:10px;
+          line-height:1.15;
+        }
+
+        body:has(#roomView.show) .badge{
+          font-size:9px;
+          padding:1px 5px;
+          margin-top:2px;
+        }
+
+        body:has(#roomView.show) .kick-btn,
+        body:has(#roomView.show) .delegate-btn{
+          display:none!important;
+        }
+
+        body:has(#roomView.show) .seat-bottom{
+          display:none!important;
+        }
+
+        body:has(#roomView.show) .seat-left-0,
+        body:has(#roomView.show) .seat-left-1,
+        body:has(#roomView.show) .seat-left-2{
+          left:5px!important;
+          right:auto!important;
+          transform:none!important;
+        }
+
+        body:has(#roomView.show) .seat-left-0{
+          top:50%!important;
+          transform:translateY(-50%)!important;
+        }
+
+        body:has(#roomView.show) .seat-left-1{
+          top:30%!important;
+          transform:translateY(-50%)!important;
+        }
+
+        body:has(#roomView.show) .seat-left-2{
+          top:70%!important;
+          transform:translateY(-50%)!important;
+        }
+
+        body:has(#roomView.show) .seat-right-0,
+        body:has(#roomView.show) .seat-right-1,
+        body:has(#roomView.show) .seat-right-2{
+          right:5px!important;
+          left:auto!important;
+          transform:none!important;
+        }
+
+        body:has(#roomView.show) .seat-right-0{
+          top:50%!important;
+          transform:translateY(-50%)!important;
+        }
+
+        body:has(#roomView.show) .seat-right-1{
+          top:30%!important;
+          transform:translateY(-50%)!important;
+        }
+
+        body:has(#roomView.show) .seat-right-2{
+          top:70%!important;
+          transform:translateY(-50%)!important;
+        }
+
+        body:has(#roomView.show) .seat-top-0,
+        body:has(#roomView.show) .seat-top-1,
+        body:has(#roomView.show) .seat-top-2{
+          top:5px!important;
+          width:92px!important;
+          min-height:44px!important;
+          padding:4px 6px!important;
+          transform:translateX(-50%)!important;
+        }
+
+        body:has(#roomView.show) .seat-top-0{
+          left:50%!important;
+        }
+
+        body:has(#roomView.show) .seat-top-1{
+          left:34%!important;
+        }
+
+        body:has(#roomView.show) .seat-top-2{
+          left:66%!important;
+        }
+
+        body:has(#roomView.show) .center-pile{
+          width:calc(100% - 132px)!important;
+          max-width:none!important;
+          min-height:0!important;
+          height:calc(100% - 22px)!important;
+          left:50%!important;
+          top:50%!important;
+          transform:translate(-50%,-50%)!important;
+          padding:0!important;
+          border-radius:16px;
+        }
+
+        body:has(#roomView.show) .pile-board{
+          height:100%;
+        }
+
+        body:has(#roomView.show) .prev-pile{
+          display:none;
+        }
+
+        body:has(#roomView.show) .cur-pile{
+          left:0!important;
+          right:0!important;
+          top:0!important;
+          bottom:0!important;
+          padding:10px 4px;
+        }
+
+        body:has(#roomView.show) .cur-pile-title{
+          font-size:13px;
+          margin-bottom:8px;
+          text-align:center;
+        }
+
+        body:has(#roomView.show) .cur-cards img{
+          width:78px!important;
+          border-radius:9px;
+          margin-left:var(--mobile-pile-overlap,-22px);
+        }
+
+        body:has(#roomView.show) .cur-cards img:first-child{
+          margin-left:0;
+        }
+
+        body:has(#roomView.show) .cur-cards.mobile-pile-count-1{
+          --mobile-pile-overlap:0px;
+        }
+
+        body:has(#roomView.show) .cur-cards.mobile-pile-count-2{
+          --mobile-pile-overlap:-12px;
+        }
+
+        body:has(#roomView.show) .cur-cards.mobile-pile-count-3{
+          --mobile-pile-overlap:-20px;
+        }
+
+        body:has(#roomView.show) .cur-cards.mobile-pile-count-4{
+          --mobile-pile-overlap:-28px;
+        }
+
+        body:has(#roomView.show) .cur-cards.mobile-pile-count-many{
+          --mobile-pile-overlap:-36px;
+        }
+
+        body:has(#roomView.show) .cur-cards img.mobile-joker-gap{
+          margin-left:calc(var(--mobile-pile-overlap,-22px) + 18px);
+        }
+
+        body:has(#roomView.show) .hand-header{
+          margin-top:0;
+          display:grid;
+          grid-template-columns:minmax(0,1fr) auto;
+          align-items:end;
+          gap:8px;
+        }
+
+        body:has(#roomView.show) .hand-header h3{
+          font-size:14px;
+          margin:0;
+        }
+
+        body:has(#roomView.show) .hand-header .muted{
+          display:none;
+        }
+
+        body:has(#roomView.show) .selected-summary{
+          font-size:12px;
+          padding:5px 8px;
+        }
+
+        body:has(#roomView.show) .hand-area{
+          min-height:112px!important;
+          height:112px;
+          padding:7px;
+          margin:0;
+          gap:7px;
+          border-radius:14px;
+        }
+
+        body:has(#roomView.show) .hand-stack{
+          width:58px!important;
+        }
+
+        body:has(#roomView.show) .hand-stack img{
+          width:58px!important;
+          border-radius:7px;
+        }
+
+        body:has(#roomView.show) .hand-stack.selected{
+          transform:translateY(-8px);
+        }
+
+        body:has(#roomView.show) .stack-count,
+        body:has(#roomView.show) .stack-selected{
+          font-size:10px;
+          padding:2px 5px;
+        }
+
+        body:has(#roomView.show) .action-row{
+          margin-top:0;
+          gap:6px;
+        }
+
+        body:has(#roomView.show) .action-row .btn{
+          flex:1 1 0;
+          padding:9px 8px;
+          font-size:13px;
+        }
       }
 `;
 document.head.appendChild(style);
@@ -1412,7 +1730,12 @@ async function loadRooms() {
 
   function renderHeader() {
     const room = S.room;
-    const statusText = ({ waiting: "대기 중", playing: `${room.round || 1}라운드`, tributeReturn: "상납 반환", betweenRounds: "라운드 종료", finished: "게임 종료" })[room.status] || room.status || "-";
+    const roundNow = Number(room.round || 0);
+    const roundTotal = room.totalRounds ? Number(room.totalRounds) : null;
+    const roundText = roundNow
+      ? (roundTotal ? `${roundNow}/${roundTotal} Round` : `${roundNow} Round`)
+      : "대기 중";
+    const statusText = ({ waiting: "대기 중", playing: roundText, tributeReturn: roundText, betweenRounds: "라운드 종료", finished: "게임 종료" })[room.status] || room.status || "-";
     if (E.roomStateText) E.roomStateText.textContent = statusText;
     if (E.roomTitle) E.roomTitle.textContent = room.title || "달무티 in 조선";
     const turnName = room.currentTurnUid ? (playersMap(room)[room.currentTurnUid]?.nickname || "-") : "-";
@@ -1522,9 +1845,23 @@ function positions() {
       return;
     }
     const prevCard = prev?.cards?.[0] ? `<img src="${cardImg(prev.cards[0].rank)}" alt="직전 카드">` : `<span class="muted">없음</span>`;
-    const curCards = cur ? (cur.cards || []).map(c => `<img src="${cardImg(c.rank)}" alt="${esc(c.name)}">`).join("") : `<span class="muted">제출 대기</span>`;
-    E.centerPile.innerHTML = `<div class="pile-board"><div class="prev-pile"><div class="prev-pile-title">직전 카드</div>${prevCard}</div><div class="cur-pile"><div class="cur-pile-title">${cur ? `현재 ${rankInfo(cur.effectiveRank).name} ${cur.count}장` : "현재 없음"}</div><div class="cur-cards">${curCards}</div></div></div>`;
-  }
+    const curList = cur?.cards || [];
+    const mobilePileClass = !cur
+      ? ""
+      : curList.length >= 5
+        ? "mobile-pile-count-many"
+        : `mobile-pile-count-${curList.length || 1}`;
+
+    const curCards = cur ? curList.map((c, i) => {
+      const prevCard = curList[i - 1];
+      const isJoker = c.joker || Number(c.rank) === 13;
+      const prevIsJoker = prevCard && (prevCard.joker || Number(prevCard.rank) === 13);
+      const jokerGap = isJoker && prevCard && !prevIsJoker ? " mobile-joker-gap" : "";
+
+      return `<img class="${jokerGap.trim()}" src="${cardImg(c.rank)}" alt="${esc(c.name)}">`;
+    }).join("") : `<span class="muted">제출 대기</span>`;
+
+    E.centerPile.innerHTML = `<div class="pile-board"><div class="prev-pile"><div class="prev-pile-title">직전 카드</div>${prevCard}</div><div class="cur-pile"><div class="cur-pile-title">${cur ? `현재 ${rankInfo(cur.effectiveRank).name} ${cur.count}장` : "현재 없음"}</div><div class="cur-cards ${mobilePileClass}">${curCards}</div></div></div>`;
 
   function currentTributePairForMe() {
     return (S.room?.tribute?.pairs || []).find(p => p.toUid === S.user && !p.returned) || null;
