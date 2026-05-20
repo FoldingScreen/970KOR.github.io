@@ -269,41 +269,788 @@ function basePlayer(uid, nickname, seatOrder, isAI) {
   function injectCss() {
     if ($("dalmutiSingleCss")) return;
     const style = document.createElement("style");
-    style.id = "dalmutiSingleCss";
-    style.textContent = `
-      @media(min-width:881px){.dalmuti-app{width:min(1380px,100%);padding:10px 14px}.dalmuti-topbar{margin-bottom:8px}.dalmuti-topbar h1{font-size:23px;margin:0}.eyebrow{font-size:10px}.room-shell{grid-template-columns:minmax(0,1fr) 300px!important;gap:10px;align-items:start}.panel{padding:12px;border-radius:18px}.game-panel{min-height:calc(100vh - 78px)!important;display:flex;flex-direction:column}.room-head{display:none!important}.message-bar{margin:0 0 8px;padding:8px 10px;font-size:13px}.table-wrap{height:calc(100vh - 300px)!important;min-height:540px!important;max-height:620px!important;margin-top:6px;flex:1}.hand-header{margin-top:8px}.hand-header h3{font-size:17px;margin:0}.hand-header .muted{display:none}.hand-area{min-height:142px!important;padding:10px;margin:6px 0;gap:8px}.hand-stack{width:74px!important}.hand-stack img{width:74px!important;border-radius:8px}.selected-summary{font-size:13px;padding:6px 10px}.action-row .btn{padding:8px 11px}.player-box{width:116px;min-height:68px;padding:7px;border-radius:14px;position:absolute}.player-role{font-size:11px}.player-name{font-size:13px}.player-meta{font-size:11px}.seat-bottom{bottom:6px!important}.seat-top-0,.seat-top-1,.seat-top-2{top:6px!important}.seat-left-0,.seat-left-1,.seat-left-2{left:8px!important}.seat-right-0,.seat-right-1,.seat-right-2{right:8px!important}.seat-top-0{left:50%!important;transform:translateX(-50%)!important}.seat-top-1{left:30%!important;transform:translateX(-50%)!important}.seat-top-2{left:70%!important;transform:translateX(-50%)!important}.center-pile{width:720px!important;max-width:72%!important;height:360px!important;min-height:360px!important;padding:0!important;overflow:visible!important;text-align:left!important}.side-panel{gap:9px;max-height:calc(100vh - 92px);overflow:auto}.side-panel>section:first-child{display:none}.chat-list{height:200px}}
-      .player-box.submitted{border-color:#7ee2a8!important;box-shadow:0 0 0 2px rgba(126,226,168,.55),0 12px 24px rgba(0,0,0,.28)!important}.player-box.passed{opacity:.8!important;border-color:#8792a7!important;background:rgba(35,39,51,.92)!important}.badge{display:inline-block;margin-top:3px;padding:2px 7px;border-radius:999px;font-size:10px;font-weight:900}.badge.submit{background:rgba(126,226,168,.16);border:1px solid rgba(126,226,168,.75);color:#9ff0bd}.badge.pass{background:rgba(135,146,167,.16);border:1px solid rgba(135,146,167,.75);color:#d2d8e4}.badge.turn{background:rgba(243,210,129,.16);border:1px solid rgba(243,210,129,.75);color:#f3d281}.badge.ai{background:rgba(111,179,255,.16);border:1px solid rgba(111,179,255,.75);color:#9fcaff}.kick-btn{position:absolute;right:5px;top:5px;border:0;border-radius:999px;background:rgba(215,101,101,.92);color:#fff;font-size:10px;font-weight:900;padding:3px 6px;cursor:pointer;z-index:3}.score-list{display:none!important}
-            .lobby-grid{display:grid;grid-template-columns:minmax(0,1fr) 390px;gap:14px;align-items:start;margin-top:12px}
-      .lobby-left,.lobby-right{min-width:0}
-      .lobby-panel-title{font-size:17px;font-weight:900;color:#f3d281;margin:0 0 10px}
-      .lobby-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-      .lobby-create-fields{display:none!important}
-      .rule-card{border:1px solid rgba(243,210,129,.3);background:rgba(13,19,32,.74);border-radius:18px;padding:13px}
-      .rule-title{font-size:17px;font-weight:900;color:#f3d281;margin-bottom:10px}
-      .rule-two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-      .rule-block{border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);border-radius:14px;padding:10px;font-size:12px;line-height:1.5;color:#d8deea}
-      .rule-block strong{display:block;color:#f3d281;margin-bottom:4px}
-      .rank-card-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
-      .rank-card-mini{border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.22);border-radius:12px;padding:6px;text-align:center}
-      .rank-card-mini img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:8px;display:block;margin-bottom:5px}
-      .rank-card-mini strong{display:block;font-size:10.5px;color:#f4f1e8;line-height:1.15}
-      .rank-card-mini span{display:block;font-size:10px;color:#aeb5c3;margin-top:2px}
-      .create-room-modal{position:fixed;inset:0;z-index:190;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.62);padding:22px}
-      .create-room-modal.show{display:flex}
-      .create-room-card{width:min(420px,94vw);background:#121827;border:1px solid rgba(243,210,129,.4);border-radius:22px;padding:18px;color:#f4f1e8;box-shadow:0 24px 80px rgba(0,0,0,.55)}
-      .create-room-card h2{margin:0 0 12px;color:#f3d281}
-      .create-room-card .input{width:100%;margin-bottom:8px}
-      .create-room-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
-      @media(max-width:880px){.lobby-grid{grid-template-columns:1fr}.rule-two-col{grid-template-columns:1fr}.rank-card-grid{grid-template-columns:repeat(3,1fr)}}
-.room-item{border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.045);border-radius:16px;padding:12px;gap:10px}
-.room-item strong{font-size:15px;color:#f4f1e8}
-.room-meta{margin-top:4px;font-size:12px;color:#aeb5c3}
-      .pile-board{position:relative;width:100%;height:100%}.pile-empty{height:100%;display:flex;align-items:center;justify-content:center;color:#aeb5c3;font-weight:900;font-size:18px}.prev-pile{position:absolute;left:14px;top:14px;width:160px;min-height:158px;border:1px solid rgba(255,255,255,.09);border-radius:14px;background:rgba(0,0,0,.24);padding:10px;display:flex;flex-direction:column;align-items:center}.prev-pile-title{font-size:12px;font-weight:900;color:#aeb5c3;margin-bottom:8px}.prev-pile img{width:82px;border-radius:10px}.cur-pile{position:absolute;left:205px;right:18px;top:20px;bottom:18px;display:flex;flex-direction:column;align-items:center;justify-content:center}.cur-pile-title{font-size:14px;font-weight:900;color:#f3d281;margin-bottom:12px}.cur-cards{display:flex;align-items:center;justify-content:center}.cur-cards img{width:132px;object-fit:cover;border-radius:12px;box-shadow:0 12px 28px rgba(0,0,0,.42);margin-left:-38px}.cur-cards img:first-child{margin-left:0}
-      .side-box{margin-top:8px;border:1px solid rgba(243,210,129,.28);background:rgba(13,19,32,.72);border-radius:16px;padding:10px}.side-title,.result-title{font-weight:900;color:#f3d281;margin-bottom:7px}.side-btns{display:flex;gap:6px;flex-wrap:wrap}.side-btns .btn{padding:6px 8px;font-size:12px}.chip{display:inline-block;font-size:11px;padding:4px 7px;border-radius:999px;border:1px solid rgba(174,181,195,.28);background:rgba(255,255,255,.045);margin:2px}.score-row.compact{font-size:12px;padding:4px 0}.room-setting-grid{display:grid;grid-template-columns:1fr;gap:6px}.room-setting-grid .input{height:32px;font-size:12px}.result-row{display:grid;grid-template-columns:40px minmax(0,1fr) 48px 62px;gap:6px;padding:6px 7px;border-radius:12px;background:rgba(255,255,255,.045);font-size:12px;margin-top:5px}.result-row.header{background:transparent;color:#aeb5c3;font-weight:900}
-      .game-modal{position:fixed;inset:0;z-index:180;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.62);padding:24px}.game-modal.show{display:flex}.modal-card{width:min(760px,96vw);max-height:86vh;overflow:auto;background:#121827;border:1px solid rgba(243,210,129,.4);border-radius:24px;padding:22px;box-shadow:0 24px 80px rgba(0,0,0,.58);color:#f4f1e8}.modal-head h2{margin:0;color:#f3d281}.modal-table{display:grid;gap:7px}.modal-row{display:grid;grid-template-columns:54px minmax(0,1fr) 74px 82px;gap:8px;align-items:center;padding:9px;border-radius:13px;background:rgba(255,255,255,.055);font-size:14px}.modal-row.header{background:transparent;color:#aeb5c3;font-size:12px;font-weight:900}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.rebellion-card{text-align:center}.rebellion-card img{width:180px;border-radius:18px;box-shadow:0 18px 55px rgba(0,0,0,.6);margin-bottom:16px}.rebellion-card h2{color:#f3d281;margin:4px 0 8px}.rebellion-card p{font-size:18px;font-weight:900;margin:6px 0}.help-section{border-top:1px solid rgba(255,255,255,.09);padding-top:12px;margin-top:12px;line-height:1.55;color:#d8deea;font-size:14px}.help-section strong{color:#f3d281}
-      #tributePanel{position:fixed;right:326px;bottom:12px;z-index:95;display:none;width:260px;padding:10px;border-radius:18px;border:1px solid rgba(243,210,129,.45);background:rgba(13,19,32,.96);box-shadow:0 16px 42px rgba(0,0,0,.42);color:#f4f1e8}.tribute-title{font-weight:900;color:#f3d281}.tribute-line{font-size:12px;color:#aeb5c3;margin:6px 0}.tribute-cards{display:flex;gap:7px;flex-wrap:wrap}.tribute-cards img{width:40px;border-radius:7px}.tribute-fly-card{position:fixed;width:54px;height:81px;object-fit:cover;border-radius:8px;z-index:220;pointer-events:none;box-shadow:0 12px 28px rgba(0,0,0,.48);transition:transform ${TRIBUTE_ANIM_MS}ms cubic-bezier(.2,.85,.18,1),opacity ${TRIBUTE_ANIM_MS}ms ease}
-    `;
-    document.head.appendChild(style);
+style.id = "dalmutiSingleCss";
+style.textContent = `
+     /* =========================
+         PC 게임 화면 압축 레이아웃
+      ========================= */
+      @media(min-width:881px){
+        .dalmuti-app{
+          width:min(1380px,100%);
+          padding:10px 14px;
+        }
+
+        .dalmuti-topbar{
+          margin-bottom:8px;
+        }
+
+        .dalmuti-topbar h1{
+          font-size:23px;
+          margin:0;
+        }
+
+        .eyebrow{
+          font-size:10px;
+        }
+
+        .room-shell{
+          grid-template-columns:minmax(0,1fr) 300px!important;
+          gap:10px;
+          align-items:start;
+        }
+
+        .panel{
+          padding:12px;
+          border-radius:18px;
+        }
+
+        .game-panel{
+          min-height:calc(100vh - 78px)!important;
+          display:flex;
+          flex-direction:column;
+        }
+
+        .room-head{
+          display:none!important;
+        }
+
+        .message-bar{
+          margin:0 0 8px;
+          padding:8px 10px;
+          font-size:13px;
+        }
+
+        .table-wrap{
+          height:calc(100vh - 300px)!important;
+          min-height:540px!important;
+          max-height:620px!important;
+          margin-top:6px;
+          flex:1;
+        }
+
+        .hand-header{
+          margin-top:8px;
+        }
+
+        .hand-header h3{
+          font-size:17px;
+          margin:0;
+        }
+
+        .hand-header .muted{
+          display:none;
+        }
+
+        .hand-area{
+          min-height:142px!important;
+          padding:10px;
+          margin:6px 0;
+          gap:8px;
+        }
+
+        .hand-stack{
+          width:74px!important;
+        }
+
+        .hand-stack img{
+          width:74px!important;
+          border-radius:8px;
+        }
+
+        .selected-summary{
+          font-size:13px;
+          padding:6px 10px;
+        }
+
+        .action-row .btn{
+          padding:8px 11px;
+        }
+
+        .player-box{
+          width:116px;
+          min-height:68px;
+          padding:7px;
+          border-radius:14px;
+          position:absolute;
+        }
+
+        .player-role{
+          font-size:11px;
+        }
+
+        .player-name{
+          font-size:13px;
+        }
+
+        .player-meta{
+          font-size:11px;
+        }
+
+        .seat-bottom{
+          bottom:6px!important;
+        }
+
+        .seat-top-0,
+        .seat-top-1,
+        .seat-top-2{
+          top:6px!important;
+        }
+
+        .seat-left-0,
+        .seat-left-1,
+        .seat-left-2{
+          left:8px!important;
+        }
+
+        .seat-right-0,
+        .seat-right-1,
+        .seat-right-2{
+          right:8px!important;
+        }
+
+        .seat-top-0{
+          left:50%!important;
+          transform:translateX(-50%)!important;
+        }
+
+        .seat-top-1{
+          left:30%!important;
+          transform:translateX(-50%)!important;
+        }
+
+        .seat-top-2{
+          left:70%!important;
+          transform:translateX(-50%)!important;
+        }
+
+        .center-pile{
+          width:720px!important;
+          max-width:72%!important;
+          height:360px!important;
+          min-height:360px!important;
+          padding:0!important;
+          overflow:visible!important;
+          text-align:left!important;
+        }
+
+        .side-panel{
+          gap:9px;
+          max-height:calc(100vh - 92px);
+          overflow:auto;
+        }
+
+        .side-panel>section:first-child{
+          display:none;
+        }
+
+        .chat-list{
+          height:200px;
+        }
+      }
+
+      /* =========================
+         플레이어 상태 뱃지
+      ========================= */
+      .player-box.submitted{
+        border-color:#7ee2a8!important;
+        box-shadow:0 0 0 2px rgba(126,226,168,.55),0 12px 24px rgba(0,0,0,.28)!important;
+      }
+
+      .player-box.passed{
+        opacity:.8!important;
+        border-color:#8792a7!important;
+        background:rgba(35,39,51,.92)!important;
+      }
+
+      .badge{
+        display:inline-block;
+        margin-top:3px;
+        padding:2px 7px;
+        border-radius:999px;
+        font-size:10px;
+        font-weight:900;
+      }
+
+      .badge.submit{
+        background:rgba(126,226,168,.16);
+        border:1px solid rgba(126,226,168,.75);
+        color:#9ff0bd;
+      }
+
+      .badge.pass{
+        background:rgba(135,146,167,.16);
+        border:1px solid rgba(135,146,167,.75);
+        color:#d2d8e4;
+      }
+
+      .badge.turn{
+        background:rgba(243,210,129,.16);
+        border:1px solid rgba(243,210,129,.75);
+        color:#f3d281;
+      }
+
+      .badge.ai{
+        background:rgba(111,179,255,.16);
+        border:1px solid rgba(111,179,255,.75);
+        color:#9fcaff;
+      }
+
+      .kick-btn{
+        position:absolute;
+        right:5px;
+        top:5px;
+        border:0;
+        border-radius:999px;
+        background:rgba(215,101,101,.92);
+        color:#fff;
+        font-size:10px;
+        font-weight:900;
+        padding:3px 6px;
+        cursor:pointer;
+        z-index:3;
+      }
+
+      .score-list{
+        display:none!important;
+      }
+
+      /* =========================
+         로비 화면
+      ========================= */
+      .legacy-lobby-hidden{
+        display:none!important;
+      }
+
+      .lobby-grid{
+        display:grid;
+        grid-template-columns:360px minmax(0,1fr);
+        gap:14px;
+        align-items:start;
+        margin-top:14px;
+      }
+
+      .lobby-left,
+      .lobby-right{
+        min-width:0;
+      }
+
+      .lobby-section-head{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:10px;
+        margin-bottom:10px;
+      }
+
+      .lobby-panel-title{
+        font-size:20px;
+        font-weight:900;
+        color:#f4f1e8;
+        margin:0;
+      }
+
+      .lobby-toolbar{
+        display:flex;
+        gap:8px;
+        flex-wrap:wrap;
+        justify-content:flex-end;
+      }
+
+      .room-item{
+        display:flex;
+        align-items:flex-start;
+        justify-content:space-between;
+        gap:10px;
+        border:1px solid rgba(255,255,255,.1);
+        background:rgba(255,255,255,.045);
+        border-radius:14px;
+        padding:10px;
+        margin-top:8px;
+      }
+
+      .room-item .btn{
+        padding:7px 10px;
+        font-size:12px;
+        white-space:nowrap;
+      }
+
+      .room-item strong{
+        font-size:15px;
+        color:#f4f1e8;
+      }
+
+      .room-meta{
+        margin-top:4px;
+        font-size:12px;
+        color:#aeb5c3;
+      }
+
+      /* =========================
+         로비 룰 설명
+      ========================= */
+      .rule-card{
+        border:0;
+        background:transparent;
+        padding:0;
+      }
+
+      .rule-title{
+        font-size:20px;
+        font-weight:900;
+        color:#f3d281;
+        margin:0 0 12px;
+      }
+
+      .rule-two-col{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:10px;
+      }
+
+      .rule-block{
+        min-height:92px;
+        border:1px solid rgba(255,255,255,.09);
+        background:rgba(255,255,255,.045);
+        border-radius:14px;
+        padding:11px;
+        font-size:12px;
+        line-height:1.55;
+        color:#d8deea;
+      }
+
+      .rule-block strong{
+        display:block;
+        color:#f3d281;
+        margin-bottom:5px;
+        font-size:13px;
+      }
+
+      .rank-card-grid{
+        display:grid;
+        grid-template-columns:repeat(6,1fr);
+        gap:8px;
+        margin-top:10px;
+      }
+
+      .rank-card-mini{
+        border:1px solid rgba(255,255,255,.1);
+        background:rgba(0,0,0,.22);
+        border-radius:12px;
+        padding:6px;
+        text-align:center;
+      }
+
+      .rank-card-mini img{
+        width:100%;
+        aspect-ratio:2/3;
+        object-fit:cover;
+        border-radius:8px;
+        display:block;
+        margin-bottom:5px;
+      }
+
+      .rank-card-mini strong{
+        display:block;
+        font-size:10.5px;
+        color:#f4f1e8;
+        line-height:1.15;
+      }
+
+      .rank-card-mini span{
+        display:block;
+        font-size:10px;
+        color:#aeb5c3;
+        margin-top:2px;
+      }
+
+      /* =========================
+         방 만들기 모달
+      ========================= */
+      .create-room-modal{
+        position:fixed;
+        inset:0;
+        z-index:190;
+        display:none;
+        align-items:center;
+        justify-content:center;
+        background:rgba(0,0,0,.62);
+        padding:22px;
+      }
+
+      .create-room-modal.show{
+        display:flex;
+      }
+
+      .create-room-card{
+        width:min(420px,94vw);
+        background:#121827;
+        border:1px solid rgba(243,210,129,.4);
+        border-radius:22px;
+        padding:18px;
+        color:#f4f1e8;
+        box-shadow:0 24px 80px rgba(0,0,0,.55);
+      }
+
+      .create-room-card h2{
+        margin:0 0 12px;
+        color:#f3d281;
+      }
+
+      .create-room-card .input{
+        width:100%;
+        margin-bottom:8px;
+      }
+
+      .create-room-actions{
+        display:flex;
+        justify-content:flex-end;
+        gap:8px;
+        margin-top:12px;
+      }
+
+      /* =========================
+         중앙 카드 제출 영역
+      ========================= */
+      .pile-board{
+        position:relative;
+        width:100%;
+        height:100%;
+      }
+
+      .pile-empty{
+        height:100%;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        color:#aeb5c3;
+        font-weight:900;
+        font-size:18px;
+      }
+
+      .prev-pile{
+        position:absolute;
+        left:14px;
+        top:14px;
+        width:160px;
+        min-height:158px;
+        border:1px solid rgba(255,255,255,.09);
+        border-radius:14px;
+        background:rgba(0,0,0,.24);
+        padding:10px;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+      }
+
+      .prev-pile-title{
+        font-size:12px;
+        font-weight:900;
+        color:#aeb5c3;
+        margin-bottom:8px;
+      }
+
+      .prev-pile img{
+        width:82px;
+        border-radius:10px;
+      }
+
+      .cur-pile{
+        position:absolute;
+        left:205px;
+        right:18px;
+        top:20px;
+        bottom:18px;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+      }
+
+      .cur-pile-title{
+        font-size:14px;
+        font-weight:900;
+        color:#f3d281;
+        margin-bottom:12px;
+      }
+
+      .cur-cards{
+        display:flex;
+        align-items:center;
+        justify-content:center;
+      }
+
+      .cur-cards img{
+        width:132px;
+        object-fit:cover;
+        border-radius:12px;
+        box-shadow:0 12px 28px rgba(0,0,0,.42);
+        margin-left:-38px;
+      }
+
+      .cur-cards img:first-child{
+        margin-left:0;
+      }
+
+      /* =========================
+         우측 사이드 박스
+      ========================= */
+      .side-box{
+        margin-top:8px;
+        border:1px solid rgba(243,210,129,.28);
+        background:rgba(13,19,32,.72);
+        border-radius:16px;
+        padding:10px;
+      }
+
+      .side-title,
+      .result-title{
+        font-weight:900;
+        color:#f3d281;
+        margin-bottom:7px;
+      }
+
+      .side-btns{
+        display:flex;
+        gap:6px;
+        flex-wrap:wrap;
+      }
+
+      .side-btns .btn{
+        padding:6px 8px;
+        font-size:12px;
+      }
+
+      .chip{
+        display:inline-block;
+        font-size:11px;
+        padding:4px 7px;
+        border-radius:999px;
+        border:1px solid rgba(174,181,195,.28);
+        background:rgba(255,255,255,.045);
+        margin:2px;
+      }
+
+      .score-row.compact{
+        font-size:12px;
+        padding:4px 0;
+      }
+
+      .room-setting-grid{
+        display:grid;
+        grid-template-columns:1fr;
+        gap:6px;
+      }
+
+      .room-setting-grid .input{
+        height:32px;
+        font-size:12px;
+      }
+
+      .result-row{
+        display:grid;
+        grid-template-columns:40px minmax(0,1fr) 48px 62px;
+        gap:6px;
+        padding:6px 7px;
+        border-radius:12px;
+        background:rgba(255,255,255,.045);
+        font-size:12px;
+        margin-top:5px;
+      }
+
+      .result-row.header{
+        background:transparent;
+        color:#aeb5c3;
+        font-weight:900;
+      }
+
+      /* =========================
+         공용 모달
+      ========================= */
+      .game-modal{
+        position:fixed;
+        inset:0;
+        z-index:180;
+        display:none;
+        align-items:center;
+        justify-content:center;
+        background:rgba(0,0,0,.62);
+        padding:24px;
+      }
+
+      .game-modal.show{
+        display:flex;
+      }
+
+      .modal-card{
+        width:min(760px,96vw);
+        max-height:86vh;
+        overflow:auto;
+        background:#121827;
+        border:1px solid rgba(243,210,129,.4);
+        border-radius:24px;
+        padding:22px;
+        box-shadow:0 24px 80px rgba(0,0,0,.58);
+        color:#f4f1e8;
+      }
+
+      .modal-head h2{
+        margin:0;
+        color:#f3d281;
+      }
+
+      .modal-table{
+        display:grid;
+        gap:7px;
+      }
+
+      .modal-row{
+        display:grid;
+        grid-template-columns:54px minmax(0,1fr) 74px 82px;
+        gap:8px;
+        align-items:center;
+        padding:9px;
+        border-radius:13px;
+        background:rgba(255,255,255,.055);
+        font-size:14px;
+      }
+
+      .modal-row.header{
+        background:transparent;
+        color:#aeb5c3;
+        font-size:12px;
+        font-weight:900;
+      }
+
+      .modal-actions{
+        display:flex;
+        justify-content:flex-end;
+        gap:8px;
+        margin-top:16px;
+      }
+
+      .rebellion-card{
+        text-align:center;
+      }
+
+      .rebellion-card img{
+        width:180px;
+        border-radius:18px;
+        box-shadow:0 18px 55px rgba(0,0,0,.6);
+        margin-bottom:16px;
+      }
+
+      .rebellion-card h2{
+        color:#f3d281;
+        margin:4px 0 8px;
+      }
+
+      .rebellion-card p{
+        font-size:18px;
+        font-weight:900;
+        margin:6px 0;
+      }
+
+      .help-section{
+        border-top:1px solid rgba(255,255,255,.09);
+        padding-top:12px;
+        margin-top:12px;
+        line-height:1.55;
+        color:#d8deea;
+        font-size:14px;
+      }
+
+      .help-section strong{
+        color:#f3d281;
+      }
+
+      /* =========================
+         상납 패널 / 카드 이동
+      ========================= */
+      #tributePanel{
+        position:fixed;
+        right:326px;
+        bottom:12px;
+        z-index:95;
+        display:none;
+        width:260px;
+        padding:10px;
+        border-radius:18px;
+        border:1px solid rgba(243,210,129,.45);
+        background:rgba(13,19,32,.96);
+        box-shadow:0 16px 42px rgba(0,0,0,.42);
+        color:#f4f1e8;
+      }
+
+      .tribute-title{
+        font-weight:900;
+        color:#f3d281;
+      }
+
+      .tribute-line{
+        font-size:12px;
+        color:#aeb5c3;
+        margin:6px 0;
+      }
+
+      .tribute-cards{
+        display:flex;
+        gap:7px;
+        flex-wrap:wrap;
+      }
+
+      .tribute-cards img{
+        width:40px;
+        border-radius:7px;
+      }
+
+      .tribute-fly-card{
+        position:fixed;
+        width:54px;
+        height:81px;
+        object-fit:cover;
+        border-radius:8px;
+        z-index:220;
+        pointer-events:none;
+        box-shadow:0 12px 28px rgba(0,0,0,.48);
+        transition:transform ${TRIBUTE_ANIM_MS}ms cubic-bezier(.2,.85,.18,1),opacity ${TRIBUTE_ANIM_MS}ms ease;
+      }
+
+      /* =========================
+         모바일
+      ========================= */
+      @media(max-width:880px){
+        .lobby-grid{
+          grid-template-columns:1fr;
+        }
+
+        .lobby-section-head{
+          align-items:flex-start;
+          flex-direction:column;
+        }
+
+        .lobby-toolbar{
+          justify-content:flex-start;
+        }
+
+        .rule-two-col{
+          grid-template-columns:1fr;
+        }
+
+        .rank-card-grid{
+          grid-template-columns:repeat(3,1fr);
+        }
+
+        .room-item{
+          align-items:flex-start;
+          flex-direction:column;
+        }
+
+        .room-item .btn{
+          width:100%;
+        }
+      }
+`;
+document.head.appendChild(style);
   }
 
  function ensureModals() {
@@ -408,13 +1155,28 @@ function setView(name) {
 function enhanceLobbyLayout() {
   if (!E.lobbyView || $("lobbyGrid")) return;
 
+  // 기존 로비 패널들 숨김
+  const createPanel = E.roomTitleInput?.closest(".panel");
+  const rankPanel = E.rankPreview?.closest(".panel");
+  const roomListPanel = E.roomList?.closest(".panel");
+
+  if (createPanel) createPanel.classList.add("legacy-lobby-hidden");
+  if (rankPanel) rankPanel.classList.add("legacy-lobby-hidden");
+  if (roomListPanel) roomListPanel.classList.add("legacy-lobby-hidden");
+
   const grid = document.createElement("div");
   grid.id = "lobbyGrid";
   grid.className = "lobby-grid";
 
   const left = document.createElement("section");
   left.className = "panel lobby-left";
-  left.innerHTML = `<h2 class="lobby-panel-title">대기방 목록</h2><div id="lobbyToolbar" class="lobby-toolbar"></div>`;
+  left.innerHTML = `
+    <div class="lobby-section-head">
+      <h2 class="lobby-panel-title">대기방 목록</h2>
+      <div id="lobbyToolbar" class="lobby-toolbar"></div>
+    </div>
+    <div id="lobbyRoomListMount"></div>
+  `;
 
   const right = document.createElement("section");
   right.className = "panel lobby-right";
@@ -423,17 +1185,31 @@ function enhanceLobbyLayout() {
   grid.appendChild(left);
   grid.appendChild(right);
 
-  E.lobbyView.appendChild(grid);
+  const introPanel = E.lobbyView.querySelector(".panel");
+  if (introPanel) {
+    introPanel.insertAdjacentElement("afterend", grid);
+  } else {
+    E.lobbyView.appendChild(grid);
+  }
 
   const toolbar = $("lobbyToolbar");
 
-  if (E.createRoomBtn) toolbar.appendChild(E.createRoomBtn);
-  if (E.refreshRoomsBtn) toolbar.appendChild(E.refreshRoomsBtn);
+  if (E.createRoomBtn) {
+    E.createRoomBtn.textContent = "방 만들기";
+    toolbar.appendChild(E.createRoomBtn);
+  }
 
-  if (E.lobbyControls) E.lobbyControls.classList.add("lobby-create-fields");
+  if (E.refreshRoomsBtn) {
+    toolbar.appendChild(E.refreshRoomsBtn);
+  }
 
-  if (E.roomList) left.appendChild(E.roomList);
-  if (E.rankPreview) $("lobbyRuleMount").appendChild(E.rankPreview);
+  if (E.roomList) {
+    $("lobbyRoomListMount").appendChild(E.roomList);
+  }
+
+  if (E.rankPreview) {
+    $("lobbyRuleMount").appendChild(E.rankPreview);
+  }
 }
   
 function renderRankPreview() {
