@@ -1862,6 +1862,7 @@ function positions() {
     }).join("") : `<span class="muted">제출 대기</span>`;
 
     E.centerPile.innerHTML = `<div class="pile-board"><div class="prev-pile"><div class="prev-pile-title">직전 카드</div>${prevCard}</div><div class="cur-pile"><div class="cur-pile-title">${cur ? `현재 ${rankInfo(cur.effectiveRank).name} ${cur.count}장` : "현재 없음"}</div><div class="cur-cards ${mobilePileClass}">${curCards}</div></div></div>`;
+  }
 
   function currentTributePairForMe() {
     return (S.room?.tribute?.pairs || []).find(p => p.toUid === S.user && !p.returned) || null;
