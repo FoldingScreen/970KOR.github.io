@@ -593,8 +593,7 @@ function positions() {
     const finalPanel = sideBox("finalResultPanel", roundPanel);
     finalPanel.style.display = S.room.status === "finished" ? "block" : "none";
     if (finalPanel.style.display !== "none") finalPanel.innerHTML = `<div class="result-title">최종 결과</div>${resultRows(allPlayers().slice().sort((a, b) => (b.score || 0) - (a.score || 0)), "final")}`;
-    const finalScorePanel = sideBox("finalScorePanel", document.querySelector(".side-panel section:last-child"));
-
+    const finalScorePanel = sideBox("finalScorePanel", finalPanel);
 if (!S.room.finalGameResult) {
   finalScorePanel.style.display = "none";
   finalScorePanel.innerHTML = "";
@@ -622,27 +621,6 @@ if (!S.room.finalGameResult) {
   `;
 }
 
-    if (finalScorePanel.style.display !== "none") {
-      const standings = S.room.finalGameResult.standings || [];
-
-      finalScorePanel.innerHTML = `
-        <div class="result-title">최종 점수</div>
-        <div class="result-row header">
-          <span>순위</span>
-          <span>닉네임</span>
-          <span>총점</span>
-          <span>직전</span>
-        </div>
-        ${standings.map(p => `
-          <div class="result-row">
-            <span>${p.rank}등</span>
-            <span>${esc(p.nickname || "-")}</span>
-            <strong>${Number(p.score || 0)}</strong>
-            <span>${p.lastRoundRank ? `${p.lastRoundRank}등` : "-"}</span>
-          </div>
-        `).join("")}
-      `;
-    }
     const admin = sideBox("adminPanel", finalPanel);
     const aiBtn = isHost() && S.room.status === "waiting" ? `<button class="btn ghost small" onclick="Dalmuti.addAI()">AI 추가</button>` : "";
     const forceBtn = isHost() && S.room.status === "betweenRounds" ? `<button class="btn ghost small" onclick="Dalmuti.forceRebellion()">민란 강제</button>` : "";
@@ -1597,11 +1575,25 @@ async function maybeAutoHostStart() {
       if (!latestSnap.exists) return;
       const latest = latestSnap.data();
       if (playersMap(latest)[latest.hostUid] || spectatorsMap(latest)[latest.hostUid]) return;
-      const next =
+const latestPlayers = playersMap(latest);
+const latestSpecs = spectatorsMap(latest);
+
+if (!hasHumanInRoom(latestPlayers, latestSpecs)) {
+  await closeRoomIfNoHuman(S.roomId, latestPlayers, latestSpecs);
+  return;
+}
+
+const next =
   allPlayers(latest).find(p => p && !p.isAI && !p.removedFromRoom) ||
   spectators(latest).find(p => p && !p.isAI && !p.removedFromRoom);
-      if (next) await roomRef().set({ hostUid: next.uid, hostNickname: next.nickname, updatedAt: serverNow() }, { merge: true });
-      else await roomRef().set({ closed: true, status: "closed", updatedAt: serverNow() }, { merge: true });
+
+if (next) {
+  await roomRef().set({
+    hostUid: next.uid,
+    hostNickname: next.nickname,
+    updatedAt: serverNow()
+  }, { merge: true });
+}
     } finally { S.hostAssigning = false; }
   }
 
