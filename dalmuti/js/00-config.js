@@ -1016,6 +1016,50 @@ style.textContent = `
       }
 
       /* =========================
+         채팅 이모티콘
+      ========================= */
+      .emoji-wrap{
+        position:relative;
+        display:inline-flex;
+      }
+
+      .emoji-panel{
+        position:absolute;
+        right:0;
+        bottom:38px;
+        z-index:120;
+        display:none;
+        width:220px;
+        padding:10px;
+        border-radius:16px;
+        border:1px solid rgba(243,210,129,.35);
+        background:rgba(13,19,32,.98);
+        box-shadow:0 16px 42px rgba(0,0,0,.45);
+        grid-template-columns:repeat(6,1fr);
+        gap:6px;
+      }
+
+      .emoji-panel.show{
+        display:grid;
+      }
+
+      .emoji-btn{
+        width:30px;
+        height:30px;
+        border:1px solid rgba(255,255,255,.1);
+        border-radius:10px;
+        background:rgba(255,255,255,.06);
+        cursor:pointer;
+        font-size:18px;
+        line-height:1;
+      }
+
+      .emoji-btn:hover{
+        background:rgba(243,210,129,.14);
+        border-color:rgba(243,210,129,.45);
+      }
+
+      /* =========================
          모바일
       ========================= */
       @media(max-width:880px){
@@ -1108,6 +1152,31 @@ document.head.appendChild(style);
     btn.style.marginLeft = "8px";
     $("selectedSummary").insertAdjacentElement("afterend", btn);
   }
+  if (!$("emojiPanel") && E.sendChatBtn?.parentElement) {
+    const wrap = document.createElement("span");
+    wrap.className = "emoji-wrap";
+
+    const btn = document.createElement("button");
+    btn.id = "emojiToggleBtn";
+    btn.type = "button";
+    btn.className = "btn ghost small";
+    btn.textContent = "😊";
+
+    const panel = document.createElement("div");
+    panel.id = "emojiPanel";
+    panel.className = "emoji-panel";
+
+    const emojis = ["😀", "😂", "👍", "👏", "🙏", "🎉", "😭", "😎", "🤔", "😡", "🔥", "💯", "❤️", "🤣", "😅", "🙌", "👀", "✅"];
+
+    panel.innerHTML = emojis.map(e => `
+      <button type="button" class="emoji-btn" data-emoji="${e}">${e}</button>
+    `).join("");
+
+    E.sendChatBtn.insertAdjacentElement("beforebegin", wrap);
+    wrap.appendChild(btn);
+    wrap.appendChild(panel);
+  }
+   
 }
   
 function setView(name) {
@@ -2819,6 +2888,27 @@ if (E.passBtn) E.passBtn.onclick = passTurn;
 const autoBtn = $("autoPlayBtn");
 if (autoBtn) autoBtn.onclick = toggleAutoPlay;
 if (E.sendChatBtn) E.sendChatBtn.onclick = sendChat;
+        const emojiToggleBtn = $("emojiToggleBtn");
+    const emojiPanel = $("emojiPanel");
+
+    if (emojiToggleBtn && emojiPanel) {
+      emojiToggleBtn.onclick = () => {
+        emojiPanel.classList.toggle("show");
+      };
+
+      emojiPanel.querySelectorAll(".emoji-btn").forEach(btn => {
+        btn.onclick = () => {
+          const emoji = btn.dataset.emoji || btn.textContent || "";
+
+          if (E.chatInput) {
+            E.chatInput.value += emoji;
+            E.chatInput.focus();
+          }
+
+          emojiPanel.classList.remove("show");
+        };
+      });
+    }
     if (E.chatInput) E.chatInput.onkeydown = e => { if (e.key === "Enter") sendChat(); };
     if (E.toggleSpectatorChatBtn) E.toggleSpectatorChatBtn.onclick = toggleSpectatorChat;
   }
