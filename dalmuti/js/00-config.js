@@ -1144,13 +1144,18 @@ style.textContent = `
 
         body:has(#roomView.show) .room-head{
           display:grid;
-          grid-template-columns:minmax(0,1fr) auto;
+          grid-template-columns:auto minmax(0,1fr) auto;
           align-items:center;
           gap:8px;
-          padding:6px 4px 4px;
+          padding:4px 2px 6px;
+        }
+
+        body:has(#roomView.show) .room-head > div:first-of-type{
+          display:contents;
         }
 
         body:has(#roomView.show) .room-head h2{
+          grid-column:2;
           font-size:17px;
           line-height:1.15;
           margin:0;
@@ -1160,9 +1165,32 @@ style.textContent = `
         }
 
         body:has(#roomView.show) .room-head .eyebrow{
-          font-size:11px;
+          grid-column:3;
+          font-size:12px;
           letter-spacing:0;
           color:#f3d281;
+          font-weight:900;
+          white-space:nowrap;
+        }
+
+        .mobile-menu-btn{
+          display:none;
+        }
+
+        body:has(#roomView.show) .mobile-menu-btn{
+          grid-column:1;
+          display:inline-flex;
+          align-items:center;
+          justify-content:center;
+          width:34px;
+          height:34px;
+          border:1px solid rgba(243,210,129,.35);
+          border-radius:11px;
+          background:rgba(13,19,32,.88);
+          color:#f3d281;
+          font-size:19px;
+          font-weight:900;
+          cursor:pointer;
         }
 
         body:has(#roomView.show) .turn-badge{
@@ -1286,22 +1314,28 @@ style.textContent = `
         body:has(#roomView.show) .seat-top-1,
         body:has(#roomView.show) .seat-top-2{
           top:5px!important;
-          width:92px!important;
-          min-height:44px!important;
-          padding:4px 6px!important;
-          transform:translateX(-50%)!important;
+          min-height:52px!important;
+          padding:5px 5px!important;
         }
 
         body:has(#roomView.show) .seat-top-0{
           left:50%!important;
+          width:96px!important;
+          transform:translateX(-50%)!important;
         }
 
         body:has(#roomView.show) .seat-top-1{
-          left:34%!important;
+          left:5px!important;
+          right:auto!important;
+          width:58px!important;
+          transform:none!important;
         }
 
         body:has(#roomView.show) .seat-top-2{
-          left:66%!important;
+          right:5px!important;
+          left:auto!important;
+          width:58px!important;
+          transform:none!important;
         }
 
         body:has(#roomView.show) .center-pile{
@@ -1339,9 +1373,9 @@ style.textContent = `
         }
 
         body:has(#roomView.show) .cur-cards img{
-          width:78px!important;
-          border-radius:9px;
-          margin-left:var(--mobile-pile-overlap,-22px);
+          width:96px!important;
+          border-radius:10px;
+          margin-left:var(--mobile-pile-overlap,-34px);
         }
 
         body:has(#roomView.show) .cur-cards img:first-child{
@@ -1353,23 +1387,23 @@ style.textContent = `
         }
 
         body:has(#roomView.show) .cur-cards.mobile-pile-count-2{
-          --mobile-pile-overlap:-12px;
+          --mobile-pile-overlap:-18px;
         }
 
         body:has(#roomView.show) .cur-cards.mobile-pile-count-3{
-          --mobile-pile-overlap:-20px;
+          --mobile-pile-overlap:-30px;
         }
 
         body:has(#roomView.show) .cur-cards.mobile-pile-count-4{
-          --mobile-pile-overlap:-28px;
+          --mobile-pile-overlap:-42px;
         }
 
         body:has(#roomView.show) .cur-cards.mobile-pile-count-many{
-          --mobile-pile-overlap:-36px;
+          --mobile-pile-overlap:-52px;
         }
 
         body:has(#roomView.show) .cur-cards img.mobile-joker-gap{
-          margin-left:calc(var(--mobile-pile-overlap,-22px) + 18px);
+          margin-left:calc(var(--mobile-pile-overlap,-34px) + 22px);
         }
 
         body:has(#roomView.show) .hand-header{
@@ -1432,6 +1466,80 @@ style.textContent = `
           padding:9px 8px;
           font-size:13px;
         }
+
+        
+        .mobile-chat-btn,
+        .mobile-panel-backdrop{
+          display:none;
+        }
+
+        body:has(#roomView.show) .mobile-chat-btn{
+          position:fixed;
+          right:14px;
+          bottom:14px;
+          z-index:230;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          width:48px;
+          height:48px;
+          border:1px solid rgba(243,210,129,.45);
+          border-radius:999px;
+          background:rgba(13,19,32,.96);
+          color:#f3d281;
+          box-shadow:0 12px 34px rgba(0,0,0,.45);
+          font-size:22px;
+          cursor:pointer;
+        }
+
+        body.mobile-menu-open .mobile-panel-backdrop,
+        body.mobile-chat-open .mobile-panel-backdrop{
+          position:fixed;
+          inset:0;
+          z-index:205;
+          display:block;
+          background:rgba(0,0,0,.42);
+        }
+
+        body.mobile-menu-open:has(#roomView.show) .side-panel,
+        body.mobile-chat-open:has(#roomView.show) .side-panel{
+          position:fixed;
+          left:10px;
+          right:10px;
+          bottom:10px;
+          z-index:220;
+          display:block!important;
+          max-height:72dvh;
+          overflow:auto;
+          border-radius:20px;
+          padding:12px;
+          box-shadow:0 20px 70px rgba(0,0,0,.62);
+        }
+
+        body.mobile-chat-open:has(#roomView.show) .side-panel > *{
+          display:none!important;
+        }
+
+        body.mobile-chat-open:has(#roomView.show) .side-panel .mobile-chat-section{
+          display:block!important;
+        }
+
+        body.mobile-menu-open:has(#roomView.show) .side-panel .mobile-chat-section{
+          display:none!important;
+        }
+
+        body.mobile-menu-open:has(#roomView.show) .side-panel .mobile-score-section{
+          display:block!important;
+        }
+
+        body.mobile-menu-open:has(#roomView.show) .side-panel .score-list{
+          display:block!important;
+        }
+
+        body.mobile-chat-open:has(#roomView.show) .chat-list{
+          height:42dvh;
+        }
+        
       }
 `;
 document.head.appendChild(style);
@@ -1492,6 +1600,35 @@ document.head.appendChild(style);
     btn.style.marginLeft = "8px";
     $("selectedSummary").insertAdjacentElement("afterend", btn);
   }
+
+  E.chatList?.closest("section")?.classList.add("mobile-chat-section");
+  E.scoreList?.closest("section")?.classList.add("mobile-score-section");
+
+  if (!$("mobileMenuBtn") && document.querySelector(".room-head")) {
+    const btn = document.createElement("button");
+    btn.id = "mobileMenuBtn";
+    btn.type = "button";
+    btn.className = "mobile-menu-btn";
+    btn.textContent = "☰";
+    document.querySelector(".room-head").insertAdjacentElement("afterbegin", btn);
+  }
+
+  if (!$("mobileChatBtn")) {
+    const btn = document.createElement("button");
+    btn.id = "mobileChatBtn";
+    btn.type = "button";
+    btn.className = "mobile-chat-btn";
+    btn.textContent = "💬";
+    document.body.appendChild(btn);
+  }
+
+  if (!$("mobilePanelBackdrop")) {
+    const bg = document.createElement("div");
+    bg.id = "mobilePanelBackdrop";
+    bg.className = "mobile-panel-backdrop";
+    document.body.appendChild(bg);
+  }
+   
   if (!$("emojiPanel") && E.sendChatBtn?.parentElement) {
     const wrap = document.createElement("span");
     wrap.className = "emoji-wrap";
@@ -1764,11 +1901,72 @@ function topSeatClass(index, total) {
   return "seat-top-0";
 }
 
+function isMobileLayout() {
+  return window.matchMedia && window.matchMedia("(max-width: 880px)").matches;
+}
+
+function positionClassForSide(side, index, total) {
+  if (total <= 1) return `seat-${side}-0`;
+  if (total === 2) return index === 0 ? `seat-${side}-1` : `seat-${side}-2`;
+  if (index === 0) return `seat-${side}-1`;
+  if (index === 1) return `seat-${side}-0`;
+  return `seat-${side}-2`;
+}
+
+function mobilePositions(ps, myIndex) {
+  const rotated = ps.length
+    ? ps.slice(myIndex).concat(ps.slice(0, myIndex))
+    : [];
+
+  const opponents = rotated.filter(p => p.uid !== S.user);
+  const opponentCount = opponents.length;
+
+  if (!opponentCount) {
+    return rotated.slice(0, 1).map(p => ({ p, cls: "seat-bottom" }));
+  }
+
+  const topCount = opponentCount === 1
+    ? 1
+    : opponentCount % 2 === 0
+      ? 2
+      : 1;
+
+  const topPlayers = opponents.slice(0, topCount);
+  const rest = opponents.slice(topCount);
+
+  const half = Math.ceil(rest.length / 2);
+  const leftPlayers = rest.slice(0, half);
+  const rightPlayers = rest.slice(half);
+
+  const result = [];
+
+  if (topPlayers.length === 1) {
+    result.push({ p: topPlayers[0], cls: "seat-top-0" });
+  } else if (topPlayers.length === 2) {
+    result.push({ p: topPlayers[0], cls: "seat-top-1" });
+    result.push({ p: topPlayers[1], cls: "seat-top-2" });
+  }
+
+  leftPlayers.forEach((p, i) => {
+    result.push({ p, cls: positionClassForSide("left", i, leftPlayers.length) });
+  });
+
+  rightPlayers.forEach((p, i) => {
+    result.push({ p, cls: positionClassForSide("right", i, rightPlayers.length) });
+  });
+
+  return result.filter(item => item && item.p && item.p.uid);
+}
+
 function positions() {
   const ps = allPlayers().filter(p => p && p.uid);
 
   const myIndexRaw = ps.findIndex(p => p.uid === S.user);
   const myIndex = myIndexRaw >= 0 ? myIndexRaw : 0;
+
+  if (isMobileLayout()) {
+    return mobilePositions(ps, myIndex);
+  }
 
   const rotated = ps.length
     ? ps.slice(myIndex).concat(ps.slice(0, myIndex))
@@ -1776,17 +1974,6 @@ function positions() {
 
   const count = rotated.length;
 
-  /*
-    화면상 계급 진행 순서 고정표
-
-    2명: 내 자리 → 위
-    3명: 내 자리 → 왼쪽 → 오른쪽
-    4명: 내 자리 → 왼쪽 → 위 → 오른쪽
-    5명: 내 자리 → 왼쪽 → 상단왼쪽 → 상단오른쪽 → 오른쪽
-    6명: 내 자리 → 왼쪽아래 → 왼쪽위 → 상단왼쪽 → 상단오른쪽 → 오른쪽
-    7명: 내 자리 → 왼쪽아래 → 왼쪽위 → 상단왼쪽 → 상단가운데 → 상단오른쪽 → 오른쪽
-    8명: 내 자리 → 왼쪽아래 → 왼쪽위 → 상단왼쪽 → 상단가운데 → 상단오른쪽 → 오른쪽위 → 오른쪽아래
-  */
   const seatMapByCount = {
     1: ["seat-bottom"],
     2: ["seat-bottom", "seat-top-0"],
@@ -1833,18 +2020,25 @@ function positions() {
 
   function renderPile() {
     if (!E.centerPile) return;
+
     if (S.room?.status === "tributeReturn") {
       const pairs = S.room.tribute?.pairs || [];
       E.centerPile.innerHTML = `<div class="pile-title">상납 반환</div><div class="muted">상납 받은 사람이 같은 장수만큼 카드를 돌려줍니다.</div><div class="muted">${pairs.map(p => `${esc(p.fromNickname)} → ${esc(p.toNickname)} ${p.count}장 ${p.returned ? "완료" : "대기"}`).join("<br>")}</div>`;
       return;
     }
+
     const prev = S.room?.previousSet;
     const cur = S.room?.currentSet;
+
     if (!prev && !cur) {
       E.centerPile.innerHTML = `<div class="pile-board"><div class="pile-empty">새 판</div></div>`;
       return;
     }
-    const prevCard = prev?.cards?.[0] ? `<img src="${cardImg(prev.cards[0].rank)}" alt="직전 카드">` : `<span class="muted">없음</span>`;
+
+    const prevCard = prev?.cards?.[0]
+      ? `<img src="${cardImg(prev.cards[0].rank)}" alt="직전 카드">`
+      : `<span class="muted">없음</span>`;
+
     const curList = cur?.cards || [];
     const mobilePileClass = !cur
       ? ""
@@ -1853,15 +2047,35 @@ function positions() {
         : `mobile-pile-count-${curList.length || 1}`;
 
     const curCards = cur ? curList.map((c, i) => {
-      const prevCard = curList[i - 1];
+      const before = curList[i - 1];
       const isJoker = c.joker || Number(c.rank) === 13;
-      const prevIsJoker = prevCard && (prevCard.joker || Number(prevCard.rank) === 13);
-      const jokerGap = isJoker && prevCard && !prevIsJoker ? " mobile-joker-gap" : "";
+      const beforeIsJoker = before && (before.joker || Number(before.rank) === 13);
+      const jokerGap = isJoker && before && !beforeIsJoker ? " mobile-joker-gap" : "";
 
       return `<img class="${jokerGap.trim()}" src="${cardImg(c.rank)}" alt="${esc(c.name)}">`;
     }).join("") : `<span class="muted">제출 대기</span>`;
 
-    E.centerPile.innerHTML = `<div class="pile-board"><div class="prev-pile"><div class="prev-pile-title">직전 카드</div>${prevCard}</div><div class="cur-pile"><div class="cur-pile-title">${cur ? `현재 ${rankInfo(cur.effectiveRank).name} ${cur.count}장` : "현재 없음"}</div><div class="cur-cards ${mobilePileClass}">${curCards}</div></div></div>`;
+    const turnName = S.room?.currentTurnUid
+      ? (playersMap()[S.room.currentTurnUid]?.nickname || "-")
+      : "-";
+
+    E.centerPile.innerHTML = `
+      <div class="pile-board">
+        <div class="prev-pile">
+          <div class="prev-pile-title">직전 카드</div>
+          ${prevCard}
+        </div>
+        <div class="cur-pile">
+          <div class="cur-pile-title">
+            ${S.room?.status === "playing" ? `${esc(turnName)} 차례 · ` : ""}
+            ${cur ? `현재 ${rankInfo(cur.effectiveRank).name} ${cur.count}장` : "현재 없음"}
+          </div>
+          <div class="cur-cards ${mobilePileClass}">
+            ${curCards}
+          </div>
+        </div>
+      </div>
+    `;
   }
 
   function currentTributePairForMe() {
@@ -3294,6 +3508,22 @@ async function closeRoomIfNoHuman(roomId = S.roomId, players = playersMap(), spe
     showModal("게임 방법", `<div class="help-section"><strong>목표</strong><br>손패를 먼저 털수록 높은 순위를 얻고, 라운드마다 승점을 얻습니다.</div><div class="help-section"><strong>제출</strong><br>같은 계급 여러 장을 낼 수 있습니다. 이미 카드가 깔려 있으면 같은 장수이면서 더 높은 계급만 낼 수 있습니다.</div><div class="help-section"><strong>홍길동</strong><br>일반 카드와 함께 내면 그 계급 카드로 취급합니다. 홍길동만 내면 최약 카드 취급입니다.</div><div class="help-section"><strong>상납</strong><br>2라운드부터 하위 계급자가 상위 계급자에게 좋은 카드를 자동 상납하고, 받은 사람은 같은 장수만큼 돌려줍니다.</div><div class="help-section"><strong>민란</strong><br>백정 또는 노비가 홍길동 2장을 들면 계급 순서가 뒤집힙니다.</div>`);
   }
 
+    function closeMobilePanels() {
+    document.body.classList.remove("mobile-menu-open", "mobile-chat-open");
+  }
+
+  function toggleMobileMenu() {
+    const open = document.body.classList.contains("mobile-menu-open");
+    closeMobilePanels();
+    if (!open) document.body.classList.add("mobile-menu-open");
+  }
+
+  function toggleMobileChat() {
+    const open = document.body.classList.contains("mobile-chat-open");
+    closeMobilePanels();
+    if (!open) document.body.classList.add("mobile-chat-open");
+  }
+
   function bindEvents() {
     if (E.leaveRoomBtn) E.leaveRoomBtn.onclick = leaveRoom;
     if (E.createRoomBtn) E.createRoomBtn.onclick = showCreateRoomModal;
@@ -3311,6 +3541,14 @@ if (E.passBtn) E.passBtn.onclick = passTurn;
 const autoBtn = $("autoPlayBtn");
 if (autoBtn) autoBtn.onclick = toggleAutoPlay;
 if (E.sendChatBtn) E.sendChatBtn.onclick = sendChat;
+    const mobileMenuBtn = $("mobileMenuBtn");
+if (mobileMenuBtn) mobileMenuBtn.onclick = toggleMobileMenu;
+
+const mobileChatBtn = $("mobileChatBtn");
+if (mobileChatBtn) mobileChatBtn.onclick = toggleMobileChat;
+
+const mobilePanelBackdrop = $("mobilePanelBackdrop");
+if (mobilePanelBackdrop) mobilePanelBackdrop.onclick = closeMobilePanels;
         const emojiToggleBtn = $("emojiToggleBtn");
     const emojiPanel = $("emojiPanel");
 
