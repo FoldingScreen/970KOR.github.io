@@ -1209,8 +1209,8 @@ style.textContent = `
 
         body:has(#roomView.show) .table-wrap{
           flex:1 1 auto;
-          min-height:0!important;
-          height:calc(100dvh - 292px)!important;
+          min-height:390px!important;
+          height:calc(100dvh - 286px)!important;
           max-height:none!important;
           margin-top:0;
           border-radius:18px;
@@ -1224,15 +1224,21 @@ style.textContent = `
         }
 
         body:has(#roomView.show) .player-box{
-          width:70px!important;
-          min-height:96px!important;
-          padding:6px 5px!important;
+          width:74px!important;
+          height:116px!important;
+          min-height:116px!important;
+          padding:7px 5px!important;
           border-radius:13px!important;
           font-size:10px;
           overflow:hidden;
+          display:flex;
+          flex-direction:column;
+          align-items:center;
+          justify-content:flex-start;
         }
 
         body:has(#roomView.show) .player-role{
+          width:100%;
           font-size:10px;
           line-height:1.1;
           height:12px;
@@ -1242,6 +1248,7 @@ style.textContent = `
         }
 
         body:has(#roomView.show) .player-name{
+          width:100%;
           font-size:11px;
           line-height:1.15;
           height:14px;
@@ -1251,6 +1258,7 @@ style.textContent = `
         }
 
         body:has(#roomView.show) .player-meta{
+          width:100%;
           font-size:10px;
           line-height:1.15;
           height:24px;
@@ -1266,6 +1274,11 @@ style.textContent = `
           line-height:1.05;
           padding:2px 5px;
           white-space:nowrap;
+          flex:0 0 auto;
+        }
+
+        body:has(#roomView.show) .badge.ai{
+          margin-top:3px;
         }
 
         body:has(#roomView.show) .kick-btn,
@@ -1291,12 +1304,12 @@ style.textContent = `
         }
 
         body:has(#roomView.show) .seat-left-1{
-          top:23%!important;
+          top:18%!important;
           transform:translateY(-50%)!important;
         }
 
         body:has(#roomView.show) .seat-left-2{
-          top:77%!important;
+          top:82%!important;
           transform:translateY(-50%)!important;
         }
 
@@ -1314,12 +1327,12 @@ style.textContent = `
         }
 
         body:has(#roomView.show) .seat-right-1{
-          top:23%!important;
+          top:18%!important;
           transform:translateY(-50%)!important;
         }
 
         body:has(#roomView.show) .seat-right-2{
-          top:77%!important;
+          top:82%!important;
           transform:translateY(-50%)!important;
         }
         
@@ -1340,19 +1353,19 @@ style.textContent = `
         body:has(#roomView.show) .seat-top-1{
           left:5px!important;
           right:auto!important;
-          width:70px!important;
+          width:74px!important;
           transform:none!important;
         }
 
         body:has(#roomView.show) .seat-top-2{
           right:5px!important;
           left:auto!important;
-          width:70px!important;
+          width:74px!important;
           transform:none!important;
         }
-
+        
         body:has(#roomView.show) .center-pile{
-          width:calc(100% - 160px)!important;
+          width:calc(100% - 172px)!important;
           max-width:none!important;
           min-height:0!important;
           height:calc(100% - 22px)!important;
@@ -1486,26 +1499,35 @@ style.textContent = `
           display:none;
         }
 
-        body:has(#roomView.show) .mobile-chat-btn{
+        body:has(#roomView.show) .mobile-auto-btn{
           position:fixed;
-          right:14px;
-          bottom:14px;
+          right:18px;
+          bottom:68px;
           z-index:230;
           display:flex;
           align-items:center;
           justify-content:center;
-          width:48px;
-          height:48px;
-          border:1px solid rgba(243,210,129,.45);
+          width:40px;
+          height:40px;
+          border:1px solid rgba(111,179,255,.55);
           border-radius:999px;
           background:rgba(13,19,32,.96);
-          color:#f3d281;
-          box-shadow:0 12px 34px rgba(0,0,0,.45);
-          font-size:22px;
+          color:#9fcaff;
+          box-shadow:0 10px 28px rgba(0,0,0,.42);
+          font-size:10px;
+          font-weight:900;
+          letter-spacing:.02em;
           cursor:pointer;
         }
 
-        body.mobile-chat-open:has(#roomView.show) .mobile-chat-btn{
+        body:has(#roomView.show) .mobile-auto-btn.primary{
+          border-color:rgba(243,210,129,.7);
+          background:rgba(243,210,129,.95);
+          color:#160f07;
+        }
+
+        body.mobile-chat-open:has(#roomView.show) .mobile-chat-btn,
+        body.mobile-chat-open:has(#roomView.show) .mobile-auto-btn{
           display:none!important;
         }
 
@@ -1608,16 +1630,15 @@ document.head.appendChild(style);
     document.body.appendChild(m);
   }
 
-  if (!$("autoPlayBtn") && $("selectedSummary")) {
+  if (!$("autoPlayBtn")) {
     const btn = document.createElement("button");
     btn.id = "autoPlayBtn";
     btn.type = "button";
-    btn.className = "btn ghost small hidden";
-    btn.textContent = "자동 OFF";
-    btn.style.marginLeft = "8px";
-    $("selectedSummary").insertAdjacentElement("afterend", btn);
+    btn.className = "mobile-auto-btn hidden";
+    btn.textContent = "AUTO";
+    document.body.appendChild(btn);
   }
-
+   
   E.chatList?.closest("section")?.classList.add("mobile-chat-section");
   E.scoreList?.closest("section")?.classList.add("mobile-score-section");
 
@@ -1891,7 +1912,7 @@ async function loadRooms() {
       : "대기 중";
     const statusText = ({ waiting: "대기 중", playing: roundText, tributeReturn: roundText, betweenRounds: "라운드 종료", finished: "게임 종료" })[room.status] || room.status || "-";
     if (E.roomStateText) E.roomStateText.textContent = statusText;
-    if (E.roomTitle) E.roomTitle.textContent = room.title || "달무티 in 조선";
+    if (E.roomTitle) E.roomTitle.textContent = isMobileLayout() ? "달무티 in 조선" : (room.title || "달무티 in 조선");
     const turnName = room.currentTurnUid ? (playersMap(room)[room.currentTurnUid]?.nickname || "-") : "-";
     if (E.turnBadge) E.turnBadge.textContent = room.status === "playing" ? `차례: ${turnName}` : statusText;
     if (E.messageBar) {
@@ -2157,9 +2178,8 @@ E.handArea.innerHTML = groups.length ? groups.map(g => {
     if (autoBtn) {
       const showAuto = !!(mine?.type === "player" && !mine.isAI);
       autoBtn.classList.toggle("hidden", !showAuto);
-      autoBtn.textContent = mine?.autoPlay ? "자동 ON" : "자동 OFF";
+      autoBtn.textContent = "AUTO";
       autoBtn.classList.toggle("primary", !!mine?.autoPlay);
-      autoBtn.classList.toggle("ghost", !mine?.autoPlay);
     }
   }
 
