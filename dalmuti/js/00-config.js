@@ -1534,10 +1534,12 @@ function positions() {
       return;
     }
     const groups = groupHand(S.hand);
-    E.handArea.innerHTML = groups.length ? groups.map(g => {
-      const selected = S.selected.get(g.rank)?.length || 0;
-      return `<div class="hand-stack${selected ? " selected" : ""}${selectableGroup(g) ? "" : " disabled"}" onclick="Dalmuti.toggleRank(${g.rank})">${selected ? `<span class="stack-selected">${selected}</span>` : ""}<img src="${cardImg(g.rank)}"><span class="stack-count">x${g.items.length}</span></div>`;
-    }).join("") : `<div class="muted">손패가 없습니다.</div>`;
+E.handArea.innerHTML = groups.length ? groups.map(g => {
+  const selectedAll = selectedCards();
+  const selected = selectedAll.filter(c => Number(c.rank) === Number(g.rank)).length;
+
+  return `<div class="hand-stack${selected ? " selected" : ""}${selectableGroup(g) ? "" : " disabled"}" onclick="Dalmuti.toggleRank(${g.rank})">${selected ? `<span class="stack-selected">${selected}</span>` : ""}<img src="${cardImg(g.rank)}"><span class="stack-count">x${g.items.length}</span></div>`;
+}).join("") : `<div class="muted">손패가 없습니다.</div>`;
     const cards = selectedCards();
     if (S.room?.status === "tributeReturn") {
       const pair = currentTributePairForMe();
