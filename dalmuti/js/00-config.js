@@ -1059,6 +1059,14 @@ style.textContent = `
         border-color:rgba(243,210,129,.45);
       }
 
+      .chat-emoji-big{
+        display:block;
+        font-size:5em;
+        line-height:1.05;
+        margin-top:4px;
+        letter-spacing:4px;
+      }
+
       /* =========================
          모바일
       ========================= */
@@ -1166,7 +1174,7 @@ document.head.appendChild(style);
     panel.id = "emojiPanel";
     panel.className = "emoji-panel";
 
-    const emojis = ["😀", "😂", "👍", "👏", "🙏", "🎉", "😭", "😎", "🤔", "😡", "🔥", "💯", "❤️", "🤣", "😅", "🙌", "👀", "✅"];
+    const emojis = ["😏", "🙄", "🤡", "🫵", "😀", "😂", "👍", "👏", "🙏", "🎉", "😭", "😎", "🤔", "😡", "🔥", "💯", "❤️", "🤣", "😅", "🙌", "👀", "✅"];
 
     panel.innerHTML = emojis.map(e => `
       <button type="button" class="emoji-btn" data-emoji="${e}">${e}</button>
@@ -1573,10 +1581,22 @@ function positions() {
     if (E.scoreList) E.scoreList.innerHTML = "";
   }
 
+function formatChatText(text) {
+  const raw = String(text || "").trim();
+
+  const emojiOnlyPattern = /^[\p{Emoji_Presentation}\p{Extended_Pictographic}\uFE0F\u200D\s]+$/u;
+
+  if (raw && emojiOnlyPattern.test(raw)) {
+    return `<span class="chat-emoji-big">${esc(raw)}</span>`;
+  }
+
+  return esc(text || "");
+}
+  
   function renderChat() {
     if (!E.chatList) return;
     const list = (S.room?.chatPreview || []).slice(-CHAT_LIMIT);
-    E.chatList.innerHTML = list.length ? list.map(m => m.type === "system" ? `<div class="chat-msg system">${esc(m.text)}</div>` : `<div class="chat-msg"><span class="chat-name">${esc(m.nickname || "-")}</span> ${esc(m.text || "")}</div>`).join("") : `<div class="muted">채팅이 없습니다.</div>`;
+    E.chatList.innerHTML = list.length ? list.map(m => m.type === "system" ? `<div class="chat-msg system">${esc(m.text)}</div>` : `<div class="chat-msg"><span class="chat-name">${esc(m.nickname || "-")}</span> ${formatChatText(m.text || "")}</div>`).join("") : `<div class="muted">채팅이 없습니다.</div>`;
     E.chatList.scrollTop = E.chatList.scrollHeight;
   }
 
