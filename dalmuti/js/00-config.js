@@ -2031,7 +2031,15 @@ async function becomePlayer() {
     if (!isHost() || S.room?.status !== "waiting") return;
     const ps = allPlayers();
     if (ps.length < 2) return toast("2명 이상 필요합니다.");
-    if (!ps.every(p => p.uid === S.room.hostUid || p.isReady || p.isAI)) {
+const notReady = ps.filter(p =>
+  p.uid !== S.room.hostUid &&
+  !p.isReady &&
+  !p.isAI
+);
+
+if (notReady.length) {
+  const names = notReady.map(p => p.nickname || p.uid).join(", ");
+  await addSystem(`게임을 시작할 수 없습니다. 아직 준비하지 않은 인원: ${names}`);
   return toast("아직 준비하지 않은 인원이 있습니다.");
 }
     await startRound(1, true, false);
