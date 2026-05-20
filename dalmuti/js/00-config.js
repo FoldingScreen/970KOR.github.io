@@ -1224,16 +1224,18 @@ style.textContent = `
         }
 
         body:has(#roomView.show) .player-box{
-          width:58px!important;
-          min-height:68px!important;
-          padding:5px 4px!important;
-          border-radius:12px!important;
+          width:70px!important;
+          min-height:96px!important;
+          padding:6px 5px!important;
+          border-radius:13px!important;
           font-size:10px;
+          overflow:hidden;
         }
 
         body:has(#roomView.show) .player-role{
           font-size:10px;
           line-height:1.1;
+          height:12px;
           white-space:nowrap;
           overflow:hidden;
           text-overflow:ellipsis;
@@ -1242,17 +1244,28 @@ style.textContent = `
         body:has(#roomView.show) .player-name{
           font-size:11px;
           line-height:1.15;
+          height:14px;
+          white-space:nowrap;
+          overflow:hidden;
+          text-overflow:ellipsis;
         }
 
         body:has(#roomView.show) .player-meta{
           font-size:10px;
           line-height:1.15;
+          height:24px;
+          overflow:hidden;
         }
 
         body:has(#roomView.show) .badge{
+          display:block;
+          width:max-content;
+          max-width:100%;
+          margin:2px auto 0;
           font-size:9px;
-          padding:1px 5px;
-          margin-top:2px;
+          line-height:1.05;
+          padding:2px 5px;
+          white-space:nowrap;
         }
 
         body:has(#roomView.show) .kick-btn,
@@ -1278,12 +1291,12 @@ style.textContent = `
         }
 
         body:has(#roomView.show) .seat-left-1{
-          top:30%!important;
+          top:23%!important;
           transform:translateY(-50%)!important;
         }
 
         body:has(#roomView.show) .seat-left-2{
-          top:70%!important;
+          top:77%!important;
           transform:translateY(-50%)!important;
         }
 
@@ -1301,15 +1314,15 @@ style.textContent = `
         }
 
         body:has(#roomView.show) .seat-right-1{
-          top:30%!important;
+          top:23%!important;
           transform:translateY(-50%)!important;
         }
 
         body:has(#roomView.show) .seat-right-2{
-          top:70%!important;
+          top:77%!important;
           transform:translateY(-50%)!important;
         }
-
+        
         body:has(#roomView.show) .seat-top-0,
         body:has(#roomView.show) .seat-top-1,
         body:has(#roomView.show) .seat-top-2{
@@ -1327,19 +1340,19 @@ style.textContent = `
         body:has(#roomView.show) .seat-top-1{
           left:5px!important;
           right:auto!important;
-          width:58px!important;
+          width:70px!important;
           transform:none!important;
         }
 
         body:has(#roomView.show) .seat-top-2{
           right:5px!important;
           left:auto!important;
-          width:58px!important;
+          width:70px!important;
           transform:none!important;
         }
 
         body:has(#roomView.show) .center-pile{
-          width:calc(100% - 132px)!important;
+          width:calc(100% - 160px)!important;
           max-width:none!important;
           min-height:0!important;
           height:calc(100% - 22px)!important;
@@ -1490,6 +1503,10 @@ style.textContent = `
           box-shadow:0 12px 34px rgba(0,0,0,.45);
           font-size:22px;
           cursor:pointer;
+        }
+
+        body.mobile-chat-open:has(#roomView.show) .mobile-chat-btn{
+          display:none!important;
         }
 
         body.mobile-menu-open .mobile-panel-backdrop,
