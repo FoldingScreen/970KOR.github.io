@@ -200,6 +200,11 @@ function nextAfter(room, uid) {
     return fallback?.uid || null;
   }
 
+function hasHumanInRoom(players = {}, specs = {}) {
+  const humanPlayers = Object.values(players).some(p => p && !p.isAI && !p.removedFromRoom);
+  const humanSpectators = Object.values(specs).some(p => p && !p.isAI && !p.removedFromRoom);
+  return humanPlayers || humanSpectators;
+}  
 function basePlayer(uid, nickname, seatOrder, isAI) {
   return {
     uid,
@@ -875,8 +880,16 @@ async function leaveRoom() {
     updatedAt: serverNow()
   };
 
+if (!hasHumanInRoom(players, specs)) {
+  await closeRoomIfNoHuman(S.roomId, players, specs);
+  leaveLocal();
+  return;
+}
+  
   if (S.room.hostUid === S.user) {
-    const next = Object.values(players)[0] || Object.values(specs)[0];
+    const next =
+  Object.values(players).find(p => p && !p.isAI && !p.removedFromRoom) ||
+  Object.values(specs).find(p => p && !p.isAI && !p.removedFromRoom);
 
     if (next) {
       update.hostUid = next.uid;
@@ -1492,6 +1505,7 @@ async function maybeAutoHostStart() {
   if (!room || !isHost(room)) return;
 
   const host = playersMap(room)[room.hostUid];
+  if (host?.isAI) return;
   if (!host?.autoPlay) return;
 
   // 대기방 자동 시작
@@ -1583,7 +1597,9 @@ async function maybeAutoHostStart() {
       if (!latestSnap.exists) return;
       const latest = latestSnap.data();
       if (playersMap(latest)[latest.hostUid] || spectatorsMap(latest)[latest.hostUid]) return;
-      const next = allPlayers(latest)[0] || spectators(latest)[0];
+      const next =
+  allPlayers(latest).find(p => p && !p.isAI && !p.removedFromRoom) ||
+  spectators(latest).find(p => p && !p.isAI && !p.removedFromRoom);
       if (next) await roomRef().set({ hostUid: next.uid, hostNickname: next.nickname, updatedAt: serverNow() }, { merge: true });
       else await roomRef().set({ closed: true, status: "closed", updatedAt: serverNow() }, { merge: true });
     } finally { S.hostAssigning = false; }
@@ -1650,6 +1666,28 @@ async function maybeAutoHostStart() {
 
     const finishOrder = (room.finishOrder || []).filter(x => x.uid !== uid);
     const update = { players, spectators: specs, kicked, playerCount: countMap(players), spectatorCount: countMap(specs), currentTurnUid, currentSet, previousSet, tribute, finishOrder, updatedAt: serverNow() };
+    if (!hasHumanInRoom(players, specs)) {
+  const batch = db.batch();
+  batch.set(roomRef(), {
+    closed: true,
+    status: "closed",
+    players: {},
+    spectators: {},
+    kicked,
+    playerCount: 0,
+    spectatorCount: 0,
+    currentTurnUid: null,
+    currentSet: null,
+    previousSet: null,
+    tribute: null,
+    finishOrder: [],
+    updatedAt: serverNow()
+  }, { merge: true });
+  batch.delete(handRef(uid));
+  await batch.commit();
+  await clearSubcollection(roomRef().collection("hands")).catch(() => null);
+  return;
+}
     const alive = Object.values(players).filter(p => p && !p.finished && !p.forfeited && !p.removedFromRoom);
     if (["playing", "tributeReturn"].includes(room.status) && alive.length <= 1) {
       const final = finishOrder.slice();
@@ -1664,6 +1702,31 @@ async function maybeAutoHostStart() {
     await appendSystemFrom({ ...room, chatPreview: room.chatPreview || [] }, `${target.nickname || uid}님이 방장에 의해 강퇴되었습니다.`);
   }
 
+async function closeRoomIfNoHuman(roomId = S.roomId, players = playersMap(), specs = spectatorsMap()) {
+  if (!roomId) return false;
+  if (hasHumanInRoom(players, specs)) return false;
+
+  const ref = roomRef(roomId);
+
+  await clearSubcollection(ref.collection("hands")).catch(() => null);
+
+  await ref.set({
+    closed: true,
+    status: "closed",
+    players: {},
+    spectators: {},
+    playerCount: 0,
+    spectatorCount: 0,
+    currentTurnUid: null,
+    currentSet: null,
+    previousSet: null,
+    tribute: null,
+    updatedAt: serverNow()
+  }, { merge: true });
+
+  return true;
+}
+  
   async function clearSubcollection(col) {
     while (true) {
       const snap = await col.limit(300).get();
