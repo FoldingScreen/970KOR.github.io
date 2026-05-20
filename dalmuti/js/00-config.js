@@ -273,17 +273,31 @@ function basePlayer(uid, nickname, seatOrder, isAI) {
     style.textContent = `
       @media(min-width:881px){.dalmuti-app{width:min(1380px,100%);padding:10px 14px}.dalmuti-topbar{margin-bottom:8px}.dalmuti-topbar h1{font-size:23px;margin:0}.eyebrow{font-size:10px}.room-shell{grid-template-columns:minmax(0,1fr) 300px!important;gap:10px;align-items:start}.panel{padding:12px;border-radius:18px}.game-panel{min-height:calc(100vh - 78px)!important;display:flex;flex-direction:column}.room-head{display:none!important}.message-bar{margin:0 0 8px;padding:8px 10px;font-size:13px}.table-wrap{height:calc(100vh - 300px)!important;min-height:540px!important;max-height:620px!important;margin-top:6px;flex:1}.hand-header{margin-top:8px}.hand-header h3{font-size:17px;margin:0}.hand-header .muted{display:none}.hand-area{min-height:142px!important;padding:10px;margin:6px 0;gap:8px}.hand-stack{width:74px!important}.hand-stack img{width:74px!important;border-radius:8px}.selected-summary{font-size:13px;padding:6px 10px}.action-row .btn{padding:8px 11px}.player-box{width:116px;min-height:68px;padding:7px;border-radius:14px;position:absolute}.player-role{font-size:11px}.player-name{font-size:13px}.player-meta{font-size:11px}.seat-bottom{bottom:6px!important}.seat-top-0,.seat-top-1,.seat-top-2{top:6px!important}.seat-left-0,.seat-left-1,.seat-left-2{left:8px!important}.seat-right-0,.seat-right-1,.seat-right-2{right:8px!important}.seat-top-0{left:50%!important;transform:translateX(-50%)!important}.seat-top-1{left:30%!important;transform:translateX(-50%)!important}.seat-top-2{left:70%!important;transform:translateX(-50%)!important}.center-pile{width:720px!important;max-width:72%!important;height:360px!important;min-height:360px!important;padding:0!important;overflow:visible!important;text-align:left!important}.side-panel{gap:9px;max-height:calc(100vh - 92px);overflow:auto}.side-panel>section:first-child{display:none}.chat-list{height:200px}}
       .player-box.submitted{border-color:#7ee2a8!important;box-shadow:0 0 0 2px rgba(126,226,168,.55),0 12px 24px rgba(0,0,0,.28)!important}.player-box.passed{opacity:.8!important;border-color:#8792a7!important;background:rgba(35,39,51,.92)!important}.badge{display:inline-block;margin-top:3px;padding:2px 7px;border-radius:999px;font-size:10px;font-weight:900}.badge.submit{background:rgba(126,226,168,.16);border:1px solid rgba(126,226,168,.75);color:#9ff0bd}.badge.pass{background:rgba(135,146,167,.16);border:1px solid rgba(135,146,167,.75);color:#d2d8e4}.badge.turn{background:rgba(243,210,129,.16);border:1px solid rgba(243,210,129,.75);color:#f3d281}.badge.ai{background:rgba(111,179,255,.16);border:1px solid rgba(111,179,255,.75);color:#9fcaff}.kick-btn{position:absolute;right:5px;top:5px;border:0;border-radius:999px;background:rgba(215,101,101,.92);color:#fff;font-size:10px;font-weight:900;padding:3px 6px;cursor:pointer;z-index:3}.score-list{display:none!important}
-            .lobby-rule-card{border:1px solid rgba(243,210,129,.28);background:linear-gradient(180deg,rgba(243,210,129,.09),rgba(255,255,255,.035));border-radius:18px;padding:12px;margin-top:10px}
-      .lobby-rule-title{font-size:15px;font-weight:900;color:#f3d281;margin-bottom:6px}
-      .lobby-rule-text{font-size:12px;line-height:1.55;color:#d8deea;margin-bottom:10px}
-      .rank-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px}
+            .lobby-grid{display:grid;grid-template-columns:minmax(0,1fr) 390px;gap:14px;align-items:start;margin-top:12px}
+      .lobby-left,.lobby-right{min-width:0}
+      .lobby-panel-title{font-size:17px;font-weight:900;color:#f3d281;margin:0 0 10px}
+      .lobby-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+      .lobby-create-fields{display:none!important}
+      .rule-card{border:1px solid rgba(243,210,129,.3);background:rgba(13,19,32,.74);border-radius:18px;padding:13px}
+      .rule-title{font-size:17px;font-weight:900;color:#f3d281;margin-bottom:10px}
+      .rule-two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+      .rule-block{border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);border-radius:14px;padding:10px;font-size:12px;line-height:1.5;color:#d8deea}
+      .rule-block strong{display:block;color:#f3d281;margin-bottom:4px}
+      .rank-card-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
       .rank-card-mini{border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.22);border-radius:12px;padding:6px;text-align:center}
       .rank-card-mini img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:8px;display:block;margin-bottom:5px}
-      .rank-card-mini strong{display:block;font-size:11px;color:#f4f1e8;line-height:1.15}
+      .rank-card-mini strong{display:block;font-size:10.5px;color:#f4f1e8;line-height:1.15}
       .rank-card-mini span{display:block;font-size:10px;color:#aeb5c3;margin-top:2px}
-      .room-item{border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.045);border-radius:16px;padding:12px;gap:10px}
-      .room-item strong{font-size:15px;color:#f4f1e8}
-      .room-meta{margin-top:4px;font-size:12px;color:#aeb5c3}
+      .create-room-modal{position:fixed;inset:0;z-index:190;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.62);padding:22px}
+      .create-room-modal.show{display:flex}
+      .create-room-card{width:min(420px,94vw);background:#121827;border:1px solid rgba(243,210,129,.4);border-radius:22px;padding:18px;color:#f4f1e8;box-shadow:0 24px 80px rgba(0,0,0,.55)}
+      .create-room-card h2{margin:0 0 12px;color:#f3d281}
+      .create-room-card .input{width:100%;margin-bottom:8px}
+      .create-room-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+      @media(max-width:880px){.lobby-grid{grid-template-columns:1fr}.rule-two-col{grid-template-columns:1fr}.rank-card-grid{grid-template-columns:repeat(3,1fr)}}
+.room-item{border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.045);border-radius:16px;padding:12px;gap:10px}
+.room-item strong{font-size:15px;color:#f4f1e8}
+.room-meta{margin-top:4px;font-size:12px;color:#aeb5c3}
       .pile-board{position:relative;width:100%;height:100%}.pile-empty{height:100%;display:flex;align-items:center;justify-content:center;color:#aeb5c3;font-weight:900;font-size:18px}.prev-pile{position:absolute;left:14px;top:14px;width:160px;min-height:158px;border:1px solid rgba(255,255,255,.09);border-radius:14px;background:rgba(0,0,0,.24);padding:10px;display:flex;flex-direction:column;align-items:center}.prev-pile-title{font-size:12px;font-weight:900;color:#aeb5c3;margin-bottom:8px}.prev-pile img{width:82px;border-radius:10px}.cur-pile{position:absolute;left:205px;right:18px;top:20px;bottom:18px;display:flex;flex-direction:column;align-items:center;justify-content:center}.cur-pile-title{font-size:14px;font-weight:900;color:#f3d281;margin-bottom:12px}.cur-cards{display:flex;align-items:center;justify-content:center}.cur-cards img{width:132px;object-fit:cover;border-radius:12px;box-shadow:0 12px 28px rgba(0,0,0,.42);margin-left:-38px}.cur-cards img:first-child{margin-left:0}
       .side-box{margin-top:8px;border:1px solid rgba(243,210,129,.28);background:rgba(13,19,32,.72);border-radius:16px;padding:10px}.side-title,.result-title{font-weight:900;color:#f3d281;margin-bottom:7px}.side-btns{display:flex;gap:6px;flex-wrap:wrap}.side-btns .btn{padding:6px 8px;font-size:12px}.chip{display:inline-block;font-size:11px;padding:4px 7px;border-radius:999px;border:1px solid rgba(174,181,195,.28);background:rgba(255,255,255,.045);margin:2px}.score-row.compact{font-size:12px;padding:4px 0}.room-setting-grid{display:grid;grid-template-columns:1fr;gap:6px}.room-setting-grid .input{height:32px;font-size:12px}.result-row{display:grid;grid-template-columns:40px minmax(0,1fr) 48px 62px;gap:6px;padding:6px 7px;border-radius:12px;background:rgba(255,255,255,.045);font-size:12px;margin-top:5px}.result-row.header{background:transparent;color:#aeb5c3;font-weight:900}
       .game-modal{position:fixed;inset:0;z-index:180;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.62);padding:24px}.game-modal.show{display:flex}.modal-card{width:min(760px,96vw);max-height:86vh;overflow:auto;background:#121827;border:1px solid rgba(243,210,129,.4);border-radius:24px;padding:22px;box-shadow:0 24px 80px rgba(0,0,0,.58);color:#f4f1e8}.modal-head h2{margin:0;color:#f3d281}.modal-table{display:grid;gap:7px}.modal-row{display:grid;grid-template-columns:54px minmax(0,1fr) 74px 82px;gap:8px;align-items:center;padding:9px;border-radius:13px;background:rgba(255,255,255,.055);font-size:14px}.modal-row.header{background:transparent;color:#aeb5c3;font-size:12px;font-weight:900}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.rebellion-card{text-align:center}.rebellion-card img{width:180px;border-radius:18px;box-shadow:0 18px 55px rgba(0,0,0,.6);margin-bottom:16px}.rebellion-card h2{color:#f3d281;margin:4px 0 8px}.rebellion-card p{font-size:18px;font-weight:900;margin:6px 0}.help-section{border-top:1px solid rgba(255,255,255,.09);padding-top:12px;margin-top:12px;line-height:1.55;color:#d8deea;font-size:14px}.help-section strong{color:#f3d281}
@@ -292,37 +306,63 @@ function basePlayer(uid, nickname, seatOrder, isAI) {
     document.head.appendChild(style);
   }
 
-  function ensureModals() {
-    if (!$('gameModal')) {
-      const m = document.createElement("div");
-      m.id = "gameModal";
-      m.className = "game-modal";
-      m.innerHTML = '<div id="gameModalCard" class="modal-card"></div>';
-      document.body.appendChild(m);
-    }
-    if (!$('rebellionModal')) {
-      const m = document.createElement("div");
-      m.id = "rebellionModal";
-      m.className = "game-modal";
-      m.innerHTML = '<div id="rebellionModalCard" class="modal-card rebellion-card"></div>';
-      document.body.appendChild(m);
-    }
-    if (!$('tributePanel')) {
-      const p = document.createElement("div");
-      p.id = "tributePanel";
-      document.body.appendChild(p);
-    }
-        if (!$("autoPlayBtn") && $("selectedSummary")) {
-      const btn = document.createElement("button");
-      btn.id = "autoPlayBtn";
-      btn.type = "button";
-      btn.className = "btn ghost small hidden";
-      btn.textContent = "자동 OFF";
-      btn.style.marginLeft = "8px";
-      $("selectedSummary").insertAdjacentElement("afterend", btn);
-    }
+ function ensureModals() {
+  if (!$("gameModal")) {
+    const m = document.createElement("div");
+    m.id = "gameModal";
+    m.className = "game-modal";
+    m.innerHTML = '<div id="gameModalCard" class="modal-card"></div>';
+    document.body.appendChild(m);
   }
 
+  if (!$("rebellionModal")) {
+    const m = document.createElement("div");
+    m.id = "rebellionModal";
+    m.className = "game-modal";
+    m.innerHTML = '<div id="rebellionModalCard" class="modal-card rebellion-card"></div>';
+    document.body.appendChild(m);
+  }
+
+  if (!$("tributePanel")) {
+    const p = document.createElement("div");
+    p.id = "tributePanel";
+    document.body.appendChild(p);
+  }
+
+  if (!$("createRoomModal")) {
+    const m = document.createElement("div");
+    m.id = "createRoomModal";
+    m.className = "create-room-modal";
+    m.innerHTML = `
+      <div class="create-room-card">
+        <h2>방 만들기</h2>
+        <input id="modalRoomTitleInput" class="input" maxlength="24" placeholder="방 제목" value="달무티 in 조선">
+        <select id="modalTotalRoundsSelect" class="input">
+          <option value="3">3판</option>
+          <option value="5" selected>5판</option>
+          <option value="10">10판</option>
+          <option value="0">무제한</option>
+        </select>
+        <div class="create-room-actions">
+          <button id="modalCreateCancelBtn" class="btn ghost" type="button">취소</button>
+          <button id="modalCreateRoomBtn" class="btn primary" type="button">생성</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(m);
+  }
+
+  if (!$("autoPlayBtn") && $("selectedSummary")) {
+    const btn = document.createElement("button");
+    btn.id = "autoPlayBtn";
+    btn.type = "button";
+    btn.className = "btn ghost small hidden";
+    btn.textContent = "자동 OFF";
+    btn.style.marginLeft = "8px";
+    $("selectedSummary").insertAdjacentElement("afterend", btn);
+  }
+}
+  
 function setView(name) {
   E.lobbyView?.classList.toggle("show", name === "lobby");
   E.roomView?.classList.toggle("show", name === "room");
@@ -365,7 +405,37 @@ function setView(name) {
     safeRender("resultModal", maybeResultModal);
     maybeClientTasks().catch(console.error);
   }
+function enhanceLobbyLayout() {
+  if (!E.lobbyView || $("lobbyGrid")) return;
 
+  const grid = document.createElement("div");
+  grid.id = "lobbyGrid";
+  grid.className = "lobby-grid";
+
+  const left = document.createElement("section");
+  left.className = "panel lobby-left";
+  left.innerHTML = `<h2 class="lobby-panel-title">대기방 목록</h2><div id="lobbyToolbar" class="lobby-toolbar"></div>`;
+
+  const right = document.createElement("section");
+  right.className = "panel lobby-right";
+  right.innerHTML = `<div id="lobbyRuleMount"></div>`;
+
+  grid.appendChild(left);
+  grid.appendChild(right);
+
+  E.lobbyView.appendChild(grid);
+
+  const toolbar = $("lobbyToolbar");
+
+  if (E.createRoomBtn) toolbar.appendChild(E.createRoomBtn);
+  if (E.refreshRoomsBtn) toolbar.appendChild(E.refreshRoomsBtn);
+
+  if (E.lobbyControls) E.lobbyControls.classList.add("lobby-create-fields");
+
+  if (E.roomList) left.appendChild(E.roomList);
+  if (E.rankPreview) $("lobbyRuleMount").appendChild(E.rankPreview);
+}
+  
 function renderRankPreview() {
   if (!E.rankPreview) return;
 
@@ -378,12 +448,37 @@ function renderRankPreview() {
   `).join("");
 
   E.rankPreview.innerHTML = `
-    <div class="lobby-rule-card">
-      <div class="lobby-rule-title">카드 서열</div>
-      <div class="lobby-rule-text">
-        숫자가 낮을수록 높은 계급입니다. 이미 카드가 깔려 있으면 같은 장수이면서 더 높은 계급만 낼 수 있습니다.<br>
-        홍길동은 일반 카드와 함께 내면 그 계급으로 취급하고, 홍길동만 내면 최약 카드로 취급합니다.
+    <div class="rule-card">
+      <div class="rule-title">게임 방법</div>
+
+      <div class="rule-two-col">
+        <div class="rule-block">
+          <strong>목표</strong>
+          손패를 먼저 털수록 높은 순위를 얻고, 라운드마다 승점을 얻습니다.
+        </div>
+        <div class="rule-block">
+          <strong>제출</strong>
+          같은 계급 여러 장을 낼 수 있습니다. 이미 카드가 깔려 있으면 같은 장수이면서 더 높은 계급만 낼 수 있습니다.
+        </div>
+        <div class="rule-block">
+          <strong>홍길동</strong>
+          일반 카드와 함께 내면 그 계급 카드로 취급합니다. 홍길동만 내면 최약 카드로 취급합니다.
+        </div>
+        <div class="rule-block">
+          <strong>상납</strong>
+          2라운드부터 하위 계급자가 상위 계급자에게 좋은 카드를 자동 상납하고, 받은 사람은 같은 장수만큼 돌려줍니다.
+        </div>
+        <div class="rule-block">
+          <strong>민란</strong>
+          백정 또는 노비가 홍길동 2장을 들면 계급 순서가 뒤집힙니다.
+        </div>
+        <div class="rule-block">
+          <strong>자동</strong>
+          자동 ON 상태에서는 차례, 패스, 상납 반환을 AI가 대신 처리합니다.
+        </div>
       </div>
+
+      <div class="rule-title" style="margin-top:14px">카드 종류</div>
       <div class="rank-card-grid">
         ${cards}
       </div>
@@ -391,17 +486,62 @@ function renderRankPreview() {
   `;
 }
 
-  async function loadRooms() {
-    if (!E.roomList) return;
-    const snap = await roomCol().orderBy("updatedAt", "desc").limit(30).get().catch(err => { console.error(err); toast("방 목록을 불러오지 못했습니다."); return null; });
-    if (!snap) return;
-    const docs = snap.docs.filter(d => !d.data().closed && d.data().status !== "closed");
-    E.roomList.innerHTML = docs.length ? docs.map(d => {
-      const r = d.data();
-      const status = ({ waiting: "대기 중", playing: "진행 중", tributeReturn: "상납 반환", betweenRounds: "라운드 종료", finished: "게임 종료" })[r.status] || r.status || "-";
-      return `<div class="room-item"><div><strong>${esc(r.title || "달무티 in 조선")}</strong><div class="room-meta">${status} · 플레이어 ${r.playerCount || 0}/${MAX_PLAYERS} · 관전자 ${r.spectatorCount || 0} · ${r.totalRounds ? `${r.totalRounds}판` : "무제한"}</div></div><button class="btn primary" type="button" onclick="Dalmuti.joinRoom('${d.id}')">입장</button></div>`;
-    }).join("") : `<div class="muted">생성된 방이 없습니다.</div>`;
+async function loadRooms() {
+  if (!E.roomList) return;
+
+  const snap = await roomCol()
+    .orderBy("updatedAt", "desc")
+    .limit(30)
+    .get()
+    .catch(err => {
+      console.error(err);
+      toast("방 목록을 불러오지 못했습니다.");
+      return null;
+    });
+
+  if (!snap) return;
+
+  const visibleDocs = [];
+
+  for (const d of snap.docs) {
+    const r = d.data();
+
+    if (r.closed || r.status === "closed") continue;
+
+    const ps = playersMap(r);
+    const sp = spectatorsMap(r);
+
+    if (!hasHumanInRoom(ps, sp)) {
+      await closeRoomIfNoHuman(d.id, ps, sp).catch(console.error);
+      continue;
+    }
+
+    visibleDocs.push(d);
   }
+
+  E.roomList.innerHTML = visibleDocs.length ? visibleDocs.map(d => {
+    const r = d.data();
+    const status = ({
+      waiting: "대기 중",
+      playing: "진행 중",
+      tributeReturn: "상납 반환",
+      betweenRounds: "라운드 종료",
+      finished: "게임 종료"
+    })[r.status] || r.status || "-";
+
+    return `
+      <div class="room-item">
+        <div>
+          <strong>${esc(r.title || "달무티 in 조선")}</strong>
+          <div class="room-meta">
+            ${status} · 플레이어 ${r.playerCount || 0}/${MAX_PLAYERS} · 관전자 ${r.spectatorCount || 0} · ${r.totalRounds ? `${r.totalRounds}판` : "무제한"}
+          </div>
+        </div>
+        <button class="btn primary" type="button" onclick="Dalmuti.joinRoom('${d.id}')">입장</button>
+      </div>
+    `;
+  }).join("") : `<div class="muted">생성된 방이 없습니다.</div>`;
+}
 
   function renderHeader() {
     const room = S.room;
@@ -761,13 +901,31 @@ if (!S.room.finalGameResult) {
 
   const addSystem = text => appendChat({ type: "system", text });
 
+function showCreateRoomModal() {
+  const modal = $("createRoomModal");
+  if (!modal) return;
+
+  const titleInput = $("modalRoomTitleInput");
+  const roundsSelect = $("modalTotalRoundsSelect");
+
+  if (titleInput) titleInput.value = E.roomTitleInput?.value || "달무티 in 조선";
+  if (roundsSelect) roundsSelect.value = E.totalRoundsSelect?.value || "5";
+
+  modal.classList.add("show");
+}
+
+function closeCreateRoomModal() {
+  $("createRoomModal")?.classList.remove("show");
+}
+  
   async function createRoom() {
-    const title = (E.roomTitleInput?.value || "").trim() || "달무티 in 조선";
-    const rawRounds = Number(E.totalRoundsSelect?.value || 5);
+const title = (($("modalRoomTitleInput")?.value || E.roomTitleInput?.value || "").trim()) || "달무티 in 조선";
+const rawRounds = Number($("modalTotalRoundsSelect")?.value || E.totalRoundsSelect?.value || 5);
     const ref = roomCol().doc();
     const player = basePlayer(S.user, S.user, 0, false);
     await ref.set({ title, hostUid: S.user, hostNickname: S.user, status: "waiting", round: 0, totalRounds: rawRounds === 0 ? null : rawRounds, players: { [S.user]: player }, spectators: {}, kicked: {}, playerCount: 1, spectatorCount: 0, currentTurnUid: null, currentSet: null, previousSet: null, finishOrder: [], lastRoundResult: null, tribute: null, chatPreview: [], spectatorChatEnabled: true, rebellionNotice: null, closed: false, updatedAt: serverNow(), createdAt: serverNow() });
     await ref.collection("hands").doc(S.user).set({ hand: [] });
+    closeCreateRoomModal();
     enterRoom(ref.id);
   }
 
@@ -1603,37 +1761,57 @@ async function maybeAutoHostStart() {
     }, AI_DELAY);
   }
 
-  async function maybeAssignHostIfNeeded() {
-    const room = S.room;
-    if (!room || room.closed || S.hostAssigning) return;
-    if (playersMap(room)[room.hostUid] || spectatorsMap(room)[room.hostUid]) return;
-    S.hostAssigning = true;
-    try {
-      const latestSnap = await roomRef().get();
-      if (!latestSnap.exists) return;
-      const latest = latestSnap.data();
-      if (playersMap(latest)[latest.hostUid] || spectatorsMap(latest)[latest.hostUid]) return;
-const latestPlayers = playersMap(latest);
-const latestSpecs = spectatorsMap(latest);
+async function maybeAssignHostIfNeeded() {
+  const room = S.room;
+  if (!room || room.closed || S.hostAssigning) return;
 
-if (!hasHumanInRoom(latestPlayers, latestSpecs)) {
-  await closeRoomIfNoHuman(S.roomId, latestPlayers, latestSpecs);
-  return;
-}
+  const currentHost =
+    playersMap(room)[room.hostUid] ||
+    spectatorsMap(room)[room.hostUid] ||
+    null;
 
-const next =
-  allPlayers(latest).find(p => p && !p.isAI && !p.removedFromRoom) ||
-  spectators(latest).find(p => p && !p.isAI && !p.removedFromRoom);
+  // 사람 방장이 있으면 유지, AI 방장이면 재배정 대상으로 봄
+  if (currentHost && !currentHost.isAI && !currentHost.removedFromRoom) return;
 
-if (next) {
-  await roomRef().set({
-    hostUid: next.uid,
-    hostNickname: next.nickname,
-    updatedAt: serverNow()
-  }, { merge: true });
-}
-    } finally { S.hostAssigning = false; }
+  S.hostAssigning = true;
+
+  try {
+    const latestSnap = await roomRef().get();
+    if (!latestSnap.exists) return;
+
+    const latest = latestSnap.data();
+    const latestPlayers = playersMap(latest);
+    const latestSpecs = spectatorsMap(latest);
+
+    const latestHost =
+      latestPlayers[latest.hostUid] ||
+      latestSpecs[latest.hostUid] ||
+      null;
+
+    if (latestHost && !latestHost.isAI && !latestHost.removedFromRoom) return;
+
+    if (!hasHumanInRoom(latestPlayers, latestSpecs)) {
+      await closeRoomIfNoHuman(S.roomId, latestPlayers, latestSpecs);
+      return;
+    }
+
+    const next =
+      allPlayers(latest).find(p => p && !p.isAI && !p.removedFromRoom) ||
+      spectators(latest).find(p => p && !p.isAI && !p.removedFromRoom);
+
+    if (next) {
+      await roomRef().set({
+        hostUid: next.uid,
+        hostNickname: next.nickname,
+        updatedAt: serverNow()
+      }, { merge: true });
+    } else {
+      await closeRoomIfNoHuman(S.roomId, latestPlayers, latestSpecs);
+    }
+  } finally {
+    S.hostAssigning = false;
   }
+}
 
   async function sendChat() {
     const text = (E.chatInput?.value || "").trim();
@@ -1842,7 +2020,9 @@ async function closeRoomIfNoHuman(roomId = S.roomId, players = playersMap(), spe
 
   function bindEvents() {
     if (E.leaveRoomBtn) E.leaveRoomBtn.onclick = leaveRoom;
-    if (E.createRoomBtn) E.createRoomBtn.onclick = createRoom;
+    if (E.createRoomBtn) E.createRoomBtn.onclick = showCreateRoomModal;
+if ($("modalCreateRoomBtn")) $("modalCreateRoomBtn").onclick = createRoom;
+if ($("modalCreateCancelBtn")) $("modalCreateCancelBtn").onclick = closeCreateRoomModal;
     if (E.refreshRoomsBtn) E.refreshRoomsBtn.onclick = loadRooms;
     if (E.readyBtn) E.readyBtn.onclick = toggleReady;
     if (E.watchBtn) E.watchBtn.onclick = becomeSpectator;
@@ -1866,9 +2046,10 @@ if (E.sendChatBtn) E.sendChatBtn.onclick = sendChat;
     S.user = String(localStorage.getItem("partyAppUser") || "").trim();
     if (!S.user) return alert("닉네임을 입력하세요.");
     if (E.myNickname) E.myNickname.textContent = S.user;
-    renderRankPreview();
-    bindEvents();
-    await loadRooms();
+enhanceLobbyLayout();
+renderRankPreview();
+bindEvents();
+await loadRooms();
     if (S.roomId) {
       const snap = await roomRef(S.roomId).get().catch(() => null);
       const data = snap?.exists ? snap.data() : null;
