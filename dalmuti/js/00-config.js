@@ -1982,9 +1982,12 @@ async function toggleAutoPlay() {
     return toast("참가자만 자동 조작을 설정할 수 있습니다.");
   }
 
+  const nextAutoPlay = !player.autoPlay;
+
   players[S.user] = {
     ...player,
-    autoPlay: !player.autoPlay
+    autoPlay: nextAutoPlay,
+    isReady: nextAutoPlay && S.room.status === "waiting" ? true : player.isReady
   };
 
   await roomRef().set({
@@ -1992,7 +1995,7 @@ async function toggleAutoPlay() {
     updatedAt: serverNow()
   }, { merge: true });
 
-  toast(players[S.user].autoPlay ? "자동 조작을 켰습니다." : "자동 조작을 껐습니다.");
+  toast(nextAutoPlay ? "자동 조작을 켰습니다. 준비도 자동으로 완료됩니다." : "자동 조작을 껐습니다.");
 }
   
 async function becomeSpectator() {
