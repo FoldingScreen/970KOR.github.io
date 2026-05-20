@@ -1630,9 +1630,19 @@ document.head.appendChild(style);
     document.body.appendChild(m);
   }
 
-  if (!$("autoPlayBtn")) {
+  if (!$("autoPlayBtn") && $("selectedSummary")) {
     const btn = document.createElement("button");
     btn.id = "autoPlayBtn";
+    btn.type = "button";
+    btn.className = "btn ghost small hidden";
+    btn.textContent = "자동 OFF";
+    btn.style.marginLeft = "8px";
+    $("selectedSummary").insertAdjacentElement("afterend", btn);
+  }
+
+  if (!$("mobileAutoPlayBtn")) {
+    const btn = document.createElement("button");
+    btn.id = "mobileAutoPlayBtn";
     btn.type = "button";
     btn.className = "mobile-auto-btn hidden";
     btn.textContent = "AUTO";
@@ -2174,12 +2184,21 @@ E.handArea.innerHTML = groups.length ? groups.map(g => {
     E.resetGameBtn?.classList.add("hidden");
     if (E.readyBtn) E.readyBtn.textContent = mine?.isReady ? "준비 취소" : "준비";
 
+    const showAuto = !!(mine?.type === "player" && !mine.isAI);
+
     const autoBtn = $("autoPlayBtn");
     if (autoBtn) {
-      const showAuto = !!(mine?.type === "player" && !mine.isAI);
       autoBtn.classList.toggle("hidden", !showAuto);
-      autoBtn.textContent = "AUTO";
+      autoBtn.textContent = mine?.autoPlay ? "자동 ON" : "자동 OFF";
       autoBtn.classList.toggle("primary", !!mine?.autoPlay);
+      autoBtn.classList.toggle("ghost", !mine?.autoPlay);
+    }
+
+    const mobileAutoBtn = $("mobileAutoPlayBtn");
+    if (mobileAutoBtn) {
+      mobileAutoBtn.classList.toggle("hidden", !showAuto);
+      mobileAutoBtn.textContent = "AUTO";
+      mobileAutoBtn.classList.toggle("primary", !!mine?.autoPlay);
     }
   }
 
@@ -3577,6 +3596,9 @@ if (E.playBtn) E.playBtn.onclick = playSelected;
 if (E.passBtn) E.passBtn.onclick = passTurn;
 const autoBtn = $("autoPlayBtn");
 if (autoBtn) autoBtn.onclick = toggleAutoPlay;
+
+const mobileAutoBtn = $("mobileAutoPlayBtn");
+if (mobileAutoBtn) mobileAutoBtn.onclick = toggleAutoPlay;
 if (E.sendChatBtn) E.sendChatBtn.onclick = sendChat;
     const mobileMenuBtn = $("mobileMenuBtn");
 if (mobileMenuBtn) mobileMenuBtn.onclick = toggleMobileMenu;
