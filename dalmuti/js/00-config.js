@@ -2515,7 +2515,13 @@ async function returnTribute(uid, cards, hand) {
     return [];
   }
 
-  const chooseReturnCards = (hand, count) => sortHand(hand || []).slice(-count);
+  const chooseReturnCards = (hand, count) => {
+  const sorted = sortHand(hand || []);
+  const nonJokers = sorted.filter(c => !(c.joker || Number(c.rank) === 13));
+  const jokers = sorted.filter(c => c.joker || Number(c.rank) === 13);
+
+  return nonJokers.slice(-count).concat(jokers).slice(0, count);
+};
 
 async function maybeClientTasks() {
   await maybeAssignHostIfNeeded();
