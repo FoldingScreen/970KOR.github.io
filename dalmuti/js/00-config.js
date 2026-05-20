@@ -509,6 +509,20 @@ style.textContent = `
         cursor:pointer;
         z-index:3;
       }
+      .delegate-btn{
+        position:absolute;
+        right:42px;
+        top:5px;
+        border:0;
+        border-radius:999px;
+        background:rgba(243,210,129,.92);
+        color:#160f07;
+        font-size:10px;
+        font-weight:900;
+        padding:3px 6px;
+        cursor:pointer;
+        z-index:3;
+      }
 
       .score-list{
         display:none!important;
@@ -1488,8 +1502,9 @@ function positions() {
       else if (p.passed) badge += `<div class="badge pass">패스</div>`;
       else if (S.room?.currentTurnUid === p.uid) badge += `<div class="badge turn">차례</div>`;
       const kick = isHost() && p.uid !== S.user ? `<button class="kick-btn" type="button" onclick="Dalmuti.kick('${p.uid}')">강퇴</button>` : "";
+      const delegate = isHost() && p.uid !== S.user && !p.isAI ? `<button class="delegate-btn" type="button" onclick="Dalmuti.delegateHost('${p.uid}')">위임</button>` : "";
       const displayRole = p.uid === S.room?.hostUid && !p.role ? "방장" : (p.role || "참가자");
-      return `<div class="player-box ${cls} ${p.uid === S.user ? "me" : ""} ${S.room?.currentTurnUid === p.uid ? "turn" : ""} ${p.passed ? "passed" : ""} ${p.finished ? "finished" : ""} ${submitted ? "submitted" : ""}">${kick}<div class="player-role">${esc(displayRole)}</div><div class="player-name">${esc(p.nickname || p.uid)}</div><div class="player-meta">${state}${p.isReady ? " · 준비" : ""}</div>${badge}</div>`;
+      return `<div class="player-box ${cls} ${p.uid === S.user ? "me" : ""} ${S.room?.currentTurnUid === p.uid ? "turn" : ""} ${p.passed ? "passed" : ""} ${p.finished ? "finished" : ""} ${submitted ? "submitted" : ""}">${delegate}${kick}<div class="player-role">${esc(displayRole)}</div><div class="player-name">${esc(p.nickname || p.uid)}</div><div class="player-meta">${state}${p.isReady ? " · 준비" : ""}</div>${badge}</div>`;
     }).join("");
   }
 
@@ -1996,6 +2011,45 @@ async function toggleAutoPlay() {
   }, { merge: true });
 
   toast(nextAutoPlay ? "자동 조작을 켰습니다. 준비도 자동으로 완료됩니다." : "자동 조작을 껐습니다.");
+}
+
+async function delegateHost(uid) {
+  if (!S.roomId) return;
+
+  const latestSnap = await roomRef().get();
+  if (!latestSnap.exists) return toast("방 정보를 찾을 수 없습니다.");
+
+  const latest = latestSnap.data();
+
+  if (latest.hostUid !== S.user) {
+    return toast("방장만 위임할 수 있습니다.");
+  }
+
+  if (uid === S.user) {
+    return toast("이미 방장입니다.");
+  }
+
+  const players = playersMap(latest);
+  const specs = spectatorsMap(latest);
+  const target = players[uid] || specs[uid];
+
+  if (!target || target.removedFromRoom) {
+    return toast("위임할 대상을 찾을 수 없습니다.");
+  }
+
+  if (target.isAI) {
+    return toast("AI에게는 방장을 위임할 수 없습니다.");
+  }
+
+  if (!confirm(`${target.nickname || uid}님에게 방장을 위임할까요?`)) return;
+
+  await roomRef().set({
+    hostUid: target.uid,
+    hostNickname: target.nickname || target.uid,
+    updatedAt: serverNow()
+  }, { merge: true });
+
+  await addSystem(`${S.user}님이 ${target.nickname || target.uid}님에게 방장을 위임했습니다.`);
 }
   
 async function becomeSpectator() {
@@ -2963,7 +3017,7 @@ await loadRooms();
     }
   }
 
-  window.Dalmuti = { joinRoom, toggleRank, saveSettings, toggleSpectatorChat, kick, deleteRoom, stopGame, addAI, nextRound: () => nextRound(false), forceRebellion: () => nextRound(true), closeModal, showHelp, becomePlayer };
+    window.Dalmuti = { joinRoom, toggleRank, saveSettings, toggleSpectatorChat, kick, delegateHost, deleteRoom, stopGame, addAI, nextRound: () => nextRound(false), forceRebellion: () => nextRound(true), closeModal, showHelp, becomePlayer };
 
   window.addEventListener("DOMContentLoaded", init);
 })();
