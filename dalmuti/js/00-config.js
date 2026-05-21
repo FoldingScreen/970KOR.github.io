@@ -360,7 +360,7 @@ function basePlayer(uid, nickname, seatOrder, isAI) {
     const link = document.createElement("link");
     link.id = "dalmutiSingleCss";
     link.rel = "stylesheet";
-    link.href = "./js/00-style.css?v=20260520-office-mode-final1";
+    link.href = "./js/00-style.css?v=20260520-office-layout1";
 
     document.head.appendChild(link);
   }
@@ -1447,58 +1447,177 @@ function formatChatText(text) {
   function renderSide() {
     const side = document.querySelector(".side-panel");
     if (!side || !S.room) return;
-    const turn = S.room.currentTurnUid ? (playersMap()[S.room.currentTurnUid]?.nickname || "-") : "-";
-    const status = ({ waiting: "대기 중", playing: `${S.room.round || 1}라운드`, tributeReturn: "상납 반환", betweenRounds: "라운드 종료", finished: "게임 종료" })[S.room.status] || S.room.status;
-    sideBox("roomInfo").innerHTML = `<div class="side-title">방 정보</div><div class="score-row compact"><span>방제</span><strong>${esc(S.room.title || "-")}</strong></div><div class="score-row compact"><span>상태</span><strong>${esc(status)}</strong></div><div class="score-row compact"><span>차례</span><strong>${esc(turn)}</strong></div>`;
+
+    const office = isOfficeMode();
+
+    const turn = S.room.currentTurnUid
+      ? (playersMap()[S.room.currentTurnUid]?.nickname || "-")
+      : "-";
+
+    const status = office
+      ? officeStatusText(S.room)
+      : (({
+          waiting: "대기 중",
+          playing: `${S.room.round || 1}라운드`,
+          tributeReturn: "상납 반환",
+          betweenRounds: "라운드 종료",
+          finished: "게임 종료"
+        })[S.room.status] || S.room.status);
+
+    sideBox("roomInfo").innerHTML = office
+      ? `
+        <div class="side-title">문서 정보</div>
+        <div class="score-row compact"><span>문서명</span><strong>${esc(S.room.title || "업무 현황 관리표")}</strong></div>
+        <div class="score-row compact"><span>상태</span><strong>${esc(status)}</strong></div>
+        <div class="score-row compact"><span>처리자</span><strong>${esc(turn)}</strong></div>
+      `
+      : `
+        <div class="side-title">방 정보</div>
+        <div class="score-row compact"><span>방제</span><strong>${esc(S.room.title || "-")}</strong></div>
+        <div class="score-row compact"><span>상태</span><strong>${esc(status)}</strong></div>
+        <div class="score-row compact"><span>차례</span><strong>${esc(turn)}</strong></div>
+      `;
+
     const settings = sideBox("roomSettings", $("roomInfo"));
     settings.style.display = isHost() && S.room.status === "waiting" ? "block" : "none";
+
     if (settings.style.display !== "none") {
-      settings.innerHTML = `<div class="side-title">방 설정</div><div class="room-setting-grid"><input id="setTitle" class="input" maxlength="24" value="${esc(S.room.title || "")}"><select id="setRounds" class="input"><option value="3">3판</option><option value="5">5판</option><option value="10">10판</option><option value="0">무제한</option></select></div><div class="side-btns" style="margin-top:8px"><button class="btn primary small" onclick="Dalmuti.saveSettings()">저장</button><button class="btn ghost small" onclick="Dalmuti.toggleSpectatorChat()">관전자 채팅 ${S.room.spectatorChatEnabled === false ? "차단" : "허용"}</button></div>`;
+      settings.innerHTML = office
+        ? `
+          <div class="side-title">문서 설정</div>
+          <div class="room-setting-grid">
+            <input id="setTitle" class="input" maxlength="24" value="${esc(S.room.title || "")}">
+            <select id="setRounds" class="input">
+              <option value="3">Sheet 3</option>
+              <option value="5">Sheet 5</option>
+              <option value="10">Sheet 10</option>
+              <option value="0">계속</option>
+            </select>
+          </div>
+          <div class="side-btns" style="margin-top:8px">
+            <button class="btn primary small" onclick="Dalmuti.saveSettings()">저장</button>
+            <button class="btn ghost small" onclick="Dalmuti.toggleSpectatorChat()">보기 전용 메모 ${S.room.spectatorChatEnabled === false ? "차단" : "허용"}</button>
+          </div>
+        `
+        : `
+          <div class="side-title">방 설정</div>
+          <div class="room-setting-grid">
+            <input id="setTitle" class="input" maxlength="24" value="${esc(S.room.title || "")}">
+            <select id="setRounds" class="input">
+              <option value="3">3판</option>
+              <option value="5">5판</option>
+              <option value="10">10판</option>
+              <option value="0">무제한</option>
+            </select>
+          </div>
+          <div class="side-btns" style="margin-top:8px">
+            <button class="btn primary small" onclick="Dalmuti.saveSettings()">저장</button>
+            <button class="btn ghost small" onclick="Dalmuti.toggleSpectatorChat()">관전자 채팅 ${S.room.spectatorChatEnabled === false ? "차단" : "허용"}</button>
+          </div>
+        `;
+
       if ($("setRounds")) $("setRounds").value = String(S.room.totalRounds || 0);
     }
+
     const spectatorPanel = sideBox("spectatorPanel", E.scoreList?.parentElement);
     const specList = spectators();
-    spectatorPanel.innerHTML = `<div class="side-title">관전자</div>${specList.length ? specList.map(p => `<span class="chip">${esc(p.nickname)}</span>`).join(" ") : `<div class="muted">관전자가 없습니다.</div>`}`;
+
+    spectatorPanel.innerHTML = office
+      ? `
+        <div class="side-title">보기 전용 사용자</div>
+        ${specList.length ? specList.map(p => `<span class="chip">${esc(p.nickname)}</span>`).join(" ") : `<div class="muted">보기 전용 사용자가 없습니다.</div>`}
+      `
+      : `
+        <div class="side-title">관전자</div>
+        ${specList.length ? specList.map(p => `<span class="chip">${esc(p.nickname)}</span>`).join(" ") : `<div class="muted">관전자가 없습니다.</div>`}
+      `;
+
     const roundPanel = sideBox("roundResultPanel", spectatorPanel);
     roundPanel.style.display = S.room.lastRoundResult && ["betweenRounds", "finished"].includes(S.room.status) ? "block" : "none";
-    if (roundPanel.style.display !== "none") roundPanel.innerHTML = `<div class="result-title">라운드 결과</div>${resultRows(allPlayers().slice().sort((a, b) => (a.lastRoundRank ?? 999) - (b.lastRoundRank ?? 999)), "round")}`;
+
+    if (roundPanel.style.display !== "none") {
+      roundPanel.innerHTML = office
+        ? `<div class="result-title">시트 처리 결과</div>${resultRows(allPlayers().slice().sort((a, b) => (a.lastRoundRank ?? 999) - (b.lastRoundRank ?? 999)), "round")}`
+        : `<div class="result-title">라운드 결과</div>${resultRows(allPlayers().slice().sort((a, b) => (a.lastRoundRank ?? 999) - (b.lastRoundRank ?? 999)), "round")}`;
+    }
+
     const finalPanel = sideBox("finalResultPanel", roundPanel);
     finalPanel.style.display = S.room.status === "finished" ? "block" : "none";
-    if (finalPanel.style.display !== "none") finalPanel.innerHTML = `<div class="result-title">최종 결과</div>${resultRows(allPlayers().slice().sort((a, b) => (b.score || 0) - (a.score || 0)), "final")}`;
+
+    if (finalPanel.style.display !== "none") {
+      finalPanel.innerHTML = office
+        ? `<div class="result-title">최종 집계 결과</div>${resultRows(allPlayers().slice().sort((a, b) => (b.score || 0) - (a.score || 0)), "final")}`
+        : `<div class="result-title">최종 결과</div>${resultRows(allPlayers().slice().sort((a, b) => (b.score || 0) - (a.score || 0)), "final")}`;
+    }
+
     const finalScorePanel = sideBox("finalScorePanel", finalPanel);
-if (!S.room.finalGameResult) {
-  finalScorePanel.style.display = "none";
-  finalScorePanel.innerHTML = "";
-} else {
-  finalScorePanel.style.display = "block";
 
-  const standings = S.room.finalGameResult.standings || [];
+    if (!S.room.finalGameResult) {
+      finalScorePanel.style.display = "none";
+      finalScorePanel.innerHTML = "";
+    } else {
+      finalScorePanel.style.display = "block";
 
-  finalScorePanel.innerHTML = `
-    <div class="result-title">최종 점수</div>
-    <div class="result-row header">
-      <span>순위</span>
-      <span>닉네임</span>
-      <span>총점</span>
-      <span>직전</span>
-    </div>
-    ${standings.map(p => `
-      <div class="result-row">
-        <span>${p.rank}등</span>
-        <span>${esc(p.nickname || "-")}</span>
-        <strong>${Number(p.score || 0)}</strong>
-        <span>${p.lastRoundRank ? `${p.lastRoundRank}등` : "-"}</span>
-      </div>
-    `).join("")}
-  `;
-}
+      const standings = S.room.finalGameResult.standings || [];
+
+      finalScorePanel.innerHTML = office
+        ? `
+          <div class="result-title">최종 집계표</div>
+          <div class="result-row header">
+            <span>순번</span>
+            <span>담당자</span>
+            <span>합계</span>
+            <span>직전</span>
+          </div>
+          ${standings.map(p => `
+            <div class="result-row">
+              <span>${p.rank}</span>
+              <span>${esc(p.nickname || "-")}</span>
+              <strong>${Number(p.score || 0)}</strong>
+              <span>${p.lastRoundRank ? `${p.lastRoundRank}` : "-"}</span>
+            </div>
+          `).join("")}
+        `
+        : `
+          <div class="result-title">최종 점수</div>
+          <div class="result-row header">
+            <span>순위</span>
+            <span>닉네임</span>
+            <span>총점</span>
+            <span>직전</span>
+          </div>
+          ${standings.map(p => `
+            <div class="result-row">
+              <span>${p.rank}등</span>
+              <span>${esc(p.nickname || "-")}</span>
+              <strong>${Number(p.score || 0)}</strong>
+              <span>${p.lastRoundRank ? `${p.lastRoundRank}등` : "-"}</span>
+            </div>
+          `).join("")}
+        `;
+    }
 
     const admin = sideBox("adminPanel", finalPanel);
-    const aiBtn = isHost() && S.room.status === "waiting" ? `<button class="btn ghost small" onclick="Dalmuti.addAI()">AI 추가</button>` : "";
-    const forceBtn = isHost() && S.room.status === "betweenRounds" ? `<button class="btn ghost small" onclick="Dalmuti.forceRebellion()">민란 강제</button>` : "";
-    const stopBtn = isHost() && S.room.status !== "waiting" ? `<button class="btn danger small" onclick="Dalmuti.stopGame()">게임 중지</button>` : "";
-    const delBtn = canAdmin() ? `<button class="btn danger small" onclick="Dalmuti.deleteRoom()">방 삭제</button>` : "";
-    admin.innerHTML = `<div class="side-title">관리</div><div class="side-btns">${aiBtn}${forceBtn}${stopBtn}${delBtn}<button class="btn ghost small" onclick="Dalmuti.showHelp()">게임 방법</button></div>`;
+
+    const aiBtn = isHost() && S.room.status === "waiting"
+      ? `<button class="btn ghost small" onclick="Dalmuti.addAI()">${office ? "자동 담당 추가" : "AI 추가"}</button>`
+      : "";
+
+    const forceBtn = isHost() && S.room.status === "betweenRounds"
+      ? `<button class="btn ghost small" onclick="Dalmuti.forceRebellion()">${office ? "예외 강제 처리" : "민란 강제"}</button>`
+      : "";
+
+    const stopBtn = isHost() && S.room.status !== "waiting"
+      ? `<button class="btn danger small" onclick="Dalmuti.stopGame()">${office ? "업무 중지" : "게임 중지"}</button>`
+      : "";
+
+    const delBtn = canAdmin()
+      ? `<button class="btn danger small" onclick="Dalmuti.deleteRoom()">${office ? "문서 삭제" : "방 삭제"}</button>`
+      : "";
+
+    admin.innerHTML = office
+      ? `<div class="side-title">문서 관리</div><div class="side-btns">${aiBtn}${forceBtn}${stopBtn}${delBtn}<button class="btn ghost small" onclick="Dalmuti.showHelp()">업무 기준</button></div>`
+      : `<div class="side-title">관리</div><div class="side-btns">${aiBtn}${forceBtn}${stopBtn}${delBtn}<button class="btn ghost small" onclick="Dalmuti.showHelp()">게임 방법</button></div>`;
   }
 
   function renderTribute() {
