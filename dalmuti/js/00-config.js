@@ -430,6 +430,27 @@ function basePlayer(uid, nickname, seatOrder, isAI) {
     document.querySelector(".side-panel").appendChild(btn);
   }   
 
+  if (!$("officeModeBtn")) {
+    const btn = document.createElement("button");
+    btn.id = "officeModeBtn";
+    btn.type = "button";
+    btn.className = "btn ghost small office-mode-btn";
+    btn.textContent = "눈치보기";
+
+    const topbar = document.querySelector(".dalmuti-topbar");
+    if (topbar) topbar.appendChild(btn);
+    else document.body.appendChild(btn);
+  }
+
+  if (!$("mobileOfficeModeBtn") && document.querySelector(".side-panel")) {
+    const btn = document.createElement("button");
+    btn.id = "mobileOfficeModeBtn";
+    btn.type = "button";
+    btn.className = "btn ghost mobile-office-mode-btn";
+    btn.textContent = "눈치보기";
+    document.querySelector(".side-panel").appendChild(btn);
+  }
+   
   if (E.chatList?.closest("section")) {
     E.chatList.closest("section").classList.add("mobile-chat-section");
   }
@@ -2485,6 +2506,23 @@ async function closeRoomIfNoHuman(roomId = S.roomId, players = playersMap(), spe
   }
 
 
+  function applyOfficeMode(enabled) {
+    document.body.classList.toggle("office-mode", !!enabled);
+    localStorage.setItem("dalmutiOfficeMode", enabled ? "1" : "0");
+
+    const label = enabled ? "원래대로" : "눈치보기";
+
+    const officeBtn = $("officeModeBtn");
+    if (officeBtn) officeBtn.textContent = label;
+
+    const mobileOfficeBtn = $("mobileOfficeModeBtn");
+    if (mobileOfficeBtn) mobileOfficeBtn.textContent = label;
+  }
+
+  function toggleOfficeMode() {
+    applyOfficeMode(!document.body.classList.contains("office-mode"));
+  }
+  
   function closeMobilePanels() {
     document.body.classList.remove("mobile-menu-open", "mobile-chat-open");
   }
@@ -2533,6 +2571,13 @@ const mobileChatBtn = $("mobileChatBtn");
 if (mobileChatBtn) mobileChatBtn.onclick = toggleMobileChat;
 const mobilePanelBackdrop = $("mobilePanelBackdrop");
 if (mobilePanelBackdrop) mobilePanelBackdrop.onclick = closeMobilePanels;
+
+const officeModeBtn = $("officeModeBtn");
+if (officeModeBtn) officeModeBtn.onclick = toggleOfficeMode;
+
+const mobileOfficeModeBtn = $("mobileOfficeModeBtn");
+if (mobileOfficeModeBtn) mobileOfficeModeBtn.onclick = toggleOfficeMode;
+    
 if (E.sendChatBtn) E.sendChatBtn.onclick = sendChat;
         const emojiToggleBtn = $("emojiToggleBtn");
     const emojiPanel = $("emojiPanel");
@@ -2569,6 +2614,7 @@ if (E.sendChatBtn) E.sendChatBtn.onclick = sendChat;
 enhanceLobbyLayout();
 renderRankPreview();
 bindEvents();
+applyOfficeMode(localStorage.getItem("dalmutiOfficeMode") === "1");
 await loadRooms();
     if (S.roomId) {
       const snap = await roomRef(S.roomId).get().catch(() => null);
