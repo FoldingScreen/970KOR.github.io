@@ -360,7 +360,7 @@ function basePlayer(uid, nickname, seatOrder, isAI) {
     const link = document.createElement("link");
     link.id = "dalmutiSingleCss";
     link.rel = "stylesheet";
-    link.href = "./js/00-style.css?v=20260520-office-layout1";
+    link.href = "./js/00-style.css?v=20260520-office-text1";
 
     document.head.appendChild(link);
   }
@@ -800,18 +800,17 @@ function officeStatusText(room = S.room) {
       E.roomStateText.textContent = mobile ? "" : statusText;
     }
 
-    if (E.roomTitle) {
-      if (office) {
-        E.roomTitle.textContent = mobile
-          ? `업무 현황 관리표  ${statusText}`
-          : "업무 현황 관리표";
-      } else {
-        E.roomTitle.textContent = mobile
-          ? `달무티 in 조선  ${statusText}`
-          : (room.title || "달무티 in 조선");
-      }
-    }
-
+if (E.roomTitle) {
+  if (office) {
+    E.roomTitle.textContent = mobile
+      ? `업무 현황 관리표  ${statusText}`
+      : `업무 현황 관리표 · ${statusText}`;
+  } else {
+    E.roomTitle.textContent = mobile
+      ? `달무티 in 조선  ${statusText}`
+      : (room.title || "달무티 in 조선");
+  }
+}
     const turnName = room.currentTurnUid
       ? (playersMap(room)[room.currentTurnUid]?.nickname || "-")
       : "-";
@@ -1007,11 +1006,12 @@ if (isMobileLayout()) {
       ].filter(Boolean).join(" ");
 
       const roleText = officeRoleName(p.role || (p.uid === S.room?.hostUid ? "방장" : "참가자"));
+      const officeNameText = `${p.nickname || p.uid}${(p.isAI || p.autoPlay) ? " (자동)" : ""}`;
 
       return `
         <div class="office-player-row ${rowClass}">
           <span>${i + 1}</span>
-          <span>${esc(p.nickname || p.uid)}</span>
+          <span>${esc(officeNameText)}</span>
           <span>${esc(roleText)}</span>
           <strong>${Number(p.cardCount || 0)}건</strong>
           <span>${esc(status)}</span>
@@ -1173,19 +1173,35 @@ if (isMobileLayout()) {
     const handTitle = document.querySelector(".hand-header h3");
 
 if (!mine || mine.type !== "player") {
+  const office = isOfficeMode();
   const nicknameText = mine?.nickname || S.user || "관전자";
-  if (handTitle) handTitle.textContent = `${nicknameText} · 관전 중 · 손패 0장`;
-  E.handArea.innerHTML = `<div class="muted">관전자는 손패가 없습니다.</div>`;
-  if (E.selectedSummary) E.selectedSummary.textContent = "선택 없음";
+
+  if (handTitle) {
+    handTitle.textContent = office
+      ? `${nicknameText} · 보기 전용 · 미처리 항목 0건`
+      : `${nicknameText} · 관전 중 · 손패 0장`;
+  }
+
+  E.handArea.innerHTML = office
+    ? `<div class="muted">보기 전용 사용자는 미처리 항목이 없습니다.</div>`
+    : `<div class="muted">관전자는 손패가 없습니다.</div>`;
+
+  if (E.selectedSummary) {
+    E.selectedSummary.textContent = office ? "선택 항목 없음" : "선택 없음";
+  }
+
   return;
 }
 
 if (handTitle) {
+  const office = isOfficeMode();
   const nicknameText = mine.nickname || S.user || "나";
   const roleText = mine.role || (S.room?.status === "waiting" ? "참가자" : "계급 없음");
   const cardCount = Array.isArray(S.hand) ? S.hand.length : 0;
 
-  handTitle.textContent = `${nicknameText} · ${roleText} · 내 손패 ${cardCount}장`;
+  handTitle.textContent = office
+    ? `${nicknameText} · ${officeRoleName(roleText)} · 미처리 항목 ${cardCount}건`
+    : `${nicknameText} · ${roleText} · 내 손패 ${cardCount}장`;
 }
 
     const groups = groupHand(S.hand);
@@ -1233,9 +1249,15 @@ const officeStatus = selected
 
     if (S.room?.status === "tributeReturn") {
       if (E.selectedSummary) {
-        E.selectedSummary.textContent = tributePair
-          ? `${tributeReturnSelectedTotal()}/${Number(tributePair.count || 0)}장 반환 선택`
-          : "상납 반환 대기";
+const office = isOfficeMode();
+
+E.selectedSummary.textContent = tributePair
+  ? (
+      office
+        ? `${tributeReturnSelectedTotal()}/${Number(tributePair.count || 0)}건 반려 선택`
+        : `${tributeReturnSelectedTotal()}/${Number(tributePair.count || 0)}장 반환 선택`
+    )
+  : (office ? "검토자료 반환 대기" : "상납 반환 대기");
       }
       return;
     }
@@ -1243,11 +1265,21 @@ const officeStatus = selected
     const cards = selectedCards();
     const combo = canPlayCombo(cards);
 
-    if (E.selectedSummary) {
-      E.selectedSummary.textContent = cards.length
-        ? (combo.ok ? `${rankInfo(combo.effectiveRank).name} ${combo.count}장` : combo.reason)
-        : "선택 없음";
-    }
+if (E.selectedSummary) {
+  const office = isOfficeMode();
+
+  E.selectedSummary.textContent = cards.length
+    ? (
+        combo.ok
+          ? (
+              office
+                ? `${officeRoleName(rankInfo(combo.effectiveRank).name)} ${combo.count}건 선택`
+                : `${rankInfo(combo.effectiveRank).name} ${combo.count}장`
+            )
+          : combo.reason
+      )
+    : (office ? "선택 항목 없음" : "선택 없음");
+}
   }
 
   function renderControls() {
@@ -2957,6 +2989,16 @@ async function closeRoomIfNoHuman(roomId = S.roomId, players = playersMap(), spe
     localStorage.setItem("dalmutiOfficeMode", enabled ? "1" : "0");
 
     const label = enabled ? "원래대로" : "눈치보기";
+    const topbarTitle = document.querySelector(".dalmuti-topbar h1");
+if (topbarTitle) {
+  if (!topbarTitle.dataset.originalText) {
+    topbarTitle.dataset.originalText = topbarTitle.textContent || "";
+  }
+
+  topbarTitle.textContent = enabled
+    ? "업무 현황 관리표"
+    : (topbarTitle.dataset.originalText || "달무티 in 조선");
+}
 
     const officeBtn = $("officeModeBtn");
     if (officeBtn) officeBtn.textContent = label;
