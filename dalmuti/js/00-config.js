@@ -968,17 +968,21 @@ function positions() {
     const mine = me();
     const handTitle = document.querySelector(".hand-header h3");
 
-    if (!mine || mine.type !== "player") {
-      if (handTitle) handTitle.textContent = "관전 · 내 손패";
-      E.handArea.innerHTML = `<div class="muted">관전자는 손패가 없습니다.</div>`;
-      if (E.selectedSummary) E.selectedSummary.textContent = "선택 없음";
-      return;
-    }
+if (!mine || mine.type !== "player") {
+  const nicknameText = mine?.nickname || S.user || "관전자";
+  if (handTitle) handTitle.textContent = `${nicknameText} · 관전 중 · 손패 0장`;
+  E.handArea.innerHTML = `<div class="muted">관전자는 손패가 없습니다.</div>`;
+  if (E.selectedSummary) E.selectedSummary.textContent = "선택 없음";
+  return;
+}
 
-    if (handTitle) {
-      const roleText = mine.role || (S.room?.status === "waiting" ? "참가자" : "계급 없음");
-      handTitle.textContent = `${roleText} · 내 손패`;
-    }
+if (handTitle) {
+  const nicknameText = mine.nickname || S.user || "나";
+  const roleText = mine.role || (S.room?.status === "waiting" ? "참가자" : "계급 없음");
+  const cardCount = Array.isArray(S.hand) ? S.hand.length : 0;
+
+  handTitle.textContent = `${nicknameText} · ${roleText} · 내 손패 ${cardCount}장`;
+}
 
     const groups = groupHand(S.hand);
     const tributePair = S.room?.status === "tributeReturn" ? syncTributeReturnSelection() : null;
