@@ -360,7 +360,7 @@ function basePlayer(uid, nickname, seatOrder, isAI) {
     const link = document.createElement("link");
     link.id = "dalmutiSingleCss";
     link.rel = "stylesheet";
-    link.href = "./js/00-style.css?v=20260520-office-mode3";
+    link.href = "./js/00-style.css?v=20260520-office-mode4";
 
     document.head.appendChild(link);
   }
@@ -867,12 +867,12 @@ function mobilePositions(ps, myIndex) {
 
 function positions() {
   const ps = allPlayers().filter(p => p && p.uid);
-  const myIndexRaw = ps.findIndex(p => p.uid === S.user);
-  const myIndex = myIndexRaw >= 0 ? myIndexRaw : 0;
+const myIndexRaw = ps.findIndex(p => p.uid === S.user);
+const myIndex = myIndexRaw >= 0 ? myIndexRaw : 0;
 
-  if (isMobileLayout()) {
-    return mobilePositions(ps, myIndex);
-  }
+if (isMobileLayout()) {
+  return mobilePositions(ps, myIndexRaw);
+}
 
   const rotated = ps.length
     ? ps.slice(myIndex).concat(ps.slice(0, myIndex))
@@ -900,23 +900,93 @@ function positions() {
   
   function renderPlayers() {
     if (!E.playersArea) return;
+
     const seated = positions();
-    if (!seated.length) {
+    const playerList = allPlayers();
+
+    if (!seated.length && !playerList.length) {
       E.playersArea.innerHTML = `<div class="muted" style="position:absolute;left:16px;top:16px">참가자 정보를 불러오는 중입니다.</div>`;
       return;
     }
-    E.playersArea.innerHTML = seated.map(({ p, cls }) => {
+
+    const officeRows = playerList.map((p, i) => {
+      const submitted = S.room?.currentSet?.uid === p.uid;
+      const isTurn = S.room?.currentTurnUid === p.uid;
+
+      const status = p.finished
+        ? `${p.finishedRank || ""}등 완료`
+        : submitted
+          ? "제출"
+          : p.passed
+            ? "보류"
+            : isTurn
+              ? "처리중"
+              : p.isReady
+                ? "확인"
+                : "대기";
+
+      const rowClass = [
+        isTurn ? "current" : "",
+        submitted ? "submitted" : "",
+        p.passed ? "passed" : "",
+        p.finished ? "finished" : ""
+      ].filter(Boolean).join(" ");
+
+      return `
+        <div class="office-player-row ${rowClass}">
+          <span>${i + 1}</span>
+          <span>${esc(p.nickname || p.uid)}</span>
+          <span>${esc(p.role || (p.uid === S.room?.hostUid ? "방장" : "참가자"))}</span>
+          <strong>${Number(p.cardCount || 0)}건</strong>
+          <span>${esc(status)}</span>
+        </div>
+      `;
+    }).join("");
+
+    const officeTable = `
+      <div class="office-player-table">
+        <div class="office-player-caption">담당자별 처리 현황</div>
+        <div class="office-player-row header">
+          <span>No.</span>
+          <span>담당자</span>
+          <span>역할</span>
+          <span>잔여</span>
+          <span>상태</span>
+        </div>
+        ${officeRows || `<div class="office-player-empty">참가자 없음</div>`}
+      </div>
+    `;
+
+    const playerBoxes = seated.map(({ p, cls }) => {
       const submitted = S.room?.currentSet?.uid === p.uid;
       const state = p.finished ? `${p.finishedRank || ""}등 완료` : p.passed ? "패스" : `${Number(p.cardCount || 0)}장`;
+
       let badge = p.isAI ? `<div class="badge ai">AI</div>` : "";
       if (p.autoPlay && !p.isAI) badge += `<div class="badge ai">자동</div>`;
       if (submitted) badge += `<div class="badge submit">제출</div>`;
       else if (p.passed) badge += `<div class="badge pass">패스</div>`;
       else if (S.room?.currentTurnUid === p.uid) badge += `<div class="badge turn">차례</div>`;
-      const kick = isHost() && p.uid !== S.user ? `<button class="kick-btn" type="button" onclick="Dalmuti.kick('${p.uid}')">강퇴</button>` : "";
-      const displayRole = p.uid === S.room?.hostUid && !p.role ? "방장" : (p.role || "참가자");
-      return `<div class="player-box ${cls} ${p.uid === S.user ? "me" : ""} ${S.room?.currentTurnUid === p.uid ? "turn" : ""} ${p.passed ? "passed" : ""} ${p.finished ? "finished" : ""} ${submitted ? "submitted" : ""}">${kick}<div class="player-role">${esc(displayRole)}</div><div class="player-name">${esc(p.nickname || p.uid)}</div><div class="player-meta">${state}${p.isReady ? " · 준비" : ""}</div>${badge}</div>`;
+
+      const kick = isHost() && p.uid !== S.user
+        ? `<button class="kick-btn" type="button" onclick="Dalmuti.kick('${p.uid}')">강퇴</button>`
+        : "";
+
+      const displayRole = p.uid === S.room?.hostUid && !p.role
+        ? "방장"
+        : (p.role || "참가자");
+
+      return `
+        <div class="player-box ${cls} ${p.uid === S.user ? "me" : ""} ${S.room?.currentTurnUid === p.uid ? "turn" : ""} ${p.passed ? "passed" : ""} ${p.finished ? "finished" : ""} ${submitted ? "submitted" : ""}">
+          ${kick}
+          <div class="player-role">${esc(displayRole)}</div>
+          <div class="player-name">${esc(p.nickname || p.uid)}</div>
+          <div class="player-meta">${state}${p.isReady ? " · 준비" : ""}</div>
+          ${badge}
+        </div>
+      `;
     }).join("");
+
+    E.playersArea.innerHTML = officeTable + playerBoxes;
   }
 
   function renderPile() {
