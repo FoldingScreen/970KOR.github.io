@@ -693,41 +693,48 @@
       /* =========================
          상납 패널 / 카드 이동
       ========================= */
+      /* =========================
+         상납 패널 / 카드 이동
+      ========================= */
       #tributePanel{
         position:fixed;
-        right:326px;
-        bottom:12px;
+        right:max(20px, calc((100vw - 1380px) / 2 + 410px));
+        bottom:26px;
         z-index:95;
         display:none;
-        width:260px;
-        padding:10px;
-        border-radius:18px;
-        border:1px solid rgba(243,210,129,.45);
-        background:rgba(13,19,32,.96);
-        box-shadow:0 16px 42px rgba(0,0,0,.42);
+        width:340px;
+        max-width:calc(100vw - 440px);
+        padding:16px;
+        border-radius:22px;
+        border:1px solid rgba(243,210,129,.48);
+        background:rgba(13,19,32,.97);
+        box-shadow:0 20px 58px rgba(0,0,0,.52);
         color:#f4f1e8;
       }
 
       .tribute-title{
         font-weight:900;
         color:#f3d281;
+        font-size:15px;
       }
 
       .tribute-line{
-        font-size:12px;
+        font-size:13px;
         color:#aeb5c3;
-        margin:6px 0;
+        margin:8px 0;
+        line-height:1.45;
       }
 
       .tribute-cards{
         display:flex;
-        gap:7px;
+        gap:9px;
         flex-wrap:wrap;
       }
 
       .tribute-cards img{
-        width:40px;
-        border-radius:7px;
+        width:58px;
+        border-radius:9px;
+        box-shadow:0 8px 18px rgba(0,0,0,.35);
       }
 
       .tribute-fly-card{
@@ -900,7 +907,41 @@
   body:has(#roomView.show) .cur-cards.mobile-pile-count-3{--mobile-pile-overlap:-60px!important;}
   body:has(#roomView.show) .cur-cards.mobile-pile-count-4{--mobile-pile-overlap:-75px!important;}
   body:has(#roomView.show) .cur-cards.mobile-pile-count-many{--mobile-pile-overlap:-88px!important;}
-  body:has(#roomView.show) .cur-cards img.mobile-joker-gap{margin-left:calc(var(--mobile-pile-overlap,-60px) + 20px)!important;}
+    body:has(#roomView.show) .cur-cards img.mobile-joker-gap{margin-left:calc(var(--mobile-pile-overlap,-60px) + 20px)!important;}
+
+  body:has(#roomView.show) #tributePanel{
+    left:50%!important;
+    right:auto!important;
+    top:auto!important;
+    bottom:calc(30dvh + 54px)!important;
+    transform:translateX(-50%)!important;
+    width:min(320px, calc(100vw - 24px))!important;
+    max-width:calc(100vw - 24px)!important;
+    padding:12px!important;
+    border-radius:18px!important;
+    z-index:210!important;
+  }
+
+  body:has(#roomView.show) #tributePanel .tribute-title{
+    font-size:13px!important;
+    text-align:center!important;
+  }
+
+  body:has(#roomView.show) #tributePanel .tribute-line{
+    font-size:12px!important;
+    text-align:center!important;
+    margin:6px 0!important;
+  }
+
+  body:has(#roomView.show) #tributePanel .tribute-cards{
+    justify-content:center!important;
+    gap:7px!important;
+  }
+
+  body:has(#roomView.show) #tributePanel .tribute-cards img{
+    width:46px!important;
+    border-radius:8px!important;
+  }
 }
 
 /* =========================
