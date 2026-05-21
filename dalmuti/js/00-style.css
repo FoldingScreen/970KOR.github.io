@@ -1565,3 +1565,148 @@ body.office-mode .tribute-title{
     display:flex!important;
   }
 }
+
+/* =========================
+   눈치보기 / 업무모드 2단계
+   - 손패를 카드 이미지 대신 표 목록처럼 표시
+========================= */
+
+.office-card-cell{
+  display:none;
+}
+
+body.office-mode #handArea{
+  display:block!important;
+  overflow:auto!important;
+  padding:0!important;
+  gap:0!important;
+  background:#ffffff!important;
+  border:1px solid #b7c7bd!important;
+}
+
+body.office-mode #handArea::before{
+  content:"No.   구분                 수량     상태";
+  display:grid;
+  grid-template-columns:52px minmax(0,1fr) 54px 72px;
+  align-items:center;
+  height:30px;
+  padding:0 10px;
+  background:#107c41;
+  color:#ffffff;
+  font-size:12px;
+  font-weight:900;
+  border-bottom:1px solid #0b5f31;
+  white-space:pre;
+}
+
+body.office-mode #handArea .hand-stack{
+  width:100%!important;
+  height:32px!important;
+  min-height:32px!important;
+  display:grid!important;
+  grid-template-columns:52px minmax(0,1fr) 54px 72px!important;
+  align-items:center!important;
+  gap:0!important;
+  padding:0 10px!important;
+  margin:0!important;
+  border:0!important;
+  border-bottom:1px solid #d9e2dc!important;
+  border-radius:0!important;
+  background:#ffffff!important;
+  box-shadow:none!important;
+  transform:none!important;
+  cursor:pointer!important;
+}
+
+body.office-mode #handArea .hand-stack:nth-child(even){
+  background:#f8fbf9!important;
+}
+
+body.office-mode #handArea .hand-stack:hover{
+  background:#eef6f0!important;
+}
+
+body.office-mode #handArea .hand-stack.selected{
+  background:#dff0e5!important;
+  box-shadow:inset 4px 0 0 #107c41!important;
+  border-color:#b7d7c1!important;
+  transform:none!important;
+}
+
+body.office-mode #handArea .hand-stack.disabled{
+  opacity:.58!important;
+  background:#f2f2f2!important;
+}
+
+body.office-mode #handArea .hand-stack img,
+body.office-mode #handArea .hand-stack .stack-count,
+body.office-mode #handArea .hand-stack .stack-selected{
+  display:none!important;
+}
+
+body.office-mode #handArea .office-card-cell{
+  display:block!important;
+  min-width:0!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  font-size:12px!important;
+  line-height:32px!important;
+  color:#202124!important;
+}
+
+body.office-mode #handArea .office-code{
+  font-weight:900!important;
+  color:#107c41!important;
+}
+
+body.office-mode #handArea .office-name{
+  font-weight:700!important;
+}
+
+body.office-mode #handArea .office-count{
+  text-align:center!important;
+}
+
+body.office-mode #handArea .office-status{
+  text-align:center!important;
+  font-size:11px!important;
+  color:#5f6368!important;
+}
+
+body.office-mode #handArea .hand-stack.selected .office-status{
+  color:#107c41!important;
+  font-weight:900!important;
+}
+
+/* 모바일 업무모드 손패 표 보정 */
+@media(max-width:880px){
+  body.office-mode:has(#roomView.show) #handArea{
+    min-height:0!important;
+    height:auto!important;
+    border-radius:3px!important;
+  }
+
+  body.office-mode:has(#roomView.show) #handArea::before{
+    grid-template-columns:42px minmax(0,1fr) 42px 58px;
+    height:26px;
+    padding:0 7px;
+    font-size:10px;
+  }
+
+  body.office-mode:has(#roomView.show) #handArea .hand-stack{
+    grid-template-columns:42px minmax(0,1fr) 42px 58px!important;
+    height:28px!important;
+    min-height:28px!important;
+    padding:0 7px!important;
+  }
+
+  body.office-mode:has(#roomView.show) #handArea .office-card-cell{
+    font-size:11px!important;
+    line-height:28px!important;
+  }
+
+  body.office-mode:has(#roomView.show) #handArea .office-status{
+    font-size:10px!important;
+  }
+}
