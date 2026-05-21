@@ -1829,3 +1829,124 @@ body.office-mode .prev-pile{
     padding:0 5px;
   }
 }
+
+/* =========================
+   눈치보기 / 업무모드 4단계
+   - 플레이어 카드 영역을 업무 현황표처럼 표시
+========================= */
+
+.office-player-table{
+  display:none;
+}
+
+body.office-mode .office-player-table{
+  display:block!important;
+  position:absolute!important;
+  left:14px!important;
+  right:14px!important;
+  top:14px!important;
+  z-index:12!important;
+  max-width:620px!important;
+  margin:0 auto!important;
+  border:1px solid #b7c7bd!important;
+  background:#ffffff!important;
+  color:#202124!important;
+  font-family:Arial, "Malgun Gothic", sans-serif!important;
+  box-shadow:none!important;
+}
+
+body.office-mode .office-player-caption{
+  height:32px;
+  line-height:32px;
+  padding:0 10px;
+  background:#107c41;
+  color:#ffffff;
+  font-size:13px;
+  font-weight:900;
+  border-bottom:1px solid #0b5f31;
+}
+
+body.office-mode .office-player-row{
+  display:grid;
+  grid-template-columns:42px minmax(0,1fr) 78px 58px 72px;
+  min-height:30px;
+  align-items:center;
+  border-bottom:1px solid #d9e2dc;
+  font-size:12px;
+}
+
+body.office-mode .office-player-row:last-child{
+  border-bottom:0;
+}
+
+body.office-mode .office-player-row.header{
+  background:#eaf3ec!important;
+  color:#107c41!important;
+  font-weight:900!important;
+}
+
+body.office-mode .office-player-row span,
+body.office-mode .office-player-row strong{
+  min-width:0;
+  padding:0 8px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+body.office-mode .office-player-row strong{
+  text-align:center;
+  color:#107c41;
+}
+
+body.office-mode .office-player-row.current{
+  background:#fff2cc!important;
+}
+
+body.office-mode .office-player-row.submitted{
+  background:#e2f0d9!important;
+}
+
+body.office-mode .office-player-row.passed{
+  background:#f2f2f2!important;
+  color:#666!important;
+}
+
+body.office-mode .office-player-empty{
+  padding:12px;
+  font-size:12px;
+  color:#5f6368;
+}
+
+/* 업무모드에서는 기존 플레이어 카드 숨김 */
+body.office-mode .players-area .player-box{
+  display:none!important;
+}
+
+/* 모바일 업무모드 플레이어 현황표 보정 */
+@media(max-width:880px){
+  body.office-mode:has(#roomView.show) .office-player-table{
+    left:8px!important;
+    right:8px!important;
+    top:8px!important;
+    max-width:none!important;
+  }
+
+  body.office-mode:has(#roomView.show) .office-player-caption{
+    height:26px;
+    line-height:26px;
+    padding:0 7px;
+    font-size:11px;
+  }
+
+  body.office-mode:has(#roomView.show) .office-player-row{
+    grid-template-columns:30px minmax(0,1fr) 54px 42px 54px;
+    min-height:24px;
+    font-size:10px;
+  }
+
+  body.office-mode:has(#roomView.show) .office-player-row span,
+  body.office-mode:has(#roomView.show) .office-player-row strong{
+    padding:0 5px;
+  }
+}
