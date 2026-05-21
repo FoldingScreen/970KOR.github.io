@@ -1265,3 +1265,303 @@ body:has(#roomView.show){
     height:42dvh;
   }
 }
+
+/* =========================
+   눈치보기 / 업무모드 1단계
+   - 게임 로직 유지
+   - 엑셀/업무표 느낌으로 색상과 분위기만 전환
+========================= */
+
+body.office-mode{
+  background:#f3f6f4!important;
+  color:#202124!important;
+}
+
+body.office-mode .dalmuti-app{
+  background:#f3f6f4!important;
+  color:#202124!important;
+  font-family:Arial, "Malgun Gothic", sans-serif!important;
+}
+
+body.office-mode .panel,
+body.office-mode .game-panel,
+body.office-mode .side-panel,
+body.office-mode .side-box,
+body.office-mode .table-wrap,
+body.office-mode .hand-area,
+body.office-mode .center-pile{
+  background:#ffffff!important;
+  color:#202124!important;
+  border:1px solid #c7d1c9!important;
+  box-shadow:none!important;
+  border-radius:4px!important;
+}
+
+body.office-mode .dalmuti-topbar{
+  background:#107c41!important;
+  color:#ffffff!important;
+  border:0!important;
+  border-radius:0!important;
+  padding:8px 10px!important;
+}
+
+body.office-mode .dalmuti-topbar h1{
+  color:#ffffff!important;
+  font-size:18px!important;
+}
+
+body.office-mode .eyebrow{
+  color:#e7f3eb!important;
+}
+
+body.office-mode #roomTitle,
+body.office-mode .room-head h2{
+  color:#107c41!important;
+}
+
+body.office-mode .room-head{
+  background:#ffffff!important;
+  border:1px solid #c7d1c9!important;
+  border-radius:4px!important;
+}
+
+body.office-mode .message-bar{
+  background:#eef6f0!important;
+  color:#202124!important;
+  border:1px solid #b9d7c1!important;
+  border-radius:3px!important;
+}
+
+body.office-mode .player-box{
+  background:#ffffff!important;
+  color:#202124!important;
+  border:1px solid #b7c7bd!important;
+  box-shadow:none!important;
+  border-radius:3px!important;
+}
+
+body.office-mode .player-box.turn{
+  border:2px solid #107c41!important;
+  background:#eef6f0!important;
+}
+
+body.office-mode .player-box.submitted{
+  border-color:#107c41!important;
+  box-shadow:inset 0 0 0 1px #107c41!important;
+}
+
+body.office-mode .player-box.passed{
+  opacity:1!important;
+  background:#f1f3f4!important;
+  border-color:#c7cdd1!important;
+}
+
+body.office-mode .player-role{
+  color:#107c41!important;
+}
+
+body.office-mode .player-name,
+body.office-mode .player-meta{
+  color:#202124!important;
+}
+
+body.office-mode .badge{
+  background:#eaf3ec!important;
+  border:1px solid #8bbf9c!important;
+  color:#107c41!important;
+  border-radius:2px!important;
+}
+
+body.office-mode .badge.turn{
+  background:#dff0e5!important;
+  border-color:#107c41!important;
+  color:#107c41!important;
+}
+
+body.office-mode .badge.submit{
+  background:#e2f0d9!important;
+  border-color:#70ad47!important;
+  color:#375623!important;
+}
+
+body.office-mode .badge.pass{
+  background:#f2f2f2!important;
+  border-color:#bfbfbf!important;
+  color:#595959!important;
+}
+
+body.office-mode .badge.ai{
+  background:#ddebf7!important;
+  border-color:#5b9bd5!important;
+  color:#1f4e79!important;
+}
+
+body.office-mode .pile-board{
+  background:
+    linear-gradient(#e6ece8 1px, transparent 1px),
+    linear-gradient(90deg, #e6ece8 1px, transparent 1px)!important;
+  background-size:44px 28px!important;
+}
+
+body.office-mode .pile-empty,
+body.office-mode .cur-pile-title,
+body.office-mode .prev-pile-title,
+body.office-mode .side-title,
+body.office-mode .result-title,
+body.office-mode .rule-title{
+  color:#107c41!important;
+}
+
+body.office-mode .prev-pile,
+body.office-mode .cur-pile{
+  background:rgba(255,255,255,.88)!important;
+  border:1px solid #c7d1c9!important;
+  border-radius:3px!important;
+}
+
+body.office-mode .hand-header h3,
+body.office-mode .selected-summary{
+  color:#202124!important;
+}
+
+body.office-mode .hand-stack{
+  background:#ffffff!important;
+  border:1px solid #c7d1c9!important;
+  border-radius:3px!important;
+  box-shadow:none!important;
+}
+
+body.office-mode .hand-stack.selected{
+  border-color:#107c41!important;
+  background:#eaf3ec!important;
+  box-shadow:inset 0 0 0 2px #107c41!important;
+}
+
+body.office-mode .hand-stack.disabled{
+  opacity:.45!important;
+}
+
+body.office-mode .stack-count,
+body.office-mode .stack-selected{
+  background:#107c41!important;
+  color:#ffffff!important;
+  border-radius:2px!important;
+}
+
+body.office-mode .btn{
+  background:#ffffff!important;
+  color:#107c41!important;
+  border:1px solid #107c41!important;
+  box-shadow:none!important;
+  border-radius:3px!important;
+  font-weight:700!important;
+}
+
+body.office-mode .btn.primary{
+  background:#107c41!important;
+  color:#ffffff!important;
+}
+
+body.office-mode .btn.danger{
+  background:#ffffff!important;
+  color:#c00000!important;
+  border-color:#c00000!important;
+}
+
+body.office-mode .btn:disabled{
+  background:#f2f2f2!important;
+  color:#8a8a8a!important;
+  border-color:#c9c9c9!important;
+}
+
+body.office-mode .chat-list,
+body.office-mode .chat-msg,
+body.office-mode .room-item,
+body.office-mode .rule-block,
+body.office-mode .rank-card-mini,
+body.office-mode .result-row,
+body.office-mode .score-row{
+  background:#ffffff!important;
+  color:#202124!important;
+  border-color:#d9e2dc!important;
+  border-radius:2px!important;
+}
+
+body.office-mode .chat-name{
+  color:#107c41!important;
+}
+
+body.office-mode .muted,
+body.office-mode .room-meta{
+  color:#5f6368!important;
+}
+
+body.office-mode .mobile-menu-btn,
+body.office-mode .mobile-chat-btn,
+body.office-mode .mobile-auto-btn{
+  background:#ffffff!important;
+  color:#107c41!important;
+  border:1px solid #107c41!important;
+  box-shadow:none!important;
+}
+
+body.office-mode .mobile-auto-btn.primary{
+  background:#107c41!important;
+  color:#ffffff!important;
+}
+
+body.office-mode .mobile-office-mode-btn{
+  display:none!important;
+}
+
+body.office-mode.mobile-menu-open:has(#roomView.show) .mobile-office-mode-btn{
+  display:flex!important;
+  width:100%!important;
+  justify-content:center!important;
+  margin-top:10px!important;
+}
+
+body.office-mode .office-mode-btn{
+  margin-left:8px!important;
+}
+
+body.office-mode #tributePanel,
+body.office-mode .modal-card,
+body.office-mode .create-room-card{
+  background:#ffffff!important;
+  color:#202124!important;
+  border:1px solid #107c41!important;
+  border-radius:4px!important;
+  box-shadow:0 8px 28px rgba(0,0,0,.18)!important;
+}
+
+body.office-mode .modal-head h2,
+body.office-mode .tribute-title{
+  color:#107c41!important;
+}
+
+/* 모바일 업무모드 보정 */
+@media(max-width:880px){
+  body.office-mode:has(#roomView.show) .room-head{
+    background:#107c41!important;
+    color:#ffffff!important;
+    border-color:#107c41!important;
+  }
+
+  body.office-mode:has(#roomView.show) .room-head h2{
+    color:#ffffff!important;
+  }
+
+  body.office-mode:has(#roomView.show) .mobile-menu-btn{
+    background:#ffffff!important;
+    color:#107c41!important;
+  }
+
+  body.office-mode:has(#roomView.show) .side-panel{
+    background:#ffffff!important;
+  }
+
+  body.office-mode.mobile-menu-open:has(#roomView.show) .mobile-office-mode-btn{
+    display:flex!important;
+  }
+}
