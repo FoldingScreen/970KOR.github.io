@@ -1950,3 +1950,213 @@ body.office-mode .players-area .player-box{
     padding:0 5px;
   }
 }
+
+/* =========================
+   눈치보기 / 업무모드 통합 마감
+   - 담당자 현황표
+   - 손패 2열 표
+   - 버튼/채팅/모달 업무화 보정
+========================= */
+
+/* 플레이어 카드 → 담당자별 처리 현황표 */
+.office-player-table{
+  display:none;
+}
+
+body.office-mode .office-player-table{
+  display:block!important;
+  position:absolute!important;
+  left:14px!important;
+  right:14px!important;
+  top:14px!important;
+  z-index:12!important;
+  max-width:620px!important;
+  margin:0 auto!important;
+  border:1px solid #b7c7bd!important;
+  background:#ffffff!important;
+  color:#202124!important;
+  font-family:Arial, "Malgun Gothic", sans-serif!important;
+  box-shadow:none!important;
+}
+
+body.office-mode .office-player-caption{
+  height:32px;
+  line-height:32px;
+  padding:0 10px;
+  background:#107c41;
+  color:#ffffff;
+  font-size:13px;
+  font-weight:900;
+  border-bottom:1px solid #0b5f31;
+}
+
+body.office-mode .office-player-row{
+  display:grid;
+  grid-template-columns:42px minmax(0,1fr) 78px 58px 72px;
+  min-height:30px;
+  align-items:center;
+  border-bottom:1px solid #d9e2dc;
+  font-size:12px;
+}
+
+body.office-mode .office-player-row:last-child{
+  border-bottom:0;
+}
+
+body.office-mode .office-player-row.header{
+  background:#eaf3ec!important;
+  color:#107c41!important;
+  font-weight:900!important;
+}
+
+body.office-mode .office-player-row span,
+body.office-mode .office-player-row strong{
+  min-width:0;
+  padding:0 8px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+body.office-mode .office-player-row strong{
+  text-align:center;
+  color:#107c41;
+}
+
+body.office-mode .office-player-row.current{
+  background:#fff2cc!important;
+}
+
+body.office-mode .office-player-row.submitted{
+  background:#e2f0d9!important;
+}
+
+body.office-mode .office-player-row.passed{
+  background:#f2f2f2!important;
+  color:#666!important;
+}
+
+body.office-mode .office-player-empty{
+  padding:12px;
+  font-size:12px;
+  color:#5f6368;
+}
+
+body.office-mode .players-area .player-box{
+  display:none!important;
+}
+
+/* 손패 표 2열 배치 */
+body.office-mode #handArea{
+  display:grid!important;
+  grid-template-columns:repeat(2, minmax(0, 1fr))!important;
+  align-content:start!important;
+  gap:0!important;
+  overflow:auto!important;
+  padding:0!important;
+}
+
+body.office-mode #handArea::before{
+  grid-column:1 / -1!important;
+}
+
+body.office-mode #handArea .hand-stack{
+  width:auto!important;
+  max-width:none!important;
+  grid-template-columns:42px minmax(0,1fr) 42px 64px!important;
+}
+
+body.office-mode #handArea .office-card-cell{
+  font-size:11px!important;
+}
+
+/* 채팅 → 검토 메모 느낌 */
+body.office-mode .chat-list{
+  background:#ffffff!important;
+  border:1px solid #b7c7bd!important;
+}
+
+body.office-mode .chat-msg{
+  border-bottom:1px solid #e6ece8!important;
+  padding:6px 8px!important;
+}
+
+body.office-mode .chat-msg.system{
+  color:#5f6368!important;
+  background:#f8fbf9!important;
+}
+
+body.office-mode .chat-name::after{
+  content:" 검토:";
+  color:#5f6368;
+  font-weight:400;
+}
+
+/* 모달 업무표 보정 */
+body.office-mode .modal-card{
+  background:#ffffff!important;
+  color:#202124!important;
+  border:1px solid #107c41!important;
+  border-radius:4px!important;
+}
+
+body.office-mode .modal-head h2{
+  color:#107c41!important;
+}
+
+body.office-mode .modal-row{
+  background:#ffffff!important;
+  border:1px solid #d9e2dc!important;
+  border-radius:0!important;
+}
+
+body.office-mode .modal-row.header{
+  background:#eaf3ec!important;
+  color:#107c41!important;
+}
+
+/* 모바일 보정 */
+@media(max-width:880px){
+  body.office-mode:has(#roomView.show) .office-player-table{
+    left:8px!important;
+    right:8px!important;
+    top:8px!important;
+    max-width:none!important;
+  }
+
+  body.office-mode:has(#roomView.show) .office-player-caption{
+    height:26px;
+    line-height:26px;
+    padding:0 7px;
+    font-size:11px;
+  }
+
+  body.office-mode:has(#roomView.show) .office-player-row{
+    grid-template-columns:30px minmax(0,1fr) 54px 42px 54px;
+    min-height:24px;
+    font-size:10px;
+  }
+
+  body.office-mode:has(#roomView.show) .office-player-row span,
+  body.office-mode:has(#roomView.show) .office-player-row strong{
+    padding:0 5px;
+  }
+
+  body.office-mode:has(#roomView.show) #handArea{
+    grid-template-columns:repeat(2, minmax(0, 1fr))!important;
+  }
+
+  body.office-mode:has(#roomView.show) #handArea .hand-stack{
+    grid-template-columns:28px minmax(0,1fr) 28px 44px!important;
+  }
+
+  body.office-mode:has(#roomView.show) #handArea .office-card-cell{
+    font-size:9px!important;
+  }
+}
+
+@media(max-width:420px){
+  body.office-mode:has(#roomView.show) #handArea{
+    grid-template-columns:1fr!important;
+  }
+}
