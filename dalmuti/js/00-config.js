@@ -1578,6 +1578,298 @@ style.textContent = `
         body.mobile-chat-open:has(#roomView.show) .chat-list{
           height:42dvh;
         }
+
+        /* =========================
+           모바일 인게임 레이아웃 재정리
+           - 상단 1줄 고정
+           - 플레이어 카드 컴팩트화
+           - 최대 4줄 배치 대응
+        ========================= */
+
+        body:has(#roomView.show) .game-panel{
+          min-height:100dvh!important;
+          gap:4px!important;
+        }
+
+        body:has(#roomView.show) .room-head{
+          display:grid!important;
+          grid-template-columns:34px minmax(0,1fr) auto!important;
+          align-items:center!important;
+          gap:6px!important;
+          height:38px!important;
+          min-height:38px!important;
+          padding:2px 2px 4px!important;
+          overflow:hidden!important;
+        }
+
+        body:has(#roomView.show) .room-head > div:first-of-type{
+          display:contents!important;
+        }
+
+        body:has(#roomView.show) .mobile-menu-btn{
+          grid-column:1!important;
+          width:32px!important;
+          height:32px!important;
+          min-width:32px!important;
+          border-radius:10px!important;
+          font-size:18px!important;
+          padding:0!important;
+        }
+
+        body:has(#roomView.show) .room-head h2{
+          grid-column:2!important;
+          display:block!important;
+          min-width:0!important;
+          margin:0!important;
+          font-size:15px!important;
+          line-height:1!important;
+          white-space:nowrap!important;
+          overflow:hidden!important;
+          text-overflow:ellipsis!important;
+        }
+
+        body:has(#roomView.show) .room-head .eyebrow{
+          grid-column:3!important;
+          display:block!important;
+          margin:0!important;
+          font-size:11px!important;
+          line-height:1!important;
+          letter-spacing:0!important;
+          white-space:nowrap!important;
+          color:#f3d281!important;
+        }
+
+        body:has(#roomView.show) .table-wrap{
+          position:relative!important;
+          min-height:430px!important;
+          height:calc(100dvh - 270px)!important;
+          max-height:none!important;
+          margin-top:0!important;
+          overflow:hidden!important;
+        }
+
+        body:has(#roomView.show) .player-box{
+          width:66px!important;
+          height:72px!important;
+          min-height:72px!important;
+          padding:5px 4px!important;
+          border-radius:12px!important;
+          display:flex!important;
+          flex-direction:column!important;
+          align-items:center!important;
+          justify-content:flex-start!important;
+          overflow:hidden!important;
+        }
+
+        body:has(#roomView.show) .player-role{
+          width:100%!important;
+          height:12px!important;
+          font-size:9px!important;
+          line-height:12px!important;
+          text-align:center!important;
+          white-space:nowrap!important;
+          overflow:hidden!important;
+          text-overflow:ellipsis!important;
+        }
+
+        body:has(#roomView.show) .player-name{
+          width:100%!important;
+          height:14px!important;
+          font-size:11px!important;
+          line-height:14px!important;
+          text-align:center!important;
+          white-space:nowrap!important;
+          overflow:hidden!important;
+          text-overflow:ellipsis!important;
+        }
+
+        body:has(#roomView.show) .player-meta{
+          width:100%!important;
+          height:13px!important;
+          font-size:9px!important;
+          line-height:13px!important;
+          text-align:center!important;
+          white-space:nowrap!important;
+          overflow:hidden!important;
+          text-overflow:ellipsis!important;
+          margin-top:1px!important;
+        }
+
+        body:has(#roomView.show) .badge{
+          display:block!important;
+          width:42px!important;
+          height:12px!important;
+          line-height:10px!important;
+          margin:1px auto 0!important;
+          padding:1px 3px!important;
+          font-size:8px!important;
+          text-align:center!important;
+          white-space:nowrap!important;
+          overflow:hidden!important;
+          text-overflow:ellipsis!important;
+          flex:0 0 auto!important;
+        }
+
+        body:has(#roomView.show) .badge.ai{
+          margin-top:1px!important;
+        }
+
+        body:has(#roomView.show) .seat-bottom{
+          display:none!important;
+        }
+
+        body:has(#roomView.show) .seat-top-0{
+          top:6px!important;
+          left:50%!important;
+          width:92px!important;
+          height:50px!important;
+          min-height:50px!important;
+          transform:translateX(-50%)!important;
+        }
+
+        body:has(#roomView.show) .seat-top-1{
+          top:6px!important;
+          left:5px!important;
+          right:auto!important;
+          width:66px!important;
+          height:72px!important;
+          min-height:72px!important;
+          transform:none!important;
+        }
+
+        body:has(#roomView.show) .seat-top-2{
+          top:6px!important;
+          right:5px!important;
+          left:auto!important;
+          width:66px!important;
+          height:72px!important;
+          min-height:72px!important;
+          transform:none!important;
+        }
+
+        body:has(#roomView.show) .seat-left-1{
+          left:5px!important;
+          top:96px!important;
+          transform:none!important;
+        }
+
+        body:has(#roomView.show) .seat-left-0{
+          left:5px!important;
+          top:calc(50% - 36px)!important;
+          transform:none!important;
+        }
+
+        body:has(#roomView.show) .seat-left-2{
+          left:5px!important;
+          top:auto!important;
+          bottom:8px!important;
+          transform:none!important;
+        }
+
+        body:has(#roomView.show) .seat-right-1{
+          right:5px!important;
+          top:96px!important;
+          transform:none!important;
+        }
+
+        body:has(#roomView.show) .seat-right-0{
+          right:5px!important;
+          top:calc(50% - 36px)!important;
+          transform:none!important;
+        }
+
+        body:has(#roomView.show) .seat-right-2{
+          right:5px!important;
+          top:auto!important;
+          bottom:8px!important;
+          transform:none!important;
+        }
+
+        body:has(#roomView.show) .center-pile{
+          width:calc(100% - 150px)!important;
+          height:calc(100% - 20px)!important;
+          min-height:0!important;
+          max-width:none!important;
+          left:50%!important;
+          top:50%!important;
+          transform:translate(-50%,-50%)!important;
+          border-radius:16px!important;
+        }
+
+        body:has(#roomView.show) .cur-pile-title{
+          font-size:12px!important;
+          line-height:1.25!important;
+          margin-bottom:7px!important;
+          text-align:center!important;
+        }
+
+        body:has(#roomView.show) .cur-cards img{
+          width:90px!important;
+          border-radius:9px!important;
+          margin-left:var(--mobile-pile-overlap,-34px)!important;
+        }
+
+        body:has(#roomView.show) .cur-cards.mobile-pile-count-1{
+          --mobile-pile-overlap:0px!important;
+        }
+
+        body:has(#roomView.show) .cur-cards.mobile-pile-count-2{
+          --mobile-pile-overlap:-18px!important;
+        }
+
+        body:has(#roomView.show) .cur-cards.mobile-pile-count-3{
+          --mobile-pile-overlap:-31px!important;
+        }
+
+        body:has(#roomView.show) .cur-cards.mobile-pile-count-4{
+          --mobile-pile-overlap:-43px!important;
+        }
+
+        body:has(#roomView.show) .cur-cards.mobile-pile-count-many{
+          --mobile-pile-overlap:-54px!important;
+        }
+
+        body:has(#roomView.show) .cur-cards img.mobile-joker-gap{
+          margin-left:calc(var(--mobile-pile-overlap,-34px) + 22px)!important;
+        }
+
+        body:has(#roomView.show) .hand-header{
+          margin-top:2px!important;
+        }
+
+        body:has(#roomView.show) .hand-area{
+          height:104px!important;
+          min-height:104px!important;
+          padding:6px!important;
+        }
+
+        body:has(#roomView.show) .hand-stack{
+          width:54px!important;
+        }
+
+        body:has(#roomView.show) .hand-stack img{
+          width:54px!important;
+        }
+
+        body:has(#roomView.show) .mobile-auto-btn{
+          right:18px!important;
+          bottom:68px!important;
+          width:38px!important;
+          height:38px!important;
+          font-size:9px!important;
+        }
+
+        body:has(#roomView.show) .mobile-chat-btn{
+          right:14px!important;
+          bottom:14px!important;
+          width:46px!important;
+          height:46px!important;
+        }
+
+        body.mobile-chat-open:has(#roomView.show) .mobile-chat-btn,
+        body.mobile-chat-open:has(#roomView.show) .mobile-auto-btn{
+          display:none!important;
+        }
         
       }
 `;
