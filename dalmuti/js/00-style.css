@@ -848,11 +848,59 @@
   body:has(#roomView.show) .dalmuti-app{height:100dvh!important;padding:4px!important;overflow:hidden!important;}
   body:has(#roomView.show) .game-panel{height:100dvh!important;min-height:100dvh!important;padding:6px!important;display:flex!important;flex-direction:column!important;gap:4px!important;overflow:hidden!important;}
 
-  body:has(#roomView.show) .room-head{flex:0 0 36px!important;height:36px!important;min-height:36px!important;display:grid!important;grid-template-columns:32px minmax(0,1fr) auto!important;align-items:center!important;gap:6px!important;padding:0 2px!important;overflow:hidden!important;}
-  body:has(#roomView.show) .room-head>div:first-of-type{display:contents!important;}
-  body:has(#roomView.show) .mobile-menu-btn{grid-column:1!important;display:flex!important;align-items:center!important;justify-content:center!important;width:32px!important;height:32px!important;min-width:32px!important;padding:0!important;border-radius:10px!important;font-size:18px!important;line-height:1!important;}
-  body:has(#roomView.show) .room-head h2{grid-column:2!important;display:block!important;min-width:0!important;margin:0!important;font-size:15px!important;line-height:1!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
-  body:has(#roomView.show) .room-head .eyebrow{grid-column:3!important;display:block!important;margin:0!important;font-size:11px!important;line-height:1!important;white-space:nowrap!important;color:#f3d281!important;font-weight:900!important;}
+  body:has(#roomView.show) .room-head{
+    flex:0 0 36px!important;
+    height:36px!important;
+    min-height:36px!important;
+    display:grid!important;
+    grid-template-columns:32px minmax(0,1fr)!important;
+    align-items:center!important;
+    gap:6px!important;
+    padding:0 2px!important;
+    overflow:hidden!important;
+  }
+
+  body:has(#roomView.show) .room-head>div:first-of-type{
+    grid-column:2!important;
+    min-width:0!important;
+    display:block!important;
+    overflow:hidden!important;
+  }
+
+  body:has(#roomView.show) .mobile-menu-btn{
+    grid-column:1!important;
+    grid-row:1!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:32px!important;
+    height:32px!important;
+    min-width:32px!important;
+    padding:0!important;
+    border-radius:10px!important;
+    font-size:18px!important;
+    line-height:1!important;
+  }
+
+  body:has(#roomView.show) .room-head h2{
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+    font-size:14px!important;
+    line-height:36px!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  body:has(#roomView.show) .room-head .eyebrow{
+    display:none!important;
+  }
+
+  body:has(#roomView.show) .turn-badge{
+    display:none!important;
+  }
   body:has(#roomView.show) .message-bar,body:has(#roomView.show) .turn-badge{display:none!important;}
 
   body:has(#roomView.show) .table-wrap{flex:7 1 0!important;min-height:0!important;height:auto!important;max-height:none!important;margin:0!important;border-radius:16px!important;overflow:hidden!important;position:relative!important;}
