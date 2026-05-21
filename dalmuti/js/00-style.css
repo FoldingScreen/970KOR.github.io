@@ -902,3 +902,68 @@
   body:has(#roomView.show) .cur-cards.mobile-pile-count-many{--mobile-pile-overlap:-88px!important;}
   body:has(#roomView.show) .cur-cards img.mobile-joker-gap{margin-left:calc(var(--mobile-pile-overlap,-60px) + 20px)!important;}
 }
+
+/* =========================
+   모바일 사이드 패널 / 메뉴 시트
+========================= */
+@media(max-width:880px){
+  .mobile-menu-btn,
+  .mobile-chat-btn,
+  .mobile-auto-btn,
+  .mobile-panel-backdrop{
+    display:none;
+  }
+
+  body:has(#roomView.show) .dalmuti-topbar{
+    display:none!important;
+  }
+
+  body.mobile-menu-open .mobile-panel-backdrop,
+  body.mobile-chat-open .mobile-panel-backdrop{
+    position:fixed;
+    inset:0;
+    z-index:205;
+    display:block;
+    background:rgba(0,0,0,.42);
+  }
+
+  body:has(#roomView.show) .side-panel{
+    display:none!important;
+  }
+
+  body.mobile-menu-open:has(#roomView.show) .side-panel,
+  body.mobile-chat-open:has(#roomView.show) .side-panel{
+    position:fixed;
+    left:10px;
+    right:10px;
+    bottom:10px;
+    z-index:220;
+    display:block!important;
+    max-height:72dvh;
+    overflow:auto;
+    border-radius:20px;
+    padding:12px;
+    box-shadow:0 20px 70px rgba(0,0,0,.62);
+  }
+
+  body.mobile-chat-open:has(#roomView.show) .side-panel>*{
+    display:none!important;
+  }
+
+  body.mobile-chat-open:has(#roomView.show) .side-panel .mobile-chat-section{
+    display:block!important;
+  }
+
+  body.mobile-menu-open:has(#roomView.show) .side-panel .mobile-chat-section{
+    display:none!important;
+  }
+
+  body.mobile-menu-open:has(#roomView.show) .side-panel .mobile-score-section,
+  body.mobile-menu-open:has(#roomView.show) .side-panel .side-box{
+    display:block!important;
+  }
+
+  body.mobile-chat-open:has(#roomView.show) .chat-list{
+    height:42dvh;
+  }
+}
