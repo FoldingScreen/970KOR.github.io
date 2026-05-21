@@ -2407,8 +2407,7 @@ function positions() {
         </div>
         <div class="cur-pile">
           <div class="cur-pile-title">
-            ${S.room?.status === "playing" ? `${esc(turnName)} 차례 · ` : ""}
-            ${cur ? `현재 ${rankInfo(cur.effectiveRank).name} ${cur.count}장` : "현재 없음"}
+            ${cur ? `${rankInfo(cur.effectiveRank).name} ${cur.count}장` : "현재 없음"}
           </div>
           <div class="cur-cards ${mobilePileClass}">
             ${curCards}
@@ -2461,19 +2460,36 @@ E.handArea.innerHTML = groups.length ? groups.map(g => {
     const mine = me();
     const waiting = S.room?.status === "waiting";
     const between = S.room?.status === "betweenRounds" || S.room?.status === "finished";
-    const myTurn = S.room?.status === "playing" && S.room.currentTurnUid === S.user && mine?.type === "player" && !mine.finished && !mine.forfeited;
-    const tributeTurn = S.room?.status === "tributeReturn" && !!currentTributePairForMe();
+    const playing = S.room?.status === "playing";
+    const tribute = S.room?.status === "tributeReturn";
+
+    const isPlayer = mine?.type === "player" && !mine.isAI;
+    const myTurn = playing && S.room.currentTurnUid === S.user && mine?.type === "player" && !mine.finished && !mine.forfeited;
+    const tributeTurn = tribute && !!currentTributePairForMe();
+
     E.lobbyControls?.classList.toggle("hidden", !waiting);
     E.betweenControls?.classList.toggle("hidden", !between);
-    E.playControls?.classList.toggle("hidden", !(myTurn || tributeTurn));
-    E.passBtn?.classList.toggle("hidden", !myTurn);
-    if (E.playBtn) E.playBtn.textContent = tributeTurn ? "반환 카드 주기" : "선택 카드 내기";
+
+    const showPlayControls = isPlayer && (playing || tribute);
+    E.playControls?.classList.toggle("hidden", !showPlayControls);
+
+    if (E.playBtn) {
+      E.playBtn.textContent = tribute ? "반환 카드 주기" : "선택 카드 내기";
+      E.playBtn.disabled = tribute ? !tributeTurn : !myTurn;
+    }
+
+    if (E.passBtn) {
+      E.passBtn.classList.remove("hidden");
+      E.passBtn.disabled = !myTurn;
+    }
+
     E.readyBtn?.classList.toggle("hidden", !(waiting && mine?.type === "player" && !mine.isAI && !isHost()));
     E.watchBtn?.classList.toggle("hidden", !(waiting && mine?.type === "player" && !mine.isAI));
     E.joinAsPlayerBtn?.classList.toggle("hidden", !(waiting && mine?.type === "spectator"));
     E.startBtn?.classList.toggle("hidden", !(waiting && isHost()));
     E.nextRoundBtn?.classList.toggle("hidden", !(S.room?.status === "betweenRounds" && isHost()));
     E.resetGameBtn?.classList.add("hidden");
+
     if (E.readyBtn) E.readyBtn.textContent = mine?.isReady ? "준비 취소" : "준비";
 
     const showAuto = !!(mine?.type === "player" && !mine.isAI);
