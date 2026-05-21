@@ -1113,7 +1113,7 @@ if (isMobileLayout()) {
           </div>
           <div class="office-pile-row">
             <span>${esc(cur.nickname || "-")}</span>
-            <span>${esc(rankInfo(cur.effectiveRank).code)}. ${esc(rankInfo(cur.effectiveRank).name)}</span>
+            <span>${esc(rankInfo(cur.effectiveRank).code)}. ${esc(officeRoleName(rankInfo(cur.effectiveRank).name))}</span>
             <strong>${Number(cur.count || 0)}건</strong>
             <span>진행중</span>
           </div>
@@ -1203,25 +1203,26 @@ if (handTitle) {
         ? true
         : (selected > 0 || selectableGroup(g));
 
-      const info = rankInfo(rank);
-      const officeStatus = selected
-        ? `선택 ${selected}`
-        : selectable
-          ? "대기"
-          : "제한";
+const info = rankInfo(rank);
+const officeName = officeRoleName(info.name);
+const officeStatus = selected
+  ? `선택 ${selected}`
+  : selectable
+    ? "대기"
+    : "제한";
 
       return `
         <div
           class="hand-stack${selected ? " selected" : ""}${selectable ? "" : " disabled"}"
           data-code="${esc(info.code)}"
-          data-name="${esc(info.name)}"
+          data-name="${esc(officeName)}"
           data-count="${g.items.length}"
           data-status="${esc(officeStatus)}"
           onclick="Dalmuti.toggleRank(${rank})"
         >
           ${selected ? `<span class="stack-selected">${selected}</span>` : ""}
           <span class="office-card-cell office-code">${esc(info.code)}</span>
-          <span class="office-card-cell office-name">${esc(info.name)}</span>
+          <span class="office-card-cell office-name">${esc(officeName)}</span>
           <span class="office-card-cell office-count">${g.items.length}</span>
           <span class="office-card-cell office-status">${esc(officeStatus)}</span>
           <img src="${cardImg(rank)}">
