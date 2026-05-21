@@ -360,7 +360,7 @@ function basePlayer(uid, nickname, seatOrder, isAI) {
     const link = document.createElement("link");
     link.id = "dalmutiSingleCss";
     link.rel = "stylesheet";
-    link.href = "./js/00-style.css?v=20260520-office-mode2";
+    link.href = "./js/00-style.css?v=20260520-office-mode3";
 
     document.head.appendChild(link);
   }
@@ -955,6 +955,42 @@ function positions() {
       return `<img class="${jokerGap.trim()}" src="${cardImg(c.rank)}" alt="${esc(c.name)}">`;
     }).join("") : `<span class="muted">제출 대기</span>`;
 
+    const officePileTable = cur
+      ? `
+        <div class="office-pile-table">
+          <div class="office-pile-caption">현재 처리 항목</div>
+          <div class="office-pile-row header">
+            <span>담당자</span>
+            <span>구분</span>
+            <span>수량</span>
+            <span>상태</span>
+          </div>
+          <div class="office-pile-row">
+            <span>${esc(cur.nickname || "-")}</span>
+            <span>${esc(rankInfo(cur.effectiveRank).code)}. ${esc(rankInfo(cur.effectiveRank).name)}</span>
+            <strong>${Number(cur.count || 0)}건</strong>
+            <span>진행중</span>
+          </div>
+        </div>
+      `
+      : `
+        <div class="office-pile-table">
+          <div class="office-pile-caption">현재 처리 항목</div>
+          <div class="office-pile-row header">
+            <span>담당자</span>
+            <span>구분</span>
+            <span>수량</span>
+            <span>상태</span>
+          </div>
+          <div class="office-pile-row">
+            <span>-</span>
+            <span>대기</span>
+            <strong>0건</strong>
+            <span>미처리</span>
+          </div>
+        </div>
+      `;
+
     E.centerPile.innerHTML = `
       <div class="pile-board">
         <div class="prev-pile">
@@ -964,6 +1000,7 @@ function positions() {
         <div class="cur-pile">
           <div class="cur-pile-title">${cur ? `${rankInfo(cur.effectiveRank).name} ${cur.count}장` : "없음"}</div>
           <div class="cur-cards ${mobilePileClass}">${curCards}</div>
+          ${officePileTable}
         </div>
       </div>
     `;
