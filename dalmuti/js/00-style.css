@@ -2308,3 +2308,40 @@ body.office-mode #roomTitle{
     display:none!important;
   }
 }
+
+/* =========================
+   눈치보기 / 담당자 현황 관리 열
+========================= */
+
+body.office-mode .office-player-row{
+  grid-template-columns:42px minmax(0,1fr) 78px 58px 72px 54px!important;
+}
+
+body.office-mode .office-kick-btn{
+  width:42px;
+  height:22px;
+  padding:0;
+  border:1px solid #c00000;
+  background:#ffffff;
+  color:#c00000;
+  border-radius:3px;
+  font-size:11px;
+  font-weight:700;
+  cursor:pointer;
+}
+
+body.office-mode .office-kick-btn:hover{
+  background:#fde9e7;
+}
+
+@media(max-width:880px){
+  body.office-mode:has(#roomView.show) .office-player-row{
+    grid-template-columns:28px minmax(0,1fr) 48px 36px 48px 38px!important;
+  }
+
+  body.office-mode:has(#roomView.show) .office-kick-btn{
+    width:32px;
+    height:20px;
+    font-size:10px;
+  }
+}
