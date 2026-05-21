@@ -360,7 +360,7 @@ function basePlayer(uid, nickname, seatOrder, isAI) {
     const link = document.createElement("link");
     link.id = "dalmutiSingleCss";
     link.rel = "stylesheet";
-    link.href = "./js/00-style.css?v=20260520-office-mode4";
+    link.href = "./js/00-style.css?v=20260520-office-mode-final1";
 
     document.head.appendChild(link);
   }
@@ -728,8 +728,55 @@ async function loadRooms() {
   }).join("") : `<div class="muted">생성된 방이 없습니다.</div>`;
 }
 
+function isOfficeMode() {
+  return document.body.classList.contains("office-mode");
+}
+
+function officeRoleName(role) {
+  const map = {
+    "임금": "총괄",
+    "세자": "부총괄",
+    "영의정": "검토",
+    "관찰사": "확인",
+    "암행어사": "점검",
+    "사또": "담당",
+    "이방": "지원",
+    "선비": "검토보조",
+    "농민": "처리",
+    "상인": "접수",
+    "백정": "보류",
+    "노비": "대기",
+    "홍길동": "예외",
+    "방장": "문서관리",
+    "참가자": "참여자"
+  };
+
+  return map[role] || role || "참여자";
+}
+
+function officeRoundText(room = S.room) {
+  const roundNow = Number(room?.round || 0);
+  const roundTotal = room?.totalRounds ? Number(room.totalRounds) : null;
+
+  if (!roundNow) return "업무 대기";
+  return roundTotal ? `Sheet ${roundNow} / ${roundTotal}` : `Sheet ${roundNow}`;
+}
+
+function officeStatusText(room = S.room) {
+  if (!room) return "-";
+
+  return ({
+    waiting: "업무 대기",
+    playing: officeRoundText(room),
+    tributeReturn: "검토자료 반환",
+    betweenRounds: "시트 검토 완료",
+    finished: "최종 집계 완료"
+  })[room.status] || room.status || "-";
+}
+  
   function renderHeader() {
     const room = S.room;
+    const office = isOfficeMode();
 
     const roundNow = Number(room.round || 0);
     const roundTotal = room.totalRounds ? Number(room.totalRounds) : null;
@@ -737,13 +784,15 @@ async function loadRooms() {
       ? (roundTotal ? `${roundNow}/${roundTotal} Round` : `${roundNow} Round`)
       : "대기 중";
 
-    const statusText = ({
-      waiting: "대기 중",
-      playing: roundText,
-      tributeReturn: roundText,
-      betweenRounds: "라운드 종료",
-      finished: "게임 종료"
-    })[room.status] || room.status || "-";
+    const statusText = office
+      ? officeStatusText(room)
+      : (({
+          waiting: "대기 중",
+          playing: roundText,
+          tributeReturn: roundText,
+          betweenRounds: "라운드 종료",
+          finished: "게임 종료"
+        })[room.status] || room.status || "-");
 
     const mobile = isMobileLayout();
 
@@ -752,9 +801,15 @@ async function loadRooms() {
     }
 
     if (E.roomTitle) {
-      E.roomTitle.textContent = mobile
-        ? `달무티 in 조선  ${statusText}`
-        : (room.title || "달무티 in 조선");
+      if (office) {
+        E.roomTitle.textContent = mobile
+          ? `업무 현황 관리표  ${statusText}`
+          : "업무 현황 관리표";
+      } else {
+        E.roomTitle.textContent = mobile
+          ? `달무티 in 조선  ${statusText}`
+          : (room.title || "달무티 in 조선");
+      }
     }
 
     const turnName = room.currentTurnUid
@@ -762,10 +817,29 @@ async function loadRooms() {
       : "-";
 
     if (E.turnBadge) {
-      E.turnBadge.textContent = room.status === "playing" ? `차례: ${turnName}` : statusText;
+      E.turnBadge.textContent = room.status === "playing"
+        ? (office ? `처리중: ${turnName}` : `차례: ${turnName}`)
+        : statusText;
     }
 
     if (E.messageBar) {
+      if (office) {
+        if (room.status === "waiting") {
+          E.messageBar.textContent = "참여자는 확인을 완료해야 업무를 시작할 수 있습니다.";
+        } else if (room.status === "tributeReturn") {
+          E.messageBar.textContent = room.currentTurnUid
+            ? `${turnName}님이 검토자료 반환을 처리할 차례입니다.`
+            : "검토자료 반환 단계입니다.";
+        } else if (room.status === "playing") {
+          E.messageBar.textContent = room.currentTurnUid === S.user ? "내 처리 순서입니다." : `${turnName}님의 처리 순서입니다.`;
+        } else if (room.status === "betweenRounds") {
+          E.messageBar.textContent = "시트 검토가 완료되었습니다.";
+        } else {
+          E.messageBar.textContent = "최종 집계가 완료되었습니다.";
+        }
+        return;
+      }
+
       if (room.status === "waiting") {
         E.messageBar.textContent = "참가자는 준비를 눌러야 게임을 시작할 수 있습니다.";
       } else if (room.status === "tributeReturn") {
@@ -914,9 +988,9 @@ if (isMobileLayout()) {
       const isTurn = S.room?.currentTurnUid === p.uid;
 
       const status = p.finished
-        ? `${p.finishedRank || ""}등 완료`
+        ? `${p.finishedRank || ""}차 완료`
         : submitted
-          ? "제출"
+          ? "완료"
           : p.passed
             ? "보류"
             : isTurn
@@ -932,11 +1006,13 @@ if (isMobileLayout()) {
         p.finished ? "finished" : ""
       ].filter(Boolean).join(" ");
 
+      const roleText = officeRoleName(p.role || (p.uid === S.room?.hostUid ? "방장" : "참가자"));
+
       return `
         <div class="office-player-row ${rowClass}">
           <span>${i + 1}</span>
           <span>${esc(p.nickname || p.uid)}</span>
-          <span>${esc(p.role || (p.uid === S.room?.hostUid ? "방장" : "참가자"))}</span>
+          <span>${esc(roleText)}</span>
           <strong>${Number(p.cardCount || 0)}건</strong>
           <span>${esc(status)}</span>
         </div>
@@ -1175,6 +1251,8 @@ if (handTitle) {
 
   function renderControls() {
     const mine = me();
+    const office = isOfficeMode();
+
     const waiting = S.room?.status === "waiting";
     const between = S.room?.status === "betweenRounds" || S.room?.status === "finished";
     const playing = S.room?.status === "playing";
@@ -1191,11 +1269,15 @@ if (handTitle) {
     E.playControls?.classList.toggle("hidden", !showPlayControls);
 
     if (E.playBtn) {
-      E.playBtn.textContent = tribute ? "반환 카드 주기" : "선택 카드 내기";
+      E.playBtn.textContent = office
+        ? (tribute ? "반려 항목 제출" : "선택 항목 처리")
+        : (tribute ? "반환 카드 주기" : "선택 카드 내기");
+
       E.playBtn.disabled = tribute ? !tributeTurn : !myTurn;
     }
 
     if (E.passBtn) {
+      E.passBtn.textContent = office ? "보류" : "패스";
       E.passBtn.classList.remove("hidden");
       E.passBtn.disabled = !myTurn;
     }
@@ -1206,14 +1288,30 @@ if (handTitle) {
     E.startBtn?.classList.toggle("hidden", !(waiting && isHost()));
     E.nextRoundBtn?.classList.toggle("hidden", !(S.room?.status === "betweenRounds" && isHost()));
     E.resetGameBtn?.classList.add("hidden");
-    if (E.readyBtn) E.readyBtn.textContent = mine?.isReady ? "준비 취소" : "준비";
+
+    if (E.readyBtn) {
+      E.readyBtn.textContent = mine?.isReady
+        ? (office ? "확인 취소" : "준비 취소")
+        : (office ? "확인" : "준비");
+    }
+
+    if (E.watchBtn) E.watchBtn.textContent = office ? "보기 전용" : "관전하기";
+    if (E.joinAsPlayerBtn) E.joinAsPlayerBtn.textContent = office ? "편집 참여" : "참가하기";
+    if (E.startBtn) E.startBtn.textContent = office ? "업무 시작" : "게임 시작";
+    if (E.nextRoundBtn) E.nextRoundBtn.textContent = office ? "다음 시트 열기" : "다음 라운드 시작";
+    if (E.leaveRoomBtn) E.leaveRoomBtn.textContent = office ? "문서 닫기" : "방 나가기";
+
+    const mobileLeaveRoomBtn = $("mobileLeaveRoomBtn");
+    if (mobileLeaveRoomBtn) mobileLeaveRoomBtn.textContent = office ? "문서 닫기" : "방 나가기";
 
     const showAuto = !!(mine?.type === "player" && !mine.isAI);
 
     const autoBtn = $("autoPlayBtn");
     if (autoBtn) {
       autoBtn.classList.toggle("hidden", !showAuto);
-      autoBtn.textContent = mine?.autoPlay ? "자동 ON" : "자동 OFF";
+      autoBtn.textContent = mine?.autoPlay
+        ? (office ? "자동 처리 ON" : "자동 ON")
+        : (office ? "자동 처리 OFF" : "자동 OFF");
       autoBtn.classList.toggle("primary", !!mine?.autoPlay);
       autoBtn.classList.toggle("ghost", !mine?.autoPlay);
     }
@@ -1221,7 +1319,7 @@ if (handTitle) {
     const mobileAutoBtn = $("mobileAutoPlayBtn");
     if (mobileAutoBtn) {
       mobileAutoBtn.classList.toggle("hidden", !showAuto);
-      mobileAutoBtn.textContent = "AUTO";
+      mobileAutoBtn.textContent = office ? "AUTO" : "AUTO";
       mobileAutoBtn.classList.toggle("primary", !!mine?.autoPlay);
     }
   }
@@ -1303,8 +1401,25 @@ function formatChatText(text) {
   
   function renderChat() {
     if (!E.chatList) return;
+
+    const office = isOfficeMode();
+    const chatSection = E.chatList.closest("section");
+    const chatTitle = chatSection?.querySelector(".side-title, h2, h3, .panel-title");
+
+    if (chatTitle) {
+      chatTitle.textContent = office ? "검토 메모" : "채팅";
+    }
+
     const list = (S.room?.chatPreview || []).slice(-CHAT_LIMIT);
-    E.chatList.innerHTML = list.length ? list.map(m => m.type === "system" ? `<div class="chat-msg system">${esc(m.text)}</div>` : `<div class="chat-msg"><span class="chat-name">${esc(m.nickname || "-")}</span> ${formatChatText(m.text || "")}</div>`).join("") : `<div class="muted">채팅이 없습니다.</div>`;
+
+    E.chatList.innerHTML = list.length
+      ? list.map(m =>
+          m.type === "system"
+            ? `<div class="chat-msg system">${esc(m.text)}</div>`
+            : `<div class="chat-msg"><span class="chat-name">${esc(m.nickname || "-")}</span> ${formatChatText(m.text || "")}</div>`
+        ).join("")
+      : `<div class="muted">${office ? "검토 메모가 없습니다." : "채팅이 없습니다."}</div>`;
+
     E.chatList.scrollTop = E.chatList.scrollHeight;
 
     if (document.body.classList.contains("mobile-chat-open")) {
@@ -2580,26 +2695,74 @@ async function closeRoomIfNoHuman(roomId = S.roomId, players = playersMap(), spe
     await addSystem("방장이 게임을 중지했습니다.");
   }
 
-  function showModal(title, body, actions = `<button class="btn primary" onclick="Dalmuti.closeModal()">확인</button>`) {
+  function showModal(
+    title,
+    body,
+    actions = `<button class="btn primary" onclick="Dalmuti.closeModal()">확인</button>`,
+    autoCloseMs = 0
+  ) {
     const card = $("gameModalCard");
     const modal = $("gameModal");
     if (!card || !modal) return;
+
+    clearTimeout(showModal.autoCloseTimer);
+
     card.innerHTML = `<div class="modal-head"><h2>${title}</h2></div>${body}<div class="modal-actions">${actions}</div>`;
     modal.classList.add("show");
+
+    if (autoCloseMs > 0) {
+      showModal.autoCloseTimer = setTimeout(() => {
+        closeModal();
+      }, autoCloseMs);
+    }
   }
 
-  function closeModal() { $("gameModal")?.classList.remove("show"); }
+  function closeModal() {
+    clearTimeout(showModal.autoCloseTimer);
+    $("gameModal")?.classList.remove("show");
+  }
 
   function modalRows(players, mode) {
-    return `<div class="modal-table"><div class="modal-row header"><span>순위</span><span>닉네임</span><span>${mode === "start" ? "점수" : "획득"}</span><span>계급</span></div>${players.map((p, i) => `<div class="modal-row"><span>${mode === "start" ? i + 1 : (p.lastRoundRank || i + 1)}등</span><span>${esc(p.nickname)}</span><strong>${mode === "start" ? (p.score || 0) : `+${p.lastRoundScore || 0}`}</strong><span>${esc(p.role || "-")}</span></div>`).join("")}</div>`;
+    const office = isOfficeMode();
+
+    const header = office
+      ? `<div class="modal-row header"><span>순번</span><span>담당자</span><span>${mode === "start" ? "점수" : "처리"}</span><span>역할</span></div>`
+      : `<div class="modal-row header"><span>순위</span><span>닉네임</span><span>${mode === "start" ? "점수" : "획득"}</span><span>계급</span></div>`;
+
+    return `<div class="modal-table">${header}${players.map((p, i) => {
+      const rankText = mode === "start" ? i + 1 : (p.lastRoundRank || i + 1);
+      const pointText = mode === "start" ? (p.score || 0) : `+${p.lastRoundScore || 0}`;
+      const roleText = office ? officeRoleName(p.role || "-") : (p.role || "-");
+
+      return `
+        <div class="modal-row">
+          <span>${office ? rankText : `${rankText}등`}</span>
+          <span>${esc(p.nickname)}</span>
+          <strong>${pointText}</strong>
+          <span>${esc(roleText)}</span>
+        </div>
+      `;
+    }).join("")}</div>`;
   }
 
   function maybeStartModal() {
     const room = S.room;
     if (!room || !["playing", "tributeReturn"].includes(room.status) || !room.round) return;
+
     const key = `dalmuti:${S.roomId}:start:${room.roundKey || room.round}`;
     if (markSeen(S.seenStart, key)) return;
-    const show = () => showModal(`${room.round}라운드 시작`, `<p class="muted">이번 라운드 배정 계급과 현재 점수입니다.</p>${modalRows(allPlayers(), "start")}${room.status === "tributeReturn" ? `<p class="muted">상납 단계가 진행됩니다.</p>` : ""}`);
+
+    const office = isOfficeMode();
+
+    const show = () => showModal(
+      office ? `${officeRoundText(room)} 시작 보고` : `${room.round}라운드 시작`,
+      office
+        ? `<p class="muted">이번 시트의 담당 역할과 현재 누적값입니다.</p>${modalRows(allPlayers(), "start")}${room.status === "tributeReturn" ? `<p class="muted">검토자료 반환 단계가 진행됩니다.</p>` : ""}`
+        : `<p class="muted">이번 라운드 배정 계급과 현재 점수입니다.</p>${modalRows(allPlayers(), "start")}${room.status === "tributeReturn" ? `<p class="muted">상납 단계가 진행됩니다.</p>` : ""}`,
+      undefined,
+      10000
+    );
+
     if (room.rebellionNotice?.round === room.round) setTimeout(show, 5100);
     else show();
   }
@@ -2607,27 +2770,65 @@ async function closeRoomIfNoHuman(roomId = S.roomId, players = playersMap(), spe
   function maybeResultModal() {
     const room = S.room;
     if (!room || !["betweenRounds", "finished"].includes(room.status) || !room.lastRoundResult) return;
+
     const key = `dalmuti:${S.roomId}:result:${room.lastRoundResult.round}`;
     if (markSeen(S.seenResult, key)) return;
-    const actions = isHost() && room.status === "betweenRounds" ? `<button class="btn primary" onclick="Dalmuti.nextRound()">다음 라운드 시작</button><button class="btn ghost" onclick="Dalmuti.closeModal()">닫기</button>` : `<button class="btn primary" onclick="Dalmuti.closeModal()">확인</button>`;
-    showModal(`${room.lastRoundResult.round}라운드 결과`, modalRows(allPlayers().slice().sort((a, b) => (a.lastRoundRank ?? 999) - (b.lastRoundRank ?? 999)), "result"), actions);
+
+    const office = isOfficeMode();
+
+    const actions = isHost() && room.status === "betweenRounds"
+      ? `<button class="btn primary" onclick="Dalmuti.nextRound()">${office ? "다음 시트 열기" : "다음 라운드 시작"}</button><button class="btn ghost" onclick="Dalmuti.closeModal()">닫기</button>`
+      : `<button class="btn primary" onclick="Dalmuti.closeModal()">확인</button>`;
+
+    showModal(
+      office ? `${room.lastRoundResult.round}번 시트 처리 결과` : `${room.lastRoundResult.round}라운드 결과`,
+      modalRows(allPlayers().slice().sort((a, b) => (a.lastRoundRank ?? 999) - (b.lastRoundRank ?? 999)), "result"),
+      actions,
+      10000
+    );
   }
 
   function maybeRebellionModal() {
     const n = S.room?.rebellionNotice;
     if (!n) return;
+
     const key = `dalmuti:${S.roomId}:rebellion:${n.round}:${n.uid}`;
     if (markSeen(S.seenRebellion, key)) return;
+
     const card = $("rebellionModalCard");
     const modal = $("rebellionModal");
     if (!card || !modal) return;
-    card.innerHTML = `<img src="${cardImg(13)}"><h2>민란 발생</h2><p>${esc(n.nickname || "누군가")}님의 홍길동이 민란을 일으켰습니다</p><p>모든 계급이 반대로 뒤집힙니다.</p>`;
+
+    const office = isOfficeMode();
+
+    card.innerHTML = office
+      ? `<h2>예외 처리 발생</h2><p>${esc(n.nickname || "누군가")}님의 예외 항목이 감지되었습니다.</p><p>처리 우선순위가 재정렬됩니다.</p>`
+      : `<img src="${cardImg(13)}"><h2>민란 발생</h2><p>${esc(n.nickname || "누군가")}님의 홍길동이 민란을 일으켰습니다</p><p>모든 계급이 반대로 뒤집힙니다.</p>`;
+
     modal.classList.add("show");
     setTimeout(() => modal.classList.remove("show"), 5000);
   }
 
   function showHelp() {
-    showModal("게임 방법", `<div class="help-section"><strong>목표</strong><br>손패를 먼저 털수록 높은 순위를 얻고, 라운드마다 승점을 얻습니다.</div><div class="help-section"><strong>제출</strong><br>같은 계급 여러 장을 낼 수 있습니다. 이미 카드가 깔려 있으면 같은 장수이면서 더 높은 계급만 낼 수 있습니다.</div><div class="help-section"><strong>홍길동</strong><br>일반 카드와 함께 내면 그 계급 카드로 취급합니다. 홍길동만 내면 최약 카드 취급입니다.</div><div class="help-section"><strong>상납</strong><br>2라운드부터 하위 계급자가 상위 계급자에게 좋은 카드를 자동 상납하고, 받은 사람은 같은 장수만큼 돌려줍니다.</div><div class="help-section"><strong>민란</strong><br>백정 또는 노비가 홍길동 2장을 들면 계급 순서가 뒤집힙니다.</div>`);
+    if (isOfficeMode()) {
+      showModal(
+        "업무 기준",
+        `<div class="help-section"><strong>목표</strong><br>미처리 항목을 먼저 정리할수록 높은 처리 순위를 얻습니다.</div>
+        <div class="help-section"><strong>처리</strong><br>같은 구분의 항목을 여러 건 한 번에 처리할 수 있습니다. 이미 처리 항목이 올라와 있으면 같은 수량이면서 더 높은 우선순위 항목만 처리할 수 있습니다.</div>
+        <div class="help-section"><strong>예외</strong><br>예외 항목은 일반 항목과 함께 처리될 수 있으며, 단독 처리 시 최저 우선순위로 취급됩니다.</div>
+        <div class="help-section"><strong>검토자료 반환</strong><br>하위 담당자가 상위 담당자에게 자료를 이관하고, 받은 담당자는 같은 수량만큼 자료를 반환합니다.</div>`
+      );
+      return;
+    }
+
+    showModal(
+      "게임 방법",
+      `<div class="help-section"><strong>목표</strong><br>손패를 먼저 털수록 높은 순위를 얻고, 라운드마다 승점을 얻습니다.</div>
+      <div class="help-section"><strong>제출</strong><br>같은 계급 여러 장을 낼 수 있습니다. 이미 카드가 깔려 있으면 같은 장수이면서 더 높은 계급만 낼 수 있습니다.</div>
+      <div class="help-section"><strong>홍길동</strong><br>일반 카드와 함께 내면 그 계급 카드로 취급합니다. 홍길동만 내면 최약 카드 취급입니다.</div>
+      <div class="help-section"><strong>상납</strong><br>2라운드부터 하위 계급자가 상위 계급자에게 좋은 카드를 자동 상납하고, 받은 사람은 같은 장수만큼 돌려줍니다.</div>
+      <div class="help-section"><strong>민란</strong><br>백정 또는 노비가 홍길동 2장을 들면 계급 순서가 뒤집힙니다.</div>`
+    );
   }
 
 
@@ -2642,6 +2843,19 @@ async function closeRoomIfNoHuman(roomId = S.roomId, players = playersMap(), spe
 
     const mobileOfficeBtn = $("mobileOfficeModeBtn");
     if (mobileOfficeBtn) mobileOfficeBtn.textContent = label;
+
+    const mobileChatBtn = $("mobileChatBtn");
+    if (mobileChatBtn) mobileChatBtn.textContent = enabled ? "📝" : "💬";
+
+    if (S.room) {
+      safeRender("header", renderHeader);
+      safeRender("players", renderPlayers);
+      safeRender("pile", renderPile);
+      safeRender("hand", renderHand);
+      safeRender("controls", renderControls);
+      safeRender("chat", renderChat);
+      safeRender("side", renderSide);
+    }
   }
 
   function toggleOfficeMode() {
