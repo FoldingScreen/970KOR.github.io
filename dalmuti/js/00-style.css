@@ -1710,3 +1710,122 @@ body.office-mode #handArea .hand-stack.selected .office-status{
     font-size:10px!important;
   }
 }
+
+/* =========================
+   눈치보기 / 업무모드 3단계
+   - 중앙판 제출 카드 영역을 업무표처럼 표시
+========================= */
+
+.office-pile-table{
+  display:none;
+}
+
+body.office-mode .office-pile-table{
+  display:block!important;
+  width:100%!important;
+  max-width:520px!important;
+  margin:0 auto!important;
+  border:1px solid #b7c7bd!important;
+  background:#ffffff!important;
+  color:#202124!important;
+  font-family:Arial, "Malgun Gothic", sans-serif!important;
+}
+
+body.office-mode .office-pile-caption{
+  height:32px;
+  line-height:32px;
+  padding:0 10px;
+  background:#107c41;
+  color:#ffffff;
+  font-size:13px;
+  font-weight:900;
+  border-bottom:1px solid #0b5f31;
+}
+
+body.office-mode .office-pile-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) 58px 72px;
+  min-height:34px;
+  align-items:center;
+  border-bottom:1px solid #d9e2dc;
+  font-size:12px;
+}
+
+body.office-mode .office-pile-row:last-child{
+  border-bottom:0;
+}
+
+body.office-mode .office-pile-row.header{
+  background:#eaf3ec!important;
+  color:#107c41!important;
+  font-weight:900!important;
+}
+
+body.office-mode .office-pile-row span,
+body.office-mode .office-pile-row strong{
+  min-width:0;
+  padding:0 8px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+body.office-mode .office-pile-row strong{
+  text-align:center;
+  color:#107c41;
+}
+
+body.office-mode .cur-pile{
+  left:14px!important;
+  right:14px!important;
+  top:14px!important;
+  bottom:14px!important;
+  padding:12px!important;
+  align-items:center!important;
+  justify-content:center!important;
+  background:#ffffff!important;
+  border:1px solid #c7d1c9!important;
+  border-radius:3px!important;
+}
+
+body.office-mode .cur-pile-title,
+body.office-mode .cur-cards{
+  display:none!important;
+}
+
+body.office-mode .prev-pile{
+  display:none!important;
+}
+
+/* 모바일 업무모드 중앙판 보정 */
+@media(max-width:880px){
+  body.office-mode:has(#roomView.show) .cur-pile{
+    left:8px!important;
+    right:8px!important;
+    top:8px!important;
+    bottom:8px!important;
+    padding:8px!important;
+  }
+
+  body.office-mode:has(#roomView.show) .office-pile-table{
+    max-width:100%!important;
+  }
+
+  body.office-mode:has(#roomView.show) .office-pile-caption{
+    height:28px;
+    line-height:28px;
+    font-size:11px;
+    padding:0 7px;
+  }
+
+  body.office-mode:has(#roomView.show) .office-pile-row{
+    grid-template-columns:minmax(0,1fr) minmax(0,1.1fr) 42px 54px;
+    min-height:28px;
+    font-size:10px;
+  }
+
+  body.office-mode:has(#roomView.show) .office-pile-row span,
+  body.office-mode:has(#roomView.show) .office-pile-row strong{
+    padding:0 5px;
+  }
+}
