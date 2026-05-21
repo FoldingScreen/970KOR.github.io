@@ -990,6 +990,16 @@
     width:46px!important;
     border-radius:8px!important;
   }
+  body:has(#roomView.show) .mobile-leave-room-btn{
+    display:none!important;
+  }
+
+  body.mobile-menu-open:has(#roomView.show) .mobile-leave-room-btn{
+    display:flex!important;
+    width:100%!important;
+    justify-content:center!important;
+    margin-top:10px!important;
+  }         
 }
 
 /* =========================
