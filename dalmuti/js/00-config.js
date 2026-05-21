@@ -778,42 +778,61 @@ function mobilePositions(ps, myIndex) {
     ? ps.slice(myIndex).concat(ps.slice(0, myIndex))
     : [];
 
+  const mePlayer = rotated.find(p => p.uid === S.user) || null;
   const opponents = rotated.filter(p => p.uid !== S.user);
   const opponentCount = opponents.length;
 
   if (!opponentCount) {
-    return rotated.slice(0, 1).map(p => ({ p, cls: "seat-bottom" }));
+    return mePlayer ? [{ p: mePlayer, cls: "seat-bottom" }] : [];
   }
 
-  const topCount = opponentCount === 1
-    ? 1
-    : opponentCount % 2 === 0
-      ? 2
-      : 1;
+  /*
+    모바일 자리 배치 순서
 
-  const topPlayers = opponents.slice(0, topCount);
-  const rest = opponents.slice(topCount);
-  const half = Math.ceil(rest.length / 2);
-  const leftPlayers = rest.slice(0, half);
-  const rightPlayers = rest.slice(half);
-  const result = [];
+    기준:
+    내 자리에서 왼쪽으로 돌기 시작한다.
+    즉, 상대 배열 순서를 다음 시각 위치에 순서대로 넣는다.
 
-  if (topPlayers.length === 1) {
-    result.push({ p: topPlayers[0], cls: "seat-top-0" });
-  } else if (topPlayers.length === 2) {
-    result.push({ p: topPlayers[0], cls: "seat-top-1" });
-    result.push({ p: topPlayers[1], cls: "seat-top-2" });
-  }
+    상대 1명:
+      상단 중앙
 
-  leftPlayers.forEach((p, i) => {
-    result.push({ p, cls: positionClassForSide("left", i, leftPlayers.length) });
-  });
+    상대 2명:
+      상단 왼쪽 → 상단 오른쪽
 
-  rightPlayers.forEach((p, i) => {
-    result.push({ p, cls: positionClassForSide("right", i, rightPlayers.length) });
-  });
+    상대 3명:
+      왼쪽 중앙 → 상단 중앙 → 오른쪽 중앙
 
-  return result.filter(item => item && item.p && item.p.uid);
+    상대 4명:
+      왼쪽 중앙 → 상단 왼쪽 → 상단 오른쪽 → 오른쪽 중앙
+
+    상대 5명:
+      왼쪽 아래 → 왼쪽 위 → 상단 중앙 → 오른쪽 위 → 오른쪽 아래
+
+    상대 6명:
+      왼쪽 아래 → 왼쪽 위 → 상단 왼쪽 → 상단 오른쪽 → 오른쪽 위 → 오른쪽 아래
+
+    상대 7명:
+      왼쪽 아래 → 왼쪽 중앙 → 왼쪽 위 → 상단 중앙 → 오른쪽 위 → 오른쪽 중앙 → 오른쪽 아래
+  */
+  const slotMapByOpponentCount = {
+    1: ["seat-top-0"],
+    2: ["seat-top-1", "seat-top-2"],
+    3: ["seat-left-0", "seat-top-0", "seat-right-0"],
+    4: ["seat-left-0", "seat-top-1", "seat-top-2", "seat-right-0"],
+    5: ["seat-left-2", "seat-left-1", "seat-top-0", "seat-right-1", "seat-right-2"],
+    6: ["seat-left-2", "seat-left-1", "seat-top-1", "seat-top-2", "seat-right-1", "seat-right-2"],
+    7: ["seat-left-2", "seat-left-0", "seat-left-1", "seat-top-0", "seat-right-1", "seat-right-0", "seat-right-2"]
+  };
+
+  const slots = slotMapByOpponentCount[opponentCount] || slotMapByOpponentCount[7];
+
+  return opponents
+    .slice(0, slots.length)
+    .map((p, i) => ({
+      p,
+      cls: slots[i]
+    }))
+    .filter(item => item && item.p && item.p.uid);
 }
 
 function positions() {
