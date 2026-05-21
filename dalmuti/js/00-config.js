@@ -272,7 +272,7 @@ function basePlayer(uid, nickname, seatOrder, isAI) {
     const link = document.createElement("link");
     link.id = "dalmutiSingleCss";
     link.rel = "stylesheet";
-    link.href = "./js/00-style.css?v=20260520-headerline1";
+    link.href = "./js/00-style.css?v=20260520-mobile-leave1";
 
     document.head.appendChild(link);
   }
@@ -332,6 +332,15 @@ function basePlayer(uid, nickname, seatOrder, isAI) {
     btn.style.marginLeft = "8px";
     $("selectedSummary").insertAdjacentElement("afterend", btn);
   }
+
+  if (!$("mobileLeaveRoomBtn") && document.querySelector(".side-panel")) {
+    const btn = document.createElement("button");
+    btn.id = "mobileLeaveRoomBtn";
+    btn.type = "button";
+    btn.className = "btn danger mobile-leave-room-btn";
+    btn.textContent = "방 나가기";
+    document.querySelector(".side-panel").appendChild(btn);
+  }   
 
   if (E.chatList?.closest("section")) {
     E.chatList.closest("section").classList.add("mobile-chat-section");
@@ -2254,6 +2263,8 @@ async function closeRoomIfNoHuman(roomId = S.roomId, players = playersMap(), spe
 
   function bindEvents() {
     if (E.leaveRoomBtn) E.leaveRoomBtn.onclick = leaveRoom;
+    const mobileLeaveRoomBtn = $("mobileLeaveRoomBtn");
+if (mobileLeaveRoomBtn) mobileLeaveRoomBtn.onclick = leaveRoom;
     if (E.createRoomBtn) E.createRoomBtn.onclick = showCreateRoomModal;
 if ($("modalCreateRoomBtn")) $("modalCreateRoomBtn").onclick = createRoom;
 if ($("modalCreateCancelBtn")) $("modalCreateCancelBtn").onclick = closeCreateRoomModal;
