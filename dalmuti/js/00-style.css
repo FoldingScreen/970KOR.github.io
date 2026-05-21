@@ -2088,8 +2088,6 @@ body.office-mode .chat-msg.system{
 
 body.office-mode .chat-name::after{
   content:":";
-  color:#5f6368;
-  font-weight:400;
 }
 
 /* 모달 업무표 보정 */
@@ -2290,5 +2288,23 @@ body.office-mode #roomTitle{
 
   body.office-mode:has(#roomView.show) #chatInput{
     background:#ffffff!important;
+  }
+}
+
+/* =========================
+   PC에서 모바일 전용 버튼 숨김
+   - 채팅 플로팅
+   - AUTO 플로팅
+   - 모바일 메뉴/나가기/눈치보기 버튼
+========================= */
+
+@media(min-width:881px){
+  .mobile-menu-btn,
+  .mobile-chat-btn,
+  .mobile-auto-btn,
+  .mobile-panel-backdrop,
+  .mobile-office-mode-btn,
+  .mobile-leave-room-btn{
+    display:none!important;
   }
 }
