@@ -360,7 +360,7 @@ function basePlayer(uid, nickname, seatOrder, isAI) {
     const link = document.createElement("link");
     link.id = "dalmutiSingleCss";
     link.rel = "stylesheet";
-    link.href = "./js/00-style.css?v=20260520-office-chatname1";
+    link.href = "./js/00-style.css?v=20260520-office-manage1";
 
     document.head.appendChild(link);
   }
@@ -1028,27 +1028,33 @@ if (isMobileLayout()) {
       const roleText = officeRoleName(p.role || (p.uid === S.room?.hostUid ? "방장" : "참가자"));
       const officeNameText = `${p.nickname || p.uid}${(p.isAI || p.autoPlay) ? " (자동)" : ""}`;
 
-      return `
-        <div class="office-player-row ${rowClass}">
-          <span>${i + 1}</span>
-          <span>${esc(officeNameText)}</span>
-          <span>${esc(roleText)}</span>
-          <strong>${Number(p.cardCount || 0)}건</strong>
-          <span>${esc(status)}</span>
-        </div>
-      `;
+const officeManageBtn = isHost() && p.uid !== S.user
+  ? `<button class="office-kick-btn" type="button" onclick="Dalmuti.kick('${p.uid}')">제외</button>`
+  : "-";
+
+return `
+  <div class="office-player-row ${rowClass}">
+    <span>${i + 1}</span>
+    <span>${esc(officeNameText || p.nickname || p.uid)}</span>
+    <span>${esc(roleText)}</span>
+    <strong>${Number(p.cardCount || 0)}건</strong>
+    <span>${esc(status)}</span>
+    <span>${officeManageBtn}</span>
+  </div>
+`;
     }).join("");
 
     const officeTable = `
       <div class="office-player-table">
         <div class="office-player-caption">담당자별 처리 현황</div>
-        <div class="office-player-row header">
-          <span>No.</span>
-          <span>담당자</span>
-          <span>역할</span>
-          <span>잔여</span>
-          <span>상태</span>
-        </div>
+<div class="office-player-row header">
+  <span>No.</span>
+  <span>담당자</span>
+  <span>역할</span>
+  <span>잔여</span>
+  <span>상태</span>
+  <span>관리</span>
+</div>
         ${officeRows || `<div class="office-player-empty">참가자 없음</div>`}
       </div>
     `;
