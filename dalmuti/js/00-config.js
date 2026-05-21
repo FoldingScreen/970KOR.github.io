@@ -612,11 +612,13 @@ async function loadRooms() {
 
   function renderHeader() {
     const room = S.room;
+
     const roundNow = Number(room.round || 0);
     const roundTotal = room.totalRounds ? Number(room.totalRounds) : null;
     const roundText = roundNow
       ? (roundTotal ? `${roundNow}/${roundTotal} Round` : `${roundNow} Round`)
       : "대기 중";
+
     const statusText = ({
       waiting: "대기 중",
       playing: roundText,
@@ -625,22 +627,40 @@ async function loadRooms() {
       finished: "게임 종료"
     })[room.status] || room.status || "-";
 
-    if (E.roomStateText) E.roomStateText.textContent = statusText;
-    if (E.roomTitle) E.roomTitle.textContent = isMobileLayout() ? "달무티 in 조선" : (room.title || "달무티 in 조선");
+    const mobile = isMobileLayout();
 
-    const turnName = room.currentTurnUid ? (playersMap(room)[room.currentTurnUid]?.nickname || "-") : "-";
-    if (E.turnBadge) E.turnBadge.textContent = room.status === "playing" ? `차례: ${turnName}` : statusText;
+    if (E.roomStateText) {
+      E.roomStateText.textContent = mobile ? "" : statusText;
+    }
+
+    if (E.roomTitle) {
+      E.roomTitle.textContent = mobile
+        ? `달무티 in 조선  ${statusText}`
+        : (room.title || "달무티 in 조선");
+    }
+
+    const turnName = room.currentTurnUid
+      ? (playersMap(room)[room.currentTurnUid]?.nickname || "-")
+      : "-";
+
+    if (E.turnBadge) {
+      E.turnBadge.textContent = room.status === "playing" ? `차례: ${turnName}` : statusText;
+    }
 
     if (E.messageBar) {
-      if (room.status === "waiting") E.messageBar.textContent = "참가자는 준비를 눌러야 게임을 시작할 수 있습니다.";
-      else if (room.status === "tributeReturn") {
+      if (room.status === "waiting") {
+        E.messageBar.textContent = "참가자는 준비를 눌러야 게임을 시작할 수 있습니다.";
+      } else if (room.status === "tributeReturn") {
         E.messageBar.textContent = room.currentTurnUid
           ? `${turnName}님이 상납받은 카드 수만큼 반환할 차례입니다.`
           : "상납받은 사람이 같은 장수만큼 카드를 돌려줘야 합니다.";
+      } else if (room.status === "playing") {
+        E.messageBar.textContent = room.currentTurnUid === S.user ? "내 차례입니다." : `${turnName}님의 차례입니다.`;
+      } else if (room.status === "betweenRounds") {
+        E.messageBar.textContent = "라운드가 종료되었습니다.";
+      } else {
+        E.messageBar.textContent = "게임이 종료되었습니다.";
       }
-      else if (room.status === "playing") E.messageBar.textContent = room.currentTurnUid === S.user ? "내 차례입니다." : `${turnName}님의 차례입니다.`;
-      else if (room.status === "betweenRounds") E.messageBar.textContent = "라운드가 종료되었습니다.";
-      else E.messageBar.textContent = "게임이 종료되었습니다.";
     }
   }
 
