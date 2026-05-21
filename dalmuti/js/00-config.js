@@ -360,7 +360,7 @@ function basePlayer(uid, nickname, seatOrder, isAI) {
     const link = document.createElement("link");
     link.id = "dalmutiSingleCss";
     link.rel = "stylesheet";
-    link.href = "./js/00-style.css?v=20260520-mobile-leave1";
+    link.href = "./js/00-style.css?v=20260520-chatbadge1";
 
     document.head.appendChild(link);
   }
@@ -938,11 +938,18 @@ function positions() {
     if (!E.handArea) return;
 
     const mine = me();
+    const handTitle = document.querySelector(".hand-header h3");
 
     if (!mine || mine.type !== "player") {
+      if (handTitle) handTitle.textContent = "관전 · 내 손패";
       E.handArea.innerHTML = `<div class="muted">관전자는 손패가 없습니다.</div>`;
       if (E.selectedSummary) E.selectedSummary.textContent = "선택 없음";
       return;
+    }
+
+    if (handTitle) {
+      const roleText = mine.role || (S.room?.status === "waiting" ? "참가자" : "계급 없음");
+      handTitle.textContent = `${roleText} · 내 손패`;
     }
 
     const groups = groupHand(S.hand);
@@ -1056,12 +1063,77 @@ function formatChatText(text) {
 
   return esc(text || "");
 }
+
+  function chatSeenKey() {
+    return `dalmuti:${S.roomId || "no-room"}:chatSeenAt:${S.user || "no-user"}`;
+  }
+
+  function chatMessageTime(msg) {
+    return Number(msg?.createdAt || 0);
+  }
+
+  function humanChatMessages() {
+    return (S.room?.chatPreview || []).filter(msg =>
+      msg &&
+      msg.type !== "system" &&
+      msg.uid !== "system" &&
+      msg.uid !== S.user
+    );
+  }
+
+  function latestHumanChatAt() {
+    return humanChatMessages().reduce((max, msg) => {
+      return Math.max(max, chatMessageTime(msg));
+    }, 0);
+  }
+
+  function ensureChatSeenInitialized() {
+    if (!S.roomId || !S.user) return;
+    const key = chatSeenKey();
+    if (localStorage.getItem(key) !== null) return;
+
+    const latest = latestHumanChatAt();
+    localStorage.setItem(key, String(latest || Date.now()));
+  }
+
+  function markChatSeen() {
+    if (!S.roomId || !S.user) return;
+    const latest = latestHumanChatAt();
+    localStorage.setItem(chatSeenKey(), String(latest || Date.now()));
+    updateMobileChatBadge();
+  }
+
+  function updateMobileChatBadge() {
+    const btn = $("mobileChatBtn");
+    if (!btn || !S.roomId || !S.user) return;
+
+    ensureChatSeenInitialized();
+
+    const seenAt = Number(localStorage.getItem(chatSeenKey()) || 0);
+    const unread = humanChatMessages().filter(msg => chatMessageTime(msg) > seenAt).length;
+
+    if (unread > 0 && !document.body.classList.contains("mobile-chat-open")) {
+      btn.classList.add("has-unread");
+      btn.dataset.unread = unread > 9 ? "9+" : String(unread);
+      btn.setAttribute("aria-label", `새 채팅 ${unread}개`);
+    } else {
+      btn.classList.remove("has-unread");
+      delete btn.dataset.unread;
+      btn.setAttribute("aria-label", "채팅");
+    }
+  }
   
   function renderChat() {
     if (!E.chatList) return;
     const list = (S.room?.chatPreview || []).slice(-CHAT_LIMIT);
     E.chatList.innerHTML = list.length ? list.map(m => m.type === "system" ? `<div class="chat-msg system">${esc(m.text)}</div>` : `<div class="chat-msg"><span class="chat-name">${esc(m.nickname || "-")}</span> ${formatChatText(m.text || "")}</div>`).join("") : `<div class="muted">채팅이 없습니다.</div>`;
     E.chatList.scrollTop = E.chatList.scrollHeight;
+
+    if (document.body.classList.contains("mobile-chat-open")) {
+      markChatSeen();
+    } else {
+      updateMobileChatBadge();
+    }
   }
 
   function sideBox(id, anchor) {
@@ -1444,9 +1516,14 @@ async function toggleAutoPlay() {
     return toast("참가자만 자동 조작을 설정할 수 있습니다.");
   }
 
+  const nextAuto = !player.autoPlay;
+
   players[S.user] = {
     ...player,
-    autoPlay: !player.autoPlay
+    autoPlay: nextAuto,
+    // 자동 ON이면 대기방에서 레디도 자동 처리
+    // 자동 OFF는 준비 상태를 임의로 취소하지 않음
+    isReady: nextAuto && S.room.status === "waiting" ? true : player.isReady
   };
 
   await roomRef().set({
@@ -1454,7 +1531,7 @@ async function toggleAutoPlay() {
     updatedAt: serverNow()
   }, { merge: true });
 
-  toast(players[S.user].autoPlay ? "자동 조작을 켰습니다." : "자동 조작을 껐습니다.");
+  toast(nextAuto ? "자동 조작을 켰습니다. 준비도 완료했습니다." : "자동 조작을 껐습니다.");
 }
   
 async function becomeSpectator() {
@@ -2389,7 +2466,13 @@ async function closeRoomIfNoHuman(roomId = S.roomId, players = playersMap(), spe
   function toggleMobileChat() {
     const open = document.body.classList.contains("mobile-chat-open");
     closeMobilePanels();
-    if (!open) document.body.classList.add("mobile-chat-open");
+
+    if (!open) {
+      document.body.classList.add("mobile-chat-open");
+      markChatSeen();
+    } else {
+      updateMobileChatBadge();
+    }
   }
 
   function bindEvents() {
