@@ -844,7 +844,19 @@
    - 제출/패스 영역 고정
 ========================= */
 @media(max-width:880px){
-  body:has(#roomView.show){overflow:hidden!important;}
+body:has(#roomView.show){
+  overflow:hidden!important;
+
+  /* 모바일 플레이어/중앙판 기준값 */
+  --side-player-w: clamp(58px, 17vw, 72px);
+  --side-player-h: clamp(62px, 10.5dvh, 74px);
+
+  --top-player-w: clamp(104px, 31vw, 126px);
+  --top-player-h: clamp(52px, 8.2dvh, 62px);
+
+  --seat-edge-gap: 5px;
+  --center-seat-gap: 8px;
+}
   body:has(#roomView.show) .dalmuti-app{height:100dvh!important;padding:4px!important;overflow:hidden!important;}
   body:has(#roomView.show) .game-panel{height:100dvh!important;min-height:100dvh!important;padding:6px!important;display:flex!important;flex-direction:column!important;gap:4px!important;overflow:hidden!important;}
 
@@ -946,23 +958,93 @@
   body.mobile-chat-open:has(#roomView.show) .mobile-chat-btn,body.mobile-chat-open:has(#roomView.show) .mobile-auto-btn{display:none!important;}
 
   body:has(#roomView.show) .players-area{position:absolute!important;inset:0!important;z-index:3!important;pointer-events:none!important;}
-  body:has(#roomView.show) .player-box{width:66px!important;height:68px!important;min-height:68px!important;padding:4px!important;border-radius:11px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important;overflow:hidden!important;pointer-events:auto!important;}
+  body:has(#roomView.show) .player-box{
+  width:var(--side-player-w)!important;
+  height:var(--side-player-h)!important;
+  min-height:var(--side-player-h)!important;
+  padding:4px!important;
+  border-radius:11px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  overflow:hidden!important;
+  pointer-events:auto!important;
+}
   body:has(#roomView.show) .player-role{width:100%!important;height:11px!important;font-size:9px!important;line-height:11px!important;text-align:center!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
   body:has(#roomView.show) .player-name{width:100%!important;height:13px!important;font-size:10px!important;line-height:13px!important;text-align:center!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
   body:has(#roomView.show) .player-meta{width:100%!important;height:12px!important;font-size:9px!important;line-height:12px!important;text-align:center!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;margin-top:1px!important;}
   body:has(#roomView.show) .badge{display:block!important;width:40px!important;height:11px!important;line-height:9px!important;margin:1px auto 0!important;padding:1px 3px!important;font-size:8px!important;text-align:center!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;flex:0 0 auto!important;}
   body:has(#roomView.show) .seat-bottom{display:none!important;}
-  body:has(#roomView.show) .seat-top-0{top:5px!important;left:50%!important;width:96px!important;height:48px!important;min-height:48px!important;transform:translateX(-50%)!important;}
-  body:has(#roomView.show) .seat-top-1{top:5px!important;left:5px!important;right:auto!important;width:66px!important;height:68px!important;min-height:68px!important;transform:none!important;}
-  body:has(#roomView.show) .seat-top-2{top:5px!important;right:5px!important;left:auto!important;width:66px!important;height:68px!important;min-height:68px!important;transform:none!important;}
-  body:has(#roomView.show) .seat-left-1{left:5px!important;top:82px!important;transform:none!important;}
-  body:has(#roomView.show) .seat-left-0{left:5px!important;top:calc(50% - 34px)!important;transform:none!important;}
-  body:has(#roomView.show) .seat-left-2{left:5px!important;top:auto!important;bottom:5px!important;transform:none!important;}
-  body:has(#roomView.show) .seat-right-1{right:5px!important;top:82px!important;transform:none!important;}
-  body:has(#roomView.show) .seat-right-0{right:5px!important;top:calc(50% - 34px)!important;transform:none!important;}
-  body:has(#roomView.show) .seat-right-2{right:5px!important;top:auto!important;bottom:5px!important;transform:none!important;}
+  body:has(#roomView.show) .seat-top-0{
+    top:var(--seat-edge-gap)!important;
+    left:50%!important;
+    transform:translateX(-50%)!important;
+  }
 
-  body:has(#roomView.show) .center-pile{width:calc(100% - 146px)!important;height:calc(100% - 12px)!important;min-height:0!important;max-width:none!important;left:50%!important;top:50%!important;transform:translate(-50%,-50%)!important;padding:0!important;border-radius:16px!important;overflow:hidden!important;}
+  body:has(#roomView.show) .seat-top-1{
+    top:var(--seat-edge-gap)!important;
+    left:var(--seat-edge-gap)!important;
+    right:auto!important;
+    transform:none!important;
+  }
+
+  body:has(#roomView.show) .seat-top-2{
+    top:var(--seat-edge-gap)!important;
+    right:var(--seat-edge-gap)!important;
+    left:auto!important;
+    transform:none!important;
+  }
+  body:has(#roomView.show) .seat-left-1{
+    left:var(--seat-edge-gap)!important;
+    top:calc(var(--top-player-h) + 18px)!important;
+    transform:none!important;
+  }
+
+  body:has(#roomView.show) .seat-left-0{
+    left:var(--seat-edge-gap)!important;
+    top:calc(50% - (var(--side-player-h) / 2))!important;
+    transform:none!important;
+  }
+
+  body:has(#roomView.show) .seat-left-2{
+    left:var(--seat-edge-gap)!important;
+    top:auto!important;
+    bottom:var(--seat-edge-gap)!important;
+    transform:none!important;
+  }
+
+  body:has(#roomView.show) .seat-right-1{
+    right:var(--seat-edge-gap)!important;
+    top:calc(var(--top-player-h) + 18px)!important;
+    transform:none!important;
+  }
+
+  body:has(#roomView.show) .seat-right-0{
+    right:var(--seat-edge-gap)!important;
+    top:calc(50% - (var(--side-player-h) / 2))!important;
+    transform:none!important;
+  }
+
+  body:has(#roomView.show) .seat-right-2{
+    right:var(--seat-edge-gap)!important;
+    top:auto!important;
+    bottom:var(--seat-edge-gap)!important;
+    transform:none!important;
+  }
+
+  body:has(#roomView.show) .center-pile{
+    width:calc(100% - (var(--side-player-w) * 2) - (var(--seat-edge-gap) * 2) - (var(--center-seat-gap) * 2))!important;
+    height:calc(100% - 12px)!important;
+    min-height:0!important;
+    max-width:none!important;
+    left:50%!important;
+    top:50%!important;
+    transform:translate(-50%,-50%)!important;
+    padding:0!important;
+    border-radius:16px!important;
+    overflow:hidden!important;
+  }
   body:has(#roomView.show) .pile-board{height:100%!important;}
   body:has(#roomView.show) .prev-pile{display:none!important;}
   body:has(#roomView.show) .cur-pile{left:0!important;right:0!important;top:0!important;bottom:0!important;padding:8px 3px!important;display:flex!important;align-items:center!important;justify-content:center!important;}
@@ -1031,9 +1113,9 @@
   body:has(#roomView.show) .seat-top-0,
   body:has(#roomView.show) .seat-top-1,
   body:has(#roomView.show) .seat-top-2{
-    width:120px!important;
-    height:58px!important;
-    min-height:58px!important;
+    width:var(--top-player-w)!important;
+    height:var(--top-player-h)!important;
+    min-height:var(--top-player-h)!important;
     padding:4px 6px!important;
     display:grid!important;
     grid-template-columns:auto minmax(0,1fr)!important;
