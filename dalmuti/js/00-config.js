@@ -360,8 +360,8 @@ function basePlayer(uid, nickname, seatOrder, isAI) {
     const link = document.createElement("link");
     link.id = "dalmutiSingleCss";
     link.rel = "stylesheet";
-    link.href = "./js/00-style.css?v=20260520-office-manage1";
-
+    link.href = "./js/00-style.css?v=20260520-office-manage2";
+    
     document.head.appendChild(link);
   }
 
@@ -1029,7 +1029,14 @@ if (isMobileLayout()) {
       const officeNameText = `${p.nickname || p.uid}${(p.isAI || p.autoPlay) ? " (자동)" : ""}`;
 
 const officeManageBtn = isHost() && p.uid !== S.user
-  ? `<button class="office-kick-btn" type="button" onclick="Dalmuti.kick('${p.uid}')">제외</button>`
+  ? `
+    <div class="office-manage-actions">
+      ${S.room?.status === "waiting"
+        ? `<button class="office-view-btn" type="button" onclick="Dalmuti.forceSpectator('${p.uid}')">보기</button>`
+        : ""}
+      <button class="office-kick-btn" type="button" onclick="Dalmuti.kick('${p.uid}')">제외</button>
+    </div>
+  `
   : "-";
 
 return `
@@ -2047,6 +2054,45 @@ async function becomeSpectator() {
   });
 }
 
+async function forceSpectator(uid) {
+  if (!isHost() || !S.room || S.room.status !== "waiting") {
+    return toast("대기 중에만 보기 전용으로 전환할 수 있습니다.");
+  }
+
+  if (uid === S.user) {
+    return toast("본인은 보기 전용 버튼을 사용하세요.");
+  }
+
+  const players = playersMap();
+  const specs = spectatorsMap();
+  const target = players[uid];
+
+  if (!target) {
+    return toast("참가자 목록에 없는 대상입니다.");
+  }
+
+  delete players[uid];
+
+  specs[uid] = {
+    ...baseSpectator(uid, target.nickname || uid),
+    uid,
+    nickname: target.nickname || uid,
+    type: "spectator"
+  };
+
+  await handRef(uid).delete().catch(() => null);
+
+  await roomRef().update({
+    players,
+    spectators: specs,
+    playerCount: countMap(players),
+    spectatorCount: countMap(specs),
+    updatedAt: serverNow()
+  });
+
+  await addSystem(`${target.nickname || uid}님이 보기 전용으로 전환되었습니다.`);
+}
+  
 async function becomePlayer() {
   if (!S.room || S.room.status !== "waiting") {
     return toast("대기 중에만 참가할 수 있습니다.");
@@ -3151,7 +3197,22 @@ await loadRooms();
     }
   }
 
-  window.Dalmuti = { joinRoom, toggleRank, saveSettings, toggleSpectatorChat, kick, deleteRoom, stopGame, addAI, nextRound: () => nextRound(false), forceRebellion: () => nextRound(true), closeModal, showHelp, becomePlayer };
+  window.Dalmuti = {
+  joinRoom,
+  toggleRank,
+  saveSettings,
+  toggleSpectatorChat,
+  kick,
+  deleteRoom,
+  stopGame,
+  addAI,
+  nextRound: () => nextRound(false),
+  forceRebellion: () => nextRound(true),
+  closeModal,
+  showHelp,
+  becomePlayer,
+  forceSpectator
+};
 
   window.addEventListener("DOMContentLoaded", init);
 })();
