@@ -42,6 +42,11 @@ const RANKS = [
     room: null,
     hand: [],
     selected: new Map(),
+    tributeReturnSelection: {
+      key: "",
+      required: 0,
+      counts: new Map()
+    },
     roomUnsub: null,
     handUnsub: null,
     seenStart: new Set(),
@@ -229,7 +234,90 @@ function basePlayer(uid, nickname, seatOrder, isAI) {
 
   const baseSpectator = (uid, nickname) => ({ uid, nickname, type: "spectator", isAI: false, removedFromRoom: false });
 
+  function clearTributeReturnSelection() {
+    S.tributeReturnSelection.key = "";
+    S.tributeReturnSelection.required = 0;
+    S.tributeReturnSelection.counts.clear();
+  }
+
+  function syncTributeReturnSelection() {
+    if (S.room?.status !== "tributeReturn") {
+      clearTributeReturnSelection();
+      return null;
+    }
+
+    const pair = currentTributePairForMe();
+    if (!pair) {
+      clearTributeReturnSelection();
+      return null;
+    }
+
+    const key = `${S.roomId}:${pair.id}`;
+    const required = Number(pair.count || 0);
+
+    if (S.tributeReturnSelection.key !== key) {
+      S.tributeReturnSelection.key = key;
+      S.tributeReturnSelection.required = required;
+      S.tributeReturnSelection.counts.clear();
+    } else {
+      S.tributeReturnSelection.required = required;
+    }
+
+    const availableByRank = new Map(
+      groupHand(S.hand).map(g => [Number(g.rank), Number(g.items.length || 0)])
+    );
+
+    Array.from(S.tributeReturnSelection.counts.keys()).forEach(rank => {
+      const available = Number(availableByRank.get(Number(rank)) || 0);
+      const current = Number(S.tributeReturnSelection.counts.get(Number(rank)) || 0);
+
+      if (!available || current <= 0) {
+        S.tributeReturnSelection.counts.delete(Number(rank));
+      } else if (current > available) {
+        S.tributeReturnSelection.counts.set(Number(rank), available);
+      }
+    });
+
+    while (tributeReturnSelectedTotal() > required) {
+      const entries = Array.from(S.tributeReturnSelection.counts.entries());
+      const last = entries[entries.length - 1];
+      if (!last) break;
+
+      const [rank, count] = last;
+      if (count > 1) S.tributeReturnSelection.counts.set(rank, count - 1);
+      else S.tributeReturnSelection.counts.delete(rank);
+    }
+
+    return pair;
+  }
+
+  function tributeReturnSelectedTotal() {
+    return Array.from(S.tributeReturnSelection.counts.values())
+      .reduce((sum, count) => sum + Number(count || 0), 0);
+  }
+
+  function selectedReturnCards() {
+    syncTributeReturnSelection();
+
+    const grouped = new Map(
+      groupHand(S.hand).map(g => [Number(g.rank), g.items])
+    );
+
+    const cards = [];
+
+    S.tributeReturnSelection.counts.forEach((count, rank) => {
+      const items = grouped.get(Number(rank)) || [];
+      cards.push(...items.slice(0, Number(count || 0)));
+    });
+
+    return cards;
+  }
+
   function selectedCards() {
+    if (S.room?.status === "tributeReturn") {
+      return selectedReturnCards();
+    }
+
     const ids = new Set();
     S.selected.forEach(cards => cards.forEach(c => ids.add(c.id)));
     return S.hand.filter(c => ids.has(c.id));
@@ -848,27 +936,56 @@ function positions() {
 
   function renderHand() {
     if (!E.handArea) return;
+
     const mine = me();
+
     if (!mine || mine.type !== "player") {
       E.handArea.innerHTML = `<div class="muted">관전자는 손패가 없습니다.</div>`;
       if (E.selectedSummary) E.selectedSummary.textContent = "선택 없음";
       return;
     }
-    const groups = groupHand(S.hand);
-E.handArea.innerHTML = groups.length ? groups.map(g => {
-  const selectedAll = selectedCards();
-  const selected = selectedAll.filter(c => Number(c.rank) === Number(g.rank)).length;
 
-  return `<div class="hand-stack${selected ? " selected" : ""}${selectableGroup(g) ? "" : " disabled"}" onclick="Dalmuti.toggleRank(${g.rank})">${selected ? `<span class="stack-selected">${selected}</span>` : ""}<img src="${cardImg(g.rank)}"><span class="stack-count">x${g.items.length}</span></div>`;
-}).join("") : `<div class="muted">손패가 없습니다.</div>`;
-    const cards = selectedCards();
+    const groups = groupHand(S.hand);
+    const tributePair = S.room?.status === "tributeReturn" ? syncTributeReturnSelection() : null;
+    const selectedAll = tributePair ? [] : selectedCards();
+
+    E.handArea.innerHTML = groups.length ? groups.map(g => {
+      const rank = Number(g.rank);
+
+      const selected = tributePair
+        ? Number(S.tributeReturnSelection.counts.get(rank) || 0)
+        : selectedAll.filter(c => Number(c.rank) === rank).length;
+
+      const selectable = tributePair
+        ? true
+        : selectableGroup(g);
+
+      return `
+        <div class="hand-stack${selected ? " selected" : ""}${selectable ? "" : " disabled"}" onclick="Dalmuti.toggleRank(${rank})">
+          ${selected ? `<span class="stack-selected">${selected}</span>` : ""}
+          <img src="${cardImg(rank)}">
+          <span class="stack-count">x${g.items.length}</span>
+        </div>
+      `;
+    }).join("") : `<div class="muted">손패가 없습니다.</div>`;
+
     if (S.room?.status === "tributeReturn") {
-      const pair = currentTributePairForMe();
-      if (E.selectedSummary) E.selectedSummary.textContent = pair ? `${cards.length}/${pair.count}장 반환 선택` : "상납 반환 대기";
+      if (E.selectedSummary) {
+        E.selectedSummary.textContent = tributePair
+          ? `${tributeReturnSelectedTotal()}/${Number(tributePair.count || 0)}장 반환 선택`
+          : "상납 반환 대기";
+      }
       return;
     }
+
+    const cards = selectedCards();
     const combo = canPlayCombo(cards);
-    if (E.selectedSummary) E.selectedSummary.textContent = cards.length ? (combo.ok ? `${rankInfo(combo.effectiveRank).name} ${combo.count}장` : combo.reason) : "선택 없음";
+
+    if (E.selectedSummary) {
+      E.selectedSummary.textContent = cards.length
+        ? (combo.ok ? `${rankInfo(combo.effectiveRank).name} ${combo.count}장` : combo.reason)
+        : "선택 없음";
+    }
   }
 
   function renderControls() {
@@ -1540,15 +1657,28 @@ batch.set(roomRef(), {
     const group = groupHand(S.hand).find(g => Number(g.rank) === Number(rank));
     if (!group) return;
     if (S.room?.status === "tributeReturn") {
-      const pair = currentTributePairForMe();
-      if (!pair) return toast("반환할 차례가 아닙니다.");
-      const existing = S.selected.get(group.rank) || [];
-      if (existing.length) S.selected.delete(group.rank);
-      else {
-        const left = Math.max(0, pair.count - selectedCards().length);
-        if (left <= 0) return toast(`${pair.count}장만 선택할 수 있습니다.`);
-        S.selected.set(group.rank, group.items.slice(0, left));
+      const pair = syncTributeReturnSelection();
+
+      if (!pair) {
+        return toast("반환할 차례가 아닙니다.");
       }
+
+      const rankNum = Number(group.rank);
+      const required = Number(pair.count || 0);
+      const current = Number(S.tributeReturnSelection.counts.get(rankNum) || 0);
+      const total = tributeReturnSelectedTotal();
+      const maxInStack = Number(group.items.length || 0);
+
+      if (total < required && current < maxInStack) {
+        S.tributeReturnSelection.counts.set(rankNum, current + 1);
+      } else if (current > 0) {
+        const next = current - 1;
+        if (next > 0) S.tributeReturnSelection.counts.set(rankNum, next);
+        else S.tributeReturnSelection.counts.delete(rankNum);
+      } else {
+        return toast(`${required}장만 선택할 수 있습니다.`);
+      }
+
       renderHand();
       return;
     }
@@ -1821,6 +1951,7 @@ async function returnTribute(uid, cards, hand) {
 
   if (uid === S.user) {
     S.selected.clear();
+    clearTributeReturnSelection();
   }
 
   await batch.commit();
