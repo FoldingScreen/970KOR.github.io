@@ -2215,3 +2215,80 @@ body.office-mode .modal-row.header{
     min-height:190px!important;
   }
 }
+
+/* =========================
+   눈치보기 / 업무모드 문구·입력부 보정
+   - 선택 없음 / 메시지 입력 배경 완화
+   - 손패 제목/상단 제목 업무표 톤 정리
+========================= */
+
+body.office-mode .hand-header h3{
+  color:#107c41!important;
+  font-weight:900!important;
+}
+
+body.office-mode .selected-summary{
+  background:#ffffff!important;
+  color:#5f6368!important;
+  border:1px solid #d9e2dc!important;
+  border-radius:3px!important;
+  box-shadow:none!important;
+}
+
+body.office-mode .selected-summary:empty{
+  display:none!important;
+}
+
+body.office-mode .chat-input-row,
+body.office-mode .chat-form,
+body.office-mode .side-panel input,
+body.office-mode .side-panel textarea{
+  background:#ffffff!important;
+  color:#202124!important;
+  border-color:#d9e2dc!important;
+  box-shadow:none!important;
+}
+
+body.office-mode #chatInput{
+  background:#ffffff!important;
+  color:#202124!important;
+  border:1px solid #d9e2dc!important;
+  box-shadow:none!important;
+  border-radius:3px!important;
+}
+
+body.office-mode #chatInput::placeholder{
+  color:#8a8f94!important;
+}
+
+body.office-mode .chat-list + div,
+body.office-mode .chat-list + .input-row,
+body.office-mode .side-panel .input-row{
+  background:transparent!important;
+  border-color:#d9e2dc!important;
+  box-shadow:none!important;
+}
+
+body.office-mode .room-head h2,
+body.office-mode #roomTitle{
+  color:#107c41!important;
+  font-weight:900!important;
+}
+
+@media(max-width:880px){
+  body.office-mode:has(#roomView.show) .room-head h2,
+  body.office-mode:has(#roomView.show) #roomTitle{
+    color:#ffffff!important;
+  }
+
+  body.office-mode:has(#roomView.show) .selected-summary{
+    background:#ffffff!important;
+    color:#5f6368!important;
+    border:1px solid #d9e2dc!important;
+    padding:4px 6px!important;
+  }
+
+  body.office-mode:has(#roomView.show) #chatInput{
+    background:#ffffff!important;
+  }
+}
