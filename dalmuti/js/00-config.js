@@ -360,7 +360,7 @@ function basePlayer(uid, nickname, seatOrder, isAI) {
     const link = document.createElement("link");
     link.id = "dalmutiSingleCss";
     link.rel = "stylesheet";
-    link.href = "./js/00-style.css?v=20260520-office-text1";
+    link.href = "./js/00-style.css?v=20260520-office-joker1";
 
     document.head.appendChild(link);
   }
@@ -754,6 +754,26 @@ function officeRoleName(role) {
   return map[role] || role || "참여자";
 }
 
+function officeCardSetLabel(cards = [], effectiveRank = null) {
+  const list = Array.isArray(cards) ? cards : [];
+  const jokerCount = list.filter(c => c?.joker || Number(c?.rank) === 13).length;
+
+  const baseRank = effectiveRank || list.find(c => !(c?.joker || Number(c?.rank) === 13))?.rank || 13;
+  const baseInfo = rankInfo(baseRank);
+
+  const baseLabel = `${baseInfo.code}. ${officeRoleName(baseInfo.name)}`;
+
+  if (Number(baseRank) === 13) {
+    return "J. 예외";
+  }
+
+  if (jokerCount > 0) {
+    return `${baseLabel} + 예외 ${jokerCount}건`;
+  }
+
+  return baseLabel;
+}
+  
 function officeRoundText(room = S.room) {
   const roundNow = Number(room?.round || 0);
   const roundTotal = room?.totalRounds ? Number(room.totalRounds) : null;
@@ -1113,7 +1133,7 @@ if (isMobileLayout()) {
           </div>
           <div class="office-pile-row">
             <span>${esc(cur.nickname || "-")}</span>
-            <span>${esc(rankInfo(cur.effectiveRank).code)}. ${esc(officeRoleName(rankInfo(cur.effectiveRank).name))}</span>
+            <span>${esc(officeCardSetLabel(cur.cards || [], cur.effectiveRank))}</span>
             <strong>${Number(cur.count || 0)}건</strong>
             <span>진행중</span>
           </div>
@@ -1273,7 +1293,7 @@ if (E.selectedSummary) {
         combo.ok
           ? (
               office
-                ? `${officeRoleName(rankInfo(combo.effectiveRank).name)} ${combo.count}건 선택`
+                ? `${officeCardSetLabel(combo.cards || [], combo.effectiveRank)} ${combo.count}건 선택`
                 : `${rankInfo(combo.effectiveRank).name} ${combo.count}장`
             )
           : combo.reason
