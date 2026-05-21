@@ -360,7 +360,7 @@ function basePlayer(uid, nickname, seatOrder, isAI) {
     const link = document.createElement("link");
     link.id = "dalmutiSingleCss";
     link.rel = "stylesheet";
-    link.href = "./js/00-style.css?v=20260520-office-mode1";
+    link.href = "./js/00-style.css?v=20260520-office-mode2";
 
     document.head.appendChild(link);
   }
@@ -1020,9 +1020,27 @@ if (handTitle) {
         ? true
         : (selected > 0 || selectableGroup(g));
 
+      const info = rankInfo(rank);
+      const officeStatus = selected
+        ? `선택 ${selected}`
+        : selectable
+          ? "대기"
+          : "제한";
+
       return `
-        <div class="hand-stack${selected ? " selected" : ""}${selectable ? "" : " disabled"}" onclick="Dalmuti.toggleRank(${rank})">
+        <div
+          class="hand-stack${selected ? " selected" : ""}${selectable ? "" : " disabled"}"
+          data-code="${esc(info.code)}"
+          data-name="${esc(info.name)}"
+          data-count="${g.items.length}"
+          data-status="${esc(officeStatus)}"
+          onclick="Dalmuti.toggleRank(${rank})"
+        >
           ${selected ? `<span class="stack-selected">${selected}</span>` : ""}
+          <span class="office-card-cell office-code">${esc(info.code)}</span>
+          <span class="office-card-cell office-name">${esc(info.name)}</span>
+          <span class="office-card-cell office-count">${g.items.length}</span>
+          <span class="office-card-cell office-status">${esc(officeStatus)}</span>
           <img src="${cardImg(rank)}">
           <span class="stack-count">x${g.items.length}</span>
         </div>
