@@ -332,6 +332,48 @@ function basePlayer(uid, nickname, seatOrder, isAI) {
     btn.style.marginLeft = "8px";
     $("selectedSummary").insertAdjacentElement("afterend", btn);
   }
+
+  if (E.chatList?.closest("section")) {
+    E.chatList.closest("section").classList.add("mobile-chat-section");
+  }
+  if (E.scoreList?.closest("section")) {
+    E.scoreList.closest("section").classList.add("mobile-score-section");
+  }
+
+  if (!$("mobileMenuBtn") && document.querySelector(".room-head")) {
+    const btn = document.createElement("button");
+    btn.id = "mobileMenuBtn";
+    btn.type = "button";
+    btn.className = "mobile-menu-btn";
+    btn.textContent = "☰";
+    document.querySelector(".room-head").insertAdjacentElement("afterbegin", btn);
+  }
+
+  if (!$("mobileChatBtn")) {
+    const btn = document.createElement("button");
+    btn.id = "mobileChatBtn";
+    btn.type = "button";
+    btn.className = "mobile-chat-btn";
+    btn.textContent = "💬";
+    document.body.appendChild(btn);
+  }
+
+  if (!$("mobileAutoPlayBtn")) {
+    const btn = document.createElement("button");
+    btn.id = "mobileAutoPlayBtn";
+    btn.type = "button";
+    btn.className = "mobile-auto-btn hidden";
+    btn.textContent = "AUTO";
+    document.body.appendChild(btn);
+  }
+
+  if (!$("mobilePanelBackdrop")) {
+    const bg = document.createElement("div");
+    bg.id = "mobilePanelBackdrop";
+    bg.className = "mobile-panel-backdrop";
+    document.body.appendChild(bg);
+  }
+
   if (!$("emojiPanel") && E.sendChatBtn?.parentElement) {
     const wrap = document.createElement("span");
     wrap.className = "emoji-wrap";
@@ -570,58 +612,107 @@ async function loadRooms() {
 
   function renderHeader() {
     const room = S.room;
-    const statusText = ({ waiting: "대기 중", playing: `${room.round || 1}라운드`, tributeReturn: "상납 반환", betweenRounds: "라운드 종료", finished: "게임 종료" })[room.status] || room.status || "-";
+    const roundNow = Number(room.round || 0);
+    const roundTotal = room.totalRounds ? Number(room.totalRounds) : null;
+    const roundText = roundNow
+      ? (roundTotal ? `${roundNow}/${roundTotal} Round` : `${roundNow} Round`)
+      : "대기 중";
+    const statusText = ({
+      waiting: "대기 중",
+      playing: roundText,
+      tributeReturn: roundText,
+      betweenRounds: "라운드 종료",
+      finished: "게임 종료"
+    })[room.status] || room.status || "-";
+
     if (E.roomStateText) E.roomStateText.textContent = statusText;
-    if (E.roomTitle) E.roomTitle.textContent = room.title || "달무티 in 조선";
+    if (E.roomTitle) E.roomTitle.textContent = isMobileLayout() ? "달무티 in 조선" : (room.title || "달무티 in 조선");
+
     const turnName = room.currentTurnUid ? (playersMap(room)[room.currentTurnUid]?.nickname || "-") : "-";
     if (E.turnBadge) E.turnBadge.textContent = room.status === "playing" ? `차례: ${turnName}` : statusText;
+
     if (E.messageBar) {
       if (room.status === "waiting") E.messageBar.textContent = "참가자는 준비를 눌러야 게임을 시작할 수 있습니다.";
       else if (room.status === "tributeReturn") {
-  E.messageBar.textContent = room.currentTurnUid
-    ? `${turnName}님이 상납받은 카드 수만큼 반환할 차례입니다.`
-    : "상납받은 사람이 같은 장수만큼 카드를 돌려줘야 합니다.";
-}
+        E.messageBar.textContent = room.currentTurnUid
+          ? `${turnName}님이 상납받은 카드 수만큼 반환할 차례입니다.`
+          : "상납받은 사람이 같은 장수만큼 카드를 돌려줘야 합니다.";
+      }
       else if (room.status === "playing") E.messageBar.textContent = room.currentTurnUid === S.user ? "내 차례입니다." : `${turnName}님의 차례입니다.`;
       else if (room.status === "betweenRounds") E.messageBar.textContent = "라운드가 종료되었습니다.";
       else E.messageBar.textContent = "게임이 종료되었습니다.";
     }
   }
 
-function topSeatClass(index, total) {
-  if (total === 1) return "seat-top-0";
-  if (total === 2) return index === 0 ? "seat-top-1" : "seat-top-2";
-  if (total >= 3) {
-    if (index === 0) return "seat-top-1";
-    if (index === 1) return "seat-top-0";
-    return "seat-top-2";
+function isMobileLayout() {
+  return window.matchMedia && window.matchMedia("(max-width: 880px)").matches;
+}
+
+function positionClassForSide(side, index, total) {
+  if (total <= 1) return `seat-${side}-0`;
+  if (total === 2) return index === 0 ? `seat-${side}-1` : `seat-${side}-2`;
+  if (index === 0) return `seat-${side}-1`;
+  if (index === 1) return `seat-${side}-0`;
+  return `seat-${side}-2`;
+}
+
+function mobilePositions(ps, myIndex) {
+  const rotated = ps.length
+    ? ps.slice(myIndex).concat(ps.slice(0, myIndex))
+    : [];
+
+  const opponents = rotated.filter(p => p.uid !== S.user);
+  const opponentCount = opponents.length;
+
+  if (!opponentCount) {
+    return rotated.slice(0, 1).map(p => ({ p, cls: "seat-bottom" }));
   }
-  return "seat-top-0";
+
+  const topCount = opponentCount === 1
+    ? 1
+    : opponentCount % 2 === 0
+      ? 2
+      : 1;
+
+  const topPlayers = opponents.slice(0, topCount);
+  const rest = opponents.slice(topCount);
+  const half = Math.ceil(rest.length / 2);
+  const leftPlayers = rest.slice(0, half);
+  const rightPlayers = rest.slice(half);
+  const result = [];
+
+  if (topPlayers.length === 1) {
+    result.push({ p: topPlayers[0], cls: "seat-top-0" });
+  } else if (topPlayers.length === 2) {
+    result.push({ p: topPlayers[0], cls: "seat-top-1" });
+    result.push({ p: topPlayers[1], cls: "seat-top-2" });
+  }
+
+  leftPlayers.forEach((p, i) => {
+    result.push({ p, cls: positionClassForSide("left", i, leftPlayers.length) });
+  });
+
+  rightPlayers.forEach((p, i) => {
+    result.push({ p, cls: positionClassForSide("right", i, rightPlayers.length) });
+  });
+
+  return result.filter(item => item && item.p && item.p.uid);
 }
 
 function positions() {
   const ps = allPlayers().filter(p => p && p.uid);
-
   const myIndexRaw = ps.findIndex(p => p.uid === S.user);
   const myIndex = myIndexRaw >= 0 ? myIndexRaw : 0;
+
+  if (isMobileLayout()) {
+    return mobilePositions(ps, myIndex);
+  }
 
   const rotated = ps.length
     ? ps.slice(myIndex).concat(ps.slice(0, myIndex))
     : [];
 
   const count = rotated.length;
-
-  /*
-    화면상 계급 진행 순서 고정표
-
-    2명: 내 자리 → 위
-    3명: 내 자리 → 왼쪽 → 오른쪽
-    4명: 내 자리 → 왼쪽 → 위 → 오른쪽
-    5명: 내 자리 → 왼쪽 → 상단왼쪽 → 상단오른쪽 → 오른쪽
-    6명: 내 자리 → 왼쪽아래 → 왼쪽위 → 상단왼쪽 → 상단오른쪽 → 오른쪽
-    7명: 내 자리 → 왼쪽아래 → 왼쪽위 → 상단왼쪽 → 상단가운데 → 상단오른쪽 → 오른쪽
-    8명: 내 자리 → 왼쪽아래 → 왼쪽위 → 상단왼쪽 → 상단가운데 → 상단오른쪽 → 오른쪽위 → 오른쪽아래
-  */
   const seatMapByCount = {
     1: ["seat-bottom"],
     2: ["seat-bottom", "seat-top-0"],
@@ -637,10 +728,7 @@ function positions() {
 
   return rotated
     .slice(0, seatMap.length)
-    .map((p, i) => ({
-      p,
-      cls: seatMap[i]
-    }))
+    .map((p, i) => ({ p, cls: seatMap[i] }))
     .filter(item => item && item.p && item.p.uid);
 }
   
@@ -667,20 +755,52 @@ function positions() {
 
   function renderPile() {
     if (!E.centerPile) return;
+
     if (S.room?.status === "tributeReturn") {
       const pairs = S.room.tribute?.pairs || [];
       E.centerPile.innerHTML = `<div class="pile-title">상납 반환</div><div class="muted">상납 받은 사람이 같은 장수만큼 카드를 돌려줍니다.</div><div class="muted">${pairs.map(p => `${esc(p.fromNickname)} → ${esc(p.toNickname)} ${p.count}장 ${p.returned ? "완료" : "대기"}`).join("<br>")}</div>`;
       return;
     }
+
     const prev = S.room?.previousSet;
     const cur = S.room?.currentSet;
+
     if (!prev && !cur) {
       E.centerPile.innerHTML = `<div class="pile-board"><div class="pile-empty">새 판</div></div>`;
       return;
     }
-    const prevCard = prev?.cards?.[0] ? `<img src="${cardImg(prev.cards[0].rank)}" alt="직전 카드">` : `<span class="muted">없음</span>`;
-    const curCards = cur ? (cur.cards || []).map(c => `<img src="${cardImg(c.rank)}" alt="${esc(c.name)}">`).join("") : `<span class="muted">제출 대기</span>`;
-    E.centerPile.innerHTML = `<div class="pile-board"><div class="prev-pile"><div class="prev-pile-title">직전 카드</div>${prevCard}</div><div class="cur-pile"><div class="cur-pile-title">${cur ? `현재 ${rankInfo(cur.effectiveRank).name} ${cur.count}장` : "현재 없음"}</div><div class="cur-cards">${curCards}</div></div></div>`;
+
+    const prevCard = prev?.cards?.[0]
+      ? `<img src="${cardImg(prev.cards[0].rank)}" alt="직전 카드">`
+      : `<span class="muted">없음</span>`;
+
+    const curList = cur?.cards || [];
+    const mobilePileClass = !cur
+      ? ""
+      : curList.length >= 5
+        ? "mobile-pile-count-many"
+        : `mobile-pile-count-${curList.length || 1}`;
+
+    const curCards = cur ? curList.map((c, i) => {
+      const before = curList[i - 1];
+      const isJoker = c.joker || Number(c.rank) === 13;
+      const beforeIsJoker = before && (before.joker || Number(before.rank) === 13);
+      const jokerGap = isJoker && before && !beforeIsJoker ? " mobile-joker-gap" : "";
+      return `<img class="${jokerGap.trim()}" src="${cardImg(c.rank)}" alt="${esc(c.name)}">`;
+    }).join("") : `<span class="muted">제출 대기</span>`;
+
+    E.centerPile.innerHTML = `
+      <div class="pile-board">
+        <div class="prev-pile">
+          <div class="prev-pile-title">직전 카드</div>
+          ${prevCard}
+        </div>
+        <div class="cur-pile">
+          <div class="cur-pile-title">${cur ? `${rankInfo(cur.effectiveRank).name} ${cur.count}장` : "없음"}</div>
+          <div class="cur-cards ${mobilePileClass}">${curCards}</div>
+        </div>
+      </div>
+    `;
   }
 
   function currentTributePairForMe() {
@@ -726,13 +846,29 @@ E.handArea.innerHTML = groups.length ? groups.map(g => {
     const mine = me();
     const waiting = S.room?.status === "waiting";
     const between = S.room?.status === "betweenRounds" || S.room?.status === "finished";
-    const myTurn = S.room?.status === "playing" && S.room.currentTurnUid === S.user && mine?.type === "player" && !mine.finished && !mine.forfeited;
-    const tributeTurn = S.room?.status === "tributeReturn" && !!currentTributePairForMe();
+    const playing = S.room?.status === "playing";
+    const tribute = S.room?.status === "tributeReturn";
+
+    const isPlayer = mine?.type === "player" && !mine.isAI;
+    const myTurn = playing && S.room.currentTurnUid === S.user && mine?.type === "player" && !mine.finished && !mine.forfeited;
+    const tributeTurn = tribute && !!currentTributePairForMe();
+
     E.lobbyControls?.classList.toggle("hidden", !waiting);
     E.betweenControls?.classList.toggle("hidden", !between);
-    E.playControls?.classList.toggle("hidden", !(myTurn || tributeTurn));
-    E.passBtn?.classList.toggle("hidden", !myTurn);
-    if (E.playBtn) E.playBtn.textContent = tributeTurn ? "반환 카드 주기" : "선택 카드 내기";
+
+    const showPlayControls = isPlayer && (playing || tribute);
+    E.playControls?.classList.toggle("hidden", !showPlayControls);
+
+    if (E.playBtn) {
+      E.playBtn.textContent = tribute ? "반환 카드 주기" : "선택 카드 내기";
+      E.playBtn.disabled = tribute ? !tributeTurn : !myTurn;
+    }
+
+    if (E.passBtn) {
+      E.passBtn.classList.remove("hidden");
+      E.passBtn.disabled = !myTurn;
+    }
+
     E.readyBtn?.classList.toggle("hidden", !(waiting && mine?.type === "player" && !mine.isAI && !isHost()));
     E.watchBtn?.classList.toggle("hidden", !(waiting && mine?.type === "player" && !mine.isAI));
     E.joinAsPlayerBtn?.classList.toggle("hidden", !(waiting && mine?.type === "spectator"));
@@ -741,13 +877,21 @@ E.handArea.innerHTML = groups.length ? groups.map(g => {
     E.resetGameBtn?.classList.add("hidden");
     if (E.readyBtn) E.readyBtn.textContent = mine?.isReady ? "준비 취소" : "준비";
 
+    const showAuto = !!(mine?.type === "player" && !mine.isAI);
+
     const autoBtn = $("autoPlayBtn");
     if (autoBtn) {
-      const showAuto = !!(mine?.type === "player" && !mine.isAI);
       autoBtn.classList.toggle("hidden", !showAuto);
       autoBtn.textContent = mine?.autoPlay ? "자동 ON" : "자동 OFF";
       autoBtn.classList.toggle("primary", !!mine?.autoPlay);
       autoBtn.classList.toggle("ghost", !mine?.autoPlay);
+    }
+
+    const mobileAutoBtn = $("mobileAutoPlayBtn");
+    if (mobileAutoBtn) {
+      mobileAutoBtn.classList.toggle("hidden", !showAuto);
+      mobileAutoBtn.textContent = "AUTO";
+      mobileAutoBtn.classList.toggle("primary", !!mine?.autoPlay);
     }
   }
 
@@ -2071,6 +2215,23 @@ async function closeRoomIfNoHuman(roomId = S.roomId, players = playersMap(), spe
     showModal("게임 방법", `<div class="help-section"><strong>목표</strong><br>손패를 먼저 털수록 높은 순위를 얻고, 라운드마다 승점을 얻습니다.</div><div class="help-section"><strong>제출</strong><br>같은 계급 여러 장을 낼 수 있습니다. 이미 카드가 깔려 있으면 같은 장수이면서 더 높은 계급만 낼 수 있습니다.</div><div class="help-section"><strong>홍길동</strong><br>일반 카드와 함께 내면 그 계급 카드로 취급합니다. 홍길동만 내면 최약 카드 취급입니다.</div><div class="help-section"><strong>상납</strong><br>2라운드부터 하위 계급자가 상위 계급자에게 좋은 카드를 자동 상납하고, 받은 사람은 같은 장수만큼 돌려줍니다.</div><div class="help-section"><strong>민란</strong><br>백정 또는 노비가 홍길동 2장을 들면 계급 순서가 뒤집힙니다.</div>`);
   }
 
+
+  function closeMobilePanels() {
+    document.body.classList.remove("mobile-menu-open", "mobile-chat-open");
+  }
+
+  function toggleMobileMenu() {
+    const open = document.body.classList.contains("mobile-menu-open");
+    closeMobilePanels();
+    if (!open) document.body.classList.add("mobile-menu-open");
+  }
+
+  function toggleMobileChat() {
+    const open = document.body.classList.contains("mobile-chat-open");
+    closeMobilePanels();
+    if (!open) document.body.classList.add("mobile-chat-open");
+  }
+
   function bindEvents() {
     if (E.leaveRoomBtn) E.leaveRoomBtn.onclick = leaveRoom;
     if (E.createRoomBtn) E.createRoomBtn.onclick = showCreateRoomModal;
@@ -2087,6 +2248,14 @@ if (E.playBtn) E.playBtn.onclick = playSelected;
 if (E.passBtn) E.passBtn.onclick = passTurn;
 const autoBtn = $("autoPlayBtn");
 if (autoBtn) autoBtn.onclick = toggleAutoPlay;
+const mobileAutoBtn = $("mobileAutoPlayBtn");
+if (mobileAutoBtn) mobileAutoBtn.onclick = toggleAutoPlay;
+const mobileMenuBtn = $("mobileMenuBtn");
+if (mobileMenuBtn) mobileMenuBtn.onclick = toggleMobileMenu;
+const mobileChatBtn = $("mobileChatBtn");
+if (mobileChatBtn) mobileChatBtn.onclick = toggleMobileChat;
+const mobilePanelBackdrop = $("mobilePanelBackdrop");
+if (mobilePanelBackdrop) mobilePanelBackdrop.onclick = closeMobilePanels;
 if (E.sendChatBtn) E.sendChatBtn.onclick = sendChat;
         const emojiToggleBtn = $("emojiToggleBtn");
     const emojiPanel = $("emojiPanel");
