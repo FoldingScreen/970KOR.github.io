@@ -2410,3 +2410,16 @@ body.office-mode .office-kick-btn:hover{
     font-size:10px!important;
   }
 }
+
+/* =========================
+   눈치보기 / 채팅 닉네임 괄호 제거
+========================= */
+
+body.office-mode .chat-name::before{
+  content:""!important;
+  display:none!important;
+}
+
+body.office-mode .chat-name::after{
+  content:":"!important;
+}
