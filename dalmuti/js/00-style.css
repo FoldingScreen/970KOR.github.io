@@ -2087,7 +2087,7 @@ body.office-mode .chat-msg.system{
 }
 
 body.office-mode .chat-name::after{
-  content:" 검토:";
+  content:":";
   color:#5f6368;
   font-weight:400;
 }
