@@ -965,7 +965,7 @@ function positions() {
 
       const selectable = tributePair
         ? true
-        : selectableGroup(g);
+        : (selected > 0 || selectableGroup(g));
 
       return `
         <div class="hand-stack${selected ? " selected" : ""}${selectable ? "" : " disabled"}" onclick="Dalmuti.toggleRank(${rank})">
