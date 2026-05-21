@@ -774,47 +774,56 @@ function positionClassForSide(side, index, total) {
 }
 
 function mobilePositions(ps, myIndex) {
+  const isPlayerView = myIndex >= 0;
+
+  /*
+    관전자 배치:
+    - 내 자리가 없으므로 하단 중앙 seat-bottom 미사용
+    - 계급 순서 그대로 좌하단 → 좌중 → 좌상 → 상단 → 우상 → 우중 → 우하단
+    - 상단은 3칸 구조:
+      홀수면 seat-top-0 중앙
+      짝수면 seat-top-1 / seat-top-2 좌우
+  */
+  if (!isPlayerView) {
+    const spectatorSlotMapByCount = {
+      1: ["seat-top-0"],
+      2: ["seat-top-1", "seat-top-2"],
+      3: ["seat-left-0", "seat-top-0", "seat-right-0"],
+      4: ["seat-left-0", "seat-top-1", "seat-top-2", "seat-right-0"],
+      5: ["seat-left-2", "seat-left-1", "seat-top-1", "seat-top-2", "seat-right-2"],
+      6: ["seat-left-2", "seat-left-1", "seat-top-1", "seat-top-2", "seat-right-1", "seat-right-2"],
+      7: ["seat-left-2", "seat-left-0", "seat-left-1", "seat-top-1", "seat-top-2", "seat-right-1", "seat-right-2"],
+      8: ["seat-left-2", "seat-left-0", "seat-left-1", "seat-top-1", "seat-top-2", "seat-right-1", "seat-right-0", "seat-right-2"]
+    };
+
+    const slots = spectatorSlotMapByCount[ps.length] || spectatorSlotMapByCount[8];
+
+    return ps
+      .slice(0, slots.length)
+      .map((p, i) => ({
+        p,
+        cls: slots[i]
+      }))
+      .filter(item => item && item.p && item.p.uid);
+  }
+
+  /*
+    플레이어 배치:
+    - 내 자리는 하단 손패 영역으로 빠짐
+    - 상대만 배치
+    - 내 다음 사람부터 왼쪽 아래 방향으로 회전
+    - 상단은 3칸 구조:
+      상대 수 홀수면 seat-top-0 중앙
+      상대 수 짝수면 seat-top-1 / seat-top-2 좌우
+  */
   const rotated = ps.length
     ? ps.slice(myIndex).concat(ps.slice(0, myIndex))
     : [];
 
-  const mePlayer = rotated.find(p => p.uid === S.user) || null;
   const opponents = rotated.filter(p => p.uid !== S.user);
   const opponentCount = opponents.length;
 
-  if (!opponentCount) {
-    return mePlayer ? [{ p: mePlayer, cls: "seat-bottom" }] : [];
-  }
-
-  /*
-    모바일 자리 배치 순서
-
-    기준:
-    내 자리에서 왼쪽으로 돌기 시작한다.
-    즉, 상대 배열 순서를 다음 시각 위치에 순서대로 넣는다.
-
-    상대 1명:
-      상단 중앙
-
-    상대 2명:
-      상단 왼쪽 → 상단 오른쪽
-
-    상대 3명:
-      왼쪽 중앙 → 상단 중앙 → 오른쪽 중앙
-
-    상대 4명:
-      왼쪽 중앙 → 상단 왼쪽 → 상단 오른쪽 → 오른쪽 중앙
-
-    상대 5명:
-      왼쪽 아래 → 왼쪽 위 → 상단 중앙 → 오른쪽 위 → 오른쪽 아래
-
-    상대 6명:
-      왼쪽 아래 → 왼쪽 위 → 상단 왼쪽 → 상단 오른쪽 → 오른쪽 위 → 오른쪽 아래
-
-    상대 7명:
-      왼쪽 아래 → 왼쪽 중앙 → 왼쪽 위 → 상단 중앙 → 오른쪽 위 → 오른쪽 중앙 → 오른쪽 아래
-  */
-  const slotMapByOpponentCount = {
+  const playerSlotMapByOpponentCount = {
     1: ["seat-top-0"],
     2: ["seat-top-1", "seat-top-2"],
     3: ["seat-left-0", "seat-top-0", "seat-right-0"],
@@ -824,7 +833,7 @@ function mobilePositions(ps, myIndex) {
     7: ["seat-left-2", "seat-left-0", "seat-left-1", "seat-top-0", "seat-right-1", "seat-right-0", "seat-right-2"]
   };
 
-  const slots = slotMapByOpponentCount[opponentCount] || slotMapByOpponentCount[7];
+  const slots = playerSlotMapByOpponentCount[opponentCount] || playerSlotMapByOpponentCount[7];
 
   return opponents
     .slice(0, slots.length)
