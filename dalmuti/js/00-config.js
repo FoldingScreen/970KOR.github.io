@@ -360,7 +360,7 @@ function basePlayer(uid, nickname, seatOrder, isAI) {
     const link = document.createElement("link");
     link.id = "dalmutiSingleCss";
     link.rel = "stylesheet";
-    link.href = "./js/00-style.css?v=20260520-office-joker1";
+    link.href = "./js/00-style.css?v=20260520-office-chatname1";
 
     document.head.appendChild(link);
   }
