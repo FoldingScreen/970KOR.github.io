@@ -2160,3 +2160,58 @@ body.office-mode .modal-row.header{
     grid-template-columns:1fr!important;
   }
 }
+
+/* =========================
+   눈치보기 / 업무모드 배치 보정
+   - 왼쪽: 담당자별 처리 현황
+   - 오른쪽: 현재 처리 항목
+========================= */
+
+@media(min-width:881px){
+  body.office-mode .office-player-table{
+    left:14px!important;
+    right:auto!important;
+    top:14px!important;
+    width:calc(50% - 22px)!important;
+    max-width:none!important;
+    margin:0!important;
+  }
+
+  body.office-mode .center-pile{
+    left:auto!important;
+    right:14px!important;
+    top:14px!important;
+    width:calc(50% - 22px)!important;
+    height:auto!important;
+    min-height:154px!important;
+    max-width:none!important;
+    transform:none!important;
+    padding:0!important;
+    border:0!important;
+    background:transparent!important;
+  }
+
+  body.office-mode .cur-pile{
+    position:static!important;
+    left:auto!important;
+    right:auto!important;
+    top:auto!important;
+    bottom:auto!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:154px!important;
+    padding:0!important;
+    border:0!important;
+    background:transparent!important;
+  }
+
+  body.office-mode .office-pile-table{
+    width:100%!important;
+    max-width:none!important;
+    margin:0!important;
+  }
+
+  body.office-mode .pile-board{
+    min-height:190px!important;
+  }
+}
