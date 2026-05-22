@@ -53,10 +53,10 @@
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
   flex-wrap: nowrap;
-  padding: 10px 14px;
-  border-radius: 18px;
+  padding: 7px 11px;
+  border-radius: 14px;
   border: 1px solid rgba(120, 160, 220, 0.22);
   background: rgba(7, 20, 36, 0.88);
   overflow: hidden;
@@ -64,7 +64,7 @@
 
 .rearrange-my-title {
   flex: 0 0 auto;
-  font-size: 17px;
+  font-size: 14px;
   font-weight: 900;
   white-space: nowrap;
 }
@@ -72,7 +72,7 @@
 .rearrange-my-item {
   flex: 0 1 auto;
   min-width: 0;
-  font-size: 13px;
+  font-size: 12px;
   white-space: nowrap;
   color: rgba(210, 230, 255, 0.9);
 }
@@ -84,9 +84,10 @@
 .rearrange-my-edit-btn {
   flex: 0 0 auto;
   margin-left: auto;
-  padding: 6px 12px;
+  padding: 5px 10px;
   border-radius: 8px;
   cursor: pointer;
+  font-size: 12px;
 }
 
 /* 신청 모달 가독성 개선 */
