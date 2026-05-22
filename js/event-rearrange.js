@@ -388,7 +388,6 @@ function renderBaselineRankingTable(entries){
     <div class="rearrange-view-tabs tiny">
       <button type="button" class="${baselineTab==="2026-04"?"active":""}" onclick="setRearrangeBaselineTab('2026-04')">2026. 4. 기준</button>
     </div>
-    <div class="party-sub">기존 순위표 · 2026. 4. 기준</div>
     <div class="rank-table-wrap">
       <table class="rank-table rearrange-admin-table">
         <thead>
