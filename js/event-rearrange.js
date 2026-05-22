@@ -171,11 +171,13 @@ function renderRearrangeAdminTabs(groups){
       <span>이동 희망 ${groups.moveRequests.length}명</span>
       <span>상관없음 ${groups.anyEntries.length}명</span>
       <span>유동적 ${groups.flexEntries.length}명 / 승인 ${approvedCount}명</span>
+      <span>제외 ${groups.excludedEntries.length}명</span>
     </div>
     <div class="rearrange-view-tabs small">
       <button type="button" class="${tab==="move"?"active":""}" onclick="setRearrangeAdminTab('move')">이동 희망</button>
       <button type="button" class="${tab==="any"?"active":""}" onclick="setRearrangeAdminTab('any')">상관없음</button>
       <button type="button" class="${tab==="flex"?"active":""}" onclick="setRearrangeAdminTab('flex')">유동적</button>
+      <button type="button" class="${tab==="excluded"?"active":""}" onclick="setRearrangeAdminTab('excluded')">제외</button>
       <button type="button" class="${tab==="baseline"?"active":""}" onclick="setRearrangeAdminTab('baseline')">기존 순위</button>
     </div>
   `;
@@ -223,6 +225,49 @@ function renderAdminSimpleTable(entries,type){
     <div class="rank-table-wrap">
       <table class="rank-table rearrange-admin-table">
         <thead>${header}</thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderExcludedAdminTable(entries){
+  if(!entries.length)return`<div class="rank-empty">제외 인원이 없습니다.</div>`;
+
+  const rows=entries.map(entry=>{
+    const powerText=entry.power>0?Number(entry.power).toLocaleString("ko-KR"):"-";
+    const noteText=entry.note?escapeHtml(entry.note):"-";
+    const existing=normalizeRearrangeGroup(entry.existingGroup)||"-";
+    const desired=normalizeRearrangeGroup(entry.desiredGroup)||"-";
+
+    return`
+      <tr>
+        <td class="left">${escapeHtml(entry.user)}</td>
+        <td>${escapeHtml(existing)}</td>
+        <td>${escapeHtml(desired)}</td>
+        <td>${escapeHtml(entry.stageText||"-")}</td>
+        <td>${powerText}</td>
+        <td class="left">${noteText}</td>
+        <td><button class="rank-edit-btn" onclick="openRearrangeRankEditModal('${escapeJs(entry.user)}')">관리</button></td>
+      </tr>
+    `;
+  }).join("");
+
+  return`
+    <div class="party-sub">배치표에서 제외된 인원입니다. 관리 버튼에서 제외 해제할 수 있습니다.</div>
+    <div class="rank-table-wrap">
+      <table class="rank-table rearrange-admin-table">
+        <thead>
+          <tr>
+            <th>닉네임</th>
+            <th>현재</th>
+            <th>희망</th>
+            <th>스테이지</th>
+            <th>전투력</th>
+            <th>비고</th>
+            <th>관리</th>
+          </tr>
+        </thead>
         <tbody>${rows}</tbody>
       </table>
     </div>
@@ -320,6 +365,11 @@ function renderRearrangeAdminPanel(groups){
     body=renderFlexAdminTable(groups.flexEntries);
   }
 
+  if(tab==="excluded"){
+    title="제외";
+    body=renderExcludedAdminTable(groups.excludedEntries);
+  }
+
   if(tab==="baseline"){
     title="기존 순위";
     body=renderBaselineRankingTable(groups.activeEntries);
@@ -386,7 +436,7 @@ function renderRearrangeEvent(){
     `;
   }
 
-  const excludedCard=renderExcludedRearrangeList(groups.excludedEntries);
+  const excludedCard="";
   const guideCard=(state.isAdmin||state.rearrangePublic)?`
     <div class="party-card layout-guide-card">
       <div class="party-title">순열 안내 예시</div>
@@ -405,7 +455,7 @@ window.setRearrangeView=function(view){
 };
 
 window.setRearrangeAdminTab=function(tab){
-  state.rearrangeAdminTab=["move","any","flex","baseline"].includes(tab)?tab:"move";
+  state.rearrangeAdminTab=["move","any","flex","excluded","baseline"].includes(tab)?tab:"move";
   renderRearrangeEvent();
 };
 
