@@ -545,6 +545,15 @@
 
   .rearrange-modal-body {
     grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+
+  .rearrange-modal-body > .form-group:nth-child(1),
+  .rearrange-modal-body > .form-group:nth-child(2),
+  .rearrange-modal-body > .form-group:nth-child(3),
+  .rearrange-modal-body > .rearrange-example-wrap {
+    grid-column: 1;
+    grid-row: auto;
   }
 
   .rearrange-check-grid,
@@ -558,8 +567,11 @@
   }
 
   .rearrange-example-wrap .example-image {
-    width: 180px;
-    max-width: 180px;
+    width: 100%;
+    max-width: 260px;
+    max-height: 360px;
+    display: block;
+    margin: 6px auto 0;
   }
   
   .rearrange-compact-table,
