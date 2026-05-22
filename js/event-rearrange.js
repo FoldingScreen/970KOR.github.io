@@ -1,3 +1,4 @@
+const REARRANGE_APPLICATION_VERSION="bear-2026-05";
 function normalizeRearrangeGroup(value){
   const v=String(value||"").replace(/\s+/g,"").trim();
   if(v==="곰1"||v==="곰１")return"곰1";
@@ -38,7 +39,7 @@ function renderExcludedRearrangeList(entries){
   `;
 }
 
-function renderRearrangeTable(entries,flexEntries=[]){
+function renderRearrangeTable(entries,flexEntries=[],groupName="곰1"){
   if(!entries.length&&!flexEntries.length)return`<div class="rank-empty">입력된 데이터가 없습니다.</div>`;
 
   const rows=entries.map((entry,idx)=>{
@@ -48,7 +49,7 @@ function renderRearrangeTable(entries,flexEntries=[]){
       return`
         <tr>
           <td>${rank}</td>
-          <td>${getLayoutLabel(rank)}</td>
+          <td>${getBearLayoutLabel(rank,groupName)}</td>
           <td class="left muted">공란</td>
           <td>-</td>
           <td>-</td>
@@ -65,7 +66,7 @@ function renderRearrangeTable(entries,flexEntries=[]){
     return`
       <tr class="${rowClass}">
         <td>${rank}</td>
-        <td>${getLayoutLabel(rank)}</td>
+        <td>${getBearLayoutLabel(rank,groupName)}</td>
         <td class="left ${entry.user===state.currentUser?"my-name":""}">${escapeHtml(entry.user)}${getDesiredBadge(entry)}</td>
         <td>${escapeHtml(entry.stageText||"-")}</td>
         <td>${powerText}</td>
@@ -117,9 +118,63 @@ function renderRearrangeGuide(){
   return`<div class="layout-guide-wrap"><img src="자리 순열.png" alt="자리 순열 안내도" class="layout-guide-image" /></div>`;
 }
 
+function isCurrentRearrangeApplication(entry){
+  return (
+    entry &&
+    entry.applicationVersion===REARRANGE_APPLICATION_VERSION &&
+    String(entry.stageText||"").trim() &&
+    isBearGroup(entry.existingGroup) &&
+    ["곰1","곰2","상관없음","유동적"].includes(normalizeRearrangeGroup(entry.desiredGroup))
+  );
+}
+
+function getBearLayoutColumn(rank, groupName){
+  if(groupName==="곰1"){
+    if(rank<=19)return 3;
+    if(rank<=27)return 1;
+    if(rank<=42)return 2;
+    return 4;
+  }
+
+  if(groupName==="곰2"){
+    if(rank<=17)return 3;
+    if(rank<=25)return 1;
+    if(rank<=40)return 2;
+    return 4;
+  }
+
+  return 4;
+}
+
+function getBearLayoutLabel(rank, groupName){
+  return `${getBearLayoutColumn(rank, groupName)}열`;
+}
+
+function getCheckedRearrangeValue(name){
+  return document.querySelector(`input[name="${name}"]:checked`)?.value||"";
+}
+
+function setCheckedRearrangeValue(name,value){
+  document.querySelectorAll(`input[name="${name}"]`).forEach(input=>{
+    input.checked=input.value===value;
+    input.closest(".rearrange-check-card")?.classList.toggle("checked",input.checked);
+  });
+}
+
+window.selectRearrangeCheckbox=function(name,clicked){
+  document.querySelectorAll(`input[name="${name}"]`).forEach(input=>{
+    if(input!==clicked)input.checked=false;
+    input.closest(".rearrange-check-card")?.classList.toggle("checked",input.checked);
+  });
+};
+
 function getRearrangeGroups(){
-  const activeEntries=state.rearrangeEntries.filter(v=>!isHiddenTestNickname(v.user)&&!v.excluded);
-  const excludedEntries=state.rearrangeEntries.filter(v=>!isHiddenTestNickname(v.user)&&v.excluded);
+  const allEntries=state.rearrangeEntries.filter(v=>!isHiddenTestNickname(v.user));
+  const baselineEntries=allEntries.slice();
+
+  const appliedEntries=allEntries.filter(isCurrentRearrangeApplication);
+  const activeEntries=appliedEntries.filter(v=>!v.excluded);
+  const excludedEntries=appliedEntries.filter(v=>v.excluded);
 
   const bear1Normal=activeEntries.filter(v=>normalizeRearrangeGroup(v.desiredGroup)==="곰1");
   const bear2Normal=activeEntries.filter(v=>{
@@ -128,7 +183,9 @@ function getRearrangeGroups(){
   });
 
   const flexEntries=activeEntries.filter(v=>normalizeRearrangeGroup(v.desiredGroup)==="유동적");
-  const flexApproved=flexEntries.filter(v=>!!v.flexApproved);
+  const flexApproved=flexEntries.filter(v=>!!v.flexApproved).slice(0,10);
+const flexApprovedBear1=flexApproved.slice(0,5);
+const flexApprovedBear2=flexApproved.slice(5,10);
 
   const moveRequests=activeEntries.filter(v=>{
     const existing=normalizeRearrangeGroup(v.existingGroup);
@@ -140,11 +197,14 @@ function getRearrangeGroups(){
 
   return{
     activeEntries,
+    baselineEntries,
     excludedEntries,
     bear1Entries:getDisplayedRearrangeEntries(bear1Normal),
     bear2Entries:getDisplayedRearrangeEntries(bear2Normal),
     flexEntries,
     flexApproved,
+    flexApprovedBear1,
+    flexApprovedBear2,
     moveRequests,
     anyEntries
   };
@@ -279,7 +339,7 @@ function renderFlexAdminTable(entries){
 
   if(!entries.length){
     return`
-      <div class="party-sub">유동 승인 ${approvedCount} / 8명</div>
+      <div class="party-sub">유동 승인 ${approvedCount} / 10명</div>
       <div class="rank-empty">유동적 신청자가 없습니다.</div>
     `;
   }
@@ -302,7 +362,7 @@ function renderFlexAdminTable(entries){
   }).join("");
 
   return`
-    <div class="party-sub">유동 승인 ${approvedCount} / 8명</div>
+    <div class="party-sub">유동 승인 ${approvedCount} / 10명</div>
     <div class="rank-table-wrap">
       <table class="rank-table rearrange-admin-table">
         <thead>
@@ -399,7 +459,7 @@ function renderRearrangeBoard(groups){
           <div class="party-title">곰 1 배치표</div>
           <button type="button" class="rank-copy-btn" onclick="copyRearrangeColumns('곰1')">복사</button>
         </div>
-        ${renderRearrangeTable(groups.bear1Entries,groups.flexApproved)}
+        ${renderRearrangeTable(groups.bear1Entries,groups.flexApprovedBear1,"곰1")}
       </div>
 
       <div class="party-card rank-table-card rearrange-board-card rearrange-bear2-card ${mobileTab!=="bear2"?"mobile-hidden-card":""}">
@@ -407,7 +467,7 @@ function renderRearrangeBoard(groups){
           <div class="party-title">곰 2 배치표</div>
           <button type="button" class="rank-copy-btn" onclick="copyRearrangeColumns('곰2')">복사</button>
         </div>
-        ${renderRearrangeTable(groups.bear2Entries,groups.flexApproved)}
+        ${renderRearrangeTable(groups.bear2Entries,groups.flexApprovedBear2,"곰2")}
       </div>
     </div>
   `;
@@ -417,15 +477,25 @@ function renderRearrangeEvent(){
   const mine=myRearrangeEntry();
   const groups=getRearrangeGroups();
 
-  const mineInfo=`
-    <div class="rearrange-my-info-bar">
+  const mineApplied=isCurrentRearrangeApplication(mine);
+
+  const mineInfo=mineApplied?`
+    <div class="rearrange-my-info-bar applied">
       <div class="rearrange-my-title">내 자리 재배치 정보</div>
-      <div class="rearrange-my-item">스테이지: <strong>${mine?escapeHtml(mine.stageText):"미입력"}</strong></div>
-      <div class="rearrange-my-item">현재 배치: <strong>${mine?escapeHtml(normalizeRearrangeGroup(mine.existingGroup)||"-"):"미입력"}</strong></div>
-      <div class="rearrange-my-item">희망 배치: <strong>${mine?escapeHtml(normalizeRearrangeGroup(mine.desiredGroup)||"-"):"미입력"}</strong></div>
-      <div class="rearrange-my-item">최종 수정: <strong>${mine?formatDateTime(mine.updatedAt):"-"}</strong></div>
+      <div class="rearrange-my-item">스테이지: <strong>${escapeHtml(mine.stageText)}</strong></div>
+      <div class="rearrange-my-item">현재 배치: <strong>${escapeHtml(normalizeRearrangeGroup(mine.existingGroup)||"-")}</strong></div>
+      <div class="rearrange-my-item">희망 배치: <strong>${escapeHtml(normalizeRearrangeGroup(mine.desiredGroup)||"-")}</strong></div>
+      <div class="rearrange-my-item">최종 수정: <strong>${formatDateTime(mine.updatedAt)}</strong></div>
       <button type="button" class="rearrange-my-edit-btn" ${state.rearrangeInputEnabled?"onclick=\"openMyRearrangeModal()\"":"disabled"}>
-        ${state.rearrangeInputEnabled?(mine?"수정":"입력"):"입력 일시중지"}
+        ${state.rearrangeInputEnabled?"수정":"입력 일시중지"}
+      </button>
+    </div>
+  `:`
+    <div class="rearrange-my-info-bar not-applied">
+      <div class="rearrange-my-title">내 자리 재배치 정보</div>
+      <div class="rearrange-my-item strong-alert">아직 신청하지 않았습니다.</div>
+      <button type="button" class="rearrange-my-edit-btn" ${state.rearrangeInputEnabled?"onclick=\"openMyRearrangeModal()\"":"disabled"}>
+        ${state.rearrangeInputEnabled?"신청하기":"입력 일시중지"}
       </button>
     </div>
   `;
@@ -516,11 +586,8 @@ window.openMyRearrangeModal=function(){
   const mine=myRearrangeEntry();
   el.rearrangeStageInput.value=mine?mine.stageText:"";
 
-  const existingSelect=document.getElementById("rearrangeExistingGroupSelect");
-  const desiredSelect=document.getElementById("rearrangeDesiredGroupSelect");
-
-  if(existingSelect)existingSelect.value=normalizeRearrangeGroup(mine?.existingGroup)||"";
-  if(desiredSelect)desiredSelect.value=normalizeRearrangeGroup(mine?.desiredGroup)||"";
+  setCheckedRearrangeValue("rearrangeExistingGroup",normalizeRearrangeGroup(mine?.existingGroup)||"");
+  setCheckedRearrangeValue("rearrangeDesiredGroup",normalizeRearrangeGroup(mine?.desiredGroup)||"");
 
   lockRearrangeInputForManualTap();
   el.rearrangeModal.classList.remove("hidden");
@@ -585,8 +652,8 @@ window.submitRearrangeProgress=async function(){
     return;
   }
 
-  const existingGroup=normalizeRearrangeGroup(document.getElementById("rearrangeExistingGroupSelect")?.value||"");
-  const desiredGroup=normalizeRearrangeGroup(document.getElementById("rearrangeDesiredGroupSelect")?.value||"");
+  const existingGroup=normalizeRearrangeGroup(getCheckedRearrangeValue("rearrangeExistingGroup"));
+  const desiredGroup=normalizeRearrangeGroup(getCheckedRearrangeValue("rearrangeDesiredGroup"));
 
   if(!isBearGroup(existingGroup)){
     alert("현재 배치된 곰을 선택하세요.");
@@ -607,6 +674,7 @@ window.submitRearrangeProgress=async function(){
     stageMinor:parsed.stageMinor,
     existingGroup,
     desiredGroup,
+    applicationVersion:REARRANGE_APPLICATION_VERSION,
     updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
     createdAt:state.rearrangeProgressEntries.find(v=>v.user===state.currentUser)?.createdAt||firebase.firestore.FieldValue.serverTimestamp()
   },{merge:true});
@@ -741,8 +809,8 @@ window.toggleRearrangeFlexApproved=async function(user){
   const next=!entry.flexApproved;
   const approvedCount=state.rearrangeEntries.filter(v=>!isHiddenTestNickname(v.user)&&!v.excluded&&normalizeRearrangeGroup(v.desiredGroup)==="유동적"&&v.flexApproved).length;
 
-  if(next&&approvedCount>=8){
-    alert("유동 승인 인원은 최대 8명입니다.");
+  if(next&&approvedCount>=10){
+    alert("유동 승인 인원은 최대 10명입니다.");
     return;
   }
 
@@ -772,16 +840,18 @@ window.copyRearrangeColumns=function(targetGroup=""){
     : ["[자리 재배치 결과]"];
 
   targetGroups.forEach(([groupName,displayedEntries])=>{
-    const columns={1:[],2:[],3:[],4:[],5:[],유동:[]};
+    const columns={1:[],2:[],3:[],4:[],유동:[]};
 
     displayedEntries.forEach((entry,idx)=>{
       const rank=idx+1;
-      const col=getRearrangeColumn(rank);
+      const col=getBearLayoutColumn(rank,groupName);
       if(!entry)return;
       columns[col].push(entry.user);
     });
 
-    groups.flexApproved.forEach(entry=>{
+    const flexList=groupName==="곰1" ? groups.flexApprovedBear1 : groups.flexApprovedBear2;
+
+    flexList.forEach(entry=>{
       columns.유동.push(entry.user);
     });
 
@@ -790,7 +860,6 @@ window.copyRearrangeColumns=function(targetGroup=""){
     lines.push(`2열: ${columns[2].join(", ")}`);
     lines.push(`3열: ${columns[3].join(", ")}`);
     lines.push(`4열: ${columns[4].join(", ")}`);
-    lines.push(`5열: ${columns[5].join(", ")}`);
     if(columns.유동.length)lines.push(`유동: ${columns.유동.join(", ")}`);
   });
 
