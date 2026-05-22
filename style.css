@@ -4511,3 +4511,62 @@ textarea.text-input{
     display: none !important;
   }
 }
+
+/* ===== 자리재배치 곰1/곰2 강제 좌우 배치 ===== */
+
+.rearrange-board-force-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  gap: 14px !important;
+  width: 100% !important;
+  align-items: stretch !important;
+}
+
+.rearrange-board-force-grid > .rearrange-board-card {
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  height: calc(100vh - 275px) !important;
+  min-height: 420px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.rearrange-board-force-grid .rank-table-wrap {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: auto !important;
+}
+
+.rearrange-board-force-grid .rank-table thead th {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 5 !important;
+}
+
+.rearrange-mobile-tabs {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .rearrange-mobile-tabs {
+    display: flex !important;
+    gap: 8px !important;
+    margin: 10px 0 !important;
+  }
+
+  .rearrange-board-force-grid {
+    display: block !important;
+  }
+
+  .rearrange-board-force-grid > .rearrange-board-card {
+    height: calc(100vh - 330px) !important;
+    min-height: 360px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .rearrange-board-force-grid > .rearrange-board-card.mobile-hidden-card {
+    display: none !important;
+  }
+}
