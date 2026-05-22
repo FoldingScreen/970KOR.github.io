@@ -281,20 +281,43 @@
 
   <div id="rearrangeModal" class="modal hidden">
     <div class="modal-header">
-      <h3 id="rearrangeModalTitle">내 진척도 입력</h3>
+      <h3 id="rearrangeModalTitle">내 자리 재배치 정보 입력</h3>
       <button class="close-btn" onclick="closeRearrangeModal()">닫기</button>
     </div>
+
     <div class="rearrange-modal-body">
       <div class="form-group">
-        <label>'빛나는 첨탑' 도달한 최고 스테이지</label>
+        <label>'빛나는 첨탑'에서 도달한 최고 스테이지를 입력해 주세요.</label>
         <input id="rearrangeStageInput" class="text-input" type="text" inputmode="text" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="예: 15-4" />
         <p class="muted form-help">입력 형식: 큰 스테이지-세부 스테이지 (예: 15-4)</p>
       </div>
+
+      <div class="form-group">
+        <label>당신이 현재 배치된 곰은 어디입니까?</label>
+        <select id="rearrangeExistingGroupSelect" class="text-input">
+          <option value="">선택하세요</option>
+          <option value="곰1">곰 1(21:40, UTC 12:40)</option>
+          <option value="곰2">곰 2(22:20, UTC 13:20)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>앞으로 희망하는 곰 배치는 어디입니까?</label>
+        <select id="rearrangeDesiredGroupSelect" class="text-input">
+          <option value="">선택하세요</option>
+          <option value="곰1">곰 1(21:40, UTC 12:40)</option>
+          <option value="곰2">곰 2(22:20, UTC 13:20)</option>
+          <option value="상관없음">상관 없음(운영진이 임의로 배치)</option>
+          <option value="유동적">유동적(상황에 따라 곰 1·2 유동적 참여)</option>
+        </select>
+      </div>
+
       <div class="form-group rearrange-example-wrap">
         <label>입력 예시</label>
         <img src="빛나는첨탑순위.png" alt="빛나는 첨탑 순위 예시" class="example-image" onclick="openExampleImageModal('tower')" />
       </div>
     </div>
+
     <div class="actions right-wrap">
       <button id="rearrangeSubmitBtn" onclick="submitRearrangeProgress()">저장</button>
     </div>
