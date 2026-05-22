@@ -387,16 +387,13 @@ function renderRearrangeAdminPanel(groups){
 function renderRearrangeBoard(groups){
   const mobileTab=state.rearrangeBoardTab||"bear1";
 
-  const boardTabs=`
+  return`
     <div class="rearrange-mobile-tabs">
       <button type="button" class="${mobileTab==="bear1"?"active":""}" onclick="setRearrangeBoardTab('bear1')">곰 1</button>
       <button type="button" class="${mobileTab==="bear2"?"active":""}" onclick="setRearrangeBoardTab('bear2')">곰 2</button>
     </div>
-  `;
 
-  return`
-    ${boardTabs}
-    <div class="rearrange-board-grid">
+    <div class="rearrange-board-force-grid">
       <div class="party-card rank-table-card rearrange-board-card rearrange-bear1-card ${mobileTab!=="bear1"?"mobile-hidden-card":""}">
         <div class="party-title">곰 1 배치표</div>
         <div class="party-sub">곰 1 희망 인원 기준입니다.</div>
