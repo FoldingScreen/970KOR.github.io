@@ -1,3 +1,24 @@
+function normalizeRearrangeGroup(value){
+  const v=String(value||"").replace(/\s+/g,"").trim();
+  if(v==="곰1"||v==="곰１")return"곰1";
+  if(v==="곰2"||v==="곰２")return"곰2";
+  if(v==="상관없음"||v==="상관무"||v==="상관X")return"상관없음";
+  if(v==="유동적"||v==="유동")return"유동적";
+  return v||"";
+}
+
+function isBearGroup(value){
+  const v=normalizeRearrangeGroup(value);
+  return v==="곰1"||v==="곰2";
+}
+
+function getDesiredBadge(entry){
+  const desired=normalizeRearrangeGroup(entry?.desiredGroup);
+  if(desired==="상관없음")return` <span class="rearrange-badge any">상관없음</span>`;
+  if(desired==="유동적")return` <span class="rearrange-badge flex">유동</span>`;
+  return"";
+}
+
 function renderExcludedRearrangeList(entries){
   if(!state.isAdmin||!entries.length)return"";
 
@@ -17,58 +38,64 @@ function renderExcludedRearrangeList(entries){
   `;
 }
 
-function renderRearrangeTable(entries){
-  if(!entries.length)return`<div class="rank-empty">입력된 데이터가 없습니다.</div>`;
+function renderRearrangeTable(entries,flexEntries=[]){
+  if(!entries.length&&!flexEntries.length)return`<div class="rank-empty">입력된 데이터가 없습니다.</div>`;
 
   const rows=entries.map((entry,idx)=>{
     const rank=idx+1;
-    const currentColumn=getRearrangeColumn(rank);
-    const rowClass=entry&&entry.user===state.currentUser?"rank-row-me":"";
 
     if(!entry){
       return`
-        <tr class="${rowClass}">
+        <tr>
           <td>${rank}</td>
           <td>${getLayoutLabel(rank)}</td>
           <td class="left muted">공란</td>
           <td>-</td>
           <td>-</td>
-          <td>-</td>
           <td class="left">-</td>
-          <td>-</td>
           <td>-</td>
         </tr>
       `;
     }
 
+    const rowClass=entry.user===state.currentUser?"rank-row-me":"";
     const powerText=entry.power>0?Number(entry.power).toLocaleString("ko-KR"):"-";
     const noteText=entry.note?escapeHtml(entry.note):"-";
-    const desiredGroupText=entry.desiredGroup||"곰1";
-    const existingText=entry.existingColumn>0?String(entry.existingColumn):"-";
-    const move=getMoveDisplay(entry.existingColumn,currentColumn);
 
     return`
       <tr class="${rowClass}">
         <td>${rank}</td>
         <td>${getLayoutLabel(rank)}</td>
-        <td class="left ${entry.user===state.currentUser?"my-name":""}">${escapeHtml(entry.user)}</td>
+        <td class="left ${entry.user===state.currentUser?"my-name":""}">${escapeHtml(entry.user)}${getDesiredBadge(entry)}</td>
         <td>${escapeHtml(entry.stageText||"-")}</td>
         <td>${powerText}</td>
-        <td>${escapeHtml(desiredGroupText)}</td>
         <td class="left">${noteText}</td>
-        <td>${existingText}</td>
-        <td>
-          <span class="${move.className}">${escapeHtml(move.text)}</span>
-          ${state.isAdmin?` <button class="rank-edit-btn" onclick="openRearrangeRankEditModal('${escapeJs(entry.user)}')">관리</button>`:""}
-        </td>
+        <td>${state.isAdmin?`<button class="rank-edit-btn" onclick="openRearrangeRankEditModal('${escapeJs(entry.user)}')">관리</button>`:"-"}</td>
+      </tr>
+    `;
+  }).join("");
+
+  const flexRows=flexEntries.map(entry=>{
+    const rowClass=entry.user===state.currentUser?"rank-row-me":"";
+    const powerText=entry.power>0?Number(entry.power).toLocaleString("ko-KR"):"-";
+    const noteText=entry.note?escapeHtml(entry.note):"-";
+
+    return`
+      <tr class="${rowClass} rearrange-flex-row">
+        <td>유동</td>
+        <td>유동</td>
+        <td class="left ${entry.user===state.currentUser?"my-name":""}">${escapeHtml(entry.user)}${getDesiredBadge(entry)}</td>
+        <td>${escapeHtml(entry.stageText||"-")}</td>
+        <td>${powerText}</td>
+        <td class="left">${noteText}</td>
+        <td>${state.isAdmin?`<button class="rank-edit-btn" onclick="openRearrangeRankEditModal('${escapeJs(entry.user)}')">관리</button>`:"-"}</td>
       </tr>
     `;
   }).join("");
 
   return`
     <div class="rank-table-wrap">
-      <table class="rank-table">
-        <colgroup><col><col><col><col><col><col><col><col><col></colgroup>
+      <table class="rank-table rearrange-compact-table">
         <thead>
           <tr>
             <th>순위</th>
@@ -76,13 +103,11 @@ function renderRearrangeTable(entries){
             <th>닉네임</th>
             <th>스테이지</th>
             <th>전투력</th>
-            <th>희망</th>
             <th>비고</th>
-            <th>기존</th>
-            <th>이동</th>
+            <th>관리</th>
           </tr>
         </thead>
-        <tbody>${rows}</tbody>
+        <tbody>${rows}${flexRows}</tbody>
       </table>
     </div>
   `;
@@ -92,57 +117,307 @@ function renderRearrangeGuide(){
   return`<div class="layout-guide-wrap"><img src="자리 순열.png" alt="자리 순열 안내도" class="layout-guide-image" /></div>`;
 }
 
-function renderRearrangeEvent(){
-  const mine=myRearrangeEntry();
+function getRearrangeGroups(){
   const activeEntries=state.rearrangeEntries.filter(v=>!isHiddenTestNickname(v.user)&&!v.excluded);
   const excludedEntries=state.rearrangeEntries.filter(v=>!isHiddenTestNickname(v.user)&&v.excluded);
 
-  const bear1Entries=getDisplayedRearrangeEntries(activeEntries.filter(v=>(v.desiredGroup||"곰1")==="곰1"));
-  const bear2Entries=getDisplayedRearrangeEntries(activeEntries.filter(v=>v.desiredGroup==="곰2"));
+  const bear1Normal=activeEntries.filter(v=>normalizeRearrangeGroup(v.desiredGroup)==="곰1");
+  const bear2Normal=activeEntries.filter(v=>{
+    const desired=normalizeRearrangeGroup(v.desiredGroup);
+    return desired==="곰2"||desired==="상관없음";
+  });
+
+  const flexEntries=activeEntries.filter(v=>normalizeRearrangeGroup(v.desiredGroup)==="유동적");
+  const flexApproved=flexEntries.filter(v=>!!v.flexApproved);
+
+  const moveRequests=activeEntries.filter(v=>{
+    const existing=normalizeRearrangeGroup(v.existingGroup);
+    const desired=normalizeRearrangeGroup(v.desiredGroup);
+    return isBearGroup(existing)&&isBearGroup(desired)&&existing!==desired;
+  });
+
+  const anyEntries=activeEntries.filter(v=>normalizeRearrangeGroup(v.desiredGroup)==="상관없음");
+
+  return{
+    activeEntries,
+    excludedEntries,
+    bear1Entries:getDisplayedRearrangeEntries(bear1Normal),
+    bear2Entries:getDisplayedRearrangeEntries(bear2Normal),
+    flexEntries,
+    flexApproved,
+    moveRequests,
+    anyEntries
+  };
+}
+
+function renderRearrangeViewTabs(){
+  if(!state.isAdmin)return"";
+  const view=state.rearrangeView||"board";
+
+  return`
+    <div class="rearrange-view-tabs">
+      <button type="button" class="${view==="board"?"active":""}" onclick="setRearrangeView('board')">배치표</button>
+      <button type="button" class="${view==="admin"?"active":""}" onclick="setRearrangeView('admin')">운영진 확인</button>
+    </div>
+  `;
+}
+
+function renderRearrangeAdminTabs(groups){
+  const tab=state.rearrangeAdminTab||"move";
+  const approvedCount=groups.flexApproved.length;
+
+  return`
+    <div class="rearrange-admin-summary">
+      <span>이동 희망 ${groups.moveRequests.length}명</span>
+      <span>상관없음 ${groups.anyEntries.length}명</span>
+      <span>유동적 ${groups.flexEntries.length}명 / 승인 ${approvedCount}명</span>
+    </div>
+    <div class="rearrange-view-tabs small">
+      <button type="button" class="${tab==="move"?"active":""}" onclick="setRearrangeAdminTab('move')">이동 희망</button>
+      <button type="button" class="${tab==="any"?"active":""}" onclick="setRearrangeAdminTab('any')">상관없음</button>
+      <button type="button" class="${tab==="flex"?"active":""}" onclick="setRearrangeAdminTab('flex')">유동적</button>
+      <button type="button" class="${tab==="baseline"?"active":""}" onclick="setRearrangeAdminTab('baseline')">기존 순위</button>
+    </div>
+  `;
+}
+
+function renderAdminSimpleTable(entries,type){
+  if(!entries.length)return`<div class="rank-empty">대상자가 없습니다.</div>`;
+
+  const rows=entries.map(entry=>{
+    const powerText=entry.power>0?Number(entry.power).toLocaleString("ko-KR"):"-";
+    const noteText=entry.note?escapeHtml(entry.note):"-";
+    const existing=normalizeRearrangeGroup(entry.existingGroup)||"-";
+    const desired=normalizeRearrangeGroup(entry.desiredGroup)||"-";
+
+    if(type==="move"){
+      return`
+        <tr>
+          <td class="left">${escapeHtml(entry.user)}</td>
+          <td>${escapeHtml(existing)}</td>
+          <td>${escapeHtml(desired)}</td>
+          <td>${escapeHtml(entry.stageText||"-")}</td>
+          <td>${powerText}</td>
+          <td class="left">${noteText}</td>
+        </tr>
+      `;
+    }
+
+    return`
+      <tr>
+        <td class="left">${escapeHtml(entry.user)}</td>
+        <td>${escapeHtml(existing)}</td>
+        <td>곰2</td>
+        <td>${escapeHtml(entry.stageText||"-")}</td>
+        <td>${powerText}</td>
+        <td class="left">${noteText}</td>
+      </tr>
+    `;
+  }).join("");
+
+  const header=type==="move"
+    ? `<tr><th>닉네임</th><th>현재</th><th>희망</th><th>스테이지</th><th>전투력</th><th>비고</th></tr>`
+    : `<tr><th>닉네임</th><th>현재</th><th>자동배치</th><th>스테이지</th><th>전투력</th><th>비고</th></tr>`;
+
+  return`
+    <div class="rank-table-wrap">
+      <table class="rank-table rearrange-admin-table">
+        <thead>${header}</thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderFlexAdminTable(entries){
+  const approvedCount=entries.filter(v=>!!v.flexApproved).length;
+
+  if(!entries.length){
+    return`
+      <div class="party-sub">유동 승인 ${approvedCount} / 8명</div>
+      <div class="rank-empty">유동적 신청자가 없습니다.</div>
+    `;
+  }
+
+  const rows=entries.map(entry=>{
+    const powerText=entry.power>0?Number(entry.power).toLocaleString("ko-KR"):"-";
+    const existing=normalizeRearrangeGroup(entry.existingGroup)||"-";
+    const approved=!!entry.flexApproved;
+
+    return`
+      <tr>
+        <td class="left">${escapeHtml(entry.user)}</td>
+        <td>${escapeHtml(existing)}</td>
+        <td>${escapeHtml(entry.stageText||"-")}</td>
+        <td>${powerText}</td>
+        <td>${approved?"승인됨":"대기"}</td>
+        <td><button class="rank-edit-btn" onclick="toggleRearrangeFlexApproved('${escapeJs(entry.user)}')">${approved?"승인 취소":"승인"}</button></td>
+      </tr>
+    `;
+  }).join("");
+
+  return`
+    <div class="party-sub">유동 승인 ${approvedCount} / 8명</div>
+    <div class="rank-table-wrap">
+      <table class="rank-table rearrange-admin-table">
+        <thead>
+          <tr><th>닉네임</th><th>현재</th><th>스테이지</th><th>전투력</th><th>상태</th><th>관리</th></tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderBaselineRankingTable(entries){
+  const baselineTab=state.rearrangeBaselineTab||"2026-04";
+
+  const rows=entries.map((entry,idx)=>{
+    const powerText=entry.power>0?Number(entry.power).toLocaleString("ko-KR"):"-";
+    const noteText=entry.note?escapeHtml(entry.note):"-";
+
+    return`
+      <tr>
+        <td>${idx+1}</td>
+        <td class="left">${escapeHtml(entry.user)}</td>
+        <td>${escapeHtml(entry.stageText||"-")}</td>
+        <td>${powerText}</td>
+        <td>${escapeHtml(normalizeRearrangeGroup(entry.existingGroup)||"-")}</td>
+        <td>${escapeHtml(normalizeRearrangeGroup(entry.desiredGroup)||"-")}</td>
+        <td class="left">${noteText}</td>
+      </tr>
+    `;
+  }).join("");
+
+  return`
+    <div class="rearrange-view-tabs tiny">
+      <button type="button" class="${baselineTab==="2026-04"?"active":""}" onclick="setRearrangeBaselineTab('2026-04')">2026. 4. 기준</button>
+    </div>
+    <div class="party-sub">기존 순위표 · 2026. 4. 기준</div>
+    <div class="rank-table-wrap">
+      <table class="rank-table rearrange-admin-table">
+        <thead>
+          <tr><th>순위</th><th>닉네임</th><th>스테이지</th><th>전투력</th><th>현재</th><th>희망</th><th>비고</th></tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderRearrangeAdminPanel(groups){
+  const tab=state.rearrangeAdminTab||"move";
+  let title="이동 희망";
+  let body=renderAdminSimpleTable(groups.moveRequests,"move");
+
+  if(tab==="any"){
+    title="상관없음";
+    body=renderAdminSimpleTable(groups.anyEntries,"any");
+  }
+
+  if(tab==="flex"){
+    title="유동적";
+    body=renderFlexAdminTable(groups.flexEntries);
+  }
+
+  if(tab==="baseline"){
+    title="기존 순위";
+    body=renderBaselineRankingTable(groups.activeEntries);
+  }
+
+  return`
+    <div class="party-card rank-table-card rearrange-admin-card">
+      <div class="party-title">운영진 확인 - ${title}</div>
+      ${renderRearrangeAdminTabs(groups)}
+      ${body}
+    </div>
+  `;
+}
+
+function renderRearrangeBoard(groups){
+  const mobileTab=state.rearrangeBoardTab||"bear1";
+
+  const boardTabs=`
+    <div class="rearrange-mobile-tabs">
+      <button type="button" class="${mobileTab==="bear1"?"active":""}" onclick="setRearrangeBoardTab('bear1')">곰 1</button>
+      <button type="button" class="${mobileTab==="bear2"?"active":""}" onclick="setRearrangeBoardTab('bear2')">곰 2</button>
+    </div>
+  `;
+
+  return`
+    ${boardTabs}
+    <div class="rearrange-board-grid">
+      <div class="party-card rank-table-card rearrange-board-card rearrange-bear1-card ${mobileTab!=="bear1"?"mobile-hidden-card":""}">
+        <div class="party-title">곰 1 배치표</div>
+        <div class="party-sub">곰 1 희망 인원 기준입니다.</div>
+        <div class="card-actions"><button onclick="copyRearrangeColumns()">복사</button></div>
+        ${renderRearrangeTable(groups.bear1Entries,groups.flexApproved)}
+      </div>
+
+      <div class="party-card rank-table-card rearrange-board-card rearrange-bear2-card ${mobileTab!=="bear2"?"mobile-hidden-card":""}">
+        <div class="party-title">곰 2 배치표</div>
+        <div class="party-sub">곰 2 희망 및 상관없음 신청자는 곰 2에 포함됩니다.</div>
+        ${renderRearrangeTable(groups.bear2Entries,groups.flexApproved)}
+      </div>
+    </div>
+  `;
+}
+
+function renderRearrangeEvent(){
+  const mine=myRearrangeEntry();
+  const groups=getRearrangeGroups();
 
   const mineCard=state.rearrangeInputEnabled
-    ? `<div class="party-card"><div class="party-title">내 진척도</div><div class="party-sub">빛나는 첨탑 최고 스테이지</div><div class="party-sub">현재 입력값: ${mine?escapeHtml(mine.stageText):"미입력"}</div><div class="party-sub">최종 수정: ${mine?formatDateTime(mine.updatedAt):"-"}</div><div class="card-actions"><button onclick="openMyRearrangeModal()">${mine?"수정":"입력"}</button></div></div>`
-    : `<div class="party-card"><div class="party-title">내 진척도</div><div class="party-sub">빛나는 첨탑 최고 스테이지</div><div class="party-sub">현재 입력값: ${mine?escapeHtml(mine.stageText):"미입력"}</div><div class="party-sub">최종 수정: ${mine?formatDateTime(mine.updatedAt):"-"}</div><div class="party-sub">현재 개인 입력은 일시 중지되어 있습니다.</div><div class="card-actions"><button disabled>입력 일시중지</button></div></div>`;
+    ? `<div class="party-card"><div class="party-title">내 자리 재배치 정보</div><div class="party-sub">스테이지: ${mine?escapeHtml(mine.stageText):"미입력"}</div><div class="party-sub">현재 배치: ${mine?escapeHtml(normalizeRearrangeGroup(mine.existingGroup)||"-"):"미입력"}</div><div class="party-sub">희망 배치: ${mine?escapeHtml(normalizeRearrangeGroup(mine.desiredGroup)||"-"):"미입력"}</div><div class="party-sub">최종 수정: ${mine?formatDateTime(mine.updatedAt):"-"}</div><div class="card-actions"><button onclick="openMyRearrangeModal()">${mine?"수정":"입력"}</button></div></div>`
+    : `<div class="party-card"><div class="party-title">내 자리 재배치 정보</div><div class="party-sub">스테이지: ${mine?escapeHtml(mine.stageText):"미입력"}</div><div class="party-sub">현재 배치: ${mine?escapeHtml(normalizeRearrangeGroup(mine.existingGroup)||"-"):"미입력"}</div><div class="party-sub">희망 배치: ${mine?escapeHtml(normalizeRearrangeGroup(mine.desiredGroup)||"-"):"미입력"}</div><div class="party-sub">현재 개인 입력은 일시 중지되어 있습니다.</div><div class="card-actions"><button disabled>입력 일시중지</button></div></div>`;
 
-  let rankingCard="";
-  let guideCard="";
+  let mainContent="";
 
   if(state.isAdmin||state.rearrangePublic){
-    rankingCard=`
-      <div class="party-card rank-table-card">
-        <div class="party-title">진척도 순위표 - 곰1</div>
-        <div class="party-sub">${state.isAdmin?(state.rearrangePublic?"현재 전체 공개 상태입니다.":"현재 운영진만 볼 수 있습니다."):"공개된 순위입니다."}</div>
-        <div class="card-actions"><button onclick="copyRearrangeColumns()">복사</button></div>
-        ${renderRearrangeTable(bear1Entries)}
-      </div>
-
-      <div class="party-card rank-table-card">
-        <div class="party-title">진척도 순위표 - 곰2</div>
-        ${renderRearrangeTable(bear2Entries)}
-      </div>
-    `;
-
-    guideCard=`
-      <div class="party-card layout-guide-card">
-        <div class="party-title">순열 안내 예시</div>
-        <div class="party-sub">빨(1), 주(2), 노(3), 초(4), 파(5)</div>
-        <div class="card-actions"><button onclick="openExampleImageModal('guide')">예시 크게 보기</button></div>
-        ${renderRearrangeGuide()}
-      </div>
-    `;
+    const view=state.isAdmin?(state.rearrangeView||"board"):"board";
+    mainContent=view==="admin"?renderRearrangeAdminPanel(groups):renderRearrangeBoard(groups);
   }else{
-    rankingCard=`
+    mainContent=`
       <div class="party-card">
-        <div class="party-title">진척도 순위</div>
+        <div class="party-title">자리 재배치표</div>
         <div class="party-sub">아직 공개되지 않았습니다.</div>
         <div class="party-sub">운영진 공개 후 전체 유저가 확인할 수 있습니다.</div>
       </div>
     `;
   }
 
-  const excludedCard=renderExcludedRearrangeList(excludedEntries);
-  el.partyList.innerHTML=mineCard+rankingCard+excludedCard+guideCard;
+  const excludedCard=renderExcludedRearrangeList(groups.excludedEntries);
+  const guideCard=(state.isAdmin||state.rearrangePublic)?`
+    <div class="party-card layout-guide-card">
+      <div class="party-title">순열 안내 예시</div>
+      <div class="party-sub">배치표 순열 기준은 추후 확정된 열별 인원수에 따라 조정합니다.</div>
+      <div class="card-actions"><button onclick="openExampleImageModal('guide')">예시 크게 보기</button></div>
+      ${renderRearrangeGuide()}
+    </div>
+  `:"";
+
+  el.partyList.innerHTML=mineCard+renderRearrangeViewTabs()+mainContent+excludedCard+guideCard;
 }
+
+window.setRearrangeView=function(view){
+  state.rearrangeView=view==="admin"?"admin":"board";
+  renderRearrangeEvent();
+};
+
+window.setRearrangeAdminTab=function(tab){
+  state.rearrangeAdminTab=["move","any","flex","baseline"].includes(tab)?tab:"move";
+  renderRearrangeEvent();
+};
+
+window.setRearrangeBoardTab=function(tab){
+  state.rearrangeBoardTab=tab==="bear2"?"bear2":"bear1";
+  renderRearrangeEvent();
+};
+
+window.setRearrangeBaselineTab=function(tab){
+  state.rearrangeBaselineTab=tab||"2026-04";
+  renderRearrangeEvent();
+};
 
 function lockRearrangeInputForManualTap(){
   el.rearrangeStageInput?.setAttribute("readonly","readonly");
@@ -168,11 +443,17 @@ if(el.rearrangeStageInput){
 }
 
 window.openMyRearrangeModal=function(){
-  el.rearrangeModalTitle.textContent="내 진척도 입력";
+  el.rearrangeModalTitle.textContent="내 자리 재배치 정보 입력";
   el.rearrangeSubmitBtn.textContent="저장";
 
   const mine=myRearrangeEntry();
   el.rearrangeStageInput.value=mine?mine.stageText:"";
+
+  const existingSelect=document.getElementById("rearrangeExistingGroupSelect");
+  const desiredSelect=document.getElementById("rearrangeDesiredGroupSelect");
+
+  if(existingSelect)existingSelect.value=normalizeRearrangeGroup(mine?.existingGroup)||"";
+  if(desiredSelect)desiredSelect.value=normalizeRearrangeGroup(mine?.desiredGroup)||"";
 
   lockRearrangeInputForManualTap();
   el.rearrangeModal.classList.remove("hidden");
@@ -237,14 +518,33 @@ window.submitRearrangeProgress=async function(){
     return;
   }
 
+  const existingGroup=normalizeRearrangeGroup(document.getElementById("rearrangeExistingGroupSelect")?.value||"");
+  const desiredGroup=normalizeRearrangeGroup(document.getElementById("rearrangeDesiredGroupSelect")?.value||"");
+
+  if(!isBearGroup(existingGroup)){
+    alert("현재 배치된 곰을 선택하세요.");
+    return;
+  }
+
+  if(!["곰1","곰2","상관없음","유동적"].includes(desiredGroup)){
+    alert("희망하는 곰 배치를 선택하세요.");
+    return;
+  }
+
+  const before=myRearrangeEntry();
+
   await rearrangeProgressRef().doc(state.currentUser).set({
     user:state.currentUser,
     stageText:raw,
     stageMajor:parsed.stageMajor,
     stageMinor:parsed.stageMinor,
+    existingGroup,
+    desiredGroup,
     updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
     createdAt:state.rearrangeProgressEntries.find(v=>v.user===state.currentUser)?.createdAt||firebase.firestore.FieldValue.serverTimestamp()
   },{merge:true});
+
+  await handleRearrangeMoveNotification(state.currentUser,before,{existingGroup,desiredGroup});
 
   closeExampleImageModal();
   closeRearrangeModal();
@@ -273,12 +573,6 @@ window.openRearrangeRankEditModal=function(userName=""){
   el.rankEditStageInput.value=entry.stageText||"";
   el.rankEditPowerInput.value=entry.power>0?String(entry.power):"";
   el.rankEditNoteInput.value=entry.note||"";
-
-  const hopeSelect=document.getElementById("rankEditHopeSelect");
-  if(hopeSelect)hopeSelect.value=entry.desiredGroup||"곰1";
-
-  const existingInput=document.getElementById("rankEditExistingInput");
-  if(existingInput)existingInput.value=entry.existingColumn>0?String(entry.existingColumn):"";
 
   const excludeBtn=document.getElementById("rankEditExcludeBtn");
   if(excludeBtn){
@@ -329,8 +623,6 @@ window.submitRearrangeRankEdit=async function(){
   const current=state.rearrangeEntries.find(v=>v.user===user);
   const powerRaw=(el.rankEditPowerInput.value||"").trim();
   const note=(el.rankEditNoteInput.value||"").trim();
-  const desiredGroup=document.getElementById("rankEditHopeSelect")?.value||"곰1";
-  const existingRaw=(document.getElementById("rankEditExistingInput")?.value||"").trim();
 
   let power=0;
   if(powerRaw!==""){
@@ -341,22 +633,12 @@ window.submitRearrangeRankEdit=async function(){
     }
   }
 
-  let existingColumn=0;
-  if(existingRaw!==""){
-    existingColumn=Number(existingRaw);
-    if(!Number.isInteger(existingColumn)||existingColumn<1){
-      alert("기존은 1 이상의 정수로 입력하세요.");
-      return;
-    }
-  }
-
   await rearrangeRankingRef().doc(user).set({
     user,
     power,
     note,
-    desiredGroup,
-    existingColumn,
     excluded:!!current?.excluded,
+    flexApproved:!!current?.flexApproved,
     updatedAt:firebase.firestore.FieldValue.serverTimestamp()
   },{merge:true});
 
@@ -382,28 +664,52 @@ window.toggleRearrangeInputEnabled=async function(){
   if(!state.isAdmin||state.currentUser!=="병풍")return;
   await eventRef("rearrange").set({rearrangeInputEnabled:!state.rearrangeInputEnabled},{merge:true});
 };
+
+window.toggleRearrangeFlexApproved=async function(user){
+  if(!state.isAdmin)return;
+
+  const entry=state.rearrangeEntries.find(v=>v.user===user);
+  if(!entry)return;
+
+  const next=!entry.flexApproved;
+  const approvedCount=state.rearrangeEntries.filter(v=>!isHiddenTestNickname(v.user)&&!v.excluded&&normalizeRearrangeGroup(v.desiredGroup)==="유동적"&&v.flexApproved).length;
+
+  if(next&&approvedCount>=8){
+    alert("유동 승인 인원은 최대 8명입니다.");
+    return;
+  }
+
+  await rearrangeRankingRef().doc(user).set({
+    user,
+    flexApproved:next,
+    flexApprovedAt:next?firebase.firestore.FieldValue.serverTimestamp():null,
+    flexApprovedBy:next?state.currentUser:"",
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+  },{merge:true});
+};
+
 window.copyRearrangeColumns=function(){
-  const activeEntries=state.rearrangeEntries.filter(v=>!isHiddenTestNickname(v.user)&&!v.excluded);
+  const groups=getRearrangeGroups();
   const grouped={
-    "곰1":getDisplayedRearrangeEntries(activeEntries.filter(v=>(v.desiredGroup||"곰1")==="곰1")),
-    "곰2":getDisplayedRearrangeEntries(activeEntries.filter(v=>v.desiredGroup==="곰2"))
+    "곰1":groups.bear1Entries,
+    "곰2":groups.bear2Entries
   };
 
   const lines=["[자리 재배치 결과]"];
 
   Object.entries(grouped).forEach(([groupName,displayedEntries])=>{
     const columns={1:[],2:[],3:[],4:[],5:[]};
-    const moveNeeded=[];
 
     displayedEntries.forEach((entry,idx)=>{
       const rank=idx+1;
       const col=getRearrangeColumn(rank);
       if(!entry)return;
-
       columns[col].push(entry.user);
+    });
 
-      const existingColumn=Number(entry.existingColumn||0);
-      if(existingColumn>0&&existingColumn!==col)moveNeeded.push(`${entry.user}(${existingColumn}→${col})`);
+    groups.flexApproved.forEach(entry=>{
+      columns["유동"]=(columns["유동"]||[]);
+      columns["유동"].push(entry.user);
     });
 
     lines.push("",`[${groupName}]`);
@@ -412,8 +718,7 @@ window.copyRearrangeColumns=function(){
     lines.push(`3열: ${columns[3].join(", ")}`);
     lines.push(`4열: ${columns[4].join(", ")}`);
     lines.push(`5열: ${columns[5].join(", ")}`);
-    lines.push("[이동 필요 인원]");
-    lines.push(...(moveNeeded.length?moveNeeded:["없음"]));
+    if(columns["유동"]?.length)lines.push(`유동: ${columns["유동"].join(", ")}`);
   });
 
   const text=lines.join("\n");
@@ -422,4 +727,3 @@ window.copyRearrangeColumns=function(){
     navigator.clipboard.writeText(text).then(()=>alert("순열이 복사되었습니다."),()=>fallbackCopy(text));
   }else fallbackCopy(text);
 };
-
