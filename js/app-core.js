@@ -1380,15 +1380,17 @@ function subscribeRearrange(){
     state.rearrangeProgressEntries=snap.docs.map(doc=>{
       const d=doc.data()||{};
 
-      return{
-        id:doc.id,
-        user:d.user||doc.id,
-        stageText:String(d.stageText||d.stage||""),
-        stageMajor:Number(d.stageMajor||0),
-        stageMinor:Number(d.stageMinor||0),
-        updatedAt:d.updatedAt||null,
-        createdAt:d.createdAt||null
-      };
+return{
+  id:doc.id,
+  user:d.user||doc.id,
+  stageText:String(d.stageText||d.stage||""),
+  stageMajor:Number(d.stageMajor||0),
+  stageMinor:Number(d.stageMinor||0),
+  existingGroup:String(d.existingGroup||""),
+  desiredGroup:String(d.desiredGroup||""),
+  updatedAt:d.updatedAt||null,
+  createdAt:d.createdAt||null
+};
     });
 
     rebuildMergedRearrangeEntries();
