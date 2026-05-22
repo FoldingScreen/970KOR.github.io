@@ -77,6 +77,10 @@ const state={
   rearrangeEntries:[],
   rearrangePublic:false,
   rearrangeInputEnabled:false,
+    rearrangeView:"board",
+  rearrangeAdminTab:"move",
+  rearrangeBoardTab:"bear1",
+  rearrangeBaselineTab:"2026-04",
 
   castleManageMode:false,
 
@@ -508,6 +512,11 @@ function subscribeMyNotifications(){
           soupId:d.soupId||"",
           soupTitle:d.soupTitle||"",
           read:!!d.read,
+          active:d.active!==false,
+targetUser:d.targetUser||"",
+fromGroup:d.fromGroup||"",
+toGroup:d.toGroup||"",
+requestKey:d.requestKey||"",
           createdAt:d.createdAt||null
         };
       });
@@ -534,7 +543,7 @@ function renderNotificationBadge(){
 
   btn.classList.remove("hidden");
 
-  const unread=(state.notifications||[]).filter(v=>!v.read).length;
+  const unread=(state.notifications||[]).filter(v=>!v.read&&v.active!==false).length;
 
   if(unread>0){
     countEl.textContent=String(unread);
@@ -556,6 +565,13 @@ async function openNotificationTarget(id){
 
   closeNotificationModal();
 
+    if(item.type==="rearrange_move_request"){
+    state.rearrangeView="admin";
+    state.rearrangeAdminTab="move";
+    await openEvent("rearrange");
+    return;
+  }
+  
   if(item.soupId){
     state.escapeLabyrinthTab="turtle";
     await openEvent("escape_labyrinth");
@@ -571,7 +587,7 @@ window.openNotificationTarget=openNotificationTarget;
 function renderNotificationList(){
   if(!el.notificationList)return;
 
-  const items=state.notifications||[];
+  const items=(state.notifications||[]).filter(v=>v.active!==false);
 
   if(!items.length){
     el.notificationList.innerHTML=`<div class="notification-empty">알림이 없습니다.</div>`;
@@ -668,6 +684,101 @@ async function createAppNotification(targetUser,payload){
 
 window.createAppNotification=createAppNotification;
 
+function safeNotificationDocId(value){
+  return String(value||"").replace(/[\/\\#?[\]]/g,"_");
+}
+
+function isNormalRearrangeMove(existingGroup,desiredGroup){
+  return (
+    (existingGroup==="곰1"||existingGroup==="곰2") &&
+    (desiredGroup==="곰1"||desiredGroup==="곰2") &&
+    existingGroup!==desiredGroup
+  );
+}
+
+async function getAdminNicknames(){
+  const snap=await db.collection("admins").get();
+  return snap.docs.map(doc=>doc.id).filter(Boolean);
+}
+
+async function sendRearrangeMoveRequestNotification(user,existingGroup,desiredGroup){
+  const admins=await getAdminNicknames();
+  if(!admins.length)return;
+
+  const requestKey=`rearrange_move_${safeNotificationDocId(user)}`;
+  const message=`${user}님이 ${existingGroup}에서 ${desiredGroup}로 변경을 희망하였습니다`;
+  const batch=db.batch();
+  const now=firebase.firestore.FieldValue.serverTimestamp();
+
+  admins.forEach(admin=>{
+    const ref=userNotificationsRef(admin).doc(requestKey);
+    batch.set(ref,{
+      type:"rearrange_move_request",
+      title:"자리재배치 이동 희망",
+      message,
+      targetUser:user,
+      fromGroup:existingGroup,
+      toGroup:desiredGroup,
+      requestKey,
+      active:true,
+      read:false,
+      cancelled:false,
+      updatedAt:now,
+      createdAt:now
+    },{merge:true});
+  });
+
+  await batch.commit();
+}
+
+async function clearRearrangeMoveRequestNotification(user){
+  const admins=await getAdminNicknames();
+  if(!admins.length)return;
+
+  const requestKey=`rearrange_move_${safeNotificationDocId(user)}`;
+  const batch=db.batch();
+  const now=firebase.firestore.FieldValue.serverTimestamp();
+
+  admins.forEach(admin=>{
+    const ref=userNotificationsRef(admin).doc(requestKey);
+    batch.set(ref,{
+      type:"rearrange_move_request",
+      targetUser:user,
+      requestKey,
+      active:false,
+      read:true,
+      cancelled:true,
+      cancelledAt:now,
+      updatedAt:now
+    },{merge:true});
+  });
+
+  await batch.commit();
+}
+
+async function handleRearrangeMoveNotification(user,before,after){
+  const oldExisting=String(before?.existingGroup||"").trim();
+  const oldDesired=String(before?.desiredGroup||"").trim();
+  const newExisting=String(after?.existingGroup||"").trim();
+  const newDesired=String(after?.desiredGroup||"").trim();
+
+  const oldMove=isNormalRearrangeMove(oldExisting,oldDesired);
+  const newMove=isNormalRearrangeMove(newExisting,newDesired);
+
+  if(newMove){
+    if(oldExisting!==newExisting||oldDesired!==newDesired){
+      await sendRearrangeMoveRequestNotification(user,newExisting,newDesired);
+    }
+    return;
+  }
+
+  if(oldMove){
+    await clearRearrangeMoveRequestNotification(user);
+  }
+}
+
+window.handleRearrangeMoveNotification=handleRearrangeMoveNotification;
+
 function initRuinsSelects(){
   if(!el.utcMonth||!el.utcDay||!el.utcHour)return;
   if(el.utcMonth.options.length||el.utcDay.options.length||el.utcHour.options.length)return;
@@ -692,23 +803,18 @@ function ensureHolySwordFields(){
 }
 
 function ensureRankingExtraFields(){
-  if(!document.getElementById("rankEditHopeWrap")){
-    const noteInput=el.rankEditNoteInput;
+  if(!document.getElementById("rankEditExcludeBtnWrap")){
+    const noteWrap=el.rankEditNoteInput?.parentElement;
 
-    if(noteInput&&noteInput.parentElement){
+    if(noteWrap){
       const wrap=document.createElement("div");
       wrap.className="form-group";
-      wrap.id="rankEditHopeWrap";
-      wrap.innerHTML=`
-        <label for="rankEditHopeSelect">희망</label>
-        <select id="rankEditHopeSelect" class="text-input">
-          <option value="곰1">곰1</option>
-          <option value="곰2">곰2</option>
-        </select>
-      `;
-      noteInput.parentElement.insertAdjacentElement("afterend",wrap);
+      wrap.id="rankEditExcludeBtnWrap";
+      wrap.innerHTML=`<button type="button" id="rankEditExcludeBtn" class="text-input">목록에서 제외</button>`;
+      noteWrap.insertAdjacentElement("afterend",wrap);
     }
   }
+}
 
   if(!document.getElementById("rankEditExistingWrap")){
     const hopeWrap=document.getElementById("rankEditHopeWrap")||el.rankEditNoteInput?.parentElement;
@@ -993,7 +1099,7 @@ if(el.eventShowAllUsersBtn){
     el.rearrangeEditBtn.classList.remove("hidden");
 
     if(state.rearrangeInputEnabled){
-      el.rearrangeEditBtn.textContent="내 진척도 입력";
+      el.rearrangeEditBtn.textContent="내 재배치 정보 입력";
       el.rearrangeEditBtn.onclick=openMyRearrangeModal;
     }else{
       el.rearrangeEditBtn.textContent="입력 일시중지";
@@ -1171,16 +1277,18 @@ function subscribeParties(){
     state.unsubscribeRanking=rearrangeRankingRef().onSnapshot(rankingSnap=>{
       const rankingMap={};
 
-      rankingSnap.docs.forEach(doc=>{
-        const d=doc.data()||{};
-        rankingMap[doc.id]={
-          user:d.user||doc.id,
-          power:Number(d.power||0),
-          note:String(d.note||""),
-          desiredGroup:String(d.desiredGroup||"곰1"),
-          existingColumn:Number(d.existingColumn||0),
-          excluded:!!d.excluded
-        };
+rankingMap[doc.id]={
+  user:d.user||doc.id,
+  power:Number(d.power||0),
+  note:String(d.note||""),
+  desiredGroup:String(d.desiredGroup||""),
+  existingGroup:String(d.existingGroup||""),
+  existingColumn:Number(d.existingColumn||0),
+  excluded:!!d.excluded,
+  flexApproved:!!d.flexApproved,
+  flexApprovedAt:d.flexApprovedAt||null,
+  flexApprovedBy:d.flexApprovedBy||""
+};
       });
 
       state.rearrangeRankingMap=rankingMap;
@@ -1194,15 +1302,17 @@ function subscribeParties(){
     state.unsubscribeMeta=rearrangeProgressRef().onSnapshot(progressSnap=>{
       state.rearrangeProgressEntries=progressSnap.docs.map(doc=>{
         const d=doc.data()||{};
-        return{
-          id:doc.id,
-          user:d.user||doc.id,
-          stageText:String(d.stageText||d.stage||""),
-          stageMajor:Number(d.stageMajor||0),
-          stageMinor:Number(d.stageMinor||0),
-          updatedAt:d.updatedAt||null,
-          createdAt:d.createdAt||null
-        };
+return{
+  id:doc.id,
+  user:d.user||doc.id,
+  stageText:String(d.stageText||d.stage||""),
+  stageMajor:Number(d.stageMajor||0),
+  stageMinor:Number(d.stageMinor||0),
+  existingGroup:String(d.existingGroup||""),
+  desiredGroup:String(d.desiredGroup||""),
+  updatedAt:d.updatedAt||null,
+  createdAt:d.createdAt||null
+};
       });
 
       rebuildMergedRearrangeEntries();
@@ -1259,15 +1369,18 @@ function rebuildMergedRearrangeEntries(){
       ...progress,
       power:Number(ranking.power||0),
       note:String(ranking.note||""),
-      desiredGroup:String(ranking.desiredGroup||"곰1"),
+      existingGroup:String(progress.existingGroup||ranking.existingGroup||""),
+      desiredGroup:String(progress.desiredGroup||ranking.desiredGroup||"곰1"),
       existingColumn:Number(ranking.existingColumn||0),
-      excluded:!!ranking.excluded
+      excluded:!!ranking.excluded,
+      flexApproved:!!ranking.flexApproved,
+      flexApprovedAt:ranking.flexApprovedAt||null,
+      flexApprovedBy:ranking.flexApprovedBy||""
     };
   });
 
   state.rearrangeEntries.sort(sortRearrangeEntries);
 }
-
 function subscribeRearrange(){
   clearSubscriptions();
 
@@ -1314,14 +1427,18 @@ function subscribeRearrange(){
 
     snap.docs.forEach(doc=>{
       const d=doc.data()||{};
-      map[doc.id]={
-        user:d.user||doc.id,
-        power:Number(d.power||0),
-        note:String(d.note||""),
-        desiredGroup:String(d.desiredGroup||"곰1"),
-        existingColumn:Number(d.existingColumn||0),
-        excluded:!!d.excluded
-      };
+map[doc.id]={
+  user:d.user||doc.id,
+  power:Number(d.power||0),
+  note:String(d.note||""),
+  desiredGroup:String(d.desiredGroup||""),
+  existingGroup:String(d.existingGroup||""),
+  existingColumn:Number(d.existingColumn||0),
+  excluded:!!d.excluded,
+  flexApproved:!!d.flexApproved,
+  flexApprovedAt:d.flexApprovedAt||null,
+  flexApprovedBy:d.flexApprovedBy||""
+};
     });
 
     state.rearrangeRankingMap=map;
