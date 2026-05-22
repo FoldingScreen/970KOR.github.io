@@ -489,25 +489,24 @@ function renderRearrangeEvent(){
     </div>
   `;
 
-  let mainContent="";
+let mainContent="";
+const currentRearrangeView=state.isAdmin?(state.rearrangeView||"board"):"board";
 
-  if(state.isAdmin||state.rearrangePublic){
-    const view=state.isAdmin?(state.rearrangeView||"board"):"board";
-    mainContent=view==="admin"?renderRearrangeAdminPanel(groups):renderRearrangeBoard(groups);
-  }else{
-    mainContent=`
-      <div class="party-card">
-        <div class="party-title">자리 재배치표</div>
-        <div class="party-sub">아직 공개되지 않았습니다.</div>
-        <div class="party-sub">운영진 공개 후 전체 유저가 확인할 수 있습니다.</div>
-      </div>
-    `;
-  }
+if(state.isAdmin||state.rearrangePublic){
+  mainContent=currentRearrangeView==="admin"?renderRearrangeAdminPanel(groups):renderRearrangeBoard(groups);
+}else{
+  mainContent=`
+    <div class="party-card">
+      <div class="party-title">자리 재배치표</div>
+      <div class="party-sub">아직 공개되지 않았습니다.</div>
+      <div class="party-sub">운영진 공개 후 전체 유저가 확인할 수 있습니다.</div>
+    </div>
+  `;
+}
 
-  const guideCard=(state.isAdmin||state.rearrangePublic)?`
+const guideCard=(state.isAdmin||state.rearrangePublic)&&currentRearrangeView==="board"?`
     <div class="party-card layout-guide-card rearrange-guide-card">
       <div class="party-title">순열 안내 예시</div>
-      <div class="party-sub">배치표 순열 기준은 추후 확정된 열별 인원수에 따라 조정합니다.</div>
       <div class="card-actions"><button onclick="openExampleImageModal('guide')">예시 크게 보기</button></div>
       ${renderRearrangeGuide()}
     </div>
