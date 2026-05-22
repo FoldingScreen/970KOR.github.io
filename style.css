@@ -3968,3 +3968,185 @@ textarea.text-input{
     display: none;
   }
 }
+
+/* ===== 자리재배치 최종 레이아웃: 상단 내 정보 + 하단 병렬 표 ===== */
+
+#partyList:has(.rearrange-board-grid),
+#partyList:has(.rearrange-admin-card) {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+/* 내 정보 카드: 상단 한 줄 */
+#partyList:has(.rearrange-board-grid) > .party-card:first-child,
+#partyList:has(.rearrange-admin-card) > .party-card:first-child {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  padding: 14px 18px;
+  min-height: auto;
+}
+
+#partyList:has(.rearrange-board-grid) > .party-card:first-child .party-title,
+#partyList:has(.rearrange-admin-card) > .party-card:first-child .party-title {
+  margin: 0;
+  font-size: 18px;
+  white-space: nowrap;
+}
+
+#partyList:has(.rearrange-board-grid) > .party-card:first-child .party-sub,
+#partyList:has(.rearrange-admin-card) > .party-card:first-child .party-sub {
+  margin: 0;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+#partyList:has(.rearrange-board-grid) > .party-card:first-child .card-actions,
+#partyList:has(.rearrange-admin-card) > .party-card:first-child .card-actions {
+  margin: 0 0 0 auto;
+}
+
+/* 배치표 / 운영진 확인 탭 */
+#partyList:has(.rearrange-board-grid) > .rearrange-view-tabs,
+#partyList:has(.rearrange-admin-card) > .rearrange-view-tabs {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+/* 곰1, 곰2 병렬 */
+.rearrange-board-grid {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+/* 표 카드 높이 고정 */
+.rearrange-board-card {
+  min-width: 0;
+  height: calc(100vh - 270px);
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 표 제목 영역은 고정 */
+.rearrange-board-card .party-title {
+  margin-bottom: 4px;
+  flex: 0 0 auto;
+}
+
+.rearrange-board-card .party-sub {
+  margin: 2px 0 6px;
+  font-size: 13px;
+  flex: 0 0 auto;
+}
+
+.rearrange-board-card .card-actions {
+  margin: 4px 0 6px;
+  flex: 0 0 auto;
+}
+
+/* 표 내부만 스크롤 */
+.rearrange-board-card .rank-table-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  border-radius: 10px;
+}
+
+/* 헤더 고정 */
+.rearrange-board-card .rank-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+/* 표 더 압축 */
+.rearrange-compact-table {
+  table-layout: fixed;
+  width: 100%;
+  font-size: 12px;
+}
+
+.rearrange-compact-table th,
+.rearrange-compact-table td {
+  padding: 5px 6px;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 운영진 확인도 넓게 */
+.rearrange-admin-card {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+.rearrange-admin-card .rank-table-wrap {
+  max-height: calc(100vh - 340px);
+  overflow: auto;
+}
+
+/* 순열 안내는 아래 전체폭 */
+.layout-guide-card {
+  grid-column: 1 / -1;
+}
+
+/* 모바일: 내 정보는 카드형, 표는 버튼 선택 */
+@media (max-width: 768px) {
+  #partyList:has(.rearrange-board-grid),
+  #partyList:has(.rearrange-admin-card) {
+    display: block;
+  }
+
+  #partyList:has(.rearrange-board-grid) > .party-card:first-child,
+  #partyList:has(.rearrange-admin-card) > .party-card:first-child {
+    display: block;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+
+  #partyList:has(.rearrange-board-grid) > .party-card:first-child .party-title,
+  #partyList:has(.rearrange-admin-card) > .party-card:first-child .party-title {
+    margin-bottom: 8px;
+  }
+
+  #partyList:has(.rearrange-board-grid) > .party-card:first-child .party-sub,
+  #partyList:has(.rearrange-admin-card) > .party-card:first-child .party-sub {
+    margin: 4px 0;
+    white-space: normal;
+  }
+
+  #partyList:has(.rearrange-board-grid) > .party-card:first-child .card-actions,
+  #partyList:has(.rearrange-admin-card) > .party-card:first-child .card-actions {
+    margin-top: 10px;
+  }
+
+  .rearrange-board-grid {
+    display: block;
+  }
+
+  .rearrange-board-card {
+    height: calc(100vh - 300px);
+    min-height: 360px;
+    margin-bottom: 12px;
+  }
+
+  .rearrange-board-card.mobile-hidden-card {
+    display: none;
+  }
+
+  .rearrange-mobile-tabs {
+    display: flex;
+    gap: 8px;
+    margin: 10px 0;
+  }
+}
