@@ -92,8 +92,8 @@
 /* 신청 모달 가독성 개선 */
 .rearrange-modal-body {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 260px;
-  gap: 18px 22px;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 20px 24px;
   align-items: start;
 }
 
@@ -124,12 +124,12 @@
 
 .rearrange-check-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: 1fr;
+  gap: 8px;
 }
 
 .rearrange-check-grid.desired {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
 }
 
 .rearrange-check-card {
@@ -400,9 +400,9 @@
 }
 
 .rearrange-example-wrap .example-image {
-  width: 140px;
-  max-width: 140px;
-  max-height: 220px;
+  width: 220px;
+  max-width: 220px;
+  max-height: 340px;
   object-fit: contain;
   margin-top: 4px;
 }
@@ -486,8 +486,8 @@
   }
 
   .rearrange-example-wrap .example-image {
-    width: 120px;
-    max-width: 120px;
+    width: 180px;
+    max-width: 180px;
   }
   
   .rearrange-compact-table,
