@@ -1,4 +1,6 @@
 const REARRANGE_APPLICATION_VERSION="bear-2026-05";
+const REARRANGE_GUIDE_BEAR1_IMAGE="자리순열_곰1.png";
+const REARRANGE_GUIDE_BEAR2_IMAGE="자리순열_곰2.png";
 function normalizeRearrangeGroup(value){
   const v=String(value||"").replace(/\s+/g,"").trim();
   if(v==="곰1"||v==="곰１")return"곰1";
@@ -105,7 +107,22 @@ function renderRearrangeTable(entries,flexEntries=[],groupName="곰1"){
 }
 
 function renderRearrangeGuide(){
-  return`<div class="layout-guide-wrap"><img src="자리 순열.png" alt="자리 순열 안내도" class="layout-guide-image" /></div>`;
+  return`
+    <div class="layout-guide-wrap two-guides">
+      <img
+        src="${REARRANGE_GUIDE_BEAR1_IMAGE}"
+        alt="곰 1 순열 안내 예시"
+        class="layout-guide-image"
+        onclick="openExampleImageModal('guideBear1')"
+      />
+      <img
+        src="${REARRANGE_GUIDE_BEAR2_IMAGE}"
+        alt="곰 2 순열 안내 예시"
+        class="layout-guide-image"
+        onclick="openExampleImageModal('guideBear2')"
+      />
+    </div>
+  `;
 }
 
 function isCurrentRearrangeApplication(entry){
@@ -546,8 +563,6 @@ if(state.isAdmin||state.rearrangePublic){
 
 const guideCard=(state.isAdmin||state.rearrangePublic)&&currentRearrangeView==="board"?`
     <div class="party-card layout-guide-card rearrange-guide-card">
-      <div class="party-title">순열 안내 예시</div>
-      <div class="card-actions"><button onclick="openExampleImageModal('guide')">예시 크게 보기</button></div>
       ${renderRearrangeGuide()}
     </div>
   `:"";
@@ -636,12 +651,21 @@ function closeRearrangeModal(){
 window.closeRearrangeModal=closeRearrangeModal;
 
 function openExampleImageModal(type="tower"){
-  if(type==="guide"){
-    el.exampleImageModalTitle.textContent="순열 안내 예시";
-    el.exampleImageModalImg.src="자리 순열.png";
-    el.exampleImageModalImg.alt="자리 순열 안내 예시";
+  el.exampleImageModalTitle.style.display="block";
+
+  if(type==="guideBear1"){
+    el.exampleImageModalTitle.textContent="";
+    el.exampleImageModalTitle.style.display="none";
+    el.exampleImageModalImg.src=REARRANGE_GUIDE_BEAR1_IMAGE;
+    el.exampleImageModalImg.alt="곰 1 순열 안내 예시";
+  }else if(type==="guideBear2"){
+    el.exampleImageModalTitle.textContent="";
+    el.exampleImageModalTitle.style.display="none";
+    el.exampleImageModalImg.src=REARRANGE_GUIDE_BEAR2_IMAGE;
+    el.exampleImageModalImg.alt="곰 2 순열 안내 예시";
   }else{
     el.exampleImageModalTitle.textContent="입력 예시 크게 보기";
+    el.exampleImageModalTitle.style.display="block";
     el.exampleImageModalImg.src="빛나는첨탑순위.png";
     el.exampleImageModalImg.alt="빛나는 첨탑 순위 예시 크게 보기";
   }
