@@ -157,7 +157,7 @@ function renderRearrangeViewTabs(){
   return`
     <div class="rearrange-top-tabs">
       <button type="button" class="${view==="board"?"active":""}" onclick="setRearrangeView('board')">배치표</button>
-      <button type="button" class="${view==="admin"?"active":""}" onclick="setRearrangeView('admin')">운영진 확인</button>
+      <button type="button" class="${view==="admin"?"active":""}" onclick="setRearrangeView('admin')">관리</button>
     </div>
   `;
 }
@@ -457,10 +457,10 @@ function renderRearrangeEvent(){
   el.partyList.classList.add("rearrange-page-list");
   el.partyList.innerHTML=`
     <div class="rearrange-page">
-      <div class="rearrange-top-row">
-        ${renderRearrangeViewTabs()}
-        ${mineInfo}
-      </div>
+<div class="rearrange-top-row">
+  ${mineInfo}
+  ${renderRearrangeViewTabs()}
+</div>
       ${mainContent}
       ${guideCard}
     </div>
