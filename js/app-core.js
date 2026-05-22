@@ -816,33 +816,6 @@ function ensureRankingExtraFields(){
   }
 }
 
-  if(!document.getElementById("rankEditExistingWrap")){
-    const hopeWrap=document.getElementById("rankEditHopeWrap")||el.rankEditNoteInput?.parentElement;
-
-    if(hopeWrap){
-      const wrap=document.createElement("div");
-      wrap.className="form-group";
-      wrap.id="rankEditExistingWrap";
-      wrap.innerHTML=`
-        <label for="rankEditExistingInput">기존</label>
-        <input id="rankEditExistingInput" class="text-input" type="number" min="1" step="1" placeholder="예: 3">
-      `;
-      hopeWrap.insertAdjacentElement("afterend",wrap);
-    }
-  }
-
-  if(!document.getElementById("rankEditExcludeBtnWrap")){
-    const existingWrap=document.getElementById("rankEditExistingWrap");
-
-    if(existingWrap){
-      const wrap=document.createElement("div");
-      wrap.className="form-group";
-      wrap.id="rankEditExcludeBtnWrap";
-      wrap.innerHTML=`<button type="button" id="rankEditExcludeBtn" class="text-input">목록에서 제외</button>`;
-      existingWrap.insertAdjacentElement("afterend",wrap);
-    }
-  }
-}
 
 function getNicknameValue(){
   const direct=el.nicknameInput&&typeof el.nicknameInput.value==="string"?el.nicknameInput.value:"";
@@ -1277,18 +1250,20 @@ function subscribeParties(){
     state.unsubscribeRanking=rearrangeRankingRef().onSnapshot(rankingSnap=>{
       const rankingMap={};
 
-rankingMap[doc.id]={
-  user:d.user||doc.id,
-  power:Number(d.power||0),
-  note:String(d.note||""),
-  desiredGroup:String(d.desiredGroup||""),
-  existingGroup:String(d.existingGroup||""),
-  existingColumn:Number(d.existingColumn||0),
-  excluded:!!d.excluded,
-  flexApproved:!!d.flexApproved,
-  flexApprovedAt:d.flexApprovedAt||null,
-  flexApprovedBy:d.flexApprovedBy||""
-};
+      rankingSnap.docs.forEach(doc=>{
+        const d=doc.data()||{};
+        rankingMap[doc.id]={
+          user:d.user||doc.id,
+          power:Number(d.power||0),
+          note:String(d.note||""),
+          desiredGroup:String(d.desiredGroup||""),
+          existingGroup:String(d.existingGroup||""),
+          existingColumn:Number(d.existingColumn||0),
+          excluded:!!d.excluded,
+          flexApproved:!!d.flexApproved,
+          flexApprovedAt:d.flexApprovedAt||null,
+          flexApprovedBy:d.flexApprovedBy||""
+        };
       });
 
       state.rearrangeRankingMap=rankingMap;
@@ -1302,17 +1277,17 @@ rankingMap[doc.id]={
     state.unsubscribeMeta=rearrangeProgressRef().onSnapshot(progressSnap=>{
       state.rearrangeProgressEntries=progressSnap.docs.map(doc=>{
         const d=doc.data()||{};
-return{
-  id:doc.id,
-  user:d.user||doc.id,
-  stageText:String(d.stageText||d.stage||""),
-  stageMajor:Number(d.stageMajor||0),
-  stageMinor:Number(d.stageMinor||0),
-  existingGroup:String(d.existingGroup||""),
-  desiredGroup:String(d.desiredGroup||""),
-  updatedAt:d.updatedAt||null,
-  createdAt:d.createdAt||null
-};
+        return{
+          id:doc.id,
+          user:d.user||doc.id,
+          stageText:String(d.stageText||d.stage||""),
+          stageMajor:Number(d.stageMajor||0),
+          stageMinor:Number(d.stageMinor||0),
+          existingGroup:String(d.existingGroup||""),
+          desiredGroup:String(d.desiredGroup||""),
+          updatedAt:d.updatedAt||null,
+          createdAt:d.createdAt||null
+        };
       });
 
       rebuildMergedRearrangeEntries();
@@ -1360,6 +1335,7 @@ return{
     alert("기본 데이터를 불러오는 중 오류가 발생했습니다.");
   });
 }
+
 
 function rebuildMergedRearrangeEntries(){
   state.rearrangeEntries=state.rearrangeProgressEntries.map(progress=>{
