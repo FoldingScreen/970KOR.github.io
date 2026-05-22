@@ -395,15 +395,18 @@ function renderRearrangeBoard(groups){
 
     <div class="rearrange-board-force-grid">
       <div class="party-card rank-table-card rearrange-board-card rearrange-bear1-card ${mobileTab!=="bear1"?"mobile-hidden-card":""}">
-        <div class="party-title">곰 1 배치표</div>
-        <div class="party-sub">곰 1 희망 인원 기준입니다.</div>
-        <div class="card-actions"><button onclick="copyRearrangeColumns()">복사</button></div>
+        <div class="rearrange-board-head">
+          <div class="party-title">곰 1 배치표</div>
+          <button type="button" class="rank-copy-btn" onclick="copyRearrangeColumns('곰1')">복사</button>
+        </div>
         ${renderRearrangeTable(groups.bear1Entries,groups.flexApproved)}
       </div>
 
       <div class="party-card rank-table-card rearrange-board-card rearrange-bear2-card ${mobileTab!=="bear2"?"mobile-hidden-card":""}">
-        <div class="party-title">곰 2 배치표</div>
-        <div class="party-sub">곰 2 희망 및 상관없음 신청자는 곰 2에 포함됩니다.</div>
+        <div class="rearrange-board-head">
+          <div class="party-title">곰 2 배치표</div>
+          <button type="button" class="rank-copy-btn" onclick="copyRearrangeColumns('곰2')">복사</button>
+        </div>
         ${renderRearrangeTable(groups.bear2Entries,groups.flexApproved)}
       </div>
     </div>
@@ -752,17 +755,24 @@ window.toggleRearrangeFlexApproved=async function(user){
   },{merge:true});
 };
 
-window.copyRearrangeColumns=function(){
+window.copyRearrangeColumns=function(targetGroup=""){
   const groups=getRearrangeGroups();
+
   const grouped={
     "곰1":groups.bear1Entries,
     "곰2":groups.bear2Entries
   };
 
-  const lines=["[자리 재배치 결과]"];
+  const targetGroups=targetGroup&&grouped[targetGroup]
+    ? [[targetGroup,grouped[targetGroup]]]
+    : Object.entries(grouped);
 
-  Object.entries(grouped).forEach(([groupName,displayedEntries])=>{
-    const columns={1:[],2:[],3:[],4:[],5:[]};
+  const lines=targetGroup
+    ? [`[${targetGroup} 자리 재배치 결과]`]
+    : ["[자리 재배치 결과]"];
+
+  targetGroups.forEach(([groupName,displayedEntries])=>{
+    const columns={1:[],2:[],3:[],4:[],5:[],유동:[]};
 
     displayedEntries.forEach((entry,idx)=>{
       const rank=idx+1;
@@ -772,17 +782,16 @@ window.copyRearrangeColumns=function(){
     });
 
     groups.flexApproved.forEach(entry=>{
-      columns["유동"]=(columns["유동"]||[]);
-      columns["유동"].push(entry.user);
+      columns.유동.push(entry.user);
     });
 
-    lines.push("",`[${groupName}]`);
+    if(!targetGroup)lines.push("",`[${groupName}]`);
     lines.push(`1열: ${columns[1].join(", ")}`);
     lines.push(`2열: ${columns[2].join(", ")}`);
     lines.push(`3열: ${columns[3].join(", ")}`);
     lines.push(`4열: ${columns[4].join(", ")}`);
     lines.push(`5열: ${columns[5].join(", ")}`);
-    if(columns["유동"]?.length)lines.push(`유동: ${columns["유동"].join(", ")}`);
+    if(columns.유동.length)lines.push(`유동: ${columns.유동.join(", ")}`);
   });
 
   const text=lines.join("\n");
