@@ -641,6 +641,17 @@
     font-size: 11px;
   }
 
+  .rearrange-admin-card .rank-table-wrap {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-width: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .rearrange-admin-table {
+    min-width: 720px;
+  }
+
   .rearrange-compact-table th,
   .rearrange-compact-table td,
   .rearrange-admin-table th,
