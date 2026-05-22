@@ -463,6 +463,10 @@ function renderRearrangeEvent(){
     </div>
   `;
 }
+window.setRearrangeView=function(view){
+  state.rearrangeView=view==="admin"?"admin":"board";
+  renderRearrangeEvent();
+};
 
 window.setRearrangeAdminTab=function(tab){
   state.rearrangeAdminTab=["move","any","flex","excluded","baseline"].includes(tab)?tab:"move";
