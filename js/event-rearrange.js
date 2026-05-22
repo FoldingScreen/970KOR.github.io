@@ -40,25 +40,15 @@ function renderExcludedRearrangeList(entries){
 }
 
 function renderRearrangeTable(entries,flexEntries=[],groupName="곰1"){
-  if(!entries.length&&!flexEntries.length)return`<div class="rank-empty">입력된 데이터가 없습니다.</div>`;
+  const visibleEntries=(entries||[]).filter(Boolean);
+  const visibleFlexEntries=(flexEntries||[]).filter(Boolean);
 
-  const rows=entries.map((entry,idx)=>{
+  if(!visibleEntries.length&&!visibleFlexEntries.length){
+    return`<div class="rank-empty">아직 아무도 없습니다.</div>`;
+  }
+
+  const rows=visibleEntries.map((entry,idx)=>{
     const rank=idx+1;
-
-    if(!entry){
-      return`
-        <tr>
-          <td>${rank}</td>
-          <td>${getBearLayoutLabel(rank,groupName)}</td>
-          <td class="left muted">공란</td>
-          <td>-</td>
-          <td>-</td>
-          <td class="left">-</td>
-          <td>-</td>
-        </tr>
-      `;
-    }
-
     const rowClass=entry.user===state.currentUser?"rank-row-me":"";
     const powerText=entry.power>0?Number(entry.power).toLocaleString("ko-KR"):"-";
     const noteText=entry.note?escapeHtml(entry.note):"-";
@@ -76,7 +66,7 @@ function renderRearrangeTable(entries,flexEntries=[],groupName="곰1"){
     `;
   }).join("");
 
-  const flexRows=flexEntries.map(entry=>{
+    const flexRows=visibleFlexEntries.map(entry=>{
     const rowClass=entry.user===state.currentUser?"rank-row-me":"";
     const powerText=entry.power>0?Number(entry.power).toLocaleString("ko-KR"):"-";
     const noteText=entry.note?escapeHtml(entry.note):"-";
@@ -493,9 +483,9 @@ function renderRearrangeEvent(){
   `:`
     <div class="rearrange-my-info-bar not-applied">
       <div class="rearrange-my-title">내 자리 재배치 정보</div>
-      <div class="rearrange-my-item strong-alert">아직 신청하지 않았습니다.</div>
+      <div class="rearrange-my-item strong-alert">아직 입력하지 않았습니다.</div>
       <button type="button" class="rearrange-my-edit-btn" ${state.rearrangeInputEnabled?"onclick=\"openMyRearrangeModal()\"":"disabled"}>
-        ${state.rearrangeInputEnabled?"신청하기":"입력 일시중지"}
+        ${state.rearrangeInputEnabled?"입력하기":"입력 일시중지"}
       </button>
     </div>
   `;
