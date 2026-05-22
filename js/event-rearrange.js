@@ -445,7 +445,7 @@ function renderRearrangeBoard(groups){
     <div class="rearrange-board-force-grid">
       <div class="party-card rank-table-card rearrange-board-card rearrange-bear1-card ${mobileTab!=="bear1"?"mobile-hidden-card":""}">
         <div class="rearrange-board-head">
-          <div class="party-title">곰 1 배치표</div>
+          <div class="party-title">곰 1(21:40, UTC 12:40) 배치표</div>
           <button type="button" class="rank-copy-btn" onclick="copyRearrangeColumns('곰1')">복사</button>
         </div>
         ${renderRearrangeTable(groups.bear1Entries,groups.flexApprovedBear1,"곰1")}
@@ -453,7 +453,7 @@ function renderRearrangeBoard(groups){
 
       <div class="party-card rank-table-card rearrange-board-card rearrange-bear2-card ${mobileTab!=="bear2"?"mobile-hidden-card":""}">
         <div class="rearrange-board-head">
-          <div class="party-title">곰 2 배치표</div>
+          <div class="party-title">곰 2(22:20, UTC 13:20) 배치표</div>
           <button type="button" class="rank-copy-btn" onclick="copyRearrangeColumns('곰2')">복사</button>
         </div>
         ${renderRearrangeTable(groups.bear2Entries,groups.flexApprovedBear2,"곰2")}
