@@ -4273,3 +4273,241 @@ textarea.text-input{
     display: none !important;
   }
 }
+
+/* ===== 자리재배치 전용 레이아웃 강제 정리 ===== */
+
+#partyList.rearrange-page-list {
+  display: block !important;
+}
+
+.rearrange-page {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 상단: 버튼 + 내 정보 한 줄 */
+.rearrange-top-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.rearrange-top-tabs {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.rearrange-top-tabs button {
+  border-radius: 999px;
+  padding: 8px 14px;
+  border: 1px solid rgba(255,255,255,.18);
+  cursor: pointer;
+}
+
+.rearrange-top-tabs button.active {
+  font-weight: 800;
+  box-shadow: 0 0 0 2px rgba(255,255,255,.14) inset;
+}
+
+/* 내 정보는 진짜 한 줄 */
+.rearrange-my-info-bar {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: nowrap;
+  padding: 10px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(120,160,220,.22);
+  background: rgba(7,20,36,.88);
+  overflow: hidden;
+}
+
+.rearrange-my-title {
+  flex: 0 0 auto;
+  font-size: 17px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.rearrange-my-item {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-size: 13px;
+  white-space: nowrap;
+  color: rgba(210,230,255,.9);
+}
+
+.rearrange-my-item strong {
+  color: #fff;
+}
+
+.rearrange-my-edit-btn {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* 곰1/곰2 배치표: 무조건 PC 병렬 */
+.rearrange-board-grid {
+  width: 100%;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  gap: 12px !important;
+  align-items: stretch !important;
+}
+
+.rearrange-board-card {
+  min-width: 0 !important;
+  height: calc(100vh - 260px) !important;
+  min-height: 430px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.rearrange-board-card .party-title {
+  flex: 0 0 auto;
+  margin-bottom: 4px;
+}
+
+.rearrange-board-card .party-sub {
+  flex: 0 0 auto;
+  margin: 2px 0 6px;
+  font-size: 13px;
+}
+
+.rearrange-board-card .card-actions {
+  flex: 0 0 auto;
+  margin: 4px 0 6px;
+}
+
+/* 표 내부만 스크롤 */
+.rearrange-board-card .rank-table-wrap {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: auto !important;
+  border-radius: 10px;
+}
+
+/* 표 헤더 고정 */
+.rearrange-board-card .rank-table thead th {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 3 !important;
+}
+
+/* 표 압축 */
+.rearrange-compact-table {
+  table-layout: fixed;
+  width: 100%;
+  font-size: 12px;
+}
+
+.rearrange-compact-table th,
+.rearrange-compact-table td {
+  padding: 5px 6px;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rearrange-compact-table th:nth-child(1),
+.rearrange-compact-table td:nth-child(1) {
+  width: 44px;
+}
+
+.rearrange-compact-table th:nth-child(2),
+.rearrange-compact-table td:nth-child(2) {
+  width: 48px;
+}
+
+.rearrange-compact-table th:nth-child(3),
+.rearrange-compact-table td:nth-child(3) {
+  width: 120px;
+}
+
+.rearrange-compact-table th:nth-child(4),
+.rearrange-compact-table td:nth-child(4) {
+  width: 68px;
+}
+
+.rearrange-compact-table th:nth-child(5),
+.rearrange-compact-table td:nth-child(5) {
+  width: 90px;
+}
+
+.rearrange-compact-table th:nth-child(6),
+.rearrange-compact-table td:nth-child(6) {
+  width: 70px;
+}
+
+.rearrange-compact-table th:nth-child(7),
+.rearrange-compact-table td:nth-child(7) {
+  width: 54px;
+}
+
+.rank-edit-btn {
+  padding: 2px 6px;
+  font-size: 11px;
+  border-radius: 6px;
+}
+
+/* 모바일에서는 한 표씩 */
+@media (max-width: 768px) {
+  .rearrange-top-row {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .rearrange-top-tabs {
+    width: 100%;
+  }
+
+  .rearrange-top-tabs button {
+    flex: 1;
+  }
+
+  .rearrange-my-info-bar {
+    display: block;
+    padding: 12px 14px;
+  }
+
+  .rearrange-my-title {
+    margin-bottom: 8px;
+  }
+
+  .rearrange-my-item {
+    margin: 4px 0;
+    white-space: normal;
+  }
+
+  .rearrange-my-edit-btn {
+    margin-top: 10px;
+    width: 100%;
+  }
+
+  .rearrange-board-grid {
+    display: block !important;
+  }
+
+  .rearrange-board-card {
+    height: calc(100vh - 330px) !important;
+    min-height: 360px !important;
+    margin-bottom: 12px;
+  }
+
+  .rearrange-board-card.mobile-hidden-card {
+    display: none !important;
+  }
+}
