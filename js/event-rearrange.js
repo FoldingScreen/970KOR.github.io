@@ -155,7 +155,7 @@ function renderRearrangeViewTabs(){
   const view=state.rearrangeView||"board";
 
   return`
-    <div class="rearrange-view-tabs">
+    <div class="rearrange-top-tabs">
       <button type="button" class="${view==="board"?"active":""}" onclick="setRearrangeView('board')">배치표</button>
       <button type="button" class="${view==="admin"?"active":""}" onclick="setRearrangeView('admin')">운영진 확인</button>
     </div>
@@ -417,9 +417,18 @@ function renderRearrangeEvent(){
   const mine=myRearrangeEntry();
   const groups=getRearrangeGroups();
 
-  const mineCard=state.rearrangeInputEnabled
-    ? `<div class="party-card"><div class="party-title">내 자리 재배치 정보</div><div class="party-sub">스테이지: ${mine?escapeHtml(mine.stageText):"미입력"}</div><div class="party-sub">현재 배치: ${mine?escapeHtml(normalizeRearrangeGroup(mine.existingGroup)||"-"):"미입력"}</div><div class="party-sub">희망 배치: ${mine?escapeHtml(normalizeRearrangeGroup(mine.desiredGroup)||"-"):"미입력"}</div><div class="party-sub">최종 수정: ${mine?formatDateTime(mine.updatedAt):"-"}</div><div class="card-actions"><button onclick="openMyRearrangeModal()">${mine?"수정":"입력"}</button></div></div>`
-    : `<div class="party-card"><div class="party-title">내 자리 재배치 정보</div><div class="party-sub">스테이지: ${mine?escapeHtml(mine.stageText):"미입력"}</div><div class="party-sub">현재 배치: ${mine?escapeHtml(normalizeRearrangeGroup(mine.existingGroup)||"-"):"미입력"}</div><div class="party-sub">희망 배치: ${mine?escapeHtml(normalizeRearrangeGroup(mine.desiredGroup)||"-"):"미입력"}</div><div class="party-sub">현재 개인 입력은 일시 중지되어 있습니다.</div><div class="card-actions"><button disabled>입력 일시중지</button></div></div>`;
+  const mineInfo=`
+    <div class="rearrange-my-info-bar">
+      <div class="rearrange-my-title">내 자리 재배치 정보</div>
+      <div class="rearrange-my-item">스테이지: <strong>${mine?escapeHtml(mine.stageText):"미입력"}</strong></div>
+      <div class="rearrange-my-item">현재 배치: <strong>${mine?escapeHtml(normalizeRearrangeGroup(mine.existingGroup)||"-"):"미입력"}</strong></div>
+      <div class="rearrange-my-item">희망 배치: <strong>${mine?escapeHtml(normalizeRearrangeGroup(mine.desiredGroup)||"-"):"미입력"}</strong></div>
+      <div class="rearrange-my-item">최종 수정: <strong>${mine?formatDateTime(mine.updatedAt):"-"}</strong></div>
+      <button type="button" class="rearrange-my-edit-btn" ${state.rearrangeInputEnabled?"onclick=\"openMyRearrangeModal()\"":"disabled"}>
+        ${state.rearrangeInputEnabled?(mine?"수정":"입력"):"입력 일시중지"}
+      </button>
+    </div>
+  `;
 
   let mainContent="";
 
@@ -436,9 +445,8 @@ function renderRearrangeEvent(){
     `;
   }
 
-  const excludedCard="";
   const guideCard=(state.isAdmin||state.rearrangePublic)?`
-    <div class="party-card layout-guide-card">
+    <div class="party-card layout-guide-card rearrange-guide-card">
       <div class="party-title">순열 안내 예시</div>
       <div class="party-sub">배치표 순열 기준은 추후 확정된 열별 인원수에 따라 조정합니다.</div>
       <div class="card-actions"><button onclick="openExampleImageModal('guide')">예시 크게 보기</button></div>
@@ -446,13 +454,18 @@ function renderRearrangeEvent(){
     </div>
   `:"";
 
-  el.partyList.innerHTML=mineCard+renderRearrangeViewTabs()+mainContent+excludedCard+guideCard;
+  el.partyList.classList.add("rearrange-page-list");
+  el.partyList.innerHTML=`
+    <div class="rearrange-page">
+      <div class="rearrange-top-row">
+        ${renderRearrangeViewTabs()}
+        ${mineInfo}
+      </div>
+      ${mainContent}
+      ${guideCard}
+    </div>
+  `;
 }
-
-window.setRearrangeView=function(view){
-  state.rearrangeView=view==="admin"?"admin":"board";
-  renderRearrangeEvent();
-};
 
 window.setRearrangeAdminTab=function(tab){
   state.rearrangeAdminTab=["move","any","flex","excluded","baseline"].includes(tab)?tab:"move";
