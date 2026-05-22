@@ -1,0 +1,345 @@
+/* ===== 자리재배치 전용 CSS ===== */
+/* 이 파일은 자리재배치 화면만 관리한다. style.css에 자리재배치 CSS를 추가하지 않는다. */
+
+/* 전체 자리재배치 렌더 영역 */
+#partyList.rearrange-page-list {
+  display: block !important;
+  width: 100%;
+}
+
+.rearrange-page {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 상단: 탭 + 내 정보 */
+.rearrange-top-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+/* 배치표 / 운영진 확인 탭 */
+.rearrange-top-tabs {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.rearrange-top-tabs button,
+.rearrange-view-tabs button,
+.rearrange-mobile-tabs button {
+  border-radius: 999px;
+  padding: 8px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  cursor: pointer;
+}
+
+.rearrange-top-tabs button.active,
+.rearrange-view-tabs button.active,
+.rearrange-mobile-tabs button.active {
+  font-weight: 800;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.14) inset;
+}
+
+/* 내 정보 한 줄 */
+.rearrange-my-info-bar {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: nowrap;
+  padding: 10px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(120, 160, 220, 0.22);
+  background: rgba(7, 20, 36, 0.88);
+  overflow: hidden;
+}
+
+.rearrange-my-title {
+  flex: 0 0 auto;
+  font-size: 17px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.rearrange-my-item {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-size: 13px;
+  white-space: nowrap;
+  color: rgba(210, 230, 255, 0.9);
+}
+
+.rearrange-my-item strong {
+  color: #fff;
+}
+
+.rearrange-my-edit-btn {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* PC: 곰1 / 곰2 강제 좌우 배치 */
+.rearrange-board-force-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  gap: 14px !important;
+  width: 100% !important;
+  align-items: stretch !important;
+}
+
+.rearrange-board-force-grid > .rearrange-board-card {
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  height: calc(100vh - 275px) !important;
+  min-height: 420px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.rearrange-board-card .party-title {
+  flex: 0 0 auto;
+  margin-bottom: 4px;
+}
+
+.rearrange-board-card .party-sub {
+  flex: 0 0 auto;
+  margin: 2px 0 6px;
+  font-size: 13px;
+}
+
+.rearrange-board-card .card-actions {
+  flex: 0 0 auto;
+  margin: 4px 0 6px;
+}
+
+/* 표 내부만 스크롤 */
+.rearrange-board-force-grid .rank-table-wrap {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: auto !important;
+  border-radius: 10px;
+}
+
+/* 표 헤더 고정 */
+.rearrange-board-force-grid .rank-table thead th {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 5 !important;
+}
+
+/* 표 압축 */
+.rearrange-compact-table,
+.rearrange-admin-table {
+  table-layout: fixed;
+  width: 100%;
+  font-size: 12px;
+}
+
+.rearrange-compact-table th,
+.rearrange-compact-table td,
+.rearrange-admin-table th,
+.rearrange-admin-table td {
+  padding: 5px 6px;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rearrange-compact-table th:nth-child(1),
+.rearrange-compact-table td:nth-child(1) {
+  width: 44px;
+}
+
+.rearrange-compact-table th:nth-child(2),
+.rearrange-compact-table td:nth-child(2) {
+  width: 48px;
+}
+
+.rearrange-compact-table th:nth-child(3),
+.rearrange-compact-table td:nth-child(3) {
+  width: 120px;
+}
+
+.rearrange-compact-table th:nth-child(4),
+.rearrange-compact-table td:nth-child(4) {
+  width: 68px;
+}
+
+.rearrange-compact-table th:nth-child(5),
+.rearrange-compact-table td:nth-child(5) {
+  width: 90px;
+}
+
+.rearrange-compact-table th:nth-child(6),
+.rearrange-compact-table td:nth-child(6) {
+  width: 70px;
+}
+
+.rearrange-compact-table th:nth-child(7),
+.rearrange-compact-table td:nth-child(7) {
+  width: 54px;
+}
+
+/* 운영진 확인 */
+.rearrange-admin-card {
+  width: 100%;
+  min-width: 0;
+}
+
+.rearrange-admin-summary {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 10px 0 12px;
+}
+
+.rearrange-admin-summary span {
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.9rem;
+}
+
+.rearrange-view-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+
+.rearrange-view-tabs.small button,
+.rearrange-view-tabs.tiny button {
+  padding: 6px 10px;
+  font-size: 0.9rem;
+}
+
+.rearrange-admin-card .rank-table-wrap {
+  max-height: calc(100vh - 340px);
+  overflow: auto;
+}
+
+/* 배지 */
+.rearrange-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 4px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.rearrange-badge.any {
+  background: rgba(255, 193, 7, 0.22);
+}
+
+.rearrange-badge.flex {
+  background: rgba(138, 92, 246, 0.24);
+}
+
+.rearrange-flex-row td {
+  font-weight: 700;
+}
+
+.rank-edit-btn {
+  padding: 2px 6px;
+  font-size: 11px;
+  border-radius: 6px;
+}
+
+/* 모바일 탭 */
+.rearrange-mobile-tabs {
+  display: none !important;
+}
+
+/* 순열 안내 */
+.rearrange-guide-card {
+  width: 100%;
+}
+
+/* 모바일 */
+@media (max-width: 768px) {
+  .rearrange-top-row {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .rearrange-top-tabs {
+    width: 100%;
+  }
+
+  .rearrange-top-tabs button {
+    flex: 1;
+  }
+
+  .rearrange-my-info-bar {
+    display: block;
+    padding: 12px 14px;
+  }
+
+  .rearrange-my-title {
+    margin-bottom: 8px;
+  }
+
+  .rearrange-my-item {
+    margin: 4px 0;
+    white-space: normal;
+  }
+
+  .rearrange-my-edit-btn {
+    margin-top: 10px;
+    width: 100%;
+  }
+
+  .rearrange-mobile-tabs {
+    display: flex !important;
+    gap: 8px !important;
+    margin: 10px 0 !important;
+  }
+
+  .rearrange-mobile-tabs button {
+    flex: 1;
+  }
+
+  .rearrange-board-force-grid {
+    display: block !important;
+  }
+
+  .rearrange-board-force-grid > .rearrange-board-card {
+    height: calc(100vh - 330px) !important;
+    min-height: 360px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .rearrange-board-force-grid > .rearrange-board-card.mobile-hidden-card {
+    display: none !important;
+  }
+
+  .rearrange-compact-table,
+  .rearrange-admin-table {
+    font-size: 11px;
+  }
+
+  .rearrange-compact-table th,
+  .rearrange-compact-table td,
+  .rearrange-admin-table th,
+  .rearrange-admin-table td {
+    padding: 4px 5px;
+  }
+}
