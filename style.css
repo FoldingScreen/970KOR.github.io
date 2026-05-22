@@ -3761,3 +3761,210 @@ textarea.text-input{
     flex-direction: column;
   }
 }
+
+/* ===== 자리재배치 화면 압축 레이아웃 ===== */
+
+#partyList:has(.rearrange-view-tabs),
+#partyList:has(.rearrange-board-grid) {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+#partyList:has(.rearrange-board-grid) > .party-card:first-child {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  min-height: auto;
+}
+
+#partyList:has(.rearrange-board-grid) > .rearrange-view-tabs {
+  grid-column: 2;
+  grid-row: 1;
+  margin: 0 0 8px;
+  align-self: start;
+}
+
+#partyList:has(.rearrange-board-grid) > .rearrange-board-grid,
+#partyList:has(.rearrange-board-grid) > .rearrange-admin-card {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+#partyList:has(.rearrange-board-grid) > .party-card:not(:first-child):not(.rank-table-card):not(.layout-guide-card) {
+  grid-column: 1;
+}
+
+.rearrange-board-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.rearrange-board-card,
+.rearrange-admin-card {
+  min-width: 0;
+}
+
+.rearrange-board-card .party-title,
+.rearrange-admin-card .party-title {
+  margin-bottom: 8px;
+}
+
+.rearrange-board-card .party-sub,
+.rearrange-admin-card .party-sub {
+  margin: 4px 0 8px;
+  font-size: 13px;
+}
+
+.rearrange-board-card .card-actions {
+  margin: 6px 0;
+}
+
+.rearrange-compact-table,
+.rearrange-admin-table {
+  table-layout: fixed;
+  width: 100%;
+  font-size: 12px;
+}
+
+.rearrange-compact-table th,
+.rearrange-compact-table td,
+.rearrange-admin-table th,
+.rearrange-admin-table td {
+  padding: 5px 6px;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rearrange-compact-table th:nth-child(1),
+.rearrange-compact-table td:nth-child(1) {
+  width: 42px;
+}
+
+.rearrange-compact-table th:nth-child(2),
+.rearrange-compact-table td:nth-child(2) {
+  width: 44px;
+}
+
+.rearrange-compact-table th:nth-child(3),
+.rearrange-compact-table td:nth-child(3) {
+  width: 88px;
+}
+
+.rearrange-compact-table th:nth-child(4),
+.rearrange-compact-table td:nth-child(4) {
+  width: 58px;
+}
+
+.rearrange-compact-table th:nth-child(5),
+.rearrange-compact-table td:nth-child(5) {
+  width: 84px;
+}
+
+.rearrange-compact-table th:nth-child(6),
+.rearrange-compact-table td:nth-child(6) {
+  width: 52px;
+}
+
+.rearrange-compact-table th:nth-child(7),
+.rearrange-compact-table td:nth-child(7) {
+  width: 42px;
+}
+
+.rank-edit-btn {
+  padding: 2px 5px;
+  font-size: 11px;
+  border-radius: 6px;
+}
+
+.rearrange-view-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rearrange-view-tabs button,
+.rearrange-mobile-tabs button {
+  padding: 7px 12px;
+  border-radius: 999px;
+}
+
+.rearrange-badge {
+  margin-left: 3px;
+  padding: 1px 5px;
+  font-size: 10px;
+  border-radius: 999px;
+}
+
+/* 운영진 확인 화면 */
+#partyList:has(.rearrange-admin-card) {
+  grid-template-columns: 320px minmax(0, 1fr);
+}
+
+#partyList:has(.rearrange-admin-card) > .party-card:first-child {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+}
+
+#partyList:has(.rearrange-admin-card) > .rearrange-view-tabs {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+#partyList:has(.rearrange-admin-card) > .rearrange-admin-card {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+/* 모바일 */
+@media (max-width: 768px) {
+  #partyList:has(.rearrange-view-tabs),
+  #partyList:has(.rearrange-board-grid),
+  #partyList:has(.rearrange-admin-card) {
+    display: block;
+  }
+
+  #partyList:has(.rearrange-board-grid) > .party-card:first-child {
+    margin-bottom: 12px;
+  }
+
+  .rearrange-board-grid {
+    display: block;
+  }
+
+  .rearrange-board-card {
+    margin-bottom: 12px;
+  }
+
+  .rearrange-board-card.mobile-hidden-card {
+    display: none;
+  }
+
+  .rearrange-mobile-tabs {
+    display: flex;
+    gap: 8px;
+    margin: 10px 0;
+  }
+
+  .rearrange-compact-table,
+  .rearrange-admin-table {
+    font-size: 11px;
+  }
+
+  .rearrange-compact-table th,
+  .rearrange-compact-table td,
+  .rearrange-admin-table th,
+  .rearrange-admin-table td {
+    padding: 4px 5px;
+  }
+}
+
+@media (min-width: 769px) {
+  .rearrange-mobile-tabs {
+    display: none;
+  }
+}
