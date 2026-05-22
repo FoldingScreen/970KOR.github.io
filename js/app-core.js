@@ -1388,6 +1388,7 @@ return{
   stageMinor:Number(d.stageMinor||0),
   existingGroup:String(d.existingGroup||""),
   desiredGroup:String(d.desiredGroup||""),
+  applicationVersion:String(d.applicationVersion||""),
   updatedAt:d.updatedAt||null,
   createdAt:d.createdAt||null
 };
