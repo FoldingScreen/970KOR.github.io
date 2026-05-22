@@ -343,3 +343,9 @@
     padding: 4px 5px;
   }
 }
+
+/* 곰1/곰2 배치표 카드가 공통 rank-table-card 때문에 전체폭을 먹는 문제 해제 */
+.rearrange-board-force-grid > .rank-table-card,
+.rearrange-board-force-grid > .rearrange-board-card {
+  grid-column: auto !important;
+}
