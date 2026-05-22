@@ -420,10 +420,10 @@ function renderRearrangeAdminPanel(groups){
     body=renderExcludedAdminTable(groups.excludedEntries);
   }
 
-  if(tab==="baseline"){
-    title="기존 순위";
-    body=renderBaselineRankingTable(groups.activeEntries);
-  }
+if(tab==="baseline"){
+  title="기존 순위";
+  body=renderBaselineRankingTable(groups.baselineEntries);
+}
 
   return`
     <div class="party-card rank-table-card rearrange-admin-card">
