@@ -1,6 +1,23 @@
 /* ===== 자리재배치 전용 CSS ===== */
 /* 이 파일은 자리재배치 화면만 관리한다. style.css에 자리재배치 CSS를 추가하지 않는다. */
 
+/* 자리재배치 상단 운영 버튼 한 줄 고정 */
+#eventScreen .event-top-row .actions.right-wrap {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+
+#eventScreen .event-top-row .actions.right-wrap button {
+  white-space: nowrap;
+  font-size: 12px;
+  padding: 7px 11px;
+  border-radius: 999px;
+}
+
 /* 전체 자리재배치 렌더 영역 */
 #partyList.rearrange-page-list {
   display: block !important;
@@ -385,29 +402,48 @@
 
 .rearrange-admin-summary {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin: 10px 0 12px;
+  gap: 6px;
+  flex-wrap: nowrap;
+  margin: 8px 0 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  scrollbar-width: none;
+}
+
+.rearrange-admin-summary::-webkit-scrollbar {
+  display: none;
 }
 
 .rearrange-admin-summary span {
+  flex: 0 0 auto;
   border-radius: 999px;
-  padding: 6px 10px;
+  padding: 5px 8px;
   background: rgba(255, 255, 255, 0.08);
-  font-size: 0.9rem;
+  font-size: 11px;
+  font-weight: 800;
 }
 
 .rearrange-view-tabs {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin: 12px 0;
+  gap: 6px;
+  flex-wrap: nowrap;
+  margin: 10px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  scrollbar-width: none;
+}
+
+.rearrange-view-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .rearrange-view-tabs.small button,
 .rearrange-view-tabs.tiny button {
-  padding: 6px 10px;
-  font-size: 0.9rem;
+  flex: 0 0 auto;
+  padding: 5px 9px;
+  font-size: 11px;
 }
 
 .rearrange-admin-card .rank-table-wrap {
@@ -470,6 +506,32 @@
 
 /* 모바일 */
 @media (max-width: 768px) {
+  #eventScreen .event-top-row .actions.right-wrap {
+    gap: 5px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  #eventScreen .event-top-row .actions.right-wrap::-webkit-scrollbar {
+    display: none;
+  }
+
+  #eventScreen .event-top-row .actions.right-wrap button {
+    font-size: 10px;
+    padding: 6px 8px;
+  }
+
+  .rearrange-admin-summary span {
+    font-size: 10px;
+    padding: 4px 7px;
+  }
+
+  .rearrange-view-tabs.small button,
+  .rearrange-view-tabs.tiny button {
+    font-size: 10px;
+    padding: 4px 8px;
+  }
+  
   .rearrange-top-row {
     display: flex;
     flex-direction: column;
