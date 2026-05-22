@@ -462,26 +462,66 @@ function renderRearrangeBoard(groups){
   `;
 }
 
+function getMyRearrangeDisplayInfo(mine,groups){
+  const desired=normalizeRearrangeGroup(mine?.desiredGroup);
+
+  if(desired==="곰1"){
+    const list=(groups.bear1Entries||[]).filter(Boolean);
+    const idx=list.findIndex(v=>v.user===mine.user);
+
+    return{
+      placement:"곰 1",
+      layout:idx>=0?getBearLayoutLabel(idx+1,"곰1"):"-"
+    };
+  }
+
+  if(desired==="곰2"||desired==="상관없음"){
+    const list=(groups.bear2Entries||[]).filter(Boolean);
+    const idx=list.findIndex(v=>v.user===mine.user);
+
+    return{
+      placement:desired==="상관없음"?"곰 2(상관없음)":"곰 2",
+      layout:idx>=0?getBearLayoutLabel(idx+1,"곰2"):"-"
+    };
+  }
+
+  if(desired==="유동적"){
+    const approvedBear1=(groups.flexApprovedBear1||[]).some(v=>v.user===mine.user);
+    const approvedBear2=(groups.flexApprovedBear2||[]).some(v=>v.user===mine.user);
+
+    return{
+      placement:"유동적",
+      layout:(approvedBear1||approvedBear2)?"유동":"승인 대기"
+    };
+  }
+
+  return{
+    placement:"-",
+    layout:"-"
+  };
+}
+
 function renderRearrangeEvent(){
   const mine=myRearrangeEntry();
   const groups=getRearrangeGroups();
 
   const mineApplied=isCurrentRearrangeApplication(mine);
+  const myDisplayInfo=mineApplied?getMyRearrangeDisplayInfo(mine,groups):null;
 
   const mineInfo=mineApplied?`
     <div class="rearrange-my-info-bar applied">
-      <div class="rearrange-my-title">내 자리 재배치 정보</div>
-      <div class="rearrange-my-item">스테이지: <strong>${escapeHtml(mine.stageText)}</strong></div>
-      <div class="rearrange-my-item">현재 배치: <strong>${escapeHtml(normalizeRearrangeGroup(mine.existingGroup)||"-")}</strong></div>
-      <div class="rearrange-my-item">희망 배치: <strong>${escapeHtml(normalizeRearrangeGroup(mine.desiredGroup)||"-")}</strong></div>
-      <div class="rearrange-my-item">최종 수정: <strong>${formatDateTime(mine.updatedAt)}</strong></div>
+      <div class="rearrange-my-title">내 정보</div>
+      <div class="rearrange-my-item">스테이지 <strong>${escapeHtml(mine.stageText)}</strong></div>
+      <div class="rearrange-my-item">배치 <strong>${escapeHtml(myDisplayInfo.placement)}</strong></div>
+      <div class="rearrange-my-item">순열 <strong>${escapeHtml(myDisplayInfo.layout)}</strong></div>
+      <div class="rearrange-my-item">최종 수정 <strong>${formatDateTime(mine.updatedAt)}</strong></div>
       <button type="button" class="rearrange-my-edit-btn" ${state.rearrangeInputEnabled?"onclick=\"openMyRearrangeModal()\"":"disabled"}>
         ${state.rearrangeInputEnabled?"수정":"입력 일시중지"}
       </button>
     </div>
   `:`
     <div class="rearrange-my-info-bar not-applied">
-      <div class="rearrange-my-title">내 자리 재배치 정보</div>
+      <div class="rearrange-my-title">내 정보</div>
       <div class="rearrange-my-item strong-alert">아직 입력하지 않았습니다.</div>
       <button type="button" class="rearrange-my-edit-btn" ${state.rearrangeInputEnabled?"onclick=\"openMyRearrangeModal()\"":"disabled"}>
         ${state.rearrangeInputEnabled?"입력하기":"입력 일시중지"}
