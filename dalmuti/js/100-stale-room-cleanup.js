@@ -15,7 +15,7 @@
   function loadScript(id, src) {
     if (document.getElementById(id)) return;
     const script = document.createElement("script");
-    script.id = src;
+    script.id = id;
     script.src = src;
     document.body.appendChild(script);
   }
