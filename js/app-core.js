@@ -1553,8 +1553,8 @@ function myRearrangeEntry(){
 
 function getRearrangeColumn(rank){
   if(rank<=18)return 3;
-  if(rank<=28)return 1;
-  if(rank<=42)return 2;
+  if(rank<=32)return 2;
+  if(rank<=42)return 1;
   if(rank<=60)return 4;
 
   return 5;
