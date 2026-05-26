@@ -401,8 +401,10 @@ function renderCastleCalculatorPanel(){
       <div class="party-card castle-calc-card">
         <div class="party-title">집결계산기</div>
 
-        <div class="castle-calc-section-title">집결 모집 시간</div>
-        <div class="castle-calc-choice-row">${gatherButtons}</div>
+        <div class="castle-calc-inline-section">
+          <div class="castle-calc-section-title">집결 모집 시간</div>
+          <div class="castle-calc-choice-row">${gatherButtons}</div>
+        </div>
         <input id="castleCalculatorGatherInput" type="hidden" value="${gatherMinutes}" />
         <input id="castleCalculatorManualModeInput" type="hidden" value="${manualMode?"1":"0"}" />
 
