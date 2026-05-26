@@ -3881,3 +3881,19 @@ textarea.text-input{
     min-width:0;
   }
 }
+
+
+/* 캐슬 집결계산기 - 집결 모집 시간 한 줄 배치 */
+.castle-calc-inline-section{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:nowrap;
+  margin:14px 0 8px;
+}
+
+.castle-calc-inline-section .castle-calc-section-title{
+  margin:0;
+  white-space:nowrap;
+  flex:0 0 auto;
+}
