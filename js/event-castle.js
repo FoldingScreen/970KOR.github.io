@@ -337,6 +337,10 @@ function renderCastleCalculatorPanel(){
   const gatherMinutes=Number(data?.gatherMinutes||1);
   const manualMode=!!data?.manualMode;
   const arrivalTime=data?.arrivalTime||"";
+  const canEdit=!!state.isAdmin;
+  const disabledAttr=canEdit?"":"disabled";
+  const readonlyAttr=canEdit&&manualMode?"":"readonly";
+
   const points=Array.isArray(data?.rallyPoints)&&data.rallyPoints.length
     ? data.rallyPoints
     : [
@@ -344,6 +348,7 @@ function renderCastleCalculatorPanel(){
       {id:"rp2",enabled:true,name:"2집결장",marchSeconds:25},
       {id:"rp3",enabled:true,name:"3집결장",marchSeconds:33}
     ];
+
   const results=Array.isArray(data?.rallyResults)?data.rallyResults:[];
 
   const resultHtml=results.length
@@ -365,34 +370,21 @@ function renderCastleCalculatorPanel(){
     </div>
   `;
 
-  if(!state.isAdmin){
-    return`
-      <div class="castle-calc-wrap">
-        <div class="party-card castle-calc-card">
-          <div class="party-title">집결계산기</div>
-          <p class="muted">운영진이 저장한 집결 시작 시각을 확인할 수 있습니다.</p>
-          ${arrivalTime?`<div class="castle-calc-arrival-readonly">도착시간 <strong>${escapeHtml(arrivalTime)}</strong></div>`:""}
-        </div>
-        ${resultBlock}
-      </div>
-    `;
-  }
-
   const gatherButtons=[1,5,10,20].map(min=>`
-    <button type="button" class="castle-calc-choice ${gatherMinutes===min?"active":""}" onclick="selectCastleCalculatorGather(${min})">${min}분</button>
+    <button type="button" class="castle-calc-choice ${gatherMinutes===min?"active":""}" onclick="selectCastleCalculatorGather(${min})" ${disabledAttr}>${min}분</button>
   `).join("");
 
   const pointRows=points.map((point,idx)=>`
     <div class="castle-calc-row">
       <label class="castle-calc-check">
-        <input type="checkbox" class="castle-calc-enabled" ${point.enabled!==false?"checked":""} />
+        <input type="checkbox" class="castle-calc-enabled" ${point.enabled!==false?"checked":""} ${disabledAttr} />
       </label>
-      <input class="text-input castle-calc-name" value="${escapeHtml(point.name||`집결장 ${idx+1}`)}" placeholder="집결장명" />
+      <input class="text-input castle-calc-name" value="${escapeHtml(point.name||`집결장 ${idx+1}`)}" placeholder="집결장명" ${canEdit?"":"readonly"} />
       <div class="castle-calc-seconds-wrap">
-        <input class="text-input castle-calc-seconds" type="number" min="0" step="1" value="${Number(point.marchSeconds||0)||""}" placeholder="초" />
+        <input class="text-input castle-calc-seconds" type="number" min="0" step="1" value="${Number(point.marchSeconds||0)||""}" placeholder="초" ${canEdit?"":"readonly"} />
         <span>초</span>
       </div>
-      <button type="button" class="inline-btn castle-calc-remove" onclick="removeCastleCalculatorRow(this)" ${points.length<=1?"disabled":""}>X</button>
+      <button type="button" class="inline-btn castle-calc-remove" onclick="removeCastleCalculatorRow(this)" ${points.length<=1||!canEdit?"disabled":""}>X</button>
     </div>
   `).join("");
 
@@ -400,6 +392,7 @@ function renderCastleCalculatorPanel(){
     <div class="castle-calc-wrap">
       <div class="party-card castle-calc-card">
         <div class="party-title">집결계산기</div>
+        ${canEdit?"":`<p class="muted">운영진만 수정할 수 있습니다.</p>`}
 
         <div class="castle-calc-inline-section">
           <div class="castle-calc-section-title">집결 모집 시간</div>
@@ -419,17 +412,17 @@ function renderCastleCalculatorPanel(){
         <div id="castleCalculatorRows" class="castle-calc-rows">${pointRows}</div>
 
         <div class="card-actions castle-calc-add-row">
-          <button type="button" onclick="addCastleCalculatorRow()">+ 집결장 추가</button>
+          <button type="button" onclick="addCastleCalculatorRow()" ${disabledAttr}>+ 집결장 추가</button>
         </div>
 
         <div class="castle-calc-action-row">
-          <button type="button" onclick="calculateCastleCalculator()">계산하기</button>
-          <button id="castleCalculatorModeBtn" type="button" onclick="toggleCastleCalculatorManualMode()">${manualMode?"도착시간 자동 산출하기":"도착시간 수동 입력하기"}</button>
+          <button type="button" onclick="calculateCastleCalculator()" ${disabledAttr}>계산하기</button>
+          <button id="castleCalculatorModeBtn" type="button" onclick="toggleCastleCalculatorManualMode()" ${disabledAttr}>${manualMode?"도착시간 자동 산출하기":"도착시간 수동 입력하기"}</button>
         </div>
 
         <div class="castle-calc-arrival-row">
           <label>도착시간</label>
-          <input id="castleCalculatorArrivalInput" class="text-input" value="${escapeHtml(arrivalTime)}" placeholder="예: 33:33" ${manualMode?"":"readonly"} />
+          <input id="castleCalculatorArrivalInput" class="text-input" value="${escapeHtml(arrivalTime)}" placeholder="예: 13:33:33" ${readonlyAttr} />
         </div>
       </div>
 
