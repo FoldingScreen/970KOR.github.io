@@ -67,6 +67,10 @@ function getCastleRallies(){
   return state.parties.filter(v=>v.type==="castle_rally");
 }
 
+function getCastleCalculatorData(){
+  return state.parties.find(v=>v.type==="castle_calculator")||null;
+}
+
 function getCastleSortedApplicants(){
   const rankMap=getRearrangeRankMap();
 
@@ -328,6 +332,110 @@ function renderCastleRallyAssignmentSelect(user){
   `;
 }
 
+function renderCastleCalculatorPanel(){
+  const data=getCastleCalculatorData();
+  const gatherMinutes=Number(data?.gatherMinutes||1);
+  const manualMode=!!data?.manualMode;
+  const arrivalTime=data?.arrivalTime||"";
+  const points=Array.isArray(data?.rallyPoints)&&data.rallyPoints.length
+    ? data.rallyPoints
+    : [
+      {id:"rp1",enabled:true,name:"1집결장",marchSeconds:15},
+      {id:"rp2",enabled:true,name:"2집결장",marchSeconds:25},
+      {id:"rp3",enabled:true,name:"3집결장",marchSeconds:33}
+    ];
+  const results=Array.isArray(data?.rallyResults)?data.rallyResults:[];
+
+  const resultHtml=results.length
+    ? results.map(item=>`
+      <div class="castle-calc-result-row">
+        <span>${escapeHtml(item.name||"")}</span>
+        <strong>${escapeHtml(item.startTime||"")}</strong>
+      </div>
+    `).join("")
+    : `<div class="empty-card mini">계산 결과가 없습니다.</div>`;
+
+  const resultBlock=`
+    <div class="party-card castle-calc-result-card">
+      <div class="castle-calc-result-head">
+        <div class="party-title">결과</div>
+        <button type="button" onclick="copyCastleCalculatorResults()" ${results.length?"":"disabled"}>복사</button>
+      </div>
+      <div id="castleCalculatorResultList" class="castle-calc-result-list">${resultHtml}</div>
+    </div>
+  `;
+
+  if(!state.isAdmin){
+    return`
+      <div class="castle-calc-wrap">
+        <div class="party-card castle-calc-card">
+          <div class="party-title">집결계산기</div>
+          <p class="muted">운영진이 저장한 집결 시작 시각을 확인할 수 있습니다.</p>
+          ${arrivalTime?`<div class="castle-calc-arrival-readonly">도착시간 <strong>${escapeHtml(arrivalTime)}</strong></div>`:""}
+        </div>
+        ${resultBlock}
+      </div>
+    `;
+  }
+
+  const gatherButtons=[1,5,10,20].map(min=>`
+    <button type="button" class="castle-calc-choice ${gatherMinutes===min?"active":""}" onclick="selectCastleCalculatorGather(${min})">${min}분</button>
+  `).join("");
+
+  const pointRows=points.map((point,idx)=>`
+    <div class="castle-calc-row">
+      <label class="castle-calc-check">
+        <input type="checkbox" class="castle-calc-enabled" ${point.enabled!==false?"checked":""} />
+      </label>
+      <input class="text-input castle-calc-name" value="${escapeHtml(point.name||`집결장 ${idx+1}`)}" placeholder="집결장명" />
+      <div class="castle-calc-seconds-wrap">
+        <input class="text-input castle-calc-seconds" type="number" min="0" step="1" value="${Number(point.marchSeconds||0)||""}" placeholder="초" />
+        <span>초</span>
+      </div>
+      <button type="button" class="inline-btn castle-calc-remove" onclick="removeCastleCalculatorRow(this)" ${points.length<=1?"disabled":""}>X</button>
+    </div>
+  `).join("");
+
+  return`
+    <div class="castle-calc-wrap">
+      <div class="party-card castle-calc-card">
+        <div class="party-title">집결계산기</div>
+
+        <div class="castle-calc-section-title">집결 모집 시간</div>
+        <div class="castle-calc-choice-row">${gatherButtons}</div>
+        <input id="castleCalculatorGatherInput" type="hidden" value="${gatherMinutes}" />
+        <input id="castleCalculatorManualModeInput" type="hidden" value="${manualMode?"1":"0"}" />
+
+        <div class="castle-calc-section-title">집결장</div>
+        <div class="castle-calc-head">
+          <span>포함</span>
+          <span>집결장명</span>
+          <span>행군시간</span>
+          <span></span>
+        </div>
+
+        <div id="castleCalculatorRows" class="castle-calc-rows">${pointRows}</div>
+
+        <div class="card-actions castle-calc-add-row">
+          <button type="button" onclick="addCastleCalculatorRow()">+ 집결장 추가</button>
+        </div>
+
+        <div class="castle-calc-action-row">
+          <button type="button" onclick="calculateCastleCalculator()">계산하기</button>
+          <button id="castleCalculatorModeBtn" type="button" onclick="toggleCastleCalculatorManualMode()">${manualMode?"도착시간 자동 산출하기":"도착시간 수동 입력하기"}</button>
+        </div>
+
+        <div class="castle-calc-arrival-row">
+          <label>도착시간</label>
+          <input id="castleCalculatorArrivalInput" class="text-input" value="${escapeHtml(arrivalTime)}" placeholder="예: 33:33" ${manualMode?"":"readonly"} />
+        </div>
+      </div>
+
+      ${resultBlock}
+    </div>
+  `;
+}
+
 function renderCastleCreatePanel(){
   if(!state.isAdmin||!state.castleCreateMode)return"";
 
@@ -360,6 +468,11 @@ function renderCastleBattleEvent(){
   const applicants=getCastleSortedApplicants();
   const rallies=getCastleRallies();
   const displayHero=getCastleDisplayHero();
+
+  if(state.castleCalculatorMode){
+    el.partyList.innerHTML=renderCastleCalculatorPanel();
+    return;
+  }
 
   const createPanel=renderCastleCreatePanel();
 
@@ -436,6 +549,205 @@ function renderCastleBattleEvent(){
 
   el.partyList.innerHTML=createPanel+rallyCards+applicantTable;
 }
+
+function formatCastleMinuteSecond(date){
+  const mm=String(date.getMinutes()).padStart(2,"0");
+  const ss=String(date.getSeconds()).padStart(2,"0");
+  return `${mm}:${ss}`;
+}
+
+function parseCastleMinuteSecond(value){
+  const text=String(value||"").trim();
+  const match=text.match(/^(\d{1,2}):(\d{2})$/);
+  if(!match)return null;
+
+  const minutes=Number(match[1]);
+  const seconds=Number(match[2]);
+
+  if(!Number.isFinite(minutes)||!Number.isFinite(seconds)||minutes<0||minutes>59||seconds<0||seconds>59){
+    return null;
+  }
+
+  const now=new Date();
+  const date=new Date(now);
+  date.setMinutes(minutes,seconds,0);
+
+  if(date.getTime()<now.getTime()){
+    date.setHours(date.getHours()+1);
+  }
+
+  return date;
+}
+
+window.selectCastleCalculatorGather=function(minutes){
+  const input=document.getElementById("castleCalculatorGatherInput");
+  if(input)input.value=String(minutes);
+
+  document.querySelectorAll(".castle-calc-choice").forEach(btn=>{
+    btn.classList.toggle("active",btn.textContent.trim()===`${minutes}분`);
+  });
+};
+
+window.addCastleCalculatorRow=function(){
+  const wrap=document.getElementById("castleCalculatorRows");
+  if(!wrap)return;
+
+  const row=document.createElement("div");
+  row.className="castle-calc-row";
+  row.innerHTML=`
+    <label class="castle-calc-check">
+      <input type="checkbox" class="castle-calc-enabled" checked />
+    </label>
+    <input class="text-input castle-calc-name" placeholder="집결장명" />
+    <div class="castle-calc-seconds-wrap">
+      <input class="text-input castle-calc-seconds" type="number" min="0" step="1" placeholder="초" />
+      <span>초</span>
+    </div>
+    <button type="button" class="inline-btn castle-calc-remove" onclick="removeCastleCalculatorRow(this)">X</button>
+  `;
+  wrap.appendChild(row);
+};
+
+window.removeCastleCalculatorRow=function(button){
+  const row=button?.closest(".castle-calc-row");
+  const rows=document.querySelectorAll(".castle-calc-row");
+
+  if(!row||rows.length<=1)return;
+
+  row.remove();
+};
+
+window.toggleCastleCalculatorManualMode=function(){
+  const modeInput=document.getElementById("castleCalculatorManualModeInput");
+  const arrivalInput=document.getElementById("castleCalculatorArrivalInput");
+  const modeBtn=document.getElementById("castleCalculatorModeBtn");
+  const nextManual=modeInput?.value!=="1";
+
+  if(modeInput)modeInput.value=nextManual?"1":"0";
+  if(arrivalInput)arrivalInput.readOnly=!nextManual;
+  if(modeBtn)modeBtn.textContent=nextManual?"도착시간 자동 산출하기":"도착시간 수동 입력하기";
+};
+
+function readCastleCalculatorRows(){
+  return[...document.querySelectorAll(".castle-calc-row")].map((row,idx)=>({
+    id:`rp${idx+1}`,
+    enabled:!!row.querySelector(".castle-calc-enabled")?.checked,
+    name:(row.querySelector(".castle-calc-name")?.value||"").trim(),
+    marchSeconds:Number(row.querySelector(".castle-calc-seconds")?.value||0)
+  }));
+}
+
+window.calculateCastleCalculator=async function(){
+  if(!state.isAdmin)return;
+
+  const gatherMinutes=Number(document.getElementById("castleCalculatorGatherInput")?.value||1);
+  const manualMode=document.getElementById("castleCalculatorManualModeInput")?.value==="1";
+  const arrivalInput=document.getElementById("castleCalculatorArrivalInput");
+  const points=readCastleCalculatorRows();
+  const enabledPoints=points.filter(point=>point.enabled);
+
+  if(!enabledPoints.length){
+    alert("계산에 포함할 집결장을 선택해 주세요.");
+    return;
+  }
+
+  for(const point of enabledPoints){
+    if(!point.name){
+      alert("포함된 집결장의 이름을 입력해 주세요.");
+      return;
+    }
+
+    if(!Number.isFinite(point.marchSeconds)||point.marchSeconds<0){
+      alert("포함된 집결장의 행군시간을 숫자로 입력해 주세요.");
+      return;
+    }
+  }
+
+  let arrivalDate;
+
+  if(manualMode){
+    arrivalDate=parseCastleMinuteSecond(arrivalInput?.value||"");
+
+    if(!arrivalDate){
+      alert("도착시간은 MM:SS 형식으로 입력해 주세요. 예: 33:33");
+      return;
+    }
+  }else{
+    const maxMarch=Math.max(...enabledPoints.map(point=>Number(point.marchSeconds||0)));
+    arrivalDate=new Date(Date.now()+(60*1000)+(gatherMinutes*60*1000)+(maxMarch*1000));
+
+    if(arrivalInput){
+      arrivalInput.value=formatCastleMinuteSecond(arrivalDate);
+    }
+  }
+
+  const gatherMs=gatherMinutes*60*1000;
+  const results=enabledPoints
+    .map(point=>{
+      const startDate=new Date(arrivalDate.getTime()-gatherMs-(point.marchSeconds*1000));
+
+      return{
+        name:point.name,
+        startTime:formatCastleMinuteSecond(startDate),
+        startValue:startDate.getTime()
+      };
+    })
+    .sort((a,b)=>a.startValue-b.startValue||a.name.localeCompare(b.name,"ko"))
+    .map(item=>({
+      name:item.name,
+      startTime:item.startTime
+    }));
+
+  const arrivalTime=formatCastleMinuteSecond(arrivalDate);
+
+  await partiesRef("castle_battle").doc("__rallyCalculator").set({
+    type:"castle_calculator",
+    event:"castle_battle",
+    gatherMinutes,
+    manualMode,
+    arrivalTime,
+    rallyPoints:points,
+    rallyResults:results,
+    calculatorUpdatedBy:state.currentUser,
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+  },{merge:true});
+
+  window.castleCalculatorLastCopyText=results
+    .map(item=>`${item.name}\t${item.startTime}`)
+    .join("\n");
+};
+
+window.copyCastleCalculatorResults=async function(){
+  const data=getCastleCalculatorData();
+  const results=Array.isArray(data?.rallyResults)?data.rallyResults:[];
+  const text=results.length
+    ? results.map(item=>`${item.name||""}\t${item.startTime||""}`).join("\n")
+    : (window.castleCalculatorLastCopyText||"");
+
+  if(!text){
+    alert("복사할 결과가 없습니다.");
+    return;
+  }
+
+  try{
+    await navigator.clipboard.writeText(text);
+    alert("복사했습니다.");
+  }catch(err){
+    console.error(err);
+    window.prompt("아래 내용을 복사해 주세요.",text);
+  }
+};
+window.toggleCastleCalculatorPanel=function(){
+  state.castleCalculatorMode=!state.castleCalculatorMode;
+
+  if(state.castleCalculatorMode){
+    state.castleCreateMode=false;
+    state.castleManagingRallyId="";
+  }
+
+  updateEventActionButtons();
+  renderCastleBattleEvent();
+};
 
 window.setCastleDisplayHero=function(heroKey){
   if(!state.isAdmin)return;
