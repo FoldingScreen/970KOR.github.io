@@ -3666,7 +3666,9 @@ textarea.text-input{
 /* ===== 캐슬전투 집결계산기 ===== */
 .castle-calc-wrap{
   display:grid;
+  grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr);
   gap:14px;
+  align-items:start;
 }
 
 .castle-calc-card,
@@ -3681,23 +3683,30 @@ textarea.text-input{
 }
 
 .castle-calc-choice-row{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
+  display:inline-flex;
+  width:auto;
+  max-width:100%;
+  flex-wrap:nowrap;
+  gap:0;
+  padding:3px;
+  border:1px solid #223653;
+  border-radius:999px;
+  background:#07111e;
 }
 
 .castle-calc-choice{
-  padding:8px 12px;
+  min-height:30px;
+  padding:5px 10px;
+  border:0;
   border-radius:999px;
-  border:1px solid #223653;
-  background:#07111e;
-  color:#c9d8f2;
-  font-weight:800;
+  background:transparent;
+  color:#9fb1cc;
+  font-size:12px;
+  font-weight:900;
 }
 
 .castle-calc-choice.active{
-  border-color:#4f8cff;
-  background:#12396c;
+  background:#2563eb;
   color:#fff;
 }
 
@@ -3760,8 +3769,21 @@ textarea.text-input{
 
 .castle-calc-action-row button{
   flex:0 0 auto;
+  min-height:38px;
+  padding:8px 14px;
+  border:1px solid #315a93;
+  background:#102545;
+  color:#e7f1ff;
+  border-radius:999px;
+  font-size:13px;
+  font-weight:900;
 }
 
+.castle-calc-action-row button:first-child{
+  border-color:#60a5fa;
+  background:#1d4ed8;
+  color:#fff;
+}
 .castle-calc-arrival-row{
   display:flex;
   align-items:center;
@@ -3776,8 +3798,9 @@ textarea.text-input{
 }
 
 .castle-calc-arrival-row input{
-  width:110px;
+  width:132px;
   text-align:center;
+  font-variant-numeric:tabular-nums;
 }
 
 .castle-calc-arrival-row input[readonly]{
@@ -3827,6 +3850,10 @@ textarea.text-input{
 @media (max-width:640px){
   .castle-calc-head{
     display:none;
+  }
+
+  .castle-calc-wrap{
+    grid-template-columns:1fr;
   }
 
   .castle-calc-row{
