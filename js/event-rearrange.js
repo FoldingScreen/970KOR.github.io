@@ -138,15 +138,15 @@ function isCurrentRearrangeApplication(entry){
 function getBearLayoutColumn(rank, groupName){
   if(groupName==="곰1"){
     if(rank<=19)return 3;
-    if(rank<=27)return 1;
-    if(rank<=42)return 2;
+    if(rank<=34)return 2;
+    if(rank<=42)return 1;
     return 4;
   }
 
   if(groupName==="곰2"){
     if(rank<=17)return 3;
-    if(rank<=25)return 1;
-    if(rank<=40)return 2;
+    if(rank<=32)return 2;
+    if(rank<=40)return 1;
     return 4;
   }
 
