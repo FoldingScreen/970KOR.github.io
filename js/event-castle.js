@@ -556,27 +556,65 @@ function formatCastleMinuteSecond(date){
   return `${mm}:${ss}`;
 }
 
-function parseCastleMinuteSecond(value){
+function formatCastleHourMinuteSecond(date){
+  const hh=String(date.getHours()).padStart(2,"0");
+  const mm=String(date.getMinutes()).padStart(2,"0");
+  const ss=String(date.getSeconds()).padStart(2,"0");
+  return `${hh}:${mm}:${ss}`;
+}
+
+function parseCastleArrivalTime(value){
   const text=String(value||"").trim();
-  const match=text.match(/^(\d{1,2}):(\d{2})$/);
-  if(!match)return null;
 
-  const minutes=Number(match[1]);
-  const seconds=Number(match[2]);
+  const hms=text.match(/^(\d{1,2}):(\d{2}):(\d{2})$/);
+  if(hms){
+    const hours=Number(hms[1]);
+    const minutes=Number(hms[2]);
+    const seconds=Number(hms[3]);
 
-  if(!Number.isFinite(minutes)||!Number.isFinite(seconds)||minutes<0||minutes>59||seconds<0||seconds>59){
-    return null;
+    if(
+      !Number.isFinite(hours)||
+      !Number.isFinite(minutes)||
+      !Number.isFinite(seconds)||
+      hours<0||hours>23||
+      minutes<0||minutes>59||
+      seconds<0||seconds>59
+    ){
+      return null;
+    }
+
+    const now=new Date();
+    const date=new Date(now);
+    date.setHours(hours,minutes,seconds,0);
+
+    if(date.getTime()<now.getTime()){
+      date.setDate(date.getDate()+1);
+    }
+
+    return date;
   }
 
-  const now=new Date();
-  const date=new Date(now);
-  date.setMinutes(minutes,seconds,0);
+  const ms=text.match(/^(\d{1,2}):(\d{2})$/);
+  if(ms){
+    const minutes=Number(ms[1]);
+    const seconds=Number(ms[2]);
 
-  if(date.getTime()<now.getTime()){
-    date.setHours(date.getHours()+1);
+    if(!Number.isFinite(minutes)||!Number.isFinite(seconds)||minutes<0||minutes>59||seconds<0||seconds>59){
+      return null;
+    }
+
+    const now=new Date();
+    const date=new Date(now);
+    date.setMinutes(minutes,seconds,0);
+
+    if(date.getTime()<now.getTime()){
+      date.setHours(date.getHours()+1);
+    }
+
+    return date;
   }
 
-  return date;
+  return null;
 }
 
 window.selectCastleCalculatorGather=function(minutes){
@@ -666,10 +704,10 @@ window.calculateCastleCalculator=async function(){
   let arrivalDate;
 
   if(manualMode){
-    arrivalDate=parseCastleMinuteSecond(arrivalInput?.value||"");
+    arrivalDate=parseCastleArrivalTime(arrivalInput?.value||"");
 
     if(!arrivalDate){
-      alert("도착시간은 MM:SS 형식으로 입력해 주세요. 예: 33:33");
+      alert("도착시간은 HH:MM:SS 또는 MM:SS 형식으로 입력해 주세요. 예: 13:33:33");
       return;
     }
   }else{
@@ -677,7 +715,7 @@ window.calculateCastleCalculator=async function(){
     arrivalDate=new Date(Date.now()+(60*1000)+(gatherMinutes*60*1000)+(maxMarch*1000));
 
     if(arrivalInput){
-      arrivalInput.value=formatCastleMinuteSecond(arrivalDate);
+      arrivalInput.value=formatCastleHourMinuteSecond(arrivalDate);
     }
   }
 
@@ -698,7 +736,7 @@ window.calculateCastleCalculator=async function(){
       startTime:item.startTime
     }));
 
-  const arrivalTime=formatCastleMinuteSecond(arrivalDate);
+  const arrivalTime=formatCastleHourMinuteSecond(arrivalDate);
 
   await partiesRef("castle_battle").doc("__rallyCalculator").set({
     type:"castle_calculator",
