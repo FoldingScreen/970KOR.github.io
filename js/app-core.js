@@ -1625,7 +1625,7 @@ function parseNoteRule(note){
 
 function getDisplayedRearrangeEntries(entries){
   const capacities={1:10,2:14,3:18,4:18,5:Number.MAX_SAFE_INTEGER};
-  const primaryColumnOrder=[3,1,2,4];
+  const primaryColumnOrder=[3,2,1,4];
 
   const sorted=[...entries];
   const explicitByColumn={1:[],2:[],3:[],4:[],5:[]};
