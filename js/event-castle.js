@@ -60,7 +60,7 @@ function getCastleHeroValue(heroes,key){
 }
 
 function getCastleApplicants(){
-  return state.parties.filter(v=>v.type!=="castle_rally"&&v.user);
+  return state.parties.filter(v=>v.type==="castle_battle"&&v.user);
 }
 
 function getCastleRallies(){
