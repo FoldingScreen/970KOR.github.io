@@ -83,6 +83,7 @@ const state={
   rearrangeBaselineTab:"2026-04",
 
   castleManageMode:false,
+  castleCalculatorMode:false,
 
   holySwordSelectedSide:localStorage.getItem("holySwordSelectedSide")||"KOR",
   tripleAllianceSelectedSide:localStorage.getItem("tripleAllianceSelectedSide")||"KOR",
@@ -119,6 +120,7 @@ const el={
   eventDesc:document.getElementById("eventDesc"),
   eventShowAllUsersBtn:document.getElementById("eventShowAllUsersBtn"),
   createPartyBtn:document.getElementById("createPartyBtn"),
+  castleCalculatorBtn:document.getElementById("castleCalculatorBtn"),
   rearrangeEditBtn:document.getElementById("rearrangeEditBtn"),
   rearrangeManageBtn:document.getElementById("rearrangeManageBtn"),
   rearrangePublicBtn:document.getElementById("rearrangePublicBtn"),
@@ -1006,6 +1008,10 @@ async function goHome(){
 
 window.goHome=goHome;
 
+window.toggleCastleCalculatorPanel=window.toggleCastleCalculatorPanel||function(){
+  alert("집결계산기 기능을 연결 중입니다.");
+};
+
 function updateEventActionButtons(){
   if(
     !el.createPartyBtn||
@@ -1017,6 +1023,7 @@ function updateEventActionButtons(){
   )return;
 
   el.createPartyBtn.classList.add("hidden");
+  el.castleCalculatorBtn?.classList.add("hidden");
   el.rearrangeEditBtn.classList.add("hidden");
   el.rearrangePublicBtn.classList.add("hidden");
   el.rearrangeManageBtn.classList.add("hidden");
@@ -1061,7 +1068,15 @@ if(el.eventShowAllUsersBtn){
       el.rearrangeEditBtn.classList.remove("hidden");
       el.rearrangeEditBtn.textContent=state.castleCreateMode?"생성 닫기":"집결 생성";
       el.rearrangeEditBtn.onclick=toggleCastleCreatePanel;
+    }
 
+    if(el.castleCalculatorBtn){
+      el.castleCalculatorBtn.classList.remove("hidden");
+      el.castleCalculatorBtn.textContent=state.castleCalculatorMode?"계산기 닫기":"집결계산기";
+      el.castleCalculatorBtn.onclick=toggleCastleCalculatorPanel;
+    }
+
+    if(state.isAdmin){
       el.rearrangeManageBtn.classList.remove("hidden");
       el.rearrangeManageBtn.textContent="초기화";
       el.rearrangeManageBtn.onclick=resetCastleBattleEvent;
@@ -1138,6 +1153,7 @@ async function openEvent(id){
   state.currentEventId=id;
   state.castleManageMode=false;
   state.castleCreateMode=false;
+  state.castleCalculatorMode=false;
   state.castleManagingRallyId="";
 
   if(el.partyList){
