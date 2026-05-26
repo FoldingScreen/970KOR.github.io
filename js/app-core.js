@@ -1241,6 +1241,13 @@ function handleAppBack(){
     return;
   }
 
+  if(state.currentEventId==="castle_battle"&&state.castleCalculatorMode){
+    state.castleCalculatorMode=false;
+    updateEventActionButtons();
+    renderCastleBattleEvent();
+    return;
+  }
+  
   if(state.currentEventId){
     goHome();
     return;
