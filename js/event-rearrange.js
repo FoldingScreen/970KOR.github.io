@@ -1,6 +1,5 @@
 const REARRANGE_APPLICATION_VERSION="bear-2026-05";
-const REARRANGE_GUIDE_BEAR1_IMAGE="자리순열_곰1.png";
-const REARRANGE_GUIDE_BEAR2_IMAGE="자리순열_곰2.png";
+const REARRANGE_GUIDE_IMAGE="자리 배치도_260529.png";
 function normalizeRearrangeGroup(value){
   const v=String(value||"").replace(/\s+/g,"").trim();
   if(v==="곰1"||v==="곰１")return"곰1";
@@ -108,18 +107,12 @@ function renderRearrangeTable(entries,flexEntries=[],groupName="곰1"){
 
 function renderRearrangeGuide(){
   return`
-    <div class="layout-guide-wrap two-guides">
+    <div class="layout-guide-wrap">
       <img
-        src="${REARRANGE_GUIDE_BEAR1_IMAGE}"
-        alt="곰 1 순열 안내 예시"
+        src="${REARRANGE_GUIDE_IMAGE}"
+        alt="자리 재배치 배치도"
         class="layout-guide-image"
-        onclick="openExampleImageModal('guideBear1')"
-      />
-      <img
-        src="${REARRANGE_GUIDE_BEAR2_IMAGE}"
-        alt="곰 2 순열 안내 예시"
-        class="layout-guide-image"
-        onclick="openExampleImageModal('guideBear2')"
+        onclick="openExampleImageModal('rearrangeGuide')"
       />
     </div>
   `;
@@ -653,16 +646,11 @@ window.closeRearrangeModal=closeRearrangeModal;
 function openExampleImageModal(type="tower"){
   el.exampleImageModalTitle.style.display="block";
 
-  if(type==="guideBear1"){
+  if(type==="rearrangeGuide"){
     el.exampleImageModalTitle.textContent="";
     el.exampleImageModalTitle.style.display="none";
-    el.exampleImageModalImg.src=REARRANGE_GUIDE_BEAR1_IMAGE;
-    el.exampleImageModalImg.alt="곰 1 순열 안내 예시";
-  }else if(type==="guideBear2"){
-    el.exampleImageModalTitle.textContent="";
-    el.exampleImageModalTitle.style.display="none";
-    el.exampleImageModalImg.src=REARRANGE_GUIDE_BEAR2_IMAGE;
-    el.exampleImageModalImg.alt="곰 2 순열 안내 예시";
+    el.exampleImageModalImg.src=REARRANGE_GUIDE_IMAGE;
+    el.exampleImageModalImg.alt="자리 재배치 배치도";
   }else{
     el.exampleImageModalTitle.textContent="입력 예시 크게 보기";
     el.exampleImageModalTitle.style.display="block";
