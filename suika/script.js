@@ -17,7 +17,11 @@ const CANNON = {
 
 const DANGER_Y = HEIGHT - 125;
 const DANGER_LIMIT_MS = 2200;
-const SHOT_POWER = 16.5;
+const SHOT_POWER = 15.2;
+
+// 실제로 보이는 크기보다 충돌 판정을 조금 크게 잡음
+// 값이 클수록 더 빡빡하고 어려워짐
+const HITBOX_SCALE = 1.00;
 
 const DRINKS = [
   { name: "물컵", emoji: "💧", radius: 20, score: 10, color: "#9ad8ff" },
@@ -82,8 +86,11 @@ function setupMatter() {
   engine = Engine.create();
   world = engine.world;
 
-  engine.gravity.x = 0;
-  engine.gravity.y = 0;
+engine.gravity.x = 0;
+
+// 아래로 살짝 끌어내려서 계속 위험선 쪽으로 압박되게 함
+// 0.10 = 약함 / 0.16 = 추천 / 0.22 = 꽤 어려움
+engine.gravity.y = - 0.04;
 
   Events.on(engine, "collisionStart", handleCollisionStart);
 }
@@ -135,8 +142,10 @@ function createWalls() {
   const wallOptions = {
     isStatic: true,
     label: "wall",
-    restitution: 0.55,
-    friction: 0
+restitution: 0.12,
+friction: 0.22,
+frictionAir: 0.05 + level * 0.005,
+density: 0.0025 + level * 0.0005,
   };
 
   const leftWall = Bodies.rectangle(-18, HEIGHT / 2, 36, HEIGHT + 120, wallOptions);
@@ -150,13 +159,25 @@ function createWalls() {
 function createDrink(x, y, level) {
   const drink = DRINKS[level];
 
-  const body = Bodies.circle(x, y, drink.radius, {
+  // 보이는 크기보다 충돌 판정을 살짝 크게 만들어 난도를 올림
+  const hitRadius = drink.radius * HITBOX_SCALE;
+
+  const body = Bodies.circle(x, y, hitRadius, {
     label: "drink",
-    restitution: 0.42,
-    friction: 0.08,
-    frictionAir: 0.018 + level * 0.002,
-    density: 0.0012 + level * 0.00025,
-    slop: 0.02
+
+    // 튕김 감소
+    restitution: 0.18,
+
+    // 서로 부딪혔을 때 미끄러짐 감소
+    friction: 0.18,
+
+    // 공중에서 빨리 안정되게 함
+    frictionAir: 0.04 + level * 0.004,
+
+    // 등급이 높을수록 더 묵직하게
+    density: 0.0022 + level * 0.00045,
+
+    slop: 0.01
   });
 
   body.drinkLevel = level;
