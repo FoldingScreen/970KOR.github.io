@@ -18,6 +18,10 @@ const CANNON = {
 const DANGER_Y = HEIGHT - 125;
 const DANGER_LIMIT_MS = 2200;
 const SHOT_POWER = 22.5;
+// 벽 반사 시 속도 유지율
+// 1.0 = 입사각/반사각 동일 + 속도 유지
+// 0.8 = 각도는 유지하되 속도만 80%로 감소
+const WALL_SPEED_KEEP = 0.8;
 
 // 실제로 보이는 크기보다 충돌 판정을 조금 크게 잡음
 // 값이 클수록 더 빡빡하고 어려워짐
@@ -138,17 +142,29 @@ function resetGame() {
 function createWalls() {
   const wallOptions = {
     isStatic: true,
-    label: "wall",
-
-    // 벽에 맞았을 때 약하게만 튀도록 설정
-    restitution: 0.2,
-    friction: 0.25
+    restitution: 1,
+    friction: 0
   };
 
-  const leftWall = Bodies.rectangle(-18, HEIGHT / 2, 36, HEIGHT + 120, wallOptions);
-  const rightWall = Bodies.rectangle(WIDTH + 18, HEIGHT / 2, 36, HEIGHT + 120, wallOptions);
-  const topWall = Bodies.rectangle(WIDTH / 2, -18, WIDTH + 60, 36, wallOptions);
-  const bottomWall = Bodies.rectangle(WIDTH / 2, HEIGHT + 36, WIDTH + 60, 72, wallOptions);
+  const leftWall = Bodies.rectangle(-18, HEIGHT / 2, 36, HEIGHT + 120, {
+    ...wallOptions,
+    label: "wall-left"
+  });
+
+  const rightWall = Bodies.rectangle(WIDTH + 18, HEIGHT / 2, 36, HEIGHT + 120, {
+    ...wallOptions,
+    label: "wall-right"
+  });
+
+  const topWall = Bodies.rectangle(WIDTH / 2, -18, WIDTH + 60, 36, {
+    ...wallOptions,
+    label: "wall-top"
+  });
+
+  const bottomWall = Bodies.rectangle(WIDTH / 2, HEIGHT + 36, WIDTH + 60, 72, {
+    ...wallOptions,
+    label: "wall-bottom"
+  });
 
   World.add(world, [leftWall, rightWall, topWall, bottomWall]);
 }
@@ -275,7 +291,24 @@ function handleCollisionStart(event) {
     const a = pair.bodyA;
     const b = pair.bodyB;
 
-    if (a.label !== "drink" || b.label !== "drink") continue;
+    const aIsDrink = a.label === "drink";
+    const bIsDrink = b.label === "drink";
+    const aIsWall = a.label && a.label.startsWith("wall-");
+    const bIsWall = b.label && b.label.startsWith("wall-");
+
+    // 벽 충돌은 직접 거울 반사 처리
+    if (aIsDrink && bIsWall) {
+      reflectDrinkFromWall(a, b);
+      continue;
+    }
+
+    if (bIsDrink && aIsWall) {
+      reflectDrinkFromWall(b, a);
+      continue;
+    }
+
+    // 아래부터는 기존 음료 합체 처리
+    if (!aIsDrink || !bIsDrink) continue;
     if (!drinks.has(a) || !drinks.has(b)) continue;
     if (a.isMerging || b.isMerging) continue;
     if (a.drinkLevel !== b.drinkLevel) continue;
@@ -290,6 +323,41 @@ function handleCollisionStart(event) {
       mergeDrinks(a, b);
     }, 0);
   }
+}
+
+function reflectDrinkFromWall(drink, wall) {
+  if (!drinks.has(drink) || drink.isMerging) return;
+
+  const vx = drink.velocity.x;
+  const vy = drink.velocity.y;
+
+  let nextVx = vx;
+  let nextVy = vy;
+
+  if (wall.label === "wall-left") {
+    nextVx = Math.abs(vx);
+    nextVy = vy;
+  }
+
+  if (wall.label === "wall-right") {
+    nextVx = -Math.abs(vx);
+    nextVy = vy;
+  }
+
+  if (wall.label === "wall-top") {
+    nextVx = vx;
+    nextVy = Math.abs(vy);
+  }
+
+  if (wall.label === "wall-bottom") {
+    nextVx = vx;
+    nextVy = -Math.abs(vy);
+  }
+
+  Body.setVelocity(drink, {
+    x: nextVx * WALL_SPEED_KEEP,
+    y: nextVy * WALL_SPEED_KEEP
+  });
 }
 
 function mergeDrinks(a, b) {
