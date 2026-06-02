@@ -142,10 +142,8 @@ function createWalls() {
   const wallOptions = {
     isStatic: true,
     label: "wall",
-restitution: 0.12,
-friction: 0.22,
-frictionAir: 0.05 + level * 0.005,
-density: 0.0025 + level * 0.0005,
+    restitution: 0.12,
+    friction: 0.22
   };
 
   const leftWall = Bodies.rectangle(-18, HEIGHT / 2, 36, HEIGHT + 120, wallOptions);
