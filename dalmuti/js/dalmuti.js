@@ -374,7 +374,8 @@ function installMainSfx() {
     if (text.includes("게임 시작") || text.includes("다음 라운드")) return "start";
     if (text.includes("선택 카드") || text.includes("반환 카드")) return "play";
     if (text.includes("패스")) return "pass";
-    if (text.includes("강퇴") || text.includes("방 나가기") || text.includes("방 삭제") || text.includes("게임 중지")) return "kick";
+    if (text.includes("강퇴") || text.includes("방 삭제") || text.includes("게임 중지")) return "kick";
+    if (text.includes("방 나가기") || text.includes("문서 닫기")) return "click";
     if (text.includes("관전") || text.includes("참가")) return "ready";
     return "click";
   }
@@ -946,243 +947,7 @@ function installPresenceMessages() {
   }, 200);
 }
 
-function installHardRemove() {
-  if (!window.firebase || !firebase.apps.length) return;
-
-  const db = firebase.firestore();
-
-  const roomCol = () => db.collection("events").doc("dalmuti").collection("rooms");
-  const currentUser = () => String(localStorage.getItem("partyAppUser") || "").trim();
-  const currentRoomId = () => String(localStorage.getItem("dalmutiCurrentRoomId") || "").trim();
-  const serverNow = () => firebase.firestore.FieldValue.serverTimestamp();
-
-  const cleanMap = obj => Object.fromEntries(
-    Object.entries(obj || {}).filter(([, value]) => value && typeof value === "object")
-  );
-
-  const countMap = obj => Object.values(cleanMap(obj)).length;
-
-  function roomRef(roomId) {
-    return roomCol().doc(roomId);
-  }
-
-  function handRef(roomId, uid) {
-    return roomRef(roomId).collection("hands").doc(uid);
-  }
-
-  function nextAliveUid(players) {
-    return Object.values(players)
-      .filter(p => p && p.uid && !p.finished && !p.forfeited && !p.removedFromRoom)
-      .sort((a, b) => (a.seatOrder ?? 999) - (b.seatOrder ?? 999))[0]?.uid || null;
-  }
-
-  function removeFromRoomData(room, uid, options = {}) {
-    const players = cleanMap(room.players);
-    const spectators = cleanMap(room.spectators);
-    const kicked = cleanMap(room.kicked);
-
-    const target = players[uid] || spectators[uid];
-
-    if (!target) return null;
-
-    delete players[uid];
-    delete spectators[uid];
-
-    if (options.kick) {
-      kicked[uid] = {
-        uid,
-        nickname: target.nickname || uid,
-        by: options.by || currentUser(),
-        at: Date.now()
-      };
-    }
-
-    let currentTurnUid = room.currentTurnUid || null;
-    let currentSet = room.currentSet || null;
-    let previousSet = room.previousSet || null;
-    let tribute = room.tribute || null;
-
-    if (currentTurnUid === uid) {
-      currentTurnUid = nextAliveUid(players);
-    }
-
-    if (currentSet?.uid === uid) {
-      previousSet = currentSet;
-      currentSet = null;
-      currentTurnUid = nextAliveUid(players);
-    }
-
-    if (tribute?.pairs) {
-      const pairs = tribute.pairs.filter(pair => (
-        pair.fromUid !== uid &&
-        pair.toUid !== uid
-      ));
-
-      tribute = pairs.length ? { ...tribute, pairs } : null;
-    }
-
-    const finishOrder = (room.finishOrder || []).filter(item => item.uid !== uid);
-    const chatPreview = (room.chatPreview || []).slice(-11);
-
-    if (options.message) {
-      chatPreview.push({
-        type: "system",
-        uid: "system",
-        nickname: "",
-        text: options.message(target),
-        createdAt: Date.now()
-      });
-    }
-
-    const update = {
-      players,
-      spectators,
-      kicked,
-      playerCount: countMap(players),
-      spectatorCount: countMap(spectators),
-      currentTurnUid,
-      currentSet,
-      previousSet,
-      tribute,
-      finishOrder,
-      chatPreview,
-      updatedAt: serverNow()
-    };
-
-    if (room.hostUid === uid) {
-      const nextHost = Object.values(players)[0] || Object.values(spectators)[0];
-
-      if (nextHost) {
-        update.hostUid = nextHost.uid;
-        update.hostNickname = nextHost.nickname || nextHost.uid;
-      } else {
-        update.closed = true;
-        update.status = "closed";
-      }
-    }
-
-    return {
-      update,
-      target
-    };
-  }
-
-  async function hardRemove(uid, options = {}) {
-    const roomId = currentRoomId();
-
-    if (!roomId || !uid) return false;
-
-    const ref = roomRef(roomId);
-    const snap = await ref.get();
-
-    if (!snap.exists) return false;
-
-    const room = snap.data();
-    const result = removeFromRoomData(room, uid, options);
-
-    if (!result) return false;
-
-    const batch = db.batch();
-
-    batch.update(ref, result.update);
-    batch.delete(handRef(roomId, uid));
-
-    await batch.commit();
-
-    return true;
-  }
-
-  async function hardLeave() {
-    const uid = currentUser();
-
-    await hardRemove(uid, {
-      message: target => `${target.nickname || uid}님이 방에서 나갔습니다.`
-    }).catch(console.error);
-
-    localStorage.removeItem("dalmutiCurrentRoomId");
-    location.reload();
-  }
-
-  function bindLeaveButton() {
-    const leaveBtn = document.getElementById("leaveRoomBtn");
-
-    if (!leaveBtn || leaveBtn.dataset.hardRemoveBound === "1") return;
-
-    leaveBtn.dataset.hardRemoveBound = "1";
-
-    leaveBtn.addEventListener("click", event => {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      hardLeave();
-    }, true);
-  }
-
-  function patchKick() {
-    if (!window.Dalmuti || window.Dalmuti.__hardKickPatched) return;
-
-    const oldKick = window.Dalmuti.kick;
-
-    window.Dalmuti.kick = async function hardKick(uid) {
-      const roomId = currentRoomId();
-      const me = currentUser();
-
-      if (!roomId || !uid || uid === me) return;
-
-      const snap = await roomRef(roomId).get();
-
-      if (!snap.exists) return;
-
-      const room = snap.data();
-
-      if (!(room.hostUid === me || me === "병풍")) {
-        alert("방장만 강퇴할 수 있습니다.");
-        return;
-      }
-
-      const target = cleanMap(room.players)[uid] || cleanMap(room.spectators)[uid];
-
-      if (!target) {
-        alert("이미 방에 없는 대상입니다.");
-        return;
-      }
-
-      if (!confirm(`${target.nickname || uid}님을 방에서 내보낼까요?`)) return;
-
-      await hardRemove(uid, {
-        kick: true,
-        by: me,
-        message: targetData => `${targetData.nickname || uid}님이 방장에 의해 강퇴되었습니다.`
-      }).catch(console.error);
-    };
-
-    window.Dalmuti.__hardKickPatched = true;
-    window.Dalmuti.__oldKick = oldKick;
-  }
-
-  function init() {
-    bindLeaveButton();
-    patchKick();
-
-    let tries = 0;
-
-    const timer = setInterval(() => {
-      tries += 1;
-      bindLeaveButton();
-      patchKick();
-
-      if (tries > 30 || window.Dalmuti?.__hardKickPatched) {
-        clearInterval(timer);
-      }
-    }, 200);
-  }
-
-  if (document.readyState === "loading") {
-    window.addEventListener("DOMContentLoaded", init);
-  } else {
-    init();
-  }
-}
-  
+ 
 installNicknameChange();
 installDetachBranding();
 installSharedActionSfx();
@@ -1250,8 +1015,9 @@ const RANKS = [
     dismissedNoticeKeys: new Set(),
     actionBusy: false,
     hostAssigning: false,
-    leavingByKick: false
-  };
+    leavingByKick: false,
+    leavingByChoice: false,
+    aiWatchTimer: null  };
 
   const E = {};
   const $ = id => document.getElementById(id);
@@ -1821,6 +1587,7 @@ function setView(name) {
     safeRender("startModal", maybeStartModal);
     safeRender("resultModal", maybeResultModal);
     maybeClientTasks().catch(console.error);
+    ensureAiWatchdog();
   }
 function enhanceLobbyLayout() {
   if (!E.lobbyView || $("lobbyGrid")) return;
@@ -3258,7 +3025,7 @@ async function createRoom() {
   const ref = roomCol().doc();
   const player = basePlayer(S.user, S.user, 0, false);
 
-  await ref.set({
+  const roomData = {
     title,
     password,
     hasPassword: !!password,
@@ -3284,13 +3051,19 @@ async function createRoom() {
     closed: false,
     updatedAt: serverNow(),
     createdAt: serverNow()
-  });
+  };
 
-  await ref.collection("hands").doc(S.user).set({ hand: [] });
+  const batch = db.batch();
+
+  batch.set(ref, roomData);
+  batch.set(ref.collection("hands").doc(S.user), { hand: [] });
+
+  await batch.commit();
 
   closeCreateRoomModal();
   enterRoom(ref.id);
 }
+  
 async function joinRoom(roomId) {
   if (S.roomId && S.roomId !== roomId) leaveSubscriptions();
 
@@ -3365,34 +3138,41 @@ async function joinRoom(roomId) {
 
   function enterRoom(roomId) {
     leaveSubscriptions();
+
     S.roomId = roomId;
     localStorage.setItem("dalmutiCurrentRoomId", roomId);
     setView("room");
+
     S.roomUnsub = roomRef(roomId).onSnapshot(snap => {
       if (!snap.exists) {
         toast("방이 삭제되었습니다.");
         leaveLocal();
         return;
       }
-S.room = snap.data();
 
-const players = playersMap(S.room);
-const specs = spectatorsMap(S.room);
-const kicked = kickedMap(S.room);
+      S.room = snap.data();
 
-if (kicked[S.user]) {
-  handleKicked();
-  return;
-}
+      const players = playersMap(S.room);
+      const specs = spectatorsMap(S.room);
+      const kicked = kickedMap(S.room);
 
-if (!players[S.user] && !specs[S.user]) {
-  handleKicked();
-  return;
-}
+      if (kicked[S.user]) {
+        handleKicked();
+        return;
+      }
 
-renderEverything();
-ensureMyHandSubscription();
-    }, err => { console.error(err); toast("방 정보를 읽지 못했습니다."); });
+      if (!players[S.user] && !specs[S.user]) {
+        // 강퇴가 아니라면, 내가 직접 나갔거나 방 데이터에서 빠진 상태
+        leaveLocal();
+        return;
+      }
+
+      renderEverything();
+      ensureMyHandSubscription();
+    }, err => {
+      console.error(err);
+      toast("방 정보를 읽지 못했습니다.");
+    });
   }
 
 function closeAllOverlays() {
@@ -3428,21 +3208,34 @@ function bindNoticeModalDismiss() {
 }  
   
 function handleKicked() {
-    closeAllOverlays();
-    if (S.leavingByKick) return;
-    S.leavingByKick = true;
-    const roomId = S.roomId;
-    leaveSubscriptions();
-    S.room = null;
-    S.hand = [];
-    S.selected.clear();
-    localStorage.removeItem("dalmutiCurrentRoomId");
-    S.roomId = "";
-    setView("lobby");
-    loadRooms();
-    alert("방장에 의해 방에서 내보내졌습니다. 로비에서 다시 입장할 수 있습니다.");
-    setTimeout(() => { S.leavingByKick = false; }, 500);
+  closeAllOverlays();
+
+  if (S.leavingByChoice) {
+    leaveLocal();
+    return;
   }
+
+  if (S.leavingByKick) return;
+
+  S.leavingByKick = true;
+
+  leaveSubscriptions();
+
+  S.room = null;
+  S.hand = [];
+  S.selected.clear();
+  localStorage.removeItem("dalmutiCurrentRoomId");
+  S.roomId = "";
+
+  setView("lobby");
+  loadRooms();
+
+  alert("방장에 의해 방에서 내보내졌습니다. 로비에서 다시 입장할 수 있습니다.");
+
+  setTimeout(() => {
+    S.leavingByKick = false;
+  }, 500);
+}
 
   function ensureMyHandSubscription() {
     const mine = me();
@@ -3483,54 +3276,67 @@ function leaveLocal() {
 async function leaveRoom() {
   if (!S.roomId || !S.room) return leaveLocal();
 
-  if (S.room.status !== "waiting") {
-    toast("게임 중에는 화면에서만 나갑니다. 재참여는 제한될 수 있습니다.");
-    leaveLocal();
-    return;
-  }
+  const roomId = S.roomId;
+  const room = S.room;
+  const ref = roomRef(roomId);
 
-  const players = playersMap();
-  const specs = spectatorsMap();
+  S.leavingByChoice = true;
 
-  if (players[S.user]) {
-    delete players[S.user];
-    await handRef().delete().catch(() => null);
-  }
-
-  if (specs[S.user]) {
-    delete specs[S.user];
-  }
-
-  const update = {
-    players,
-    spectators: specs,
-    playerCount: countMap(players),
-    spectatorCount: countMap(specs),
-    updatedAt: serverNow()
-  };
-
-if (!hasHumanInRoom(players, specs)) {
-  await closeRoomIfNoHuman(S.roomId, players, specs);
-  leaveLocal();
-  return;
-}
-  
-  if (S.room.hostUid === S.user) {
-    const next =
-  Object.values(players).find(p => p && !p.isAI && !p.removedFromRoom) ||
-  Object.values(specs).find(p => p && !p.isAI && !p.removedFromRoom);
-
-    if (next) {
-      update.hostUid = next.uid;
-      update.hostNickname = next.nickname;
-    } else {
-      update.closed = true;
-      update.status = "closed";
+  try {
+    if (room.status !== "waiting") {
+      toast("게임 중에는 화면에서만 나갑니다. 재참여는 제한될 수 있습니다.");
+      leaveLocal();
+      return;
     }
-  }
 
-  await roomRef().update(update);
-  leaveLocal();
+    const players = playersMap(room);
+    const specs = spectatorsMap(room);
+
+    if (players[S.user]) {
+      delete players[S.user];
+      await handRef(S.user, roomId).delete().catch(() => null);
+    }
+
+    if (specs[S.user]) {
+      delete specs[S.user];
+    }
+
+    if (!hasHumanInRoom(players, specs)) {
+      leaveSubscriptions();
+      await closeRoomIfNoHuman(roomId, players, specs).catch(console.error);
+      leaveLocal();
+      return;
+    }
+
+    const update = {
+      players,
+      spectators: specs,
+      playerCount: countMap(players),
+      spectatorCount: countMap(specs),
+      updatedAt: serverNow()
+    };
+
+    if (room.hostUid === S.user) {
+      const next =
+        Object.values(players).find(p => p && !p.isAI && !p.removedFromRoom) ||
+        Object.values(specs).find(p => p && !p.isAI && !p.removedFromRoom);
+
+      if (next) {
+        update.hostUid = next.uid;
+        update.hostNickname = next.nickname || next.uid;
+      }
+    }
+
+    leaveSubscriptions();
+
+    await ref.set(update, { merge: true });
+
+    leaveLocal();
+  } finally {
+    setTimeout(() => {
+      S.leavingByChoice = false;
+    }, 500);
+  }
 }
 
 async function toggleReady() {
@@ -4274,6 +4080,18 @@ function acquireAiLock(key, ms = 5000) {
 
   return true;
 }
+
+function ensureAiWatchdog() {
+  if (S.aiWatchTimer) return;
+
+  S.aiWatchTimer = setInterval(() => {
+    if (!S.roomId || !S.room) return;
+    if (!isHost(S.room)) return;
+    if (!["playing", "tributeReturn", "betweenRounds", "waiting"].includes(S.room.status)) return;
+
+    maybeClientTasks().catch(console.error);
+  }, 1800);
+}
   
 async function maybeClientTasks() {
   await maybeAssignHostIfNeeded();
@@ -4540,6 +4358,9 @@ async function kick(uid) {
     previousSet,
     tribute,
     finishOrder,
+    turnOrder: Array.isArray(room.turnOrder)
+      ? room.turnOrder.filter(id => id !== uid && players[id])
+      : Object.keys(players),
     chatPreview,
     updatedAt: serverNow()
   };
@@ -4621,19 +4442,26 @@ async function closeRoomIfNoHuman(roomId = S.roomId, players = playersMap(), spe
 
   await clearSubcollection(ref.collection("hands")).catch(() => null);
 
-  await ref.set({
-    closed: true,
-    status: "closed",
-    players: {},
-    spectators: {},
-    playerCount: 0,
-    spectatorCount: 0,
-    currentTurnUid: null,
-    currentSet: null,
-    previousSet: null,
-    tribute: null,
-    updatedAt: serverNow()
-  }, { merge: true });
+  try {
+    await ref.delete();
+  } catch (err) {
+    console.error("[dalmuti] empty room delete failed, fallback to closed", err);
+
+    await ref.set({
+      closed: true,
+      status: "closed",
+      players: {},
+      spectators: {},
+      playerCount: 0,
+      spectatorCount: 0,
+      currentTurnUid: null,
+      currentSet: null,
+      previousSet: null,
+      tribute: null,
+      finishOrder: [],
+      updatedAt: serverNow()
+    }, { merge: true });
+  }
 
   return true;
 }
