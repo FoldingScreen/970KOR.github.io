@@ -17,7 +17,7 @@ const CANNON = {
 
 const DANGER_Y = HEIGHT - 125;
 const DANGER_LIMIT_MS = 2200;
-const SHOT_POWER = 22.5;
+const SHOT_POWER = 25.5;
 // 벽 반사 시 속도 유지율
 // 1.0 = 입사각/반사각 동일 + 속도 유지
 // 0.8 = 각도는 유지하되 속도만 80%로 감소
