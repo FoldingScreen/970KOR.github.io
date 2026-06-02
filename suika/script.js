@@ -17,7 +17,7 @@ const CANNON = {
 
 const DANGER_Y = HEIGHT - 125;
 const DANGER_LIMIT_MS = 2200;
-const SHOT_POWER = 15.2;
+const SHOT_POWER = 22.5;
 
 // 실제로 보이는 크기보다 충돌 판정을 조금 크게 잡음
 // 값이 클수록 더 빡빡하고 어려워짐
@@ -87,10 +87,7 @@ function setupMatter() {
   world = engine.world;
 
 engine.gravity.x = 0;
-
-// 아래로 살짝 끌어내려서 계속 위험선 쪽으로 압박되게 함
-// 0.10 = 약함 / 0.16 = 추천 / 0.22 = 꽤 어려움
-engine.gravity.y = - 0.04;
+engine.gravity.y = 0;
 
   Events.on(engine, "collisionStart", handleCollisionStart);
 }
@@ -142,8 +139,10 @@ function createWalls() {
   const wallOptions = {
     isStatic: true,
     label: "wall",
-    restitution: 0.12,
-    friction: 0.22
+
+    // 벽에 맞았을 때 약하게만 튀도록 설정
+    restitution: 0.2,
+    friction: 0.25
   };
 
   const leftWall = Bodies.rectangle(-18, HEIGHT / 2, 36, HEIGHT + 120, wallOptions);
@@ -152,6 +151,36 @@ function createWalls() {
   const bottomWall = Bodies.rectangle(WIDTH / 2, HEIGHT + 36, WIDTH + 60, 72, wallOptions);
 
   World.add(world, [leftWall, rightWall, topWall, bottomWall]);
+}
+
+function createDrink(x, y, level) {
+  const drink = DRINKS[level];
+
+  const hitRadius = drink.radius * HITBOX_SCALE;
+
+  const body = Bodies.circle(x, y, hitRadius, {
+    label: "drink",
+
+    // 직선으로 벽에 맞았을 때 대략 1/5 정도만 반사되는 느낌
+    restitution: 0.2,
+
+    // 너무 쉽게 밀리지 않게 마찰과 무게감 증가
+    friction: 0.24,
+    frictionAir: 0.022 + level * 0.003,
+    density: 0.0028 + level * 0.00055,
+
+    slop: 0.01
+  });
+
+  body.drinkLevel = level;
+  body.gameId = bodyId++;
+  body.isMerging = false;
+  body.spawnedAt = performance.now();
+
+  drinks.add(body);
+  World.add(world, body);
+
+  return body;
 }
 
 function createDrink(x, y, level) {
