@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>머지 드링크 슈터</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <main class="game-page">
+    <section class="game-card">
+      <header class="game-header">
+        <div>
+          <h1>머지 드링크 슈터</h1>
+          <p>조준해서 쏘고, 같은 음료끼리 합치기</p>
+        </div>
+
+        <button id="restartBtn" class="restart-btn" type="button">새 게임</button>
+      </header>
+
+      <div class="score-row">
+        <div class="score-box">
+          <span>점수</span>
+          <strong id="scoreText">0</strong>
+        </div>
+        <div class="score-box">
+          <span>최고점수</span>
+          <strong id="bestText">0</strong>
+        </div>
+        <div class="score-box next-box">
+          <span>다음</span>
+          <strong id="nextDrink">💧</strong>
+        </div>
+      </div>
+
+      <div class="canvas-wrap">
+        <canvas id="gameCanvas" width="420" height="640"></canvas>
+      </div>
+
+      <div class="status-row">
+        <span id="statusText">조준 후 클릭/터치로 발사</span>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+  <script src="./script.js"></script>
+</body>
+</html>
