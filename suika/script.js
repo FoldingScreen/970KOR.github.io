@@ -90,12 +90,18 @@ function setupMatter() {
   engine = Engine.create();
   world = engine.world;
 
-engine.gravity.x = 0;
-engine.gravity.y = 0;
+  engine.gravity.x = 0;
+  engine.gravity.y = 0;
 
+  // 센서 원은 본체 음료를 따라다니기만 함
+  Events.on(engine, "beforeUpdate", syncMagnetSensors);
+
+  // 실제 음료 충돌/벽 반사/합체
   Events.on(engine, "collisionStart", handleCollisionStart);
-}
 
+  // 보이지 않는 센서끼리 겹칠 때만 자석 효과
+  Events.on(engine, "collisionActive", handleMagnetSensorCollision);
+}
 function bindEvents() {
   restartBtn.addEventListener("click", resetGame);
 
@@ -177,10 +183,8 @@ function createDrink(x, y, level) {
   const body = Bodies.circle(x, y, hitRadius, {
     label: "drink",
 
-    // 직선으로 벽에 맞았을 때 대략 1/5 정도만 반사되는 느낌
-    restitution: 0.2,
-
-    // 너무 쉽게 밀리지 않게 마찰과 무게감 증가
+    // 음료끼리는 너무 튀지 않게
+    restitution: 0.12,
     friction: 0.24,
     frictionAir: 0.022 + level * 0.003,
     density: 0.0028 + level * 0.00055,
@@ -193,43 +197,22 @@ function createDrink(x, y, level) {
   body.isMerging = false;
   body.spawnedAt = performance.now();
 
-  drinks.add(body);
-  World.add(world, body);
+  // 실제 히트박스보다 살짝 큰 보이지 않는 센서
+  // +5면 양쪽 합쳐서 약 10px 거리 안에서만 자석 효과 발생
+  const sensorRadius = hitRadius + 5;
 
-  return body;
-}
-
-function createDrink(x, y, level) {
-  const drink = DRINKS[level];
-
-  // 보이는 크기보다 충돌 판정을 살짝 크게 만들어 난도를 올림
-  const hitRadius = drink.radius * HITBOX_SCALE;
-
-  const body = Bodies.circle(x, y, hitRadius, {
-    label: "drink",
-
-    // 튕김 감소
-    restitution: 0.18,
-
-    // 서로 부딪혔을 때 미끄러짐 감소
-    friction: 0.18,
-
-    // 공중에서 빨리 안정되게 함
-    frictionAir: 0.04 + level * 0.004,
-
-    // 등급이 높을수록 더 묵직하게
-    density: 0.0022 + level * 0.00045,
-
-    slop: 0.01
+  const magnetSensor = Bodies.circle(x, y, sensorRadius, {
+    label: "magnet-sensor",
+    isSensor: true,
+    frictionAir: 1,
+    density: 0.000001
   });
 
-  body.drinkLevel = level;
-  body.gameId = bodyId++;
-  body.isMerging = false;
-  body.spawnedAt = performance.now();
+  magnetSensor.ownerDrink = body;
+  body.magnetSensor = magnetSensor;
 
   drinks.add(body);
-  World.add(world, body);
+  World.add(world, [body, magnetSensor]);
 
   return body;
 }
@@ -307,7 +290,12 @@ function handleCollisionStart(event) {
       continue;
     }
 
-    // 아래부터는 기존 음료 합체 처리
+    // 센서는 합체 판정에서 제외
+    if (a.label === "magnet-sensor" || b.label === "magnet-sensor") {
+      continue;
+    }
+
+    // 아래부터는 실제 음료끼리 닿았을 때만 합체
     if (!aIsDrink || !bIsDrink) continue;
     if (!drinks.has(a) || !drinks.has(b)) continue;
     if (a.isMerging || b.isMerging) continue;
@@ -323,6 +311,86 @@ function handleCollisionStart(event) {
       mergeDrinks(a, b);
     }, 0);
   }
+}
+
+function handleMagnetSensorCollision(event) {
+  if (gameOver) return;
+
+  for (const pair of event.pairs) {
+    const a = pair.bodyA;
+    const b = pair.bodyB;
+
+    if (a.label !== "magnet-sensor" || b.label !== "magnet-sensor") continue;
+
+    applyMagnetFromSensorPair(a, b);
+  }
+}
+
+function syncMagnetSensors() {
+  for (const drink of drinks) {
+    if (!drink || !drink.magnetSensor) continue;
+
+    Body.setPosition(drink.magnetSensor, {
+      x: drink.position.x,
+      y: drink.position.y
+    });
+
+    Body.setVelocity(drink.magnetSensor, {
+      x: drink.velocity.x,
+      y: drink.velocity.y
+    });
+  }
+}
+
+function applyMagnetFromSensorPair(sensorA, sensorB) {
+  const a = sensorA.ownerDrink;
+  const b = sensorB.ownerDrink;
+
+  if (!a || !b) return;
+  if (!drinks.has(a) || !drinks.has(b)) return;
+  if (a.isMerging || b.isMerging) return;
+  if (a.drinkLevel !== b.drinkLevel) return;
+
+  const nextLevel = a.drinkLevel + 1;
+  if (nextLevel >= DRINKS.length) return;
+
+  const hitRadiusA = DRINKS[a.drinkLevel].radius * HITBOX_SCALE;
+  const hitRadiusB = DRINKS[b.drinkLevel].radius * HITBOX_SCALE;
+
+  const dx = b.position.x - a.position.x;
+  const dy = b.position.y - a.position.y;
+  const distSq = dx * dx + dy * dy;
+
+  if (distSq <= 0.0001) return;
+
+  const dist = Math.sqrt(distSq);
+  const touchDistance = hitRadiusA + hitRadiusB;
+  const gap = dist - touchDistance;
+
+  // 이미 실제 히트박스가 닿은 상태면 자석이 아니라 합체 로직에 맡김
+  if (gap <= 0) return;
+
+  // 센서가 양쪽 +5px이므로 실제로는 약 10px 이내에서만 작동
+  const magnetRange = 10;
+  if (gap > magnetRange) return;
+
+  const closeness = 1 - gap / magnetRange;
+
+  // 진짜 약한 자석 힘
+  const magnetForce = 0.000055 * closeness;
+
+  const nx = dx / dist;
+  const ny = dy / dist;
+
+  Body.applyForce(a, a.position, {
+    x: nx * magnetForce * a.mass,
+    y: ny * magnetForce * a.mass
+  });
+
+  Body.applyForce(b, b.position, {
+    x: -nx * magnetForce * b.mass,
+    y: -ny * magnetForce * b.mass
+  });
 }
 
 function reflectDrinkFromWall(drink, wall) {
@@ -360,6 +428,18 @@ function reflectDrinkFromWall(drink, wall) {
   });
 }
 
+function removeDrink(body) {
+  if (!body) return;
+
+  if (body.magnetSensor) {
+    body.magnetSensor.ownerDrink = null;
+    World.remove(world, body.magnetSensor);
+  }
+
+  World.remove(world, body);
+  drinks.delete(body);
+}
+
 function mergeDrinks(a, b) {
   if (!drinks.has(a) || !drinks.has(b)) return;
 
@@ -372,10 +452,8 @@ function mergeDrinks(a, b) {
   const vx = (a.velocity.x + b.velocity.x) * 0.22;
   const vy = (a.velocity.y + b.velocity.y) * 0.22;
 
-  World.remove(world, a);
-  World.remove(world, b);
-  drinks.delete(a);
-  drinks.delete(b);
+  removeDrink(a);
+  removeDrink(b);
 
   const merged = createDrink(x, y, nextLevel);
 
@@ -401,7 +479,6 @@ function mergeDrinks(a, b) {
 
   updateHud();
 }
-
 function updateAimFromEvent(event) {
   const point = getCanvasPoint(event);
 
