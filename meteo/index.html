@@ -3,24 +3,27 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>메테오 파이터</title>
+  <title>섀도우 파이터</title>
   <style>
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
       overflow: hidden;
       background: #050713;
-      color: white;
-      font-family: system-ui, sans-serif;
+      color: #fff;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
     #wrap {
+      position: relative;
       width: 100vw;
       height: 100vh;
       display: grid;
       place-items: center;
-      background: radial-gradient(circle at 50% 50%, #1f2746 0%, #050713 70%);
+      background: radial-gradient(circle at 50% 65%, #20294b 0%, #07091a 58%, #02030a 100%);
     }
 
     canvas {
@@ -34,67 +37,70 @@
     .screen {
       position: absolute;
       inset: 0;
+      z-index: 5;
       display: grid;
       place-items: center;
-      background: rgba(0, 0, 0, 0.68);
-      z-index: 3;
+      background: rgba(0, 0, 0, 0.66);
     }
 
     .hide {
-      display: none;
+      display: none !important;
     }
 
     .box {
-      width: min(520px, calc(100vw - 28px));
-      padding: 25px;
-      border-radius: 22px;
-      background: #10162fee;
-      border: 1px solid #ffffff33;
+      width: min(620px, calc(100vw - 28px));
+      padding: 28px;
+      border: 1px solid rgba(255, 255, 255, 0.23);
+      border-radius: 24px;
+      background: rgba(12, 17, 38, 0.94);
+      box-shadow: 0 20px 70px rgba(0, 0, 0, 0.48);
       text-align: center;
     }
 
     .title {
-      font-size: 40px;
-      font-weight: 950;
       margin-bottom: 10px;
+      font-size: 42px;
+      font-weight: 950;
+      letter-spacing: -1px;
     }
 
     .sub {
-      line-height: 1.65;
+      line-height: 1.68;
       opacity: 0.88;
     }
 
     button {
-      margin-top: 18px;
+      margin-top: 20px;
       border: 0;
       border-radius: 14px;
       padding: 13px 22px;
       background: #ffd43b;
       color: #111;
-      font-weight: 900;
       font-size: 17px;
+      font-weight: 900;
       cursor: pointer;
     }
 
     .card {
       margin-top: 10px;
       padding: 14px;
-      text-align: left;
+      border: 1px solid rgba(255, 255, 255, 0.22);
       border-radius: 16px;
-      background: #202b5c;
-      border: 1px solid #ffffff33;
+      background: linear-gradient(180deg, #24306a, #121936);
+      text-align: left;
       cursor: pointer;
     }
 
     .card:hover {
       border-color: #ffd43b;
+      transform: translateY(-1px);
     }
 
     .key {
       display: inline-grid;
       place-items: center;
-      width: 27px;
-      height: 27px;
+      width: 28px;
+      height: 28px;
       border-radius: 50%;
       background: #ffd43b;
       color: #111;
@@ -102,258 +108,255 @@
     }
 
     .name {
+      margin-top: 7px;
       font-size: 20px;
       font-weight: 950;
-      margin-top: 6px;
     }
 
     .desc {
-      font-size: 14px;
-      opacity: 0.84;
       margin-top: 4px;
+      font-size: 14px;
+      line-height: 1.45;
+      opacity: 0.84;
     }
   </style>
 </head>
 <body>
   <div id="wrap">
-    <canvas id="c" width="960" height="540"></canvas>
+    <canvas id="game" width="960" height="540"></canvas>
 
-    <div id="start" class="screen">
+    <div id="startScreen" class="screen">
       <div class="box">
-        <div class="title">메테오 파이터</div>
+        <div class="title">섀도우 파이터</div>
         <div class="sub">
-          중앙의 <b>지구</b>를 지켜라.<br>
-          방향키로 자유 이동, A 연타로 격투 콤보, Space 대쉬, Space+A 대쉬공격.<br>
-          사방에서 몰려오는 운석을 하데스 느낌으로 파괴하는 구조다.
+          그림자괴물들이 너를 향해 몰려온다.<br>
+          방향키로 이동, A 연타로 불꽃 박투 콤보, Space 대쉬, Space+A 대쉬공격.<br>
+          <b>D 패링</b>으로 적 공격을 튕겨내고, 반격으로 벽에 처박아 터뜨려라.
         </div>
-        <button id="go">게임 시작</button>
+        <button id="startBtn">게임 시작</button>
       </div>
     </div>
 
-    <div id="sel" class="screen hide">
+    <div id="choiceScreen" class="screen hide">
       <div class="box">
-        <div class="title" style="font-size:30px">수련 선택</div>
-        <div id="cards"></div>
+        <div class="title" style="font-size:30px">불꽃 수련 선택</div>
+        <div id="choiceCards"></div>
       </div>
     </div>
 
-    <div id="over" class="screen hide">
+    <div id="gameOverScreen" class="screen hide">
       <div class="box">
-        <div class="title">게임 오버</div>
-        <div id="result" class="sub"></div>
-        <button id="again">다시하기</button>
+        <div class="title">쓰러졌다</div>
+        <div id="resultText" class="sub"></div>
+        <button id="restartBtn">다시하기</button>
       </div>
     </div>
   </div>
 
   <script>
     (() => {
-      const cv = document.getElementById("c");
-      const ctx = cv.getContext("2d");
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
 
-      const startScreen = document.getElementById("start");
-      const selectScreen = document.getElementById("sel");
-      const gameOverScreen = document.getElementById("over");
-      const cards = document.getElementById("cards");
-      const result = document.getElementById("result");
-      const go = document.getElementById("go");
-      const again = document.getElementById("again");
+      const startScreen = document.getElementById("startScreen");
+      const choiceScreen = document.getElementById("choiceScreen");
+      const gameOverScreen = document.getElementById("gameOverScreen");
+      const choiceCards = document.getElementById("choiceCards");
+      const resultText = document.getElementById("resultText");
 
       const W = 960;
       const H = 540;
-      const CENTER = { x: W / 2, y: H / 2 };
-      const ARENA_R = 215;
-      const EARTH_R = 46;
+      const FLOOR_Y = 435;
+      const MIN_Y = 210;
+      const TWO_PI = Math.PI * 2;
 
       let keys = {};
       let game;
       let lastTime = 0;
       let rafId = null;
-      let picks = [];
+      let currentChoices = [];
 
-      function rand(min, max) {
-        return Math.random() * (max - min) + min;
-      }
-
-      function clamp(v, min, max) {
-        return Math.max(min, Math.min(max, v));
-      }
+      const rand = (min, max) => Math.random() * (max - min) + min;
+      const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
       function norm(x, y) {
         const d = Math.hypot(x, y) || 1;
         return { x: x / d, y: y / d };
       }
 
-      function dist(a, b) {
-        return Math.hypot(a.x - b.x, a.y - b.y);
-      }
-
-      function newGame() {
+      function resetGame() {
         game = {
-          run: true,
+          running: true,
+          choosing: false,
+          dead: false,
+
           time: 0,
           score: 0,
           level: 1,
           xp: 0,
-          nextXp: 28,
-
-          earthHp: 16,
-          earthMaxHp: 16,
-
+          nextXp: 35,
           combo: 0,
           comboTimer: 0,
           ult: 0,
 
           spawnTimer: 0,
+          orbTimer: rand(20, 30),
           bossTimer: 0,
-          orbTimer: rand(18, 26),
 
           hitStop: 0,
           shake: 0,
           flash: 0,
+          slowMo: 0,
 
           limit: 0,
           cutscene: false,
           cutType: "",
           cutTimer: 0,
-          overheat: 0,
 
-          choosing: false,
-          dead: false,
-
-          meteors: [],
+          enemies: [],
           hits: [],
           effects: [],
           texts: [],
           ghosts: [],
           orbs: [],
+          wallMarks: [],
+          dangerLines: [],
 
           player: {
-            x: CENTER.x,
-            y: CENTER.y + 115,
+            x: W / 2,
+            y: FLOOR_Y - 28,
             vx: 0,
             vy: 0,
+            hp: 100,
+            maxHp: 100,
             face: 1,
             dir: { x: 1, y: 0 },
-
             pose: "idle",
 
-            moveSpeed: 260,
-            attackCooldown: 0,
+            moveSpeed: 265,
+            dashSpeed: 780,
             dashCooldown: 0,
             dashTimer: 0,
+            invuln: 0,
 
+            attackCooldown: 0,
+            attackBaseCooldown: 0.16,
             lastA: 9,
             lastDash: 9,
             comboStage: 0,
 
-            maxCombo: 1,
-            damage: 1,
-            range: 78,
-            width: 28,
-            track: 175,
-            lunge: 540,
-            dashSpeed: 820,
+            maxCombo: 3,
+            damage: 2,
+            range: 76,
+            width: 30,
+            lunge: 470,
+            track: 165,
+
+            spinCooldown: 0,
+            parry: 0,
+            parryCooldown: 0,
+            parryRecovery: 0,
+            counterReady: 0,
+            counterTarget: null,
 
             dashReset: false,
-            shock: 0,
-            preview: false,
+            wallBurst: true,
+            fireFeet: false,
+            blueFlame: false,
             limitExtend: false,
-            attackBaseCooldown: 0.16
+            parryFire: false,
+            parryExplosion: false
           }
         };
       }
 
-      go.onclick = startGame;
-      again.onclick = startGame;
-
       function startGame() {
-        newGame();
-
+        resetGame();
         startScreen.classList.add("hide");
-        selectScreen.classList.add("hide");
+        choiceScreen.classList.add("hide");
         gameOverScreen.classList.add("hide");
-
         cancelAnimationFrame(rafId);
         lastTime = performance.now();
         rafId = requestAnimationFrame(loop);
       }
 
-      window.addEventListener("keydown", (e) => {
-        keys[e.code] = true;
+      document.getElementById("startBtn").onclick = startGame;
+      document.getElementById("restartBtn").onclick = startGame;
 
-        if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Space"].includes(e.code)) {
-          e.preventDefault();
+      window.addEventListener("keydown", (event) => {
+        keys[event.code] = true;
+
+        if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Space"].includes(event.code)) {
+          event.preventDefault();
         }
 
         if (!game) return;
 
         if (game.choosing) {
-          if (e.code === "Digit1") pickUpgrade(0);
-          if (e.code === "Digit2") pickUpgrade(1);
-          if (e.code === "Digit3") pickUpgrade(2);
+          if (event.code === "Digit1") pickUpgrade(0);
+          if (event.code === "Digit2") pickUpgrade(1);
+          if (event.code === "Digit3") pickUpgrade(2);
           return;
         }
 
         if (game.dead) {
-          if (e.code === "KeyR") startGame();
+          if (event.code === "KeyR") startGame();
           return;
         }
 
-        if (game.cutscene || e.repeat) return;
+        if (game.cutscene || event.repeat) return;
 
-        if (e.code === "Space") dash();
-        if (e.code === "KeyA") attack();
-        if (e.code === "KeyF") ultimate();
+        if (event.code === "Space") dash();
+        if (event.code === "KeyA") attack();
+        if (event.code === "KeyS") spinKick();
+        if (event.code === "KeyD") parry();
+        if (event.code === "KeyF") ultimate();
       });
 
-      window.addEventListener("keyup", (e) => {
-        keys[e.code] = false;
+      window.addEventListener("keyup", (event) => {
+        keys[event.code] = false;
       });
 
       const upgrades = [
         {
-          name: "연속정권",
-          desc: "A 콤보 2타 해금",
-          condition: (p) => p.maxCombo < 2,
-          apply: (p) => p.maxCombo = 2
-        },
-        {
-          name: "붕권",
-          desc: "A 콤보 3타 해금. 강한 전진타.",
-          condition: (p) => p.maxCombo >= 2 && p.maxCombo < 3,
-          apply: (p) => p.maxCombo = 3
-        },
-        {
-          name: "올려차기",
-          desc: "A 콤보 4타 해금. 넓은 각 타격.",
-          condition: (p) => p.maxCombo >= 3 && p.maxCombo < 4,
+          name: "파쇄권",
+          desc: "A 콤보 4타 해금. 막타가 적을 벽으로 날려 폭발시킨다.",
+          condition: (p) => p.maxCombo < 4,
           apply: (p) => p.maxCombo = 4
         },
         {
-          name: "파쇄권",
-          desc: "A 콤보 5타 해금. 막타 폭발.",
+          name: "화염각",
+          desc: "A 콤보 5타 해금. 발에도 불꽃이 붙고 스핀/발차기 연출이 강화된다.",
           condition: (p) => p.maxCombo >= 4 && p.maxCombo < 5,
-          apply: (p) => p.maxCombo = 5
+          apply: (p) => {
+            p.maxCombo = 5;
+            p.fireFeet = true;
+          }
         },
         {
-          name: "추격 보법",
-          desc: "추격거리와 공격범위 증가",
-          condition: () => true,
+          name: "청염 수련",
+          desc: "불꽃이 파랗게 진화한다. 공격속도와 이동속도가 증가한다.",
+          condition: (p) => !p.blueFlame,
           apply: (p) => {
-            p.track *= 1.18;
-            p.range *= 1.12;
+            p.blueFlame = true;
+            p.attackBaseCooldown *= 0.88;
+            p.moveSpeed *= 1.12;
           }
         },
         {
           name: "무영보",
-          desc: "이동속도, 공격 전진력, 대쉬속도 증가",
+          desc: "대쉬 속도와 대쉬공격 전진력이 증가한다.",
           condition: () => true,
           apply: (p) => {
-            p.moveSpeed *= 1.12;
+            p.dashSpeed *= 1.15;
             p.lunge *= 1.12;
-            p.dashSpeed *= 1.12;
           }
+        },
+        {
+          name: "연쇄돌파",
+          desc: "대쉬공격으로 적을 처치하면 대쉬 쿨타임이 초기화된다.",
+          condition: (p) => !p.dashReset,
+          apply: (p) => p.dashReset = true
         },
         {
           name: "단전 강화",
@@ -362,35 +365,39 @@
           apply: (p) => p.damage += 1
         },
         {
-          name: "연타 호흡",
-          desc: "공격 쿨타임 감소",
+          name: "추격 보법",
+          desc: "공격 추격거리와 타격 범위가 증가한다.",
           condition: () => true,
-          apply: (p) => p.attackBaseCooldown *= 0.88
+          apply: (p) => {
+            p.track *= 1.16;
+            p.range *= 1.1;
+            p.width *= 1.08;
+          }
         },
         {
-          name: "연쇄돌파",
-          desc: "대쉬공격 처치 시 대쉬 초기화",
-          condition: (p) => !p.dashReset,
-          apply: (p) => p.dashReset = true
+          name: "불꽃 패링",
+          desc: "패링 성공 시 적에게 화염 피해를 주고 반격 시간이 길어진다.",
+          condition: (p) => !p.parryFire,
+          apply: (p) => p.parryFire = true
         },
         {
-          name: "충격파",
-          desc: "처치 시 주변 운석 추가 피해",
-          condition: () => true,
-          apply: (p) => p.shock += 1
+          name: "패링 폭발",
+          desc: "패링 성공 시 주변 그림자괴물도 밀쳐낸다.",
+          condition: (p) => !p.parryExplosion,
+          apply: (p) => p.parryExplosion = true
         },
         {
-          name: "지구 보강",
-          desc: "지구 체력 +3",
+          name: "체력 단련",
+          desc: "최대 HP와 현재 HP가 15 증가한다.",
           condition: () => true,
-          apply: () => {
-            game.earthMaxHp += 3;
-            game.earthHp = Math.min(game.earthMaxHp, game.earthHp + 3);
+          apply: (p) => {
+            p.maxHp += 15;
+            p.hp = Math.min(p.maxHp, p.hp + 15);
           }
         },
         {
           name: "폭주 연장",
-          desc: "한계돌파 중 처치하면 지속시간 증가",
+          desc: "한계돌파 중 처치하면 지속시간이 조금 증가한다.",
           condition: (p) => !p.limitExtend,
           apply: (p) => p.limitExtend = true
         }
@@ -398,42 +405,42 @@
 
       function showUpgrades() {
         game.choosing = true;
-        selectScreen.classList.remove("hide");
+        choiceScreen.classList.remove("hide");
 
         const pool = upgrades
-          .filter((up) => up.condition(game.player))
+          .filter((upgrade) => upgrade.condition(game.player))
           .sort(() => Math.random() - 0.5);
 
-        picks = pool.slice(0, 3);
-        cards.innerHTML = "";
+        currentChoices = pool.slice(0, 3);
+        choiceCards.innerHTML = "";
 
-        picks.forEach((up, i) => {
+        currentChoices.forEach((upgrade, index) => {
           const card = document.createElement("div");
           card.className = "card";
           card.innerHTML = `
-            <span class="key">${i + 1}</span>
-            <div class="name">${up.name}</div>
-            <div class="desc">${up.desc}</div>
+            <span class="key">${index + 1}</span>
+            <div class="name">${upgrade.name}</div>
+            <div class="desc">${upgrade.desc}</div>
           `;
-          card.onclick = () => pickUpgrade(i);
-          cards.appendChild(card);
+          card.onclick = () => pickUpgrade(index);
+          choiceCards.appendChild(card);
         });
       }
 
       function pickUpgrade(index) {
-        if (!picks[index]) return;
-        picks[index].apply(game.player);
+        if (!currentChoices[index]) return;
+        currentChoices[index].apply(game.player);
         game.choosing = false;
-        selectScreen.classList.add("hide");
+        choiceScreen.classList.add("hide");
       }
 
       function buff() {
         if (game.limit > 0) {
           return {
             speed: 0.38,
-            move: 2.2,
-            damage: 3,
-            range: 1.8,
+            move: 2.15,
+            damage: 2.8,
+            range: 1.75,
             track: 2,
             gold: true
           };
@@ -449,6 +456,11 @@
         };
       }
 
+      function flameColor() {
+        if (game.limit > 0) return "#ffd84a";
+        return game.player.blueFlame ? "#59d9ff" : "#ff8a2a";
+      }
+
       function inputDir() {
         let x = 0;
         let y = 0;
@@ -458,62 +470,54 @@
         if (keys.ArrowUp) y -= 1;
         if (keys.ArrowDown) y += 1;
 
-        if (x || y) return norm(x, y);
-        return null;
+        return x || y ? norm(x, y) : null;
       }
 
-      function findTarget(dir, range, free) {
-        const p = game.player;
+      function nearestEnemy(range, dir = null, free = false) {
+        const player = game.player;
         let best = null;
         let bestScore = Infinity;
 
-        for (const m of game.meteors) {
-          if (m.dead) continue;
+        for (const enemy of game.enemies) {
+          if (enemy.dead || enemy.state === "dying") continue;
 
-          const dx = m.x - p.x;
-          const dy = m.y - p.y;
+          const dx = enemy.x - player.x;
+          const dy = enemy.y - player.y;
           const d = Math.hypot(dx, dy);
 
-          if (d > range + m.r) continue;
+          if (d > range + enemy.r) continue;
 
           let dot = 1;
-
           if (dir) {
             dot = (dx / (d || 1)) * dir.x + (dy / (d || 1)) * dir.y;
-            if (dot < 0.2 && !free) continue;
+            if (dot < 0.15 && !free) continue;
           }
 
-          const score = d - dot * 50 + Math.hypot(m.x - CENTER.x, m.y - CENTER.y) * -0.08;
+          const threat = enemy.state === "windup" || enemy.state === "attack" ? -90 : 0;
+          const score = d - dot * 58 + threat;
 
           if (score < bestScore) {
             bestScore = score;
-            best = m;
+            best = enemy;
           }
         }
 
         return best;
       }
 
-      function aim(range, free) {
-        const p = game.player;
+      function aim(range, free = false) {
+        const player = game.player;
         const b = buff();
         const input = inputDir();
+        const target = nearestEnemy(range * b.track, input, free);
 
-        const target = findTarget(input, range * b.track, free);
-
-        if (target) {
-          return norm(target.x - p.x, target.y - p.y);
-        }
-
+        if (target) return norm(target.x - player.x, target.y - player.y);
         if (input) return input;
 
-        const autoTarget = findTarget(null, range * 1.3 * b.track, true);
+        const autoTarget = nearestEnemy(range * 1.25 * b.track, null, true);
+        if (autoTarget) return norm(autoTarget.x - player.x, autoTarget.y - player.y);
 
-        if (autoTarget) {
-          return norm(autoTarget.x - p.x, autoTarget.y - p.y);
-        }
-
-        return { x: p.face, y: 0 };
+        return { x: player.face, y: 0 };
       }
 
       function setPose(name, dir) {
@@ -522,389 +526,478 @@
       }
 
       function dash() {
-        const p = game.player;
+        const player = game.player;
         const b = buff();
 
-        if (p.dashCooldown > 0 && game.limit <= 0) return;
+        if (player.dashCooldown > 0 && game.limit <= 0) return;
 
-        const dir = inputDir() || aim(p.track * 1.3, true);
-
-        p.face = dir.x < -0.15 ? -1 : dir.x > 0.15 ? 1 : p.face;
-        p.dir = dir;
-
-        p.vx = dir.x * p.dashSpeed * b.move;
-        p.vy = dir.y * p.dashSpeed * b.move;
-
-        p.dashCooldown = 0.72 * b.speed;
-        p.dashTimer = 0.15;
-        p.lastDash = 0;
+        const dir = inputDir() || aim(player.track, true);
+        player.face = dir.x < -0.15 ? -1 : dir.x > 0.15 ? 1 : player.face;
+        player.dir = dir;
+        player.vx = dir.x * player.dashSpeed * b.move;
+        player.vy = dir.y * player.dashSpeed * b.move * 0.72;
+        player.dashCooldown = 0.58 * b.speed;
+        player.dashTimer = 0.16;
+        player.lastDash = 0;
+        player.invuln = Math.max(player.invuln, 0.18);
 
         setPose("dash", dir);
         addGhost(0.22);
-        addParticles(p.x, p.y, 12, b.gold ? "#ffd84a" : "#9de1ff", 2);
+        addParticles(player.x, player.y, 16, b.gold ? "#ffd84a" : "#9de1ff", 2.4);
       }
 
       function attack() {
-        const p = game.player;
+        const player = game.player;
         const b = buff();
 
-        if (game.overheat > 0) return;
-        if (p.attackCooldown > 0 && game.limit <= 0) return;
+        if (player.parryRecovery > 0) return;
+        if (player.attackCooldown > 0 && game.limit <= 0) return;
 
-        if (p.dashTimer > 0 || p.lastDash < 0.22 || keys.Space) {
+        if (player.counterReady > 0) {
+          counterAttack();
+          return;
+        }
+
+        if (player.dashTimer > 0 || player.lastDash < 0.22 || keys.Space) {
           dashAttack();
           return;
         }
 
-        if (p.lastA > 0.62) {
-          p.comboStage = 0;
+        if (player.lastA > 0.62) {
+          player.comboStage = 0;
         }
 
-        p.comboStage = p.comboStage % p.maxCombo + 1;
-        p.lastA = 0;
+        player.comboStage = player.comboStage % player.maxCombo + 1;
+        player.lastA = 0;
 
-        let stage = p.comboStage;
-        let name = "정권";
+        const stage = player.comboStage;
+        let name = "화염정권";
         let pose = "punch";
-        let damage = p.damage;
-        let range = p.range;
-        let width = p.width;
-        let move = p.lunge;
-        let cooldown = p.attackBaseCooldown;
-        let dir = null;
+        let damage = player.damage;
+        let range = player.range;
+        let width = player.width;
+        let move = player.lunge;
+        let cooldown = player.attackBaseCooldown;
+        let killStyle = "burn";
 
         if (stage === 2) {
-          name = "연속정권";
-          damage += 0.6;
+          name = "연환권";
+          damage += 0.7;
+          range *= 1.05;
           move *= 1.08;
           cooldown *= 0.88;
         }
 
         if (stage === 3) {
-          name = "붕권";
-          pose = "big";
-          damage += 1.6;
-          range *= 1.22;
-          width *= 1.16;
-          move *= 1.24;
+          name = "화염각";
+          pose = "kick";
+          damage += 1.3;
+          range *= 1.26;
+          width *= 1.18;
+          move *= 1.18;
+          killStyle = "spin";
+          player.fireFeet = true;
         }
 
         if (stage === 4) {
-          name = "올려차기";
-          pose = "kick";
-          damage += 1.3;
-          range *= 1.34;
+          name = "붕권";
+          pose = "big";
+          damage += 2.2;
+          range *= 1.35;
           width *= 1.22;
-
-          const a = aim(p.track * 1.35, true);
-          dir = norm(a.x * 0.9, a.y * 0.9 - 0.25);
+          move *= 1.32;
+          killStyle = "wall";
         }
 
         if (stage === 5) {
-          name = "파쇄권";
-          pose = "big";
-          damage += 3;
-          range *= 1.45;
-          width *= 1.4;
+          name = "파쇄피니시";
+          pose = "finish";
+          damage += 4.4;
+          range *= 1.55;
+          width *= 1.45;
+          move *= 1.45;
+          killStyle = "wall";
         }
 
-        strike(name, pose, dir || aim(p.track, false), damage, range, width, move, cooldown, "combo", stage);
+        strike({
+          name,
+          pose,
+          dir: aim(player.track, false),
+          damage,
+          range,
+          width,
+          move,
+          cooldown,
+          source: "combo",
+          stage,
+          killStyle,
+          color: flameColor()
+        });
       }
 
       function dashAttack() {
-        const p = game.player;
-        const input = inputDir();
-        let dir = aim(p.track * 1.9, true);
+        const player = game.player;
+        const dir = aim(player.track * 1.85, true);
 
-        let name = "대쉬정권";
-        let pose = "dashPunch";
-        let damage = p.damage + 1.5;
-        let range = p.range * 1.6;
-        let width = p.width * 1.22;
-        let move = p.lunge * 1.45;
-
-        if (input && input.y < -0.45) {
-          name = "비연각";
-          pose = "kick";
-          dir = norm(dir.x * 0.55 + input.x * 0.22, dir.y * 0.55 + input.y * 0.65);
-          range *= 1.16;
-        }
-
-        strike(name, pose, dir, damage, range, width, move, p.attackBaseCooldown * 1.04, "dash", 0);
+        strike({
+          name: "슬라이드 펀치",
+          pose: "dashPunch",
+          dir,
+          damage: player.damage + 2.2,
+          range: player.range * 1.62,
+          width: player.width * 1.18,
+          move: player.lunge * 1.55,
+          cooldown: player.attackBaseCooldown * 1.05,
+          source: "dash",
+          stage: 0,
+          killStyle: "dash",
+          color: game.limit > 0 ? "#ffd84a" : "#9de1ff"
+        });
       }
 
-      function strike(name, pose, dir, damage, range, width, move, cooldown, source, stage) {
-        const p = game.player;
+      function spinKick() {
+        const player = game.player;
         const b = buff();
 
-        dir = norm(dir.x, dir.y);
+        if (player.spinCooldown > 0 && game.limit <= 0) return;
+        if (player.parryRecovery > 0) return;
 
-        p.face = dir.x < -0.15 ? -1 : dir.x > 0.15 ? 1 : p.face;
-        p.dir = dir;
+        player.spinCooldown = 1.4 * b.speed;
+        player.attackCooldown = 0.22 * b.speed;
+        player.fireFeet = true;
+        setPose("spin", player.dir);
+        addGhost(0.24);
+        addText(player.x, player.y - 62, "스핀킥", flameColor(), 0.45);
 
-        p.vx = dir.x * move * b.move;
-        p.vy = dir.y * move * b.move;
-
-        p.attackCooldown = cooldown * b.speed;
-        setPose(pose, dir);
-
-        addText(p.x, p.y - 54, name, b.gold ? "#ffd84a" : "#fff", 0.42);
-        addGhost(0.22);
-
-        const sx = p.x;
-        const sy = p.y - 18;
-        const ex = sx + dir.x * range * b.range;
-        const ey = sy + dir.y * range * b.range;
-
-        let killed = false;
+        const radius = 100 * b.range;
+        const damage = Math.ceil((player.damage + 1.5) * b.damage);
         let hit = false;
+
+        game.hits.push({
+          circle: true,
+          x: player.x,
+          y: player.y,
+          radius,
+          timer: 0.22,
+          color: flameColor(),
+          width: 10
+        });
+
+        for (const enemy of game.enemies) {
+          if (enemy.dead || enemy.state === "dying") continue;
+
+          if (Math.hypot(enemy.x - player.x, enemy.y - player.y) <= radius + enemy.r) {
+            const dir = norm(enemy.x - player.x, enemy.y - player.y);
+            hitEnemy(enemy, damage, dir, "spin", 0, "spin");
+            hit = true;
+          }
+        }
+
+        if (hit) {
+          game.hitStop = Math.max(game.hitStop, 0.04);
+          game.shake = Math.max(game.shake, 7);
+        }
+      }
+
+      function parry() {
+        const player = game.player;
+
+        if (player.parryCooldown > 0 || player.parryRecovery > 0) return;
+
+        player.parry = 0.2;
+        player.parryCooldown = 0.52;
+        player.parryRecovery = 0.28;
+        player.attackCooldown = Math.max(player.attackCooldown, 0.1);
+        setPose("parry", inputDir() || player.dir);
+        addText(player.x, player.y - 62, "PARRY", "#9de1ff", 0.34);
+        addParticles(player.x, player.y - 18, 10, "#9de1ff", 1.4);
+
+        for (const enemy of game.enemies) {
+          if (enemy.dead || enemy.state === "dying") continue;
+          if (enemy.state !== "windup" && enemy.state !== "attack") continue;
+
+          const d = Math.hypot(enemy.x - player.x, enemy.y - player.y);
+          if (d <= enemy.attackRange + 64) {
+            parryEnemy(enemy);
+            break;
+          }
+        }
+      }
+
+      function parryEnemy(enemy) {
+        const player = game.player;
+        const dir = norm(enemy.x - player.x, enemy.y - player.y);
+
+        enemy.state = "stun";
+        enemy.timer = player.parryFire ? 1.35 : 1.05;
+        enemy.vx = dir.x * 170;
+        enemy.vy = dir.y * 90;
+        enemy.flash = 0.18;
+        enemy.hasHit = true;
+
+        player.parry = 0;
+        player.parryRecovery = 0.06;
+        player.counterReady = player.parryFire ? 1.05 : 0.78;
+        player.counterTarget = enemy;
+        player.ult = clamp(player.ult + 13, 0, 100);
+        player.invuln = Math.max(player.invuln, 0.28);
+
+        game.hitStop = 0.07;
+        game.shake = Math.max(game.shake, 12);
+        game.flash = Math.max(game.flash, 0.08);
+
+        addText(player.x, player.y - 85, "PARRY!", "#9de1ff", 0.68);
+        addParticles(enemy.x, enemy.y, 28, "#9de1ff", 3.5);
+        addRing(player.x, player.y, 70, "#9de1ff");
+
+        if (player.parryFire) {
+          enemy.hp -= Math.ceil(player.damage * 1.4);
+          addParticles(enemy.x, enemy.y, 18, flameColor(), 2.8);
+          if (enemy.hp <= 0) killEnemy(enemy, "burn", dir, false);
+        }
+
+        if (player.parryExplosion) {
+          for (const other of game.enemies) {
+            if (other === enemy || other.dead || other.state === "dying") continue;
+            const d = Math.hypot(other.x - player.x, other.y - player.y);
+            if (d < 115) {
+              const push = norm(other.x - player.x, other.y - player.y);
+              other.vx += push.x * 230;
+              other.vy += push.y * 120;
+              other.state = "stun";
+              other.timer = 0.55;
+              other.flash = 0.12;
+            }
+          }
+        }
+      }
+
+      function counterAttack() {
+        const player = game.player;
+        const target = player.counterTarget && !player.counterTarget.dead ? player.counterTarget : nearestEnemy(player.track * 1.5, null, true);
+        const dir = target ? norm(target.x - player.x, target.y - player.y) : (inputDir() || player.dir);
+
+        player.counterReady = 0;
+        player.counterTarget = null;
+
+        strike({
+          name: "반격정권",
+          pose: "counter",
+          dir,
+          damage: player.damage + 5,
+          range: player.range * 1.7,
+          width: player.width * 1.55,
+          move: player.lunge * 1.4,
+          cooldown: player.attackBaseCooldown * 1.2,
+          source: "counter",
+          stage: 5,
+          killStyle: "wall",
+          color: "#9de1ff"
+        });
+      }
+
+      function strike(config) {
+        const player = game.player;
+        const b = buff();
+        const dir = norm(config.dir.x, config.dir.y);
+        const damage = Math.ceil(config.damage * b.damage);
+        const range = config.range * b.range;
+        const width = config.width * b.range;
+
+        player.face = dir.x < -0.15 ? -1 : dir.x > 0.15 ? 1 : player.face;
+        player.dir = dir;
+        player.vx = dir.x * config.move * b.move;
+        player.vy = dir.y * config.move * b.move * 0.65;
+        player.attackCooldown = config.cooldown * b.speed;
+        setPose(config.pose, dir);
+        addGhost(0.24);
+        addText(player.x, player.y - 62, config.name, config.color, 0.42);
+
+        const sx = player.x;
+        const sy = player.y - 18;
+        const ex = sx + dir.x * range;
+        const ey = sy + dir.y * range;
 
         game.hits.push({
           x1: sx,
           y1: sy,
           x2: ex,
           y2: ey,
-          width: width * b.range,
-          timer: 0.13,
-          color: b.gold ? "#ffd84a" : source === "dash" ? "#9de1ff" : "#fff"
+          width,
+          timer: 0.14,
+          color: config.color
         });
 
-        for (const m of game.meteors) {
-          if (m.dead) continue;
+        let didHit = false;
+        let didKill = false;
 
-          const d = pointToSegmentDistance(m.x, m.y, sx, sy, ex, ey);
+        for (const enemy of game.enemies) {
+          if (enemy.dead || enemy.state === "dying") continue;
 
-          if (d <= m.r + width * b.range * 0.5) {
-            hit = true;
-
-            const dead = hurtMeteor(m, Math.ceil(damage * b.damage), dir, source, stage);
-            if (dead) killed = true;
+          const d = pointToSegmentDistance(enemy.x, enemy.y, sx, sy, ex, ey);
+          if (d <= enemy.r + width * 0.5) {
+            didHit = true;
+            if (hitEnemy(enemy, damage, dir, config.source, config.stage, config.killStyle)) {
+              didKill = true;
+            }
           }
         }
 
-        if (hit) {
-          game.hitStop = Math.max(game.hitStop, source === "dash" ? 0.05 : 0.035);
-          game.shake = Math.max(game.shake, source === "dash" ? 8 : 5);
+        if (didHit) {
+          game.hitStop = Math.max(game.hitStop, config.source === "dash" || config.source === "counter" ? 0.055 : 0.035);
+          game.shake = Math.max(game.shake, config.source === "counter" ? 13 : config.source === "dash" ? 9 : 6);
         }
 
-        if (killed && source === "dash" && p.dashReset) {
-          p.dashCooldown = 0;
-          addText(p.x, p.y - 86, "연쇄돌파!", "#9de1ff", 0.55);
+        if (didKill && config.source === "dash" && player.dashReset) {
+          player.dashCooldown = 0;
+          addText(player.x, player.y - 88, "연쇄돌파!", "#9de1ff", 0.55);
         }
 
-        if (killed && game.limit > 0 && p.limitExtend && game.limit < 8) {
-          game.limit += 0.18;
+        if (didKill && game.limit > 0 && player.limitExtend && game.limit < 8) {
+          game.limit += 0.15;
         }
       }
 
-      function hurtMeteor(m, damage, dir, source, stage) {
-        m.hp -= damage;
-        m.vx += dir.x * 90;
-        m.vy += dir.y * 90;
-        m.flash = 0.12;
+      function hitEnemy(enemy, damage, dir, source, stage, killStyle) {
+        if (enemy.dead || enemy.state === "dying") return false;
 
-        addParticles(m.x, m.y, 12 + Math.min(14, damage * 2), game.limit > 0 ? "#ffd84a" : "#fff0a8", 2.5);
-        addText(m.x, m.y - m.r, "-" + damage, "#fff3a8", 0.5);
+        enemy.hp -= damage;
+        enemy.flash = 0.14;
+        enemy.state = enemy.state === "stun" ? "stun" : "hurt";
+        enemy.timer = 0.15;
+        enemy.vx += dir.x * (source === "dash" ? 290 : source === "counter" ? 420 : 190);
+        enemy.vy += dir.y * 90;
 
-        if (game.limit > 0 || stage === 5) {
-          explosion(m.x, m.y, game.limit > 0 ? 56 : 42, Math.max(1, Math.floor(damage * 0.45)));
-        }
+        addText(enemy.x, enemy.y - enemy.r, "-" + damage, "#fff3a8", 0.42);
+        addParticles(enemy.x, enemy.y, 12 + Math.min(16, damage * 2), flameColor(), 2.5);
 
-        if (m.hp <= 0) {
-          killMeteor(m);
+        if (enemy.hp <= 0) {
+          killEnemy(enemy, killStyle, dir, stage >= 4 || source === "dash" || source === "counter");
           return true;
         }
 
         return false;
       }
 
-      function killMeteor(m) {
-        if (m.dead) return;
+      function killEnemy(enemy, style, dir, forceLaunch) {
+        if (enemy.dead || enemy.state === "dying") return;
 
-        m.dead = true;
-        game.score += m.score;
+        game.score += enemy.score;
         game.combo += 1;
-        game.comboTimer = 1.15;
-        game.ult = clamp(game.ult + 7.5, 0, 100);
-        game.xp += m.xp;
+        game.comboTimer = 1.25;
+        game.ult = clamp(game.ult + enemy.ult, 0, 100);
+        game.xp += enemy.xp;
 
         if (game.xp >= game.nextXp) {
           game.xp -= game.nextXp;
           game.level += 1;
-          game.nextXp = Math.floor(game.nextXp * 1.25 + 12);
+          game.nextXp = Math.floor(game.nextXp * 1.25 + 16);
           showUpgrades();
         }
 
-        addText(m.x, m.y, "+" + m.score, "#ffef8a", 0.7);
-        addParticles(m.x, m.y, 28, m.color, 3.5);
+        addText(enemy.x, enemy.y - enemy.r - 10, "+" + enemy.score, "#ffef8a", 0.6);
 
-        if (m.type === "big") {
-          addMeteor("fragment", m.x - 10, m.y, -70);
-          addMeteor("fragment", m.x + 10, m.y, 70);
+        if (style === "wall" || forceLaunch) {
+          enemy.state = "dying";
+          enemy.killStyle = "wall";
+          enemy.deadTimer = 1.5;
+          enemy.vx = (dir.x >= 0 ? 1 : -1) * (620 + rand(0, 120));
+          enemy.vy = dir.y * 100 - 60;
+          enemy.spin = rand(-12, 12);
+          addAfterImage(enemy.x, enemy.y, enemy.r, "#18111f");
+          return;
         }
 
-        if (m.type === "bomb") {
-          explosion(m.x, m.y, 72, 2);
+        if (style === "spin") {
+          enemy.state = "dying";
+          enemy.killStyle = "spin";
+          enemy.deadTimer = 0.65;
+          enemy.vx = dir.x * 340;
+          enemy.vy = -180 + dir.y * 80;
+          enemy.spin = 18 * (dir.x || 1);
+          addParticles(enemy.x, enemy.y, 22, "#ff8a2a", 3.1);
+          return;
         }
 
-        if (game.player.shock) {
-          explosion(m.x, m.y, 42 + game.player.shock * 13, game.player.shock);
+        if (style === "dash") {
+          enemy.state = "dying";
+          enemy.killStyle = "dash";
+          enemy.deadTimer = 0.55;
+          enemy.vx = (dir.x || game.player.face) * 520;
+          enemy.vy = dir.y * 120 - 40;
+          enemy.spin = 10 * (dir.x || game.player.face);
+          addParticles(enemy.x, enemy.y, 18, "#9de1ff", 3.2);
+          return;
         }
+
+        burnEnemy(enemy);
       }
 
-      function explosion(x, y, radius, damage) {
-        game.hits.push({
-          circle: true,
-          x,
-          y,
-          radius,
-          timer: 0.18,
-          color: game.limit > 0 ? "#ffd84a" : "#ffdf7e"
-        });
+      function burnEnemy(enemy) {
+        enemy.dead = true;
+        addParticles(enemy.x, enemy.y, 28, "#101018", 3.5);
+        addParticles(enemy.x, enemy.y, 22, flameColor(), 2.8);
+        addRing(enemy.x, enemy.y, enemy.r + 22, flameColor());
+        game.shake = Math.max(game.shake, 5);
+      }
 
-        for (const m of game.meteors) {
-          if (m.dead) continue;
+      function wallSlam(enemy) {
+        enemy.dead = true;
+        const wallX = enemy.x < W / 2 ? 28 : W - 28;
+        enemy.x = wallX;
+        game.shake = Math.max(game.shake, 16);
+        game.hitStop = Math.max(game.hitStop, 0.075);
+        addWallMark(wallX, enemy.y, enemy.r * 1.5);
+        addText(wallX, enemy.y - 35, "WALL BREAK!", "#ffdf7e", 0.75);
+        addParticles(wallX, enemy.y, 36, "#15111c", 4.8);
+        addParticles(wallX, enemy.y, 32, flameColor(), 4.2);
+        addRing(wallX, enemy.y, enemy.r + 42, "#ffdf7e");
 
-          if (Math.hypot(m.x - x, m.y - y) <= radius + m.r) {
-            m.hp -= damage;
-            if (m.hp <= 0) killMeteor(m);
+        for (const other of game.enemies) {
+          if (other.dead || other.state === "dying") continue;
+          if (Math.hypot(other.x - wallX, other.y - enemy.y) < 95) {
+            const push = norm(other.x - wallX, other.y - enemy.y);
+            other.hp -= 2 + game.player.damage;
+            other.vx += push.x * 260;
+            other.vy += push.y * 120;
+            other.flash = 0.15;
+            if (other.hp <= 0) burnEnemy(other);
           }
         }
       }
 
-      function spawnFromEdge() {
-        const edge = Math.floor(rand(0, 4));
-        let x, y;
+      function damagePlayer(amount, enemy, dir) {
+        const player = game.player;
 
-        if (edge === 0) {
-          x = rand(-40, W + 40);
-          y = -40;
-        } else if (edge === 1) {
-          x = W + 40;
-          y = rand(-40, H + 40);
-        } else if (edge === 2) {
-          x = rand(-40, W + 40);
-          y = H + 40;
-        } else {
-          x = -40;
-          y = rand(-40, H + 40);
+        if (player.invuln > 0 || player.dashTimer > 0) return;
+
+        if (player.parry > 0) {
+          parryEnemy(enemy);
+          return;
         }
 
-        return { x, y };
-      }
+        player.hp -= amount;
+        player.invuln = 0.7;
+        player.vx -= dir.x * 230;
+        player.vy -= dir.y * 90;
+        player.pose = "hurt";
+        game.shake = Math.max(game.shake, 13);
+        game.flash = Math.max(game.flash, 0.08);
+        addText(player.x, player.y - 74, "-" + amount, "#ff5b5b", 0.65);
+        addParticles(player.x, player.y - 20, 18, "#ff5b5b", 2.6);
 
-      function addMeteor(forceType = null, fx = null, fy = null, forcedVx = null) {
-        let type = forceType || "normal";
-
-        if (!forceType) {
-          const roll = Math.random();
-
-          if (game.time > 14 && roll < 0.12) type = "fast";
-          else if (game.time > 24 && roll < 0.26) type = "big";
-          else if (game.time > 34 && roll < 0.38) type = "steel";
-          else if (game.time > 44 && roll < 0.48) type = "bomb";
-          else if (roll > 0.92) type = "crystal";
+        if (player.hp <= 0) {
+          player.hp = 0;
+          game.dead = true;
+          game.running = false;
+          resultText.innerHTML = `
+            점수: <b>${game.score}</b><br>
+            생존 시간: <b>${Math.floor(game.time)}초</b><br>
+            도달 레벨: <b>${game.level}</b><br>
+            최고 콤보: <b>${game.combo}</b>
+          `;
+          gameOverScreen.classList.remove("hide");
         }
-
-        if (forceType === "boss") type = "boss";
-
-        const spawn = (fx == null || fy == null) ? spawnFromEdge() : { x: fx, y: fy };
-        const toEarth = norm(CENTER.x - spawn.x, CENTER.y - spawn.y);
-
-        const m = {
-          x: spawn.x,
-          y: spawn.y,
-          vx: toEarth.x * (55 + game.time * 0.7),
-          vy: toEarth.y * (55 + game.time * 0.7),
-          r: 18,
-          hp: 1,
-          maxHp: 1,
-          score: 10,
-          xp: 8,
-          type,
-          color: "#9a7755",
-          dead: false,
-          rot: rand(0, 7),
-          vr: rand(-2, 2),
-          flash: 0,
-          orbit: rand(-0.5, 0.5),
-          shape: Array.from({ length: 9 }, () => rand(0.78, 1.22))
-        };
-
-        if (type === "fragment") {
-          m.r = 13;
-          m.score = 8;
-          m.xp = 5;
-          m.color = "#bd8a5b";
-          if (forcedVx != null) {
-            m.vx += forcedVx;
-          }
-        }
-
-        if (type === "fast") {
-          m.r = 15;
-          m.vx *= 1.5;
-          m.vy *= 1.5;
-          m.score = 16;
-          m.xp = 10;
-          m.color = "#ff644d";
-        }
-
-        if (type === "big") {
-          m.r = 28;
-          m.hp = 3;
-          m.maxHp = 3;
-          m.vx *= 0.86;
-          m.vy *= 0.86;
-          m.score = 30;
-          m.xp = 18;
-          m.color = "#b17a4c";
-        }
-
-        if (type === "steel") {
-          m.r = 22;
-          m.hp = 5;
-          m.maxHp = 5;
-          m.vx *= 0.9;
-          m.vy *= 0.9;
-          m.score = 36;
-          m.xp = 22;
-          m.color = "#92a0b0";
-        }
-
-        if (type === "bomb") {
-          m.r = 21;
-          m.hp = 2;
-          m.maxHp = 2;
-          m.score = 34;
-          m.xp = 20;
-          m.color = "#ff9d25";
-        }
-
-        if (type === "crystal") {
-          m.r = 19;
-          m.score = 20;
-          m.xp = 28;
-          m.color = "#75ecff";
-        }
-
-        if (type === "boss") {
-          const s = spawnFromEdge();
-          const t = norm(CENTER.x - s.x, CENTER.y - s.y);
-
-          m.x = s.x;
-          m.y = s.y;
-          m.r = 46;
-          m.hp = 18 + game.level * 4;
-          m.maxHp = m.hp;
-          m.score = 260;
-          m.xp = 90;
-          m.color = "#d9554e";
-          m.vx = t.x * (40 + game.time * 0.4);
-          m.vy = t.y * (40 + game.time * 0.4);
-        }
-
-        game.meteors.push(m);
       }
 
       function ultimate() {
@@ -912,16 +1005,22 @@
 
         game.ult = 0;
         game.flash = 0.35;
-        game.shake = 16;
+        game.shake = 20;
+        game.slowMo = 0.35;
+        addText(W / 2, 96, "쇼타임!", "#ffd84a", 1);
+        addRing(game.player.x, game.player.y, 190, "#ffd84a");
 
-        addText(CENTER.x, 110, "유성난무!", "#9de1ff", 1);
-
-        for (const m of game.meteors) {
-          if (m.type === "boss") {
-            m.hp -= 12 + game.player.damage * 2;
-            if (m.hp <= 0) killMeteor(m);
-          } else {
-            killMeteor(m);
+        for (const enemy of game.enemies) {
+          if (enemy.dead || enemy.state === "dying") continue;
+          const dir = norm(enemy.x - game.player.x, enemy.y - game.player.y);
+          enemy.hp -= 18 + game.player.damage * 3;
+          if (enemy.hp <= 0) killEnemy(enemy, "wall", dir, true);
+          else {
+            enemy.vx += dir.x * 440;
+            enemy.vy += dir.y * 180;
+            enemy.state = "stun";
+            enemy.timer = 1.0;
+            enemy.flash = 0.25;
           }
         }
       }
@@ -930,11 +1029,10 @@
         game.cutscene = true;
         game.cutType = "start";
         game.cutTimer = 0;
-        game.flash = 0.2;
-        game.shake = 12;
-
+        game.flash = 0.25;
+        game.shake = 14;
         setPose("limit", { x: 0, y: -1 });
-        addText(game.player.x, game.player.y - 94, "한계돌파!", "#ffd84a", 1.2);
+        addText(game.player.x, game.player.y - 92, "한계돌파!", "#ffd84a", 1.2);
       }
 
       function endLimitBreak() {
@@ -942,15 +1040,120 @@
         game.cutscene = true;
         game.cutType = "end";
         game.cutTimer = 0;
-        game.overheat = 0.42;
         game.shake = 8;
-
         setPose("over", { x: 0, y: 1 });
-        addText(game.player.x, game.player.y - 88, "과부하", "#ddd", 0.75);
+        game.player.parryRecovery = Math.max(game.player.parryRecovery, 0.22);
+        addText(game.player.x, game.player.y - 82, "과부하", "#ddd", 0.75);
+      }
+
+      function spawnEnemy(forceType = null) {
+        let type = forceType || "grunt";
+        const roll = Math.random();
+
+        if (!forceType) {
+          if (game.time > 18 && roll < 0.16) type = "runner";
+          else if (game.time > 30 && roll < 0.3) type = "brute";
+          else if (game.time > 42 && roll < 0.42) type = "bomber";
+          else if (game.time > 55 && roll < 0.52) type = "mask";
+        }
+
+        const side = Math.random() < 0.5 ? -1 : 1;
+        const enemy = {
+          x: side < 0 ? -40 : W + 40,
+          y: rand(MIN_Y + 15, FLOOR_Y - 10),
+          vx: 0,
+          vy: 0,
+          side,
+          type,
+          state: "move",
+          timer: 0,
+          attackDir: { x: -side, y: 0 },
+          hasHit: false,
+          dead: false,
+          deadTimer: 0,
+          killStyle: "",
+          spin: 0,
+          rot: 0,
+          flash: 0,
+          phase: rand(0, 10),
+          r: 24,
+          hp: 4,
+          maxHp: 4,
+          speed: 72,
+          damage: 7,
+          score: 12,
+          xp: 8,
+          ult: 5,
+          attackRange: 48,
+          windup: 0.45,
+          attackTime: 0.16,
+          recovery: 0.34,
+          color: "#0c0b13",
+          eye: "#ffe066"
+        };
+
+        if (type === "runner") {
+          enemy.r = 18;
+          enemy.hp = enemy.maxHp = 3;
+          enemy.speed = 125;
+          enemy.damage = 5;
+          enemy.score = 16;
+          enemy.xp = 10;
+          enemy.attackRange = 42;
+          enemy.windup = 0.28;
+          enemy.attackTime = 0.12;
+          enemy.recovery = 0.24;
+          enemy.eye = "#75ecff";
+        }
+
+        if (type === "brute") {
+          enemy.r = 34;
+          enemy.hp = enemy.maxHp = 10;
+          enemy.speed = 45;
+          enemy.damage = 15;
+          enemy.score = 38;
+          enemy.xp = 24;
+          enemy.ult = 10;
+          enemy.attackRange = 62;
+          enemy.windup = 0.78;
+          enemy.attackTime = 0.22;
+          enemy.recovery = 0.52;
+          enemy.eye = "#ff6b6b";
+        }
+
+        if (type === "bomber") {
+          enemy.r = 22;
+          enemy.hp = enemy.maxHp = 4;
+          enemy.speed = 72;
+          enemy.damage = 22;
+          enemy.score = 28;
+          enemy.xp = 18;
+          enemy.attackRange = 46;
+          enemy.windup = 0.62;
+          enemy.attackTime = 0.1;
+          enemy.recovery = 0.4;
+          enemy.eye = "#ff3232";
+        }
+
+        if (type === "mask") {
+          enemy.r = 25;
+          enemy.hp = enemy.maxHp = 6;
+          enemy.speed = 82;
+          enemy.damage = 9;
+          enemy.score = 32;
+          enemy.xp = 21;
+          enemy.attackRange = 56;
+          enemy.windup = 0.38;
+          enemy.attackTime = 0.18;
+          enemy.recovery = 0.34;
+          enemy.eye = "#d6b8ff";
+        }
+
+        game.enemies.push(enemy);
       }
 
       function update(dt) {
-        if (!game.run || game.choosing || game.dead) return;
+        if (!game.running || game.choosing || game.dead) return;
 
         if (game.hitStop > 0) {
           game.hitStop -= dt;
@@ -958,43 +1161,66 @@
         }
 
         if (game.cutscene) {
-          game.cutTimer += dt;
-
-          if (game.cutType === "start" && game.cutTimer > 1.05) {
-            game.cutscene = false;
-            game.limit = 5;
-            game.flash = 0.35;
-            game.shake = 16;
-            game.player.attackCooldown = 0;
-            game.player.dashCooldown = 0;
-            addParticles(game.player.x, game.player.y - 30, 54, "#ffd84a", 5);
-          }
-
-          if (game.cutType === "end" && game.cutTimer > 0.48) {
-            game.cutscene = false;
-          }
-
+          updateCutscene(dt);
           updateVisuals(dt);
           return;
         }
 
-        game.time += dt;
+        if (game.slowMo > 0) {
+          game.slowMo -= dt;
+          dt *= 0.35;
+        }
 
+        game.time += dt;
         if (game.flash > 0) game.flash -= dt;
         if (game.shake > 0) game.shake -= 30 * dt;
 
-        const p = game.player;
+        updatePlayer(dt);
+        updateSpawning(dt);
+        updateEnemies(dt);
+        updateOrbs(dt);
+        updateVisuals(dt);
+      }
+
+      function updateCutscene(dt) {
+        game.cutTimer += dt;
+
+        if (game.cutType === "start" && game.cutTimer > 1.05) {
+          game.cutscene = false;
+          game.limit = 5;
+          game.flash = 0.35;
+          game.shake = 18;
+          game.player.attackCooldown = 0;
+          game.player.dashCooldown = 0;
+          game.player.spinCooldown = 0;
+          game.player.parryCooldown = 0;
+          addParticles(game.player.x, game.player.y - 18, 64, "#ffd84a", 5.5);
+          addRing(game.player.x, game.player.y, 150, "#ffd84a");
+        }
+
+        if (game.cutType === "end" && game.cutTimer > 0.5) {
+          game.cutscene = false;
+        }
+      }
+
+      function updatePlayer(dt) {
+        const player = game.player;
         const b = buff();
+        const move = inputDir();
 
-        p.attackCooldown = Math.max(0, p.attackCooldown - dt);
-        p.dashCooldown = Math.max(0, p.dashCooldown - dt);
-        p.dashTimer = Math.max(0, p.dashTimer - dt);
-        p.lastA += dt;
-        p.lastDash += dt;
+        player.attackCooldown = Math.max(0, player.attackCooldown - dt);
+        player.dashCooldown = Math.max(0, player.dashCooldown - dt);
+        player.dashTimer = Math.max(0, player.dashTimer - dt);
+        player.spinCooldown = Math.max(0, player.spinCooldown - dt);
+        player.parry = Math.max(0, player.parry - dt);
+        player.parryCooldown = Math.max(0, player.parryCooldown - dt);
+        player.parryRecovery = Math.max(0, player.parryRecovery - dt);
+        player.counterReady = Math.max(0, player.counterReady - dt);
+        player.invuln = Math.max(0, player.invuln - dt);
+        player.lastA += dt;
+        player.lastDash += dt;
 
-        if (game.overheat > 0) game.overheat -= dt;
-
-        if (p.lastA > 0.62) p.comboStage = 0;
+        if (player.lastA > 0.62) player.comboStage = 0;
 
         if (game.comboTimer > 0) {
           game.comboTimer -= dt;
@@ -1003,166 +1229,235 @@
 
         if (game.limit > 0) {
           game.limit -= dt;
-
           if (game.limit <= 0) {
             endLimitBreak();
             return;
           }
         }
 
-        const moveDir = inputDir();
-        const moveSpeed = p.moveSpeed * b.move;
-
-        if (moveDir) {
-          p.face = moveDir.x < -0.15 ? -1 : moveDir.x > 0.15 ? 1 : p.face;
-          p.dir = moveDir;
+        if (move) {
+          player.face = move.x < -0.15 ? -1 : move.x > 0.15 ? 1 : player.face;
+          player.dir = move;
         }
 
-        p.x += (moveDir ? moveDir.x * moveSpeed : 0) * dt + p.vx * dt;
-        p.y += (moveDir ? moveDir.y * moveSpeed : 0) * dt + p.vy * dt;
+        const speed = player.moveSpeed * b.move;
+        player.x += (move ? move.x * speed : 0) * dt + player.vx * dt;
+        player.y += (move ? move.y * speed * 0.62 : 0) * dt + player.vy * dt;
+        player.vx *= Math.pow(0.06, dt);
+        player.vy *= Math.pow(0.06, dt);
 
-        p.vx *= Math.pow(0.05, dt);
-        p.vy *= Math.pow(0.05, dt);
+        player.x = clamp(player.x, 42, W - 42);
+        player.y = clamp(player.y, MIN_Y, FLOOR_Y - 18);
 
-        const dx = p.x - CENTER.x;
-        const dy = p.y - CENTER.y;
-        const d = Math.hypot(dx, dy);
-
-        if (d < EARTH_R + 16) {
-          const out = norm(dx, dy);
-          p.x = CENTER.x + out.x * (EARTH_R + 16);
-          p.y = CENTER.y + out.y * (EARTH_R + 16);
+        if ((move || Math.abs(player.vx) + Math.abs(player.vy) > 230 || game.limit > 0) && player.pose !== "parry") {
+          addGhost(0.12);
         }
 
-        p.x = clamp(p.x, 30, W - 30);
-        p.y = clamp(p.y, 30, H - 30);
-
-        if (Math.abs(p.vx) + Math.abs(p.vy) > 260 || game.limit > 0 || moveDir) {
-          addGhost(0.14);
+        if (player.parry > 0) {
+          for (const enemy of game.enemies) {
+            if (enemy.dead || enemy.state === "dying") continue;
+            if (enemy.state !== "windup" && enemy.state !== "attack") continue;
+            if (Math.hypot(enemy.x - player.x, enemy.y - player.y) < enemy.attackRange + 58) {
+              parryEnemy(enemy);
+              break;
+            }
+          }
         }
+      }
 
+      function updateSpawning(dt) {
         game.spawnTimer -= dt;
+
         if (game.spawnTimer <= 0) {
-          addMeteor();
-          const interval = clamp(0.85 - game.time * 0.0045, 0.18, 0.85);
-          game.spawnTimer = rand(interval * 0.55, interval * 1.06);
+          spawnEnemy();
+          const interval = clamp(1.2 - game.time * 0.006, 0.32, 1.2);
+          game.spawnTimer = rand(interval * 0.6, interval * 1.05);
         }
 
         game.bossTimer += dt;
-        if (game.time > 30 && game.bossTimer > 45) {
+        if (game.time > 45 && game.bossTimer > 48) {
           game.bossTimer = 0;
-          addMeteor("boss");
-          addText(CENTER.x, 78, "거대 운석 접근!", "#ff6a6a", 1);
+          spawnEnemy("brute");
+          spawnEnemy("mask");
+          addText(W / 2, 92, "그림자 무리 접근!", "#ff6b6b", 1);
         }
 
         game.orbTimer -= dt;
-        if (game.time > 15 && game.orbTimer <= 0) {
-          game.orbTimer = rand(24, 34);
+        if (game.time > 18 && game.orbTimer <= 0) {
+          game.orbTimer = rand(26, 36);
           game.orbs.push({
-            x: rand(120, W - 120),
-            y: rand(100, H - 100),
-            r: 15,
+            x: rand(150, W - 150),
+            y: rand(MIN_Y + 25, FLOOR_Y - 55),
+            r: 16,
             spin: 0,
-            life: 8,
+            timer: 8,
             dead: false
           });
-          addText(CENTER.x, 92, "금빛 구슬 출현!", "#ffd84a", 1);
+          addText(W / 2, 122, "금빛 불꽃 출현!", "#ffd84a", 1);
         }
-
-        updateMeteors(dt);
-        updateOrbs(dt);
-        updateVisuals(dt);
       }
 
-      function updateMeteors(dt) {
-        for (const m of game.meteors) {
-          const slow = game.limit > 0 ? 0.82 : 1;
+      function updateEnemies(dt) {
+        const player = game.player;
 
-          const toEarth = norm(CENTER.x - m.x, CENTER.y - m.y);
-          m.vx += toEarth.x * 8 * dt;
-          m.vy += toEarth.y * 8 * dt;
+        for (const enemy of game.enemies) {
+          if (enemy.dead) continue;
 
-          m.x += m.vx * dt * slow;
-          m.y += m.vy * dt * slow;
-          m.rot += m.vr * dt;
-          m.flash = Math.max(0, m.flash - dt);
+          enemy.phase += dt;
+          enemy.flash = Math.max(0, enemy.flash - dt);
+          enemy.rot += enemy.spin * dt;
 
-          if (Math.hypot(m.x - CENTER.x, m.y - CENTER.y) <= EARTH_R + m.r) {
-            m.dead = true;
+          if (enemy.state === "dying") {
+            enemy.x += enemy.vx * dt;
+            enemy.y += enemy.vy * dt;
+            enemy.vy += 320 * dt;
+            enemy.vx *= Math.pow(0.95, dt);
+            enemy.deadTimer -= dt;
 
-            let damage = 1;
-            if (m.type === "bomb") damage = 3;
-            if (m.type === "big" || m.type === "steel") damage = 2;
-            if (m.type === "boss") damage = 5;
-
-            game.earthHp -= damage;
-            game.combo = 0;
-            game.shake = 12;
-
-            addText(CENTER.x, CENTER.y - 58, "-" + damage + " HP", "#ff5b5b", 0.8);
-
-            if (m.type === "bomb") {
-              addParticles(CENTER.x, CENTER.y, 26, "#ff9d25", 4);
+            if (enemy.killStyle === "wall" && (enemy.x < 32 || enemy.x > W - 32)) {
+              wallSlam(enemy);
+            } else if (enemy.deadTimer <= 0 || enemy.y > H + 80 || enemy.x < -120 || enemy.x > W + 120) {
+              burnEnemy(enemy);
             }
 
-            if (game.earthHp <= 0) {
-              game.dead = true;
-              game.run = false;
+            continue;
+          }
 
-              result.innerHTML = `
-                점수: <b>${game.score}</b><br>
-                생존 시간: <b>${Math.floor(game.time)}초</b><br>
-                도달 레벨: <b>${game.level}</b>
-              `;
+          if (enemy.state === "stun" || enemy.state === "hurt") {
+            enemy.timer -= dt;
+            enemy.x += enemy.vx * dt;
+            enemy.y += enemy.vy * dt;
+            enemy.vx *= Math.pow(0.12, dt);
+            enemy.vy *= Math.pow(0.12, dt);
 
-              gameOverScreen.classList.remove("hide");
+            if (enemy.timer <= 0) {
+              enemy.state = "move";
+            }
+          } else if (enemy.state === "move") {
+            const dir = norm(player.x - enemy.x, player.y - enemy.y);
+            enemy.attackDir = dir;
+            enemy.x += dir.x * enemy.speed * dt;
+            enemy.y += dir.y * enemy.speed * 0.68 * dt;
+            enemy.side = dir.x < 0 ? -1 : 1;
+
+            if (Math.hypot(player.x - enemy.x, player.y - enemy.y) < enemy.attackRange) {
+              enemy.state = "windup";
+              enemy.timer = enemy.windup;
+              enemy.hasHit = false;
+              enemy.attackDir = norm(player.x - enemy.x, player.y - enemy.y);
+              game.dangerLines.push({
+                x: enemy.x,
+                y: enemy.y,
+                dx: enemy.attackDir.x,
+                dy: enemy.attackDir.y,
+                length: enemy.attackRange + 24,
+                timer: enemy.windup,
+                maxTimer: enemy.windup,
+                color: enemy.type === "brute" ? "#ff4d4d" : "#ff8787"
+              });
+            }
+          } else if (enemy.state === "windup") {
+            enemy.timer -= dt;
+            enemy.attackDir = norm(player.x - enemy.x, player.y - enemy.y);
+
+            if (enemy.timer <= 0) {
+              enemy.state = "attack";
+              enemy.timer = enemy.attackTime;
+              enemy.hasHit = false;
+              enemy.vx += enemy.attackDir.x * (enemy.type === "runner" ? 180 : 90);
+              enemy.vy += enemy.attackDir.y * 65;
+            }
+          } else if (enemy.state === "attack") {
+            enemy.timer -= dt;
+            enemy.x += enemy.vx * dt;
+            enemy.y += enemy.vy * dt;
+            enemy.vx *= Math.pow(0.35, dt);
+            enemy.vy *= Math.pow(0.35, dt);
+
+            const start = { x: enemy.x, y: enemy.y - 4 };
+            const end = {
+              x: enemy.x + enemy.attackDir.x * (enemy.attackRange + enemy.r * 0.6),
+              y: enemy.y + enemy.attackDir.y * (enemy.attackRange + enemy.r * 0.6) - 4
+            };
+
+            if (!enemy.hasHit && player.invuln <= 0) {
+              const d = pointToSegmentDistance(player.x, player.y - 18, start.x, start.y, end.x, end.y);
+              if (d < 27) {
+                enemy.hasHit = true;
+                damagePlayer(enemy.damage, enemy, enemy.attackDir);
+              }
+            }
+
+            if (enemy.type === "bomber" && !enemy.hasHit && Math.hypot(enemy.x - player.x, enemy.y - player.y) < enemy.r + 24) {
+              enemy.hasHit = true;
+              damagePlayer(enemy.damage, enemy, enemy.attackDir);
+              killEnemy(enemy, "burn", enemy.attackDir, false);
+            }
+
+            if (enemy.timer <= 0) {
+              enemy.state = "recovery";
+              enemy.timer = enemy.recovery;
+            }
+          } else if (enemy.state === "recovery") {
+            enemy.timer -= dt;
+            if (enemy.timer <= 0) {
+              enemy.state = "move";
             }
           }
+
+          enemy.x = clamp(enemy.x, 18, W - 18);
+          enemy.y = clamp(enemy.y, MIN_Y - 10, FLOOR_Y + 12);
         }
 
-        game.meteors = game.meteors.filter((m) => !m.dead);
+        game.enemies = game.enemies.filter((enemy) => !enemy.dead);
       }
 
       function updateOrbs(dt) {
-        const p = game.player;
+        const player = game.player;
 
-        for (const o of game.orbs) {
-          o.spin += dt * 4;
-          o.life -= dt;
+        for (const orb of game.orbs) {
+          orb.spin += dt * 5;
+          orb.timer -= dt;
 
-          if (Math.hypot(o.x - p.x, o.y - (p.y - 18)) < o.r + 24) {
-            o.dead = true;
+          if (Math.hypot(orb.x - player.x, orb.y - player.y) < orb.r + 26) {
+            orb.dead = true;
             startLimitBreak();
           }
 
-          if (o.life <= 0) {
-            o.dead = true;
+          if (orb.timer <= 0) {
+            orb.dead = true;
           }
         }
 
-        game.orbs = game.orbs.filter((o) => !o.dead);
+        game.orbs = game.orbs.filter((orb) => !orb.dead);
       }
 
       function updateVisuals(dt) {
-        for (const h of game.hits) h.timer -= dt;
-        game.hits = game.hits.filter((h) => h.timer > 0);
+        for (const hit of game.hits) hit.timer -= dt;
+        game.hits = game.hits.filter((hit) => hit.timer > 0);
 
-        for (const f of game.effects) {
-          f.x += f.vx * dt;
-          f.y += f.vy * dt;
-          f.vy += 240 * dt;
-          f.timer -= dt;
+        for (const effect of game.effects) {
+          effect.x += effect.vx * dt;
+          effect.y += effect.vy * dt;
+          effect.vy += effect.gravity * dt;
+          effect.timer -= dt;
         }
-        game.effects = game.effects.filter((f) => f.timer > 0);
+        game.effects = game.effects.filter((effect) => effect.timer > 0);
 
-        for (const t of game.texts) {
-          t.y -= 34 * dt;
-          t.timer -= dt;
+        for (const text of game.texts) {
+          text.y -= 35 * dt;
+          text.timer -= dt;
         }
-        game.texts = game.texts.filter((t) => t.timer > 0);
+        game.texts = game.texts.filter((text) => text.timer > 0);
 
-        for (const gh of game.ghosts) gh.timer -= dt;
-        game.ghosts = game.ghosts.filter((gh) => gh.timer > 0);
+        for (const ghost of game.ghosts) ghost.timer -= dt;
+        game.ghosts = game.ghosts.filter((ghost) => ghost.timer > 0);
+
+        for (const mark of game.wallMarks) mark.timer -= dt;
+        game.wallMarks = game.wallMarks.filter((mark) => mark.timer > 0);
+
+        for (const line of game.dangerLines) line.timer -= dt;
+        game.dangerLines = game.dangerLines.filter((line) => line.timer > 0);
       }
 
       function draw() {
@@ -1174,30 +1469,21 @@
         }
 
         drawBackground();
-        drawArena();
-        if (game.player.preview) drawPreviews();
+        drawWallMarks();
+        drawDangerLines();
 
-        for (const o of game.orbs) drawOrb(o);
-        for (const m of game.meteors) drawMeteor(m);
-        for (const h of game.hits) drawHit(h);
-
-        for (const f of game.effects) {
-          ctx.globalAlpha = clamp(f.timer / f.maxTimer, 0, 1);
-          ctx.fillStyle = f.color;
-          ctx.beginPath();
-          ctx.arc(f.x, f.y, f.size, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.globalAlpha = 1;
-        }
-
-        for (const gh of game.ghosts) {
+        for (const orb of game.orbs) drawOrb(orb);
+        for (const enemy of game.enemies) drawEnemy(enemy);
+        for (const hit of game.hits) drawHit(hit);
+        for (const effect of game.effects) drawEffect(effect);
+        for (const ghost of game.ghosts) {
           drawStickman(
-            gh.x,
-            gh.y,
-            gh.pose,
-            gh.dir,
-            clamp(gh.timer / gh.maxTimer, 0, 1) * 0.28,
-            gh.gold ? "#ffd84a" : "#9de1ff"
+            ghost.x,
+            ghost.y,
+            ghost.pose,
+            ghost.dir,
+            clamp(ghost.timer / ghost.maxTimer, 0, 1) * 0.28,
+            ghost.gold ? "#ffd84a" : "#9de1ff"
           );
         }
 
@@ -1206,18 +1492,11 @@
           game.player.y,
           game.player.pose,
           game.player.dir,
-          1,
+          game.player.invuln > 0 ? 0.62 + Math.sin(game.time * 48) * 0.22 : 1,
           game.limit > 0 ? "#ffd84a" : "#fff"
         );
 
-        for (const t of game.texts) {
-          ctx.globalAlpha = clamp(t.timer / t.maxTimer, 0, 1);
-          ctx.fillStyle = t.color;
-          ctx.font = "900 22px system-ui";
-          ctx.textAlign = "center";
-          ctx.fillText(t.text, t.x, t.y);
-          ctx.globalAlpha = 1;
-        }
+        for (const text of game.texts) drawText(text);
 
         drawUI();
         drawModeEffects();
@@ -1226,257 +1505,314 @@
       }
 
       function drawBackground() {
-        const gr = ctx.createLinearGradient(0, 0, 0, H);
-        gr.addColorStop(0, "#060817");
-        gr.addColorStop(0.58, "#101936");
-        gr.addColorStop(1, "#1a1f34");
-
-        ctx.fillStyle = gr;
+        const gradient = ctx.createLinearGradient(0, 0, 0, H);
+        gradient.addColorStop(0, "#070817");
+        gradient.addColorStop(0.58, "#141b37");
+        gradient.addColorStop(1, "#24202f");
+        ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, W, H);
 
-        ctx.globalAlpha = 0.4;
+        ctx.globalAlpha = 0.38;
         ctx.fillStyle = "#fff";
-
         for (let i = 0; i < 90; i++) {
           ctx.beginPath();
-          ctx.arc((i * 97.3) % W, (i * 53.1) % H, (i % 3) * 0.55 + 0.8, 0, Math.PI * 2);
+          ctx.arc((i * 113.3) % W, (i * 57.7) % 330, (i % 3) * 0.55 + 0.65, 0, TWO_PI);
           ctx.fill();
         }
-
         ctx.globalAlpha = 1;
-      }
 
-      function drawArena() {
-        ctx.save();
+        ctx.fillStyle = "#181d32";
+        ctx.fillRect(0, FLOOR_Y, W, H - FLOOR_Y);
+
+        ctx.fillStyle = "#252f52";
+        ctx.fillRect(0, FLOOR_Y, W, 8);
 
         ctx.strokeStyle = "rgba(255,255,255,0.08)";
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 1;
+        for (let x = 0; x < W; x += 48) {
+          ctx.beginPath();
+          ctx.moveTo(x, FLOOR_Y + 8);
+          ctx.lineTo(x - 70, H);
+          ctx.stroke();
+        }
 
-        ctx.beginPath();
-        ctx.arc(CENTER.x, CENTER.y, ARENA_R, 0, Math.PI * 2);
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.arc(CENTER.x, CENTER.y, ARENA_R * 0.65, 0, Math.PI * 2);
-        ctx.stroke();
-
-        const earthGrad = ctx.createRadialGradient(CENTER.x, CENTER.y, 8, CENTER.x, CENTER.y, EARTH_R);
-        earthGrad.addColorStop(0, "#6de4ff");
-        earthGrad.addColorStop(0.6, "#2a7df7");
-        earthGrad.addColorStop(1, "#0f2f73");
-
-        ctx.fillStyle = earthGrad;
-        ctx.beginPath();
-        ctx.arc(CENTER.x, CENTER.y, EARTH_R, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.strokeStyle = "#ffffff55";
-        ctx.lineWidth = 3;
-        ctx.stroke();
-
-        ctx.fillStyle = "#ffffff18";
-        ctx.beginPath();
-        ctx.arc(CENTER.x - 12, CENTER.y - 14, 14, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.restore();
+        ctx.fillStyle = "rgba(255, 110, 80, 0.08)";
+        ctx.fillRect(0, MIN_Y - 35, 8, FLOOR_Y - MIN_Y + 65);
+        ctx.fillRect(W - 8, MIN_Y - 35, 8, FLOOR_Y - MIN_Y + 65);
       }
 
-      function drawPreviews() {
-        for (const m of game.meteors) {
-          const toEarth = norm(CENTER.x - m.x, CENTER.y - m.y);
-          const futureX = m.x + (m.vx + toEarth.x * 8) * 1.2;
-          const futureY = m.y + (m.vy + toEarth.y * 8) * 1.2;
-
-          ctx.globalAlpha = 0.3;
-          ctx.fillStyle = "#ffd84a";
-          ctx.beginPath();
-          ctx.arc(futureX, futureY, Math.max(5, m.r * 0.22), 0, Math.PI * 2);
-          ctx.fill();
-          ctx.globalAlpha = 1;
+      function drawWallMarks() {
+        for (const mark of game.wallMarks) {
+          const alpha = clamp(mark.timer / mark.maxTimer, 0, 1);
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.translate(mark.x, mark.y);
+          ctx.strokeStyle = mark.color;
+          ctx.lineWidth = 3;
+          for (let i = 0; i < 7; i++) {
+            const a = (TWO_PI * i) / 7 + mark.seed;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(Math.cos(a) * mark.size * rand(0.5, 1), Math.sin(a) * mark.size * rand(0.5, 1));
+            ctx.stroke();
+          }
+          ctx.restore();
         }
       }
 
-      function drawOrb(o) {
+      function drawDangerLines() {
+        for (const line of game.dangerLines) {
+          const alpha = clamp(line.timer / line.maxTimer, 0, 1);
+          ctx.save();
+          ctx.globalAlpha = 0.2 + 0.55 * alpha;
+          ctx.strokeStyle = line.color;
+          ctx.lineWidth = 4;
+          ctx.lineCap = "round";
+          ctx.beginPath();
+          ctx.moveTo(line.x, line.y - 3);
+          ctx.lineTo(line.x + line.dx * line.length, line.y + line.dy * line.length - 3);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+
+      function drawOrb(orb) {
         ctx.save();
-        ctx.translate(o.x, o.y);
-        ctx.rotate(o.spin);
+        ctx.translate(orb.x, orb.y);
+        ctx.rotate(orb.spin);
 
-        const gr = ctx.createRadialGradient(0, 0, 3, 0, 0, 32);
-        gr.addColorStop(0, "#fff");
-        gr.addColorStop(0.32, "#fff08a");
-        gr.addColorStop(1, "rgba(255,216,74,0)");
+        const gradient = ctx.createRadialGradient(0, 0, 4, 0, 0, 34);
+        gradient.addColorStop(0, "#fff");
+        gradient.addColorStop(0.35, "#fff08a");
+        gradient.addColorStop(1, "rgba(255,216,74,0)");
 
-        ctx.fillStyle = gr;
+        ctx.fillStyle = gradient;
         ctx.beginPath();
-        ctx.arc(0, 0, 32, 0, Math.PI * 2);
+        ctx.arc(0, 0, 34, 0, TWO_PI);
         ctx.fill();
 
         ctx.fillStyle = "#fff4a8";
         ctx.beginPath();
-        ctx.arc(0, 0, o.r, 0, Math.PI * 2);
+        ctx.arc(0, 0, orb.r, 0, TWO_PI);
         ctx.fill();
 
         ctx.restore();
       }
 
-      function drawMeteor(m) {
-        ctx.save();
-        ctx.translate(m.x, m.y);
-        ctx.rotate(m.rot);
+      function drawEnemy(enemy) {
+        const stateAlpha = enemy.state === "dying" ? clamp(enemy.deadTimer / 0.6, 0.4, 1) : 1;
+        const pulse = Math.sin(enemy.phase * 7) * 0.06;
+        const windupScale = enemy.state === "windup" ? 1.18 + Math.sin(enemy.phase * 35) * 0.05 : 1;
+        const attackScale = enemy.state === "attack" ? 1.1 : 1;
+        const scale = (1 + pulse) * windupScale * attackScale;
 
-        ctx.fillStyle = m.flash > 0 ? "#fff" : m.color;
-        ctx.strokeStyle = "#ffffff55";
+        ctx.save();
+        ctx.translate(enemy.x, enemy.y);
+        ctx.rotate(enemy.rot);
+        ctx.globalAlpha = stateAlpha;
+
+        ctx.fillStyle = enemy.flash > 0 ? "#fff" : enemy.color;
+        ctx.strokeStyle = enemy.state === "windup" || enemy.state === "attack" ? "#ff5b5b" : "rgba(255,255,255,0.12)";
         ctx.lineWidth = 2;
 
         ctx.beginPath();
-        m.shape.forEach((q, i) => {
-          const a = Math.PI * 2 * i / m.shape.length;
-          const x = Math.cos(a) * m.r * q;
-          const y = Math.sin(a) * m.r * q;
-          if (i === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        });
-        ctx.closePath();
+        ctx.ellipse(0, 0, enemy.r * 1.05 * scale, enemy.r * 0.92 * scale, 0, 0, TWO_PI);
         ctx.fill();
         ctx.stroke();
 
+        ctx.fillStyle = "rgba(0,0,0,0.22)";
+        ctx.beginPath();
+        ctx.ellipse(-enemy.r * 0.12, enemy.r * 0.42, enemy.r * 0.85, enemy.r * 0.28, 0, 0, TWO_PI);
+        ctx.fill();
+
+        if (enemy.type === "mask") {
+          ctx.fillStyle = enemy.flash > 0 ? "#fff" : "#d8d8e8";
+          ctx.beginPath();
+          ctx.ellipse(0, -enemy.r * 0.1, enemy.r * 0.58, enemy.r * 0.42, 0, 0, TWO_PI);
+          ctx.fill();
+        }
+
+        if (enemy.type === "bomber") {
+          ctx.fillStyle = "#ff3131";
+          ctx.beginPath();
+          ctx.arc(0, 0, enemy.r * 0.38 + Math.sin(enemy.phase * 12) * 2, 0, TWO_PI);
+          ctx.fill();
+        }
+
+        const eyeColor = enemy.state === "windup" || enemy.state === "attack" ? "#ff3030" : enemy.eye;
+        ctx.fillStyle = eyeColor;
+        const eyeY = -enemy.r * 0.23;
+        ctx.beginPath();
+        ctx.arc(-enemy.r * 0.28, eyeY, enemy.r * 0.12, 0, TWO_PI);
+        ctx.arc(enemy.r * 0.28, eyeY, enemy.r * 0.12, 0, TWO_PI);
+        ctx.fill();
+
+        if (enemy.state === "attack") {
+          ctx.strokeStyle = "#ff5555";
+          ctx.lineWidth = 8;
+          ctx.lineCap = "round";
+          ctx.beginPath();
+          ctx.moveTo(0, -4);
+          ctx.lineTo(enemy.attackDir.x * (enemy.attackRange + enemy.r * 0.7), enemy.attackDir.y * (enemy.attackRange + enemy.r * 0.7) - 4);
+          ctx.stroke();
+        }
+
+        if (enemy.state === "stun") {
+          ctx.fillStyle = "#9de1ff";
+          ctx.font = "900 18px system-ui";
+          ctx.textAlign = "center";
+          ctx.fillText("✦", 0, -enemy.r - 10);
+        }
+
         ctx.restore();
 
-        if (m.maxHp > 1) {
-          const w = m.r * 1.8;
-          const ratio = clamp(m.hp / m.maxHp, 0, 1);
-
+        if (enemy.maxHp > 4 && !enemy.dead && enemy.state !== "dying") {
+          const w = enemy.r * 1.8;
+          const ratio = clamp(enemy.hp / enemy.maxHp, 0, 1);
           ctx.fillStyle = "#0008";
-          ctx.fillRect(m.x - w / 2, m.y - m.r - 13, w, 5);
-
-          ctx.fillStyle = m.type === "boss" ? "#ff5555" : "#ffd84a";
-          ctx.fillRect(m.x - w / 2, m.y - m.r - 13, w * ratio, 5);
+          ctx.fillRect(enemy.x - w / 2, enemy.y - enemy.r - 18, w, 5);
+          ctx.fillStyle = enemy.type === "brute" ? "#ff6b6b" : "#ffd84a";
+          ctx.fillRect(enemy.x - w / 2, enemy.y - enemy.r - 18, w * ratio, 5);
         }
       }
 
-      function drawHit(h) {
+      function drawHit(hit) {
         ctx.save();
-        ctx.globalAlpha = clamp(h.timer / 0.13, 0, 1);
+        ctx.globalAlpha = clamp(hit.timer / 0.14, 0, 1);
 
-        if (h.circle) {
-          ctx.strokeStyle = h.color;
-          ctx.lineWidth = 8;
+        if (hit.circle) {
+          ctx.strokeStyle = hit.color;
+          ctx.lineWidth = hit.width || 8;
           ctx.beginPath();
-          ctx.arc(h.x, h.y, h.radius, 0, Math.PI * 2);
+          ctx.arc(hit.x, hit.y, hit.radius, 0, TWO_PI);
           ctx.stroke();
         } else {
           ctx.lineCap = "round";
-
-          ctx.strokeStyle = h.color;
-          ctx.lineWidth = h.width;
+          ctx.strokeStyle = hit.color;
+          ctx.lineWidth = hit.width;
           ctx.beginPath();
-          ctx.moveTo(h.x1, h.y1);
-          ctx.lineTo(h.x2, h.y2);
+          ctx.moveTo(hit.x1, hit.y1);
+          ctx.lineTo(hit.x2, hit.y2);
           ctx.stroke();
 
           ctx.strokeStyle = "#fff";
-          ctx.lineWidth = Math.max(2, h.width * 0.16);
+          ctx.lineWidth = Math.max(2, hit.width * 0.16);
           ctx.beginPath();
-          ctx.moveTo(h.x1, h.y1);
-          ctx.lineTo(h.x2, h.y2);
+          ctx.moveTo(hit.x1, hit.y1);
+          ctx.lineTo(hit.x2, hit.y2);
           ctx.stroke();
         }
 
+        ctx.restore();
+      }
+
+      function drawEffect(effect) {
+        ctx.save();
+        ctx.globalAlpha = clamp(effect.timer / effect.maxTimer, 0, 1);
+        ctx.fillStyle = effect.color;
+        ctx.beginPath();
+        ctx.arc(effect.x, effect.y, effect.size, 0, TWO_PI);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function drawText(text) {
+        ctx.save();
+        ctx.globalAlpha = clamp(text.timer / text.maxTimer, 0, 1);
+        ctx.fillStyle = text.color;
+        ctx.font = "900 22px system-ui";
+        ctx.textAlign = "center";
+        ctx.fillText(text.text, text.x, text.y);
         ctx.restore();
       }
 
       function drawStickman(px, py, pose, dir, alpha, color) {
-        dir = norm(dir.x || 0, dir.y || 0);
-        if (!isFinite(dir.x)) dir = { x: 1, y: 0 };
-
+        dir = norm(dir.x || 1, dir.y || 0);
         const side = Math.abs(dir.x) > 0.15 ? Math.sign(dir.x) : game.player.face;
         const perp = { x: -dir.y, y: dir.x };
 
-        let neck = { x: px, y: py - 28 };
-        let hip = { x: px, y: py + 6 };
-        let head = { x: px, y: py - 43 };
-
-        let armA = { x: neck.x + side * 20, y: neck.y + 8 };
-        let armB = { x: neck.x - side * 18, y: neck.y + 13 };
-        let legA = { x: hip.x + side * 16, y: hip.y + 28 };
-        let legB = { x: hip.x - side * 16, y: hip.y + 28 };
+        let neck = { x: px, y: py - 35 };
+        let hip = { x: px, y: py - 2 };
+        let head = { x: px, y: py - 50 };
+        let handA = { x: neck.x + side * 22, y: neck.y + 8 };
+        let handB = { x: neck.x - side * 18, y: neck.y + 12 };
+        let footA = { x: hip.x + side * 17, y: hip.y + 30 };
+        let footB = { x: hip.x - side * 17, y: hip.y + 30 };
 
         if (pose === "punch") {
           neck.x += dir.x * 8;
-          neck.y += dir.y * 4;
-          armA = { x: neck.x + dir.x * 48, y: neck.y + dir.y * 48 };
-          armB = {
-            x: neck.x - dir.x * 18 - perp.x * 12,
-            y: neck.y - dir.y * 18 - perp.y * 12
-          };
+          neck.y += dir.y * 3;
+          handA = { x: neck.x + dir.x * 52, y: neck.y + dir.y * 46 };
+          handB = { x: neck.x - dir.x * 18 - perp.x * 12, y: neck.y - dir.y * 18 - perp.y * 12 };
         }
 
-        if (pose === "big" || pose === "dashPunch") {
-          neck.x += dir.x * 15;
-          neck.y += dir.y * 8;
-
-          armA = { x: neck.x + dir.x * 60, y: neck.y + dir.y * 60 };
-          armB = {
-            x: neck.x - dir.x * 24 - perp.x * 12,
-            y: neck.y - dir.y * 24 - perp.y * 12
-          };
-
-          legA = {
-            x: hip.x - dir.x * 26 + perp.x * 14,
-            y: hip.y - dir.y * 26 + perp.y * 14 + 22
-          };
-
-          legB = {
-            x: hip.x - dir.x * 18 - perp.x * 14,
-            y: hip.y - dir.y * 18 - perp.y * 14 + 24
-          };
+        if (pose === "big" || pose === "finish" || pose === "dashPunch" || pose === "counter") {
+          neck.x += dir.x * 17;
+          neck.y += dir.y * 7;
+          handA = { x: neck.x + dir.x * 66, y: neck.y + dir.y * 58 };
+          handB = { x: neck.x - dir.x * 25 - perp.x * 12, y: neck.y - dir.y * 25 - perp.y * 12 };
+          footA = { x: hip.x - dir.x * 25 + perp.x * 13, y: hip.y - dir.y * 20 + perp.y * 13 + 24 };
+          footB = { x: hip.x - dir.x * 20 - perp.x * 13, y: hip.y - dir.y * 20 - perp.y * 13 + 25 };
         }
 
         if (pose === "kick") {
-          const up = norm(dir.x * 0.8, dir.y - 0.5);
-          armA = { x: neck.x + up.x * 18 + side * 8, y: neck.y + up.y * 18 };
-          legA = { x: hip.x + up.x * 16, y: hip.y + up.y * 52 };
-          legB = { x: hip.x - side * 18, y: hip.y + 24 };
+          handA = { x: neck.x + side * 18, y: neck.y + 8 };
+          handB = { x: neck.x - side * 21, y: neck.y + 10 };
+          footA = { x: hip.x + dir.x * 56, y: hip.y + dir.y * 40 };
+          footB = { x: hip.x - side * 18, y: hip.y + 28 };
+        }
+
+        if (pose === "spin") {
+          const t = game.time * 20;
+          handA = { x: neck.x + Math.cos(t) * 34, y: neck.y + Math.sin(t) * 16 };
+          handB = { x: neck.x + Math.cos(t + Math.PI) * 34, y: neck.y + Math.sin(t + Math.PI) * 16 };
+          footA = { x: hip.x + Math.cos(t + 0.7) * 55, y: hip.y + Math.sin(t + 0.7) * 22 };
+          footB = { x: hip.x + Math.cos(t + Math.PI) * 30, y: hip.y + Math.sin(t + Math.PI) * 14 + 22 };
         }
 
         if (pose === "dash") {
           neck.x += dir.x * 16;
-          neck.y += dir.y * 10;
+          neck.y += dir.y * 7;
+          handA = { x: neck.x - dir.x * 24 + perp.x * 9, y: neck.y - dir.y * 24 + perp.y * 9 };
+          handB = { x: neck.x - dir.x * 28 - perp.x * 9, y: neck.y - dir.y * 28 - perp.y * 9 };
+        }
 
-          armA = {
-            x: neck.x - dir.x * 24 + perp.x * 8,
-            y: neck.y - dir.y * 24 + perp.y * 8
-          };
+        if (pose === "parry") {
+          handA = { x: neck.x + dir.x * 26 + perp.x * 12, y: neck.y + dir.y * 26 + perp.y * 12 };
+          handB = { x: neck.x + dir.x * 20 - perp.x * 12, y: neck.y + dir.y * 20 - perp.y * 12 };
+        }
 
-          armB = {
-            x: neck.x - dir.x * 28 - perp.x * 8,
-            y: neck.y - dir.y * 28 - perp.y * 8
-          };
+        if (pose === "hurt") {
+          neck.x -= side * 8;
+          head.x -= side * 10;
+          handA = { x: neck.x - side * 22, y: neck.y + 24 };
+          handB = { x: neck.x + side * 8, y: neck.y + 22 };
         }
 
         if (pose === "limit") {
-          neck.y += 9;
-          hip.y += 10;
+          neck.y += 8;
+          hip.y += 8;
           head.y += 8;
-
-          armA = { x: neck.x + 24, y: neck.y + 32 };
-          armB = { x: neck.x - 24, y: neck.y + 32 };
-          legA = { x: hip.x + 25, y: hip.y + 28 };
-          legB = { x: hip.x - 25, y: hip.y + 28 };
-
-          ctx.globalAlpha = 0.45;
+          handA = { x: neck.x + 28, y: neck.y + 32 };
+          handB = { x: neck.x - 28, y: neck.y + 32 };
+          footA = { x: hip.x + 27, y: hip.y + 28 };
+          footB = { x: hip.x - 27, y: hip.y + 28 };
+          ctx.save();
+          ctx.globalAlpha = alpha * 0.55;
           ctx.strokeStyle = "#ffd84a";
           ctx.lineWidth = 4;
           ctx.beginPath();
-          ctx.arc(px, py - 12, 60, 0, Math.PI * 2);
+          ctx.arc(px, py - 12, 64, 0, TWO_PI);
           ctx.stroke();
+          ctx.restore();
         }
 
         if (pose === "over") {
           neck.y += 12;
           hip.y += 10;
           head.y += 12;
+          handA = { x: neck.x + side * 18, y: neck.y + 28 };
+          handB = { x: neck.x - side * 18, y: neck.y + 28 };
         }
 
         ctx.save();
@@ -1486,141 +1822,211 @@
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
 
-        line(neck, hip);
-        line(neck, armA);
-        line(neck, armB);
-        line(hip, legA);
-        line(hip, legB);
+        drawLine(neck, hip);
+        drawLine(neck, handA);
+        drawLine(neck, handB);
+        drawLine(hip, footA);
+        drawLine(hip, footB);
 
         ctx.beginPath();
-        ctx.arc(head.x, head.y, 12, 0, Math.PI * 2);
+        ctx.arc(head.x, head.y, 12, 0, TWO_PI);
         ctx.stroke();
 
         ctx.restore();
+
+        const fire = flameColor();
+        drawFlame(handA.x, handA.y, pose === "parry" ? "#9de1ff" : fire, 9 + Math.sin(game.time * 35) * 2, alpha);
+        drawFlame(handB.x, handB.y, pose === "parry" ? "#9de1ff" : fire, 6, alpha * 0.75);
+
+        if (game.player.fireFeet || game.player.maxCombo >= 5 || game.limit > 0 || pose === "kick" || pose === "spin") {
+          drawFlame(footA.x, footA.y, fire, 8, alpha);
+          drawFlame(footB.x, footB.y, fire, 6, alpha * 0.75);
+        }
+
+        if (pose === "spin") {
+          ctx.save();
+          ctx.globalAlpha = alpha * 0.72;
+          ctx.strokeStyle = fire;
+          ctx.lineWidth = 8;
+          ctx.beginPath();
+          ctx.ellipse(px, py - 10, 62, 22, 0, 0, TWO_PI);
+          ctx.stroke();
+          ctx.restore();
+        }
       }
 
-      function line(a, b) {
+      function drawLine(a, b) {
         ctx.beginPath();
         ctx.moveTo(a.x, a.y);
         ctx.lineTo(b.x, b.y);
         ctx.stroke();
       }
 
+      function drawFlame(x, y, color, size, alpha) {
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        const gradient = ctx.createRadialGradient(x, y, 1, x, y, size * 2.2);
+        gradient.addColorStop(0, "#fff");
+        gradient.addColorStop(0.28, color);
+        gradient.addColorStop(1, "rgba(255,130,40,0)");
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(x, y, size * 2.2, 0, TWO_PI);
+        ctx.fill();
+        ctx.restore();
+      }
+
       function drawUI() {
-        ctx.fillStyle = "#0006";
-        ctx.fillRect(12, 12, W - 24, 80);
+        const player = game.player;
+
+        ctx.fillStyle = "rgba(0,0,0,0.48)";
+        ctx.fillRect(14, 12, W - 28, 82);
 
         ctx.fillStyle = "#fff";
         ctx.font = "900 18px system-ui";
         ctx.textAlign = "left";
+        ctx.fillText("HP", 28, 38);
+        drawBar(64, 23, 190, 16, player.hp / player.maxHp, "#ff5b5b");
 
-        ctx.fillText("점수 " + game.score, 24, 38);
-        ctx.fillText("Lv." + game.level, 24, 64);
+        ctx.fillText("Lv." + game.level, 28, 68);
+        drawBar(80, 53, 174, 16, game.xp / game.nextXp, "#69e36d");
 
-        ctx.fillText("지구", 128, 38);
-        drawBar(176, 24, 150, 16, game.earthHp / game.earthMaxHp, "#5ec7ff");
-
-        ctx.fillText("경험치", 128, 64);
-        drawBar(176, 50, 150, 16, game.xp / game.nextXp, "#69e36d");
-
-        ctx.fillText("F", 360, 38);
-        drawBar(386, 24, 110, 16, game.ult / 100, "#9de1ff");
+        ctx.fillText("점수 " + game.score, 286, 38);
+        ctx.fillText("F", 286, 68);
+        drawBar(314, 53, 132, 16, game.ult / 100, "#9de1ff");
 
         ctx.fillStyle = "#d7e3ff";
         ctx.font = "800 13px system-ui";
-        ctx.fillText("방향키 이동 · A 콤보 · Space 대쉬 · Space+A", 24, 86);
+        ctx.fillText("방향키 이동 · A 콤보 · S 스핀킥 · D 패링 · Space 대쉬 · Space+A", 480, 38);
+
+        const p = game.player;
+        drawCooldownBox(704, 64, "S", p.spinCooldown, 1.4, "스핀");
+        drawCooldownBox(762, 64, "D", p.parryCooldown, 0.52, "패링");
+        drawCooldownBox(820, 64, "Sp", p.dashCooldown, 0.58, "대쉬");
+        drawCooldownBox(878, 64, "F", 100 - game.ult, 100, "필살");
 
         if (game.combo > 1) {
           ctx.fillStyle = "#ffd84a";
-          ctx.font = "950 28px system-ui";
+          ctx.font = "950 30px system-ui";
           ctx.textAlign = "center";
-          ctx.fillText(game.combo + " COMBO", W / 2, 122);
+          ctx.fillText(game.combo + " COMBO", W / 2, 126);
+        }
+
+        if (p.counterReady > 0) {
+          ctx.fillStyle = "#9de1ff";
+          ctx.font = "950 22px system-ui";
+          ctx.textAlign = "center";
+          ctx.fillText("A 반격 가능", p.x, p.y - 100);
         }
 
         if (game.limit > 0) {
           ctx.fillStyle = "#ffd84a";
           ctx.font = "950 18px system-ui";
           ctx.textAlign = "center";
-          ctx.fillText("한계돌파", W / 2, 152);
-          drawBar(W / 2 - 128, 160, 256, 12, game.limit / 5, "#ffd84a");
+          ctx.fillText("한계돌파", W / 2, 154);
+          drawBar(W / 2 - 128, 162, 256, 12, game.limit / 5, "#ffd84a");
         }
+      }
+
+      function drawCooldownBox(x, y, key, cooldown, maxCooldown, label) {
+        const ready = cooldown <= 0;
+        ctx.save();
+        ctx.fillStyle = ready ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.5)";
+        ctx.strokeStyle = ready ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.2)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(x - 24, y - 24, 48, 48, 10);
+        ctx.fill();
+        ctx.stroke();
+
+        if (!ready) {
+          const ratio = clamp(cooldown / maxCooldown, 0, 1);
+          ctx.fillStyle = "rgba(0,0,0,0.48)";
+          ctx.fillRect(x - 24, y - 24, 48, 48 * ratio);
+        }
+
+        ctx.fillStyle = ready ? "#ffd84a" : "#fff";
+        ctx.font = "900 16px system-ui";
+        ctx.textAlign = "center";
+        ctx.fillText(key, x, y - 3);
+        ctx.font = "800 10px system-ui";
+        ctx.fillText(label, x, y + 14);
+        ctx.restore();
       }
 
       function drawBar(x, y, w, h, ratio, color) {
         ratio = clamp(ratio, 0, 1);
-
-        ctx.fillStyle = "#ffffff26";
+        ctx.fillStyle = "rgba(255,255,255,0.16)";
         ctx.fillRect(x, y, w, h);
-
         ctx.fillStyle = color;
         ctx.fillRect(x, y, w * ratio, h);
-
-        ctx.strokeStyle = "#ffffff55";
+        ctx.strokeStyle = "rgba(255,255,255,0.4)";
         ctx.strokeRect(x, y, w, h);
       }
 
       function drawModeEffects() {
         if (game.flash > 0) {
-          ctx.globalAlpha = clamp(game.flash * 2.2, 0, 0.6);
+          ctx.globalAlpha = clamp(game.flash * 2.2, 0, 0.55);
           ctx.fillStyle = game.limit > 0 || game.cutType === "start" ? "#ffd84a" : "#fff";
           ctx.fillRect(0, 0, W, H);
           ctx.globalAlpha = 1;
         }
 
         if (game.limit > 0) {
-          ctx.globalAlpha = game.limit < 1 ? Math.sin(game.time * 40) * 0.2 + 0.55 : 0.35;
+          ctx.globalAlpha = game.limit < 1 ? Math.sin(game.time * 42) * 0.22 + 0.56 : 0.35;
           ctx.strokeStyle = "#ffd84a";
           ctx.lineWidth = 10;
-          ctx.strokeRect(5, 5, W - 10, H - 10);
+          ctx.strokeRect(6, 6, W - 12, H - 12);
           ctx.globalAlpha = 1;
         }
 
         if (game.cutscene) {
-          ctx.fillStyle = "#0005";
+          ctx.fillStyle = "rgba(0,0,0,0.42)";
           ctx.fillRect(0, 0, W, H);
-
           ctx.fillStyle = game.cutType === "start" ? "#ffd84a" : "#ddd";
-          ctx.font = "950 42px system-ui";
+          ctx.font = "950 44px system-ui";
           ctx.textAlign = "center";
-          ctx.fillText(game.cutType === "start" ? "한계돌파" : "과부하", W / 2, 220);
+          ctx.fillText(game.cutType === "start" ? "한계돌파" : "과부하", W / 2, 210);
         }
       }
 
       function addParticles(x, y, count, color, power) {
         for (let i = 0; i < count; i++) {
-          const a = rand(0, Math.PI * 2);
-          const s = rand(45, 120) * power;
-
+          const a = rand(0, TWO_PI);
+          const speed = rand(45, 120) * power;
           game.effects.push({
             x,
             y,
-            vx: Math.cos(a) * s,
-            vy: Math.sin(a) * s - rand(20, 90),
-            size: rand(2, 4.8),
+            vx: Math.cos(a) * speed,
+            vy: Math.sin(a) * speed - rand(0, 60),
+            gravity: rand(120, 280),
+            size: rand(2, 5),
             color,
-            timer: rand(0.28, 0.72),
-            maxTimer: 0.72
+            timer: rand(0.28, 0.74),
+            maxTimer: 0.74
           });
         }
       }
 
       function addText(x, y, text, color, timer = 0.85) {
-        game.texts.push({
+        game.texts.push({ x, y, text, color, timer, maxTimer: timer });
+      }
+
+      function addRing(x, y, radius, color) {
+        game.hits.push({
+          circle: true,
           x,
           y,
-          text,
+          radius,
+          timer: 0.2,
           color,
-          timer,
-          maxTimer: timer
+          width: 7
         });
       }
 
       function addGhost(timer) {
         const p = game.player;
-
-        if (game.ghosts[0] && Math.hypot(game.ghosts[0].x - p.x, game.ghosts[0].y - p.y) < 6) {
-          return;
-        }
+        if (game.ghosts[0] && Math.hypot(game.ghosts[0].x - p.x, game.ghosts[0].y - p.y) < 6) return;
 
         game.ghosts.unshift({
           x: p.x,
@@ -1633,29 +2039,50 @@
         });
       }
 
+      function addAfterImage(x, y, r, color) {
+        game.effects.push({
+          x,
+          y,
+          vx: 0,
+          vy: 0,
+          gravity: 0,
+          size: r,
+          color,
+          timer: 0.22,
+          maxTimer: 0.22
+        });
+      }
+
+      function addWallMark(x, y, size) {
+        game.wallMarks.push({
+          x,
+          y,
+          size,
+          timer: 0.65,
+          maxTimer: 0.65,
+          color: "#ffdf7e",
+          seed: rand(0, TWO_PI)
+        });
+      }
+
       function pointToSegmentDistance(px, py, x1, y1, x2, y2) {
         const dx = x2 - x1;
         const dy = y2 - y1;
         const lenSq = dx * dx + dy * dy;
-
         if (!lenSq) return Math.hypot(px - x1, py - y1);
-
         const t = clamp(((px - x1) * dx + (py - y1) * dy) / lenSq, 0, 1);
-
         return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
       }
 
       function loop(now) {
         const dt = Math.min(0.033, (now - lastTime) / 1000);
         lastTime = now;
-
         update(dt);
         draw();
-
         rafId = requestAnimationFrame(loop);
       }
 
-      newGame();
+      resetGame();
       draw();
     })();
   </script>
