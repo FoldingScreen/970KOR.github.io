@@ -5,9 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>메테오 슬래셔</title>
 <style>
-  * {
-    box-sizing: border-box;
-  }
+  * { box-sizing: border-box; }
 
   body {
     margin: 0;
@@ -23,8 +21,7 @@
     height: 100vh;
     display: grid;
     place-items: center;
-    background:
-      radial-gradient(circle at 50% 120%, #24304f 0%, #050816 50%, #02030a 100%);
+    background: radial-gradient(circle at 50% 120%, #24304f 0%, #050816 50%, #02030a 100%);
   }
 
   canvas {
@@ -32,7 +29,6 @@
     height: min(56.25vw, 100vh);
     background: transparent;
     display: block;
-    cursor: crosshair;
   }
 
   .screen {
@@ -44,12 +40,10 @@
     z-index: 10;
   }
 
-  .hidden {
-    display: none !important;
-  }
+  .hidden { display: none !important; }
 
   .panel {
-    width: min(720px, calc(100vw - 28px));
+    width: min(760px, calc(100vw - 28px));
     padding: 28px;
     border: 1px solid rgba(255,255,255,0.22);
     border-radius: 24px;
@@ -66,8 +60,8 @@
   }
 
   .subtitle {
-    opacity: 0.82;
-    line-height: 1.65;
+    opacity: 0.84;
+    line-height: 1.7;
     margin-bottom: 22px;
   }
 
@@ -82,9 +76,7 @@
     cursor: pointer;
   }
 
-  button:hover {
-    filter: brightness(1.06);
-  }
+  button:hover { filter: brightness(1.06); }
 
   #choiceScreen {
     place-items: center;
@@ -143,13 +135,8 @@
   }
 
   @media (max-width: 720px) {
-    .cards {
-      grid-template-columns: 1fr;
-    }
-
-    .title {
-      font-size: 34px;
-    }
+    .cards { grid-template-columns: 1fr; }
+    .title { font-size: 34px; }
   }
 </style>
 </head>
@@ -161,8 +148,9 @@
     <div class="panel">
       <div class="title">메테오 슬래셔</div>
       <div class="subtitle">
-        칼 든 졸라맨을 움직여서 떨어지는 운석을 베어라.<br>
-        마우스로 칼 방향을 잡고, 레벨업할 때마다 로그라이크식 강화를 선택한다.
+        키보드만으로 조작하는 운석 베기 로그라이트.<br>
+        방향키로 이동하고, 자동조준 스킬로 떨어지는 운석을 부숴라.<br><br>
+        ← / → 이동 · Space 대시 · A 기본참 · S 반월참 · D 승천참 · F 천공참
       </div>
       <button id="startBtn">게임 시작</button>
     </div>
@@ -200,11 +188,10 @@
   const groundY = 470;
 
   let keys = {};
-  let mouse = { x: W / 2, y: H / 2 };
   let lastTime = 0;
   let rafId = null;
-
   let game;
+  let currentChoices = [];
 
   const rand = (min, max) => Math.random() * (max - min) + min;
   const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
@@ -239,30 +226,34 @@
       player: {
         x: W / 2,
         y: groundY,
-        speed: 290,
-        dashSpeed: 650,
+        facing: 1,
+
+        speed: 300,
+        dashSpeed: 700,
         dashTime: 0,
         dashDuration: 0.13,
         dashCooldown: 0,
-        dashCooldownMax: 1.1,
-        dashDir: 1,
+        dashCooldownMax: 0.95,
 
-        attackCooldown: 0,
-        attackCooldownMax: 0.26,
         damage: 1,
-        slashLength: 135,
-        slashWidth: 24,
+        slashLength: 150,
+        slashWidth: 27,
         slashCount: 1,
+        autoRange: 260,
 
-        charging: false,
-        charge: 0,
-        chargeRate: 1,
-        chargeMax: 1.25,
+        cooldownMul: 1,
+        skillCooldownMul: 1,
 
         xpGain: 1,
         ultGain: 1,
         shock: 0,
-        preview: false
+        preview: false,
+
+        cooldowns: {
+          a: 0,
+          s: 0,
+          d: 0
+        }
       }
     };
   }
@@ -272,6 +263,7 @@
     startScreen.classList.add("hidden");
     gameOverScreen.classList.add("hidden");
     choiceScreen.classList.add("hidden");
+
     lastTime = performance.now();
     cancelAnimationFrame(rafId);
     rafId = requestAnimationFrame(loop);
@@ -282,6 +274,10 @@
 
   window.addEventListener("keydown", (e) => {
     keys[e.code] = true;
+
+    if (["ArrowLeft", "ArrowRight", "Space"].includes(e.code)) {
+      e.preventDefault();
+    }
 
     if (!game) return;
 
@@ -297,274 +293,44 @@
       return;
     }
 
-    if (e.code === "ShiftLeft" || e.code === "ShiftRight") {
-      dash();
-    }
+    if (e.repeat) return;
 
-    if (e.code === "KeyE") {
-      useUltimate();
-    }
+    if (e.code === "Space") dash();
+    if (e.code === "KeyA") useSkillA();
+    if (e.code === "KeyS") useSkillS();
+    if (e.code === "KeyD") useSkillD();
+    if (e.code === "KeyF") useUltimate();
   });
 
   window.addEventListener("keyup", (e) => {
     keys[e.code] = false;
   });
 
-  canvas.addEventListener("mousemove", (e) => {
-    const rect = canvas.getBoundingClientRect();
-    mouse.x = (e.clientX - rect.left) * (W / rect.width);
-    mouse.y = (e.clientY - rect.top) * (H / rect.height);
-  });
-
-  canvas.addEventListener("contextmenu", (e) => e.preventDefault());
-
-  canvas.addEventListener("mousedown", (e) => {
-    if (!game || game.choosing || game.gameOver) return;
-
-    if (e.button === 0) {
-      performSlash(1);
-    }
-
-    if (e.button === 2) {
-      game.player.charging = true;
-      game.player.charge = 0;
-    }
-  });
-
-  window.addEventListener("mouseup", (e) => {
-    if (!game || game.choosing || game.gameOver) return;
-
-    if (e.button === 2 && game.player.charging) {
-      const power = 1 + game.player.charge;
-      game.player.charging = false;
-      game.player.charge = 0;
-      performSlash(power);
-    }
-  });
-
-  function dash() {
-    const p = game.player;
-    if (p.dashCooldown > 0 || p.dashTime > 0) return;
-
-    let dir = 0;
-    if (keys.ArrowLeft || keys.KeyA) dir -= 1;
-    if (keys.ArrowRight || keys.KeyD) dir += 1;
-    if (dir === 0) dir = p.dashDir;
-
-    p.dashDir = dir;
-    p.dashTime = p.dashDuration;
-    p.dashCooldown = p.dashCooldownMax;
-
-    addParticles(p.x, p.y - 20, 12, "#9bdcff", 2.2);
-  }
-
-  function getAimAngle() {
-    const p = game.player;
-    let sx = p.x;
-    let sy = p.y - 58;
-
-    let dx = mouse.x - sx;
-    let dy = mouse.y - sy;
-
-    if (dy > -18) dy = -18;
-
-    const len = Math.hypot(dx, dy) || 1;
-    dx /= len;
-    dy /= len;
-
-    return Math.atan2(dy, dx);
-  }
-
-  function performSlash(power = 1) {
-    const p = game.player;
-    if (p.attackCooldown > 0) return;
-
-    p.attackCooldown = Math.max(0.08, p.attackCooldownMax / Math.sqrt(power));
-
-    const baseAngle = getAimAngle();
-    const count = p.slashCount;
-    const spread = count === 1 ? 0 : 0.16;
-
-    for (let i = 0; i < count; i++) {
-      const offset = (i - (count - 1) / 2) * spread;
-      createSlash(baseAngle + offset, power);
-    }
-  }
-
-  function createSlash(angle, power) {
-    const p = game.player;
-    const sx = p.x;
-    const sy = p.y - 58;
-
-    const length = p.slashLength * (1 + (power - 1) * 0.72);
-    const width = p.slashWidth * (1 + (power - 1) * 0.45);
-    const damage = Math.ceil(p.damage * power);
-
-    const ex = sx + Math.cos(angle) * length;
-    const ey = sy + Math.sin(angle) * length;
-
-    game.slashes.push({
-      x1: sx,
-      y1: sy,
-      x2: ex,
-      y2: ey,
-      age: 0,
-      life: 0.13,
-      width,
-      power
-    });
-
-    addParticles(ex, ey, 10, "#ffffff", 1.6);
-
-    for (const m of game.meteors) {
-      if (m.dead) continue;
-
-      const dist = pointToSegmentDistance(m.x, m.y, sx, sy, ex, ey);
-      if (dist <= m.r + width * 0.5) {
-        hitMeteor(m, damage, angle);
-      }
-    }
-  }
-
-  function hitMeteor(m, damage, angle) {
-    if (m.type === "cursed") {
-      m.dead = true;
-      game.baseHp -= 1;
-      addText(m.x, m.y, "저주!", "#b66cff");
-      addParticles(m.x, m.y, 24, "#7b2cff", 3.5);
-      checkGameOver();
-      return;
-    }
-
-    m.hp -= damage;
-    m.vx += Math.cos(angle) * 35;
-    m.vy += Math.sin(angle) * 20;
-
-    addParticles(m.x, m.y, 12, "#ffdf7a", 2.4);
-    addText(m.x, m.y - m.r, "-" + damage, "#fff2a8");
-
-    if (m.hp <= 0) {
-      destroyMeteor(m);
-    }
-  }
-
-  function destroyMeteor(m) {
-    if (m.dead) return;
-    m.dead = true;
-
-    let gain = m.exp;
-    let scoreGain = m.score;
-
-    game.score += scoreGain;
-    game.combo += 1;
-    game.comboTimer = 1.3;
-    game.ult = clamp(game.ult + 8 * game.player.ultGain, 0, game.ultMax);
-
-    addXP(gain * game.player.xpGain);
-
-    addText(m.x, m.y, "+" + scoreGain, "#ffef8a");
-    addParticles(m.x, m.y, 28, m.color, 3.4);
-
-    if (m.type === "big" && !m.boss) {
-      spawnFragment(m.x - 12, m.y, -95);
-      spawnFragment(m.x + 12, m.y, 95);
-    }
-
-    if (m.type === "bomb") {
-      explode(m.x, m.y, 92, 2);
-    }
-
-    if (game.player.shock > 0) {
-      explode(m.x, m.y, 58 + game.player.shock * 18, game.player.shock);
-    }
-  }
-
-  function explode(x, y, radius, damage) {
-    addParticles(x, y, 42, "#ff9f43", 5);
-    game.slashes.push({
-      x1: x - radius,
-      y1: y,
-      x2: x + radius,
-      y2: y,
-      age: 0,
-      life: 0.18,
-      width: radius * 1.1,
-      power: 1.8,
-      circle: true,
-      x,
-      y,
-      radius
-    });
-
-    for (const m of game.meteors) {
-      if (m.dead || m.type === "cursed") continue;
-      const d = Math.hypot(m.x - x, m.y - y);
-      if (d <= radius + m.r) {
-        m.hp -= damage;
-        if (m.hp <= 0) destroyMeteor(m);
-      }
-    }
-  }
-
-  function useUltimate() {
-    if (game.ult < game.ultMax || game.choosing || game.gameOver) return;
-    game.ult = 0;
-
-    addText(W / 2, 120, "천공참!", "#9bdcff");
-
-    game.slashes.push({
-      x1: 70,
-      y1: groundY - 10,
-      x2: W - 70,
-      y2: 80,
-      age: 0,
-      life: 0.32,
-      width: 80,
-      power: 3.5
-    });
-
-    for (const m of game.meteors) {
-      if (m.dead) continue;
-
-      if (m.boss) {
-        m.hp -= 9 + game.player.damage;
-        addText(m.x, m.y, "보스 타격!", "#9bdcff");
-        if (m.hp <= 0) destroyMeteor(m);
-      } else {
-        m.dead = true;
-        game.score += m.score;
-        addXP(m.exp * game.player.xpGain);
-        addParticles(m.x, m.y, 22, "#9bdcff", 4);
-      }
-    }
-  }
-
-  function addXP(amount) {
-    game.xp += amount;
-
-    if (game.xp >= game.xpNeed && !game.choosing) {
-      game.xp -= game.xpNeed;
-      game.level += 1;
-      game.xpNeed = Math.floor(game.xpNeed * 1.24 + 12);
-      showChoices();
-    }
-  }
-
   const upgradePool = [
     {
       name: "검 길이 증가",
-      desc: "기본 베기 범위가 18% 증가한다.",
-      apply: () => game.player.slashLength *= 1.18
+      desc: "모든 베기 범위가 16% 증가한다.",
+      apply: () => game.player.slashLength *= 1.16
     },
     {
-      name: "공격 속도 증가",
-      desc: "좌클릭 베기 쿨타임이 14% 감소한다.",
-      apply: () => game.player.attackCooldownMax *= 0.86
+      name: "검폭 확장",
+      desc: "칼 판정 폭이 18% 증가한다.",
+      apply: () => game.player.slashWidth *= 1.18
     },
     {
       name: "칼날 강화",
-      desc: "모든 베기 피해량이 1 증가한다.",
+      desc: "모든 스킬 피해량이 1 증가한다.",
       apply: () => game.player.damage += 1
+    },
+    {
+      name: "공격 템포",
+      desc: "A 기본참 쿨타임이 15% 감소한다.",
+      apply: () => game.player.cooldownMul *= 0.85
+    },
+    {
+      name: "스킬 순환",
+      desc: "S, D 스킬 쿨타임이 14% 감소한다.",
+      apply: () => game.player.skillCooldownMul *= 0.86
     },
     {
       name: "가벼운 발놀림",
@@ -580,9 +346,14 @@
       }
     },
     {
-      name: "차지 숙련",
-      desc: "우클릭 차지 속도가 25% 증가한다.",
-      apply: () => game.player.chargeRate *= 1.25
+      name: "자동조준 강화",
+      desc: "자동조준 탐색 범위가 22% 증가한다.",
+      apply: () => game.player.autoRange *= 1.22
+    },
+    {
+      name: "이중 베기",
+      desc: "A 기본참 사용 시 칼날이 하나 더 나간다.",
+      apply: () => game.player.slashCount += 1
     },
     {
       name: "방어선 보강",
@@ -591,11 +362,6 @@
         game.maxBaseHp += 2;
         game.baseHp = Math.min(game.maxBaseHp, game.baseHp + 2);
       }
-    },
-    {
-      name: "이중 베기",
-      desc: "한 번 공격할 때 칼날이 하나 더 나간다.",
-      apply: () => game.player.slashCount += 1
     },
     {
       name: "경험치 흡수",
@@ -609,7 +375,7 @@
     },
     {
       name: "충격파",
-      desc: "운석을 파괴할 때 주변 운석에도 약한 피해를 준다.",
+      desc: "운석 파괴 시 주변 운석에도 약한 피해를 준다.",
       apply: () => game.player.shock += 1
     },
     {
@@ -619,18 +385,12 @@
     }
   ];
 
-  let currentChoices = [];
-
   function showChoices() {
     game.choosing = true;
     choiceScreen.classList.remove("hidden");
 
-    currentChoices = [];
     const pool = [...upgradePool].sort(() => Math.random() - 0.5);
-
-    for (let i = 0; i < 3; i++) {
-      currentChoices.push(pool[i]);
-    }
+    currentChoices = pool.slice(0, 3);
 
     choiceCards.innerHTML = "";
 
@@ -655,6 +415,255 @@
     choiceScreen.classList.add("hidden");
   }
 
+  function dash() {
+    const p = game.player;
+    if (p.dashCooldown > 0 || p.dashTime > 0) return;
+
+    let dir = 0;
+    if (keys.ArrowLeft) dir -= 1;
+    if (keys.ArrowRight) dir += 1;
+    if (dir === 0) dir = p.facing;
+
+    p.facing = dir;
+    p.dashTime = p.dashDuration;
+    p.dashCooldown = p.dashCooldownMax;
+
+    addParticles(p.x, p.y - 20, 12, "#9bdcff", 2.2);
+  }
+
+  function useSkillA() {
+    const p = game.player;
+    if (p.cooldowns.a > 0) return;
+
+    p.cooldowns.a = 0.24 * p.cooldownMul;
+
+    const baseAngle = getAutoAngle(p.autoRange, false);
+    const count = p.slashCount;
+    const spread = count === 1 ? 0 : 0.15;
+
+    for (let i = 0; i < count; i++) {
+      const offset = (i - (count - 1) / 2) * spread;
+      createSlash(baseAngle + offset, p.slashLength, p.slashWidth, p.damage, 0.13, "#ffffff");
+    }
+  }
+
+  function useSkillS() {
+    const p = game.player;
+    if (p.cooldowns.s > 0) return;
+
+    p.cooldowns.s = 1.05 * p.skillCooldownMul;
+
+    const baseAngle = getAutoAngle(p.autoRange * 1.05, false);
+    const angles = [baseAngle - 0.38, baseAngle, baseAngle + 0.38];
+
+    for (const angle of angles) {
+      createSlash(angle, p.slashLength * 1.12, p.slashWidth * 0.95, Math.max(1, p.damage), 0.17, "#ffef9a");
+    }
+
+    addText(p.x, p.y - 128, "반월참", "#ffef9a");
+  }
+
+  function useSkillD() {
+    const p = game.player;
+    if (p.cooldowns.d > 0) return;
+
+    p.cooldowns.d = 2.2 * p.skillCooldownMul;
+
+    const angle = getAutoAngle(p.autoRange * 1.8, true);
+    createSlash(angle, p.slashLength * 1.78, p.slashWidth * 1.35, p.damage * 2 + 1, 0.22, "#9bdcff");
+
+    addText(p.x, p.y - 128, "승천참", "#9bdcff");
+  }
+
+  function useUltimate() {
+    if (game.ult < game.ultMax || game.choosing || game.gameOver) return;
+
+    game.ult = 0;
+    addText(W / 2, 110, "천공참!", "#9bdcff");
+
+    for (let i = 0; i < 5; i++) {
+      const x = 150 + i * 165;
+
+      game.slashes.push({
+        x1: x,
+        y1: groundY - 8,
+        x2: x + rand(-70, 70),
+        y2: 55,
+        age: 0,
+        life: 0.34,
+        width: 74,
+        color: "#9bdcff"
+      });
+    }
+
+    for (const m of game.meteors) {
+      if (m.dead) continue;
+
+      if (m.boss) {
+        m.hp -= 12 + game.player.damage * 2;
+        addText(m.x, m.y, "보스 타격!", "#9bdcff");
+        if (m.hp <= 0) destroyMeteor(m);
+      } else {
+        m.dead = true;
+        game.score += m.score;
+        addXP(m.exp * game.player.xpGain);
+        addParticles(m.x, m.y, 24, "#9bdcff", 4.2);
+      }
+    }
+  }
+
+  function getAutoAngle(range, longRange) {
+    const p = game.player;
+    const sx = p.x;
+    const sy = p.y - 58;
+
+    let best = null;
+    let bestScore = Infinity;
+
+    for (const m of game.meteors) {
+      if (m.dead) continue;
+      if (m.y > groundY - 18) continue;
+
+      const dx = m.x - sx;
+      const dy = m.y - sy;
+      const d = Math.hypot(dx, dy);
+
+      if (!longRange && d > range + m.r) continue;
+      if (longRange && d > range + 120 + m.r) continue;
+
+      const urgency = m.y / groundY;
+      const centerBonus = Math.abs(dx) * 0.12;
+      const score = d + centerBonus - urgency * 95;
+
+      if (score < bestScore) {
+        bestScore = score;
+        best = m;
+      }
+    }
+
+    if (!best) {
+      return p.facing === 1 ? -Math.PI / 2 + 0.08 : -Math.PI / 2 - 0.08;
+    }
+
+    let angle = Math.atan2(best.y - sy, best.x - sx);
+    angle = clamp(angle, -Math.PI + 0.25, -0.12);
+
+    return angle;
+  }
+
+  function createSlash(angle, length, width, damage, life, color) {
+    const p = game.player;
+
+    const sx = p.x;
+    const sy = p.y - 58;
+    const ex = sx + Math.cos(angle) * length;
+    const ey = sy + Math.sin(angle) * length;
+
+    game.slashes.push({
+      x1: sx,
+      y1: sy,
+      x2: ex,
+      y2: ey,
+      age: 0,
+      life,
+      width,
+      color
+    });
+
+    addParticles(ex, ey, 8, color, 1.5);
+
+    for (const m of game.meteors) {
+      if (m.dead) continue;
+
+      const dist = pointToSegmentDistance(m.x, m.y, sx, sy, ex, ey);
+      if (dist <= m.r + width * 0.5) {
+        hitMeteor(m, damage, angle);
+      }
+    }
+  }
+
+  function hitMeteor(m, damage, angle) {
+    m.hp -= damage;
+    m.vx += Math.cos(angle) * 35;
+    m.vy += Math.sin(angle) * 20;
+
+    addParticles(m.x, m.y, 12, "#ffdf7a", 2.4);
+    addText(m.x, m.y - m.r, "-" + damage, "#fff2a8");
+
+    if (m.hp <= 0) {
+      destroyMeteor(m);
+    }
+  }
+
+  function destroyMeteor(m) {
+    if (m.dead) return;
+
+    m.dead = true;
+
+    game.score += m.score;
+    game.combo += 1;
+    game.comboTimer = 1.3;
+    game.ult = clamp(game.ult + 8 * game.player.ultGain, 0, game.ultMax);
+
+    addXP(m.exp * game.player.xpGain);
+
+    addText(m.x, m.y, "+" + m.score, "#ffef8a");
+    addParticles(m.x, m.y, 28, m.color, 3.4);
+
+    if (m.type === "big" && !m.boss) {
+      spawnFragment(m.x - 12, m.y, -95);
+      spawnFragment(m.x + 12, m.y, 95);
+    }
+
+    if (m.type === "bomb") {
+      explode(m.x, m.y, 96, 2);
+    }
+
+    if (game.player.shock > 0) {
+      explode(m.x, m.y, 55 + game.player.shock * 17, game.player.shock);
+    }
+  }
+
+  function explode(x, y, radius, damage) {
+    addParticles(x, y, 42, "#ff9f43", 5);
+
+    game.slashes.push({
+      x1: x - radius,
+      y1: y,
+      x2: x + radius,
+      y2: y,
+      age: 0,
+      life: 0.18,
+      width: radius * 1.1,
+      color: "#ffda78",
+      circle: true,
+      x,
+      y,
+      radius
+    });
+
+    for (const m of game.meteors) {
+      if (m.dead) continue;
+
+      const d = Math.hypot(m.x - x, m.y - y);
+      if (d <= radius + m.r) {
+        m.hp -= damage;
+        if (m.hp <= 0) destroyMeteor(m);
+      }
+    }
+  }
+
+  function addXP(amount) {
+    game.xp += amount;
+
+    if (game.xp >= game.xpNeed && !game.choosing) {
+      game.xp -= game.xpNeed;
+      game.level += 1;
+      game.xpNeed = Math.floor(game.xpNeed * 1.24 + 12);
+      showChoices();
+    }
+  }
+
   function spawnMeteor(forceBoss = false) {
     const difficulty = 1 + game.time / 55;
     let type = "normal";
@@ -664,11 +673,10 @@
     } else {
       const roll = Math.random();
 
-      if (game.time > 18 && roll < 0.12) type = "fast";
-      if (game.time > 28 && roll >= 0.12 && roll < 0.24) type = "big";
-      if (game.time > 38 && roll >= 0.24 && roll < 0.34) type = "steel";
-      if (game.time > 45 && roll >= 0.34 && roll < 0.42) type = "bomb";
-      if (game.time > 55 && roll >= 0.42 && roll < 0.49) type = "cursed";
+      if (game.time > 18 && roll < 0.13) type = "fast";
+      if (game.time > 28 && roll >= 0.13 && roll < 0.27) type = "big";
+      if (game.time > 38 && roll >= 0.27 && roll < 0.39) type = "steel";
+      if (game.time > 45 && roll >= 0.39 && roll < 0.49) type = "bomb";
       if (roll > 0.91) type = "crystal";
     }
 
@@ -737,16 +745,6 @@
       base.exp = 28;
     }
 
-    if (type === "cursed") {
-      base.r = 22;
-      base.hp = 1;
-      base.maxHp = 1;
-      base.color = "#2b183f";
-      base.vy *= 0.95;
-      base.score = 0;
-      base.exp = 0;
-    }
-
     if (type === "boss") {
       base.x = rand(160, W - 160);
       base.y = -90;
@@ -788,12 +786,6 @@
   function impactMeteor(m) {
     m.dead = true;
 
-    if (m.type === "cursed") {
-      addText(m.x, groundY - 20, "통과", "#b66cff");
-      addParticles(m.x, groundY, 10, "#7b2cff", 2);
-      return;
-    }
-
     let damage = 1;
     if (m.type === "big") damage = 2;
     if (m.type === "steel") damage = 2;
@@ -818,7 +810,8 @@
       finalText.innerHTML = `
         점수: <b>${game.score}</b><br>
         생존 시간: <b>${Math.floor(game.time)}초</b><br>
-        도달 레벨: <b>${game.level}</b>
+        도달 레벨: <b>${game.level}</b><br>
+        R 키 또는 다시하기 버튼으로 재시작
       `;
 
       gameOverScreen.classList.remove("hidden");
@@ -832,8 +825,10 @@
 
     const p = game.player;
 
-    if (p.attackCooldown > 0) p.attackCooldown -= dt;
-    if (p.dashCooldown > 0) p.dashCooldown -= dt;
+    p.cooldowns.a = Math.max(0, p.cooldowns.a - dt);
+    p.cooldowns.s = Math.max(0, p.cooldowns.s - dt);
+    p.cooldowns.d = Math.max(0, p.cooldowns.d - dt);
+    p.dashCooldown = Math.max(0, p.dashCooldown - dt);
 
     if (game.comboTimer > 0) {
       game.comboTimer -= dt;
@@ -841,38 +836,30 @@
     }
 
     let move = 0;
-    if (keys.ArrowLeft || keys.KeyA) move -= 1;
-    if (keys.ArrowRight || keys.KeyD) move += 1;
-
-    if (move !== 0) p.dashDir = move;
-
-    let speed = p.speed;
-    if (p.charging) speed *= 0.56;
+    if (keys.ArrowLeft) move -= 1;
+    if (keys.ArrowRight) move += 1;
+    if (move !== 0) p.facing = move;
 
     if (p.dashTime > 0) {
-      p.x += p.dashDir * p.dashSpeed * dt;
+      p.x += p.facing * p.dashSpeed * dt;
       p.dashTime -= dt;
     } else {
-      p.x += move * speed * dt;
+      p.x += move * p.speed * dt;
     }
 
     p.x = clamp(p.x, 35, W - 35);
 
-    if (p.charging) {
-      p.charge += dt * p.chargeRate;
-      p.charge = clamp(p.charge, 0, p.chargeMax);
-    }
-
-    const difficulty = 1 + game.time / 60;
     game.spawnTimer -= dt;
 
     if (game.spawnTimer <= 0) {
       spawnMeteor(false);
+
       const interval = clamp(1.05 - game.time * 0.008, 0.34, 1.05);
       game.spawnTimer = rand(interval * 0.55, interval * 1.1);
     }
 
     game.bossTimer += dt;
+
     if (game.time > 30 && game.bossTimer >= 42) {
       game.bossTimer = 0;
       spawnMeteor(true);
@@ -912,12 +899,14 @@
       pt.vy += 260 * dt;
       pt.life -= dt;
     }
+
     game.particles = game.particles.filter(pt => pt.life > 0);
 
     for (const t of game.texts) {
       t.y -= 36 * dt;
       t.life -= dt;
     }
+
     game.texts = game.texts.filter(t => t.life > 0);
   }
 
@@ -951,6 +940,7 @@
       const x = (i * 137.5) % W;
       const y = (i * 61.7) % 310;
       const r = (i % 3) + 0.7;
+
       ctx.beginPath();
       ctx.arc(x, y, r, 0, Math.PI * 2);
       ctx.fill();
@@ -966,6 +956,7 @@
 
     ctx.strokeStyle = "rgba(255,255,255,0.12)";
     ctx.lineWidth = 1;
+
     for (let x = 0; x < W; x += 48) {
       ctx.beginPath();
       ctx.moveTo(x, groundY + 8);
@@ -981,7 +972,7 @@
     ctx.globalAlpha = 0.32;
 
     for (const m of game.meteors) {
-      if (m.dead || m.type === "cursed") continue;
+      if (m.dead) continue;
 
       const t = (groundY - m.y) / Math.max(1, m.vy);
       const px = clamp(m.x + m.vx * t, m.r, W - m.r);
@@ -1006,6 +997,7 @@
       ctx.lineWidth = 2;
 
       ctx.beginPath();
+
       const n = m.shape.length;
 
       for (let i = 0; i < n; i++) {
@@ -1034,13 +1026,6 @@
         ctx.fillStyle = m.boss ? "#ff5555" : "#ffdf5a";
         ctx.fillRect(m.x - barW / 2, m.y - m.r - 13, barW * hpRatio, 5);
       }
-
-      if (m.type === "cursed") {
-        ctx.fillStyle = "#c99cff";
-        ctx.font = "bold 16px sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText("금지", m.x, m.y + 5);
-      }
     }
   }
 
@@ -1052,22 +1037,25 @@
       ctx.globalAlpha = a;
 
       if (s.circle) {
-        ctx.strokeStyle = "#ffda78";
+        ctx.strokeStyle = s.color;
         ctx.lineWidth = 8;
+
         ctx.beginPath();
         ctx.arc(s.x, s.y, s.radius * (1.05 - a * 0.25), 0, Math.PI * 2);
         ctx.stroke();
       } else {
-        ctx.strokeStyle = s.power > 1.3 ? "#9bdcff" : "#ffffff";
+        ctx.strokeStyle = s.color || "#ffffff";
         ctx.lineWidth = s.width;
         ctx.lineCap = "round";
+
         ctx.beginPath();
         ctx.moveTo(s.x1, s.y1);
         ctx.lineTo(s.x2, s.y2);
         ctx.stroke();
 
         ctx.strokeStyle = "#ffef9a";
-        ctx.lineWidth = Math.max(2, s.width * 0.18);
+        ctx.lineWidth = Math.max(2, s.width * 0.16);
+
         ctx.beginPath();
         ctx.moveTo(s.x1, s.y1);
         ctx.lineTo(s.x2, s.y2);
@@ -1083,25 +1071,15 @@
     const x = p.x;
     const y = p.y;
 
-    const angle = getAimAngle();
-    const swordLen = 58 + p.charge * 28;
+    const swordAngle = p.facing === 1 ? -1.1 : -2.04;
     const sx = x;
     const sy = y - 58;
-    const ex = sx + Math.cos(angle) * swordLen;
-    const ey = sy + Math.sin(angle) * swordLen;
+    const ex = sx + Math.cos(swordAngle) * 58;
+    const ey = sy + Math.sin(swordAngle) * 58;
 
     ctx.save();
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-
-    if (p.charging) {
-      ctx.globalAlpha = 0.25 + p.charge * 0.25;
-      ctx.fillStyle = "#9bdcff";
-      ctx.beginPath();
-      ctx.arc(x, y - 46, 34 + p.charge * 16, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.globalAlpha = 1;
-    }
 
     ctx.strokeStyle = "#ffffff";
     ctx.lineWidth = 5;
@@ -1123,6 +1101,7 @@
 
     ctx.strokeStyle = "#ffdf6b";
     ctx.lineWidth = 7;
+
     ctx.beginPath();
     ctx.moveTo(sx, sy);
     ctx.lineTo(ex, ey);
@@ -1133,7 +1112,7 @@
 
     ctx.beginPath();
     ctx.moveTo(x, y - 53);
-    ctx.lineTo(x - 20, y - 42);
+    ctx.lineTo(x - 20 * p.facing, y - 42);
     ctx.stroke();
 
     ctx.beginPath();
@@ -1148,8 +1127,10 @@
 
     if (p.dashCooldown > 0) {
       const ratio = 1 - p.dashCooldown / p.dashCooldownMax;
+
       ctx.fillStyle = "rgba(255,255,255,0.15)";
       ctx.fillRect(x - 24, y + 10, 48, 5);
+
       ctx.fillStyle = "#9bdcff";
       ctx.fillRect(x - 24, y + 10, 48 * ratio, 5);
     }
@@ -1162,9 +1143,11 @@
       ctx.save();
       ctx.globalAlpha = clamp(p.life, 0, 1);
       ctx.fillStyle = p.color;
+
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
       ctx.fill();
+
       ctx.restore();
     }
   }
@@ -1182,43 +1165,73 @@
   }
 
   function drawUI() {
+    const p = game.player;
+
     ctx.save();
 
     ctx.fillStyle = "rgba(0,0,0,0.32)";
-    ctx.fillRect(16, 14, 928, 76);
+    ctx.fillRect(16, 14, 928, 86);
 
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 20px sans-serif";
     ctx.textAlign = "left";
 
     ctx.fillText("점수 " + game.score, 32, 42);
-    ctx.fillText("Lv." + game.level, 32, 70);
+    ctx.fillText("Lv." + game.level, 32, 72);
 
     ctx.fillText("방어선", 160, 42);
     drawBar(230, 25, 180, 18, game.baseHp / game.maxBaseHp, "#ff5e5e");
 
-    ctx.fillText("경험치", 160, 70);
-    drawBar(230, 53, 180, 18, game.xp / game.xpNeed, "#72e06a");
+    ctx.fillText("경험치", 160, 72);
+    drawBar(230, 55, 180, 18, game.xp / game.xpNeed, "#72e06a");
 
-    ctx.fillText("궁극기 E", 450, 42);
+    ctx.fillText("궁극기 F", 450, 42);
     drawBar(548, 25, 150, 18, game.ult / game.ultMax, "#9bdcff");
 
-    ctx.fillText("시간 " + Math.floor(game.time) + "초", 450, 70);
+    ctx.fillText("시간 " + Math.floor(game.time) + "초", 450, 72);
 
     if (game.combo > 1) {
       ctx.fillStyle = "#ffdf6b";
       ctx.font = "bold 28px sans-serif";
       ctx.textAlign = "right";
-      ctx.fillText(game.combo + " COMBO", 928, 55);
+      ctx.fillText(game.combo + " COMBO", 928, 58);
     }
 
-    if (game.player.charging) {
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 18px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText("차지 중", game.player.x, game.player.y - 120);
-      drawBar(game.player.x - 50, game.player.y - 105, 100, 9, game.player.charge / game.player.chargeMax, "#9bdcff");
+    drawSkillBox(706, 58, "A", "기본참", p.cooldowns.a, 0.24 * p.cooldownMul);
+    drawSkillBox(772, 58, "S", "반월", p.cooldowns.s, 1.05 * p.skillCooldownMul);
+    drawSkillBox(838, 58, "D", "승천", p.cooldowns.d, 2.2 * p.skillCooldownMul);
+    drawSkillBox(904, 58, "F", "천공", game.ultMax - game.ult, game.ultMax);
+
+    ctx.restore();
+  }
+
+  function drawSkillBox(x, y, key, name, cd, maxCd) {
+    const ready = cd <= 0;
+
+    ctx.save();
+
+    ctx.fillStyle = ready ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.45)";
+    ctx.strokeStyle = ready ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.2)";
+    ctx.lineWidth = 1;
+
+    ctx.beginPath();
+    ctx.roundRect(x - 26, y - 26, 52, 52, 10);
+    ctx.fill();
+    ctx.stroke();
+
+    if (!ready) {
+      const ratio = clamp(cd / maxCd, 0, 1);
+      ctx.fillStyle = "rgba(0,0,0,0.48)";
+      ctx.fillRect(x - 26, y - 26, 52, 52 * ratio);
     }
+
+    ctx.fillStyle = ready ? "#ffdf6b" : "#ffffff";
+    ctx.font = "bold 20px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(key, x, y - 2);
+
+    ctx.font = "bold 10px sans-serif";
+    ctx.fillText(name, x, y + 16);
 
     ctx.restore();
   }
