@@ -39,7 +39,6 @@ const WOBBLE_DECAY = 0.0019;
 
 // 고립 버블이 물속 거품처럼 위로 떠오르는 값
 const FLOAT_LIFE_MS = 2600;
-const FLOAT_UP_SPEED = 2.2;
 
 const BUBBLE_COLORS = [
   { key: "sky", name: "하늘", hue: 196, stroke: "rgba(61, 185, 255, 0.78)" },
