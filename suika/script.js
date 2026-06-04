@@ -6,14 +6,16 @@ const CANNON = {
   y: HEIGHT - 44
 };
 
-const SLOT_RADIUS = 13.5;
-const VISUAL_RADIUS = 13.5;
-const COLS = 13;
-const ROWS = 17;
-const COL_GAP = 30;
-const ROW_GAP = 25.5;
-const GRID_TOP = 82;
-const GRID_LEFT = (WIDTH - (COLS - 1) * COL_GAP) / 2;
+const SLOT_RADIUS = 22;
+const VISUAL_RADIUS = 22;
+const COLS = 8;
+const ROWS = 12;
+const COL_GAP = 48;
+const ROW_GAP = 41;
+const GRID_TOP = 92;
+
+// 홀수 줄이 오른쪽으로 반 칸 밀리므로, 그 폭까지 고려해서 가운데 정렬
+const GRID_LEFT = (WIDTH - ((COLS - 1) * COL_GAP + COL_GAP / 2)) / 2;
 
 const SHOT_POWER = 18.5;
 const WALL_SPEED_KEEP = 0.96;
