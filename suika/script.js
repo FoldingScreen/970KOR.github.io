@@ -293,8 +293,11 @@ function loop(now) {
 function updateKeyboardAim(delta) {
   if (activeBubble) return;
 
-  const normalSpeed = 0.0027;
-  const slowSpeed = 0.0011;
+  // 조준 감도
+  // normalSpeed: 일반 회전 속도
+  // slowSpeed: Shift 누른 상태 미세 조준 속도
+  const normalSpeed = 0.0018;
+  const slowSpeed = 0.00065;
   const speed = keys.slow ? slowSpeed : normalSpeed;
 
   const minAngle = -Math.PI + 0.18;
