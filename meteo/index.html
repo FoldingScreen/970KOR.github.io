@@ -130,8 +130,8 @@
         <div class="title">섀도우 파이터</div>
         <div class="sub">
           그림자괴물들이 너를 향해 몰려온다.<br>
-          방향키로 이동, A 연타로 불꽃 박투 콤보, Space 대쉬, Space+A 대쉬공격.<br>
-          <b>D 패링</b>으로 적 공격을 튕겨내고, 반격으로 벽에 처박아 터뜨려라.
+          방향키 이동, <b>A 손 공격</b>, <b>B 발 공격</b>, Space 대쉬, D 패링.<br>
+          적은 더 크고 빠르며, 공격 중 빈틈이 생긴다. 스테이지를 클리어할 때마다 보상을 선택하라.
         </div>
         <button id="startBtn">게임 시작</button>
       </div>
@@ -194,8 +194,15 @@
           time: 0,
           score: 0,
           level: 1,
+          stage: 1,
+          stageKills: 0,
+          stageGoal: 9,
+          stageSpawnCap: 9,
+          stageSpawned: 0,
+          stageRewardPending: false,
+          stageCleared: false,
           xp: 0,
-          nextXp: 35,
+          nextXp: 9,
           combo: 0,
           comboTimer: 0,
           ult: 0,
@@ -244,19 +251,22 @@
             invuln: 0,
 
             attackCooldown: 0,
-            attackBaseCooldown: 0.16,
+            attackBaseCooldown: 0.42,
             lastA: 9,
             lastDash: 9,
             comboStage: 0,
 
             maxCombo: 3,
+            maxKickCombo: 2,
             damage: 2,
             range: 82,
             width: 30,
-            lunge: 170,
-            track: 165,
+            lunge: 92,
+            track: 155,
 
             spinCooldown: 0,
+            lastB: 9,
+            kickStage: 0,
             parry: 0,
             parryCooldown: 0,
             parryRecovery: 0,
@@ -312,7 +322,7 @@
 
         if (event.code === "Space") dash();
         if (event.code === "KeyA") attack();
-        if (event.code === "KeyS") spinKick();
+        if (event.code === "KeyB") kickAttack();
         if (event.code === "KeyD") parry();
         if (event.code === "KeyF") ultimate();
       });
@@ -324,36 +334,36 @@
       const upgrades = [
         {
           name: "파쇄권",
-          desc: "A 콤보 4타 해금. 막타가 적을 벽으로 날려 폭발시킨다.",
+          desc: "A 손 콤보 4타 해금. 막타가 적을 벽으로 날려 폭발시킨다.",
           condition: (p) => p.maxCombo < 4,
           apply: (p) => p.maxCombo = 4
         },
         {
           name: "화염각",
-          desc: "A 콤보 5타 해금. 발에도 불꽃이 붙고 스핀/발차기 연출이 강화된다.",
-          condition: (p) => p.maxCombo >= 4 && p.maxCombo < 5,
+          desc: "B 발 콤보 2타 해금. 발에도 불꽃이 붙고 발차기 연출이 강화된다.",
+          condition: (p) => !p.fireFeet,
           apply: (p) => {
-            p.maxCombo = 5;
+            p.maxKickCombo = 3;
             p.fireFeet = true;
           }
         },
         {
           name: "청염 수련",
-          desc: "불꽃이 파랗게 진화한다. 공격속도와 이동속도가 증가한다.",
+          desc: "불꽃이 파랗게 진화한다. 이동속도와 공격 후딜이 약간 개선된다.",
           condition: (p) => !p.blueFlame,
           apply: (p) => {
             p.blueFlame = true;
-            p.attackBaseCooldown *= 0.88;
-            p.moveSpeed *= 1.12;
+            p.attackBaseCooldown *= 0.94;
+            p.moveSpeed *= 1.08;
           }
         },
         {
           name: "무영보",
-          desc: "대쉬 속도와 대쉬공격 전진력이 증가한다.",
+          desc: "대쉬 속도는 증가하지만 일반 공격 이동은 크게 늘어나지 않는다.",
           condition: () => true,
           apply: (p) => {
             p.dashSpeed *= 1.15;
-            p.lunge *= 1.12;
+            p.lunge *= 1.04;
           }
         },
         {
@@ -436,6 +446,38 @@
         currentChoices[index].apply(game.player);
         game.choosing = false;
         choiceScreen.classList.add("hide");
+
+        if (game.stageRewardPending) {
+          startNextStage();
+        }
+      }
+
+      function startNextStage() {
+        game.stageRewardPending = false;
+        game.stageCleared = false;
+        game.stage += 1;
+        game.level = game.stage;
+        game.stageKills = 0;
+        game.stageSpawned = 0;
+        game.stageSpawnCap = Math.floor(8 + game.stage * 3.2);
+        game.stageGoal = game.stageSpawnCap;
+        game.xp = 0;
+        game.nextXp = game.stageGoal;
+        game.spawnTimer = 1.0;
+        game.orbTimer = rand(18, 28);
+        addText(W / 2, 118, "STAGE " + game.stage, "#ffd84a", 1.15);
+      }
+
+      function checkStageClear() {
+        if (game.dead || game.choosing || game.stageCleared) return;
+        if (game.stageSpawned < game.stageSpawnCap) return;
+        if (game.stageKills < game.stageGoal) return;
+        if (game.enemies.some((enemy) => !enemy.dead)) return;
+
+        game.stageCleared = true;
+        game.stageRewardPending = true;
+        addText(W / 2, 104, "STAGE CLEAR", "#ffd84a", 1.1);
+        showUpgrades();
       }
 
       function buff() {
@@ -594,33 +636,32 @@
         }
 
         if (stage === 3) {
-          name = "화염각";
-          pose = "kick";
-          damage += 1.3;
-          range *= 1.26;
-          width *= 1.18;
-          move *= 1.18;
-          killStyle = "spin";
-          player.fireFeet = true;
+          name = "붕권";
+          pose = "big";
+          damage += 1.7;
+          range *= 1.22;
+          width *= 1.12;
+          move *= 1.08;
+          killStyle = "wall";
         }
 
         if (stage === 4) {
-          name = "붕권";
-          pose = "big";
-          damage += 2.2;
-          range *= 1.35;
-          width *= 1.22;
-          move *= 1.32;
+          name = "파쇄권";
+          pose = "finish";
+          damage += 3.2;
+          range *= 1.36;
+          width *= 1.3;
+          move *= 1.12;
           killStyle = "wall";
         }
 
         if (stage === 5) {
-          name = "파쇄피니시";
+          name = "멸화피니시";
           pose = "finish";
-          damage += 4.4;
-          range *= 1.55;
-          width *= 1.45;
-          move *= 1.45;
+          damage += 4.5;
+          range *= 1.48;
+          width *= 1.4;
+          move *= 1.14;
           killStyle = "wall";
         }
 
@@ -648,11 +689,11 @@
           name: "슬라이드 펀치",
           pose: "dashPunch",
           dir,
-          damage: player.damage + 2.2,
-          range: player.range * 1.62,
-          width: player.width * 1.18,
-          move: player.lunge * 1.55,
-          cooldown: player.attackBaseCooldown * 1.05,
+          damage: player.damage + 2.6,
+          range: player.range * 1.46,
+          width: player.width * 1.2,
+          move: player.lunge * 1.75,
+          cooldown: player.attackBaseCooldown * 1.15,
           source: "dash",
           stage: 0,
           killStyle: "dash",
@@ -660,47 +701,109 @@
         });
       }
 
-      function spinKick() {
+      function kickAttack() {
         const player = game.player;
         const b = buff();
 
         if (player.spinCooldown > 0 && game.limit <= 0) return;
         if (player.parryRecovery > 0) return;
 
-        player.spinCooldown = 1.4 * b.speed;
-        player.attackCooldown = 0.22 * b.speed;
-        player.fireFeet = true;
-        setPose("spin", player.dir);
-        addGhost(0.24);
-        addText(player.x, player.y - 62, "스핀킥", flameColor(), 0.45);
+        if (player.lastB > 0.78) {
+          player.kickStage = 0;
+        }
 
-        const radius = 100 * b.range;
-        const damage = Math.ceil((player.damage + 1.5) * b.damage);
+        player.kickStage = player.kickStage % player.maxKickCombo + 1;
+        player.lastB = 0;
+
+        let name = "앞차기";
+        let pose = "kick";
+        let radius = 0;
+        let damage = Math.ceil((player.damage + 1.7) * b.damage);
+        let range = player.range * 1.35 * b.range;
+        let width = player.width * 1.15 * b.range;
+        let move = player.lunge * 0.72;
+        let cooldown = 0.66 * b.speed;
+        let killStyle = "spin";
+        let dir = aim(player.track * 0.95, false);
+
+        player.fireFeet = true;
+
+        if (player.kickStage === 2) {
+          name = "화염각";
+          damage += 2;
+          range *= 1.12;
+          width *= 1.15;
+          move *= 1.08;
+          cooldown = 0.76 * b.speed;
+        }
+
+        if (player.kickStage >= 3) {
+          name = "회전각";
+          pose = "spin";
+          radius = 102 * b.range;
+          damage += 2.7;
+          cooldown = 0.92 * b.speed;
+        }
+
+        player.spinCooldown = cooldown;
+        player.attackCooldown = cooldown * 0.78;
+        setPose(pose, dir);
+        addGhost(0.24);
+        addText(player.x, player.y - 62, name, flameColor(), 0.45);
+
         let hit = false;
 
-        game.hits.push({
-          circle: true,
-          x: player.x,
-          y: player.y,
-          radius,
-          timer: 0.22,
-          color: flameColor(),
-          width: 10
-        });
+        if (radius > 0) {
+          game.hits.push({
+            circle: true,
+            x: player.x,
+            y: player.y,
+            radius,
+            timer: 0.22,
+            color: flameColor(),
+            width: 10
+          });
 
-        for (const enemy of game.enemies) {
-          if (enemy.dead || enemy.state === "dying") continue;
+          for (const enemy of game.enemies) {
+            if (enemy.dead || enemy.state === "dying") continue;
 
-          if (Math.hypot(enemy.x - player.x, enemy.y - player.y) <= radius + enemy.r) {
-            const dir = norm(enemy.x - player.x, enemy.y - player.y);
-            hitEnemy(enemy, damage, dir, "spin", 0, "spin");
-            hit = true;
+            if (Math.hypot(enemy.x - player.x, enemy.y - player.y) <= radius + enemy.r) {
+              const hitDir = norm(enemy.x - player.x, enemy.y - player.y);
+              hitEnemy(enemy, damage, hitDir, "spin", 0, killStyle);
+              hit = true;
+            }
+          }
+        } else {
+          const sx = player.x;
+          const sy = player.y - 18;
+          const ex = sx + dir.x * range;
+          const ey = sy + dir.y * range;
+          player.vx = dir.x * move * b.move;
+          player.vy = Math.min(player.vy, -40);
+
+          game.hits.push({
+            x1: sx,
+            y1: sy,
+            x2: ex,
+            y2: ey,
+            width,
+            timer: 0.16,
+            color: flameColor()
+          });
+
+          for (const enemy of game.enemies) {
+            if (enemy.dead || enemy.state === "dying") continue;
+            const d = pointToSegmentDistance(enemy.x, enemy.y, sx, sy, ex, ey);
+            if (d <= enemy.r + width * 0.5) {
+              hitEnemy(enemy, damage, dir, "kick", player.kickStage, killStyle);
+              hit = true;
+            }
           }
         }
 
         if (hit) {
-          game.hitStop = Math.max(game.hitStop, 0.04);
-          game.shake = Math.max(game.shake, 7);
+          game.hitStop = Math.max(game.hitStop, 0.045);
+          game.shake = Math.max(game.shake, 8);
         }
       }
 
@@ -904,14 +1007,9 @@
         game.combo += 1;
         game.comboTimer = 1.25;
         game.ult = clamp(game.ult + enemy.ult, 0, 100);
-        game.xp += enemy.xp;
-
-        if (game.xp >= game.nextXp) {
-          game.xp -= game.nextXp;
-          game.level += 1;
-          game.nextXp = Math.floor(game.nextXp * 1.25 + 16);
-          showUpgrades();
-        }
+        game.stageKills += 1;
+        game.xp = game.stageKills;
+        game.nextXp = game.stageGoal;
 
         addText(enemy.x, enemy.y - enemy.r - 10, "+" + enemy.score, "#ffef8a", 0.6);
 
@@ -1011,7 +1109,7 @@
           resultText.innerHTML = `
             점수: <b>${game.score}</b><br>
             생존 시간: <b>${Math.floor(game.time)}초</b><br>
-            도달 레벨: <b>${game.level}</b><br>
+            도달 스테이지: <b>${game.stage}</b><br>
             최고 콤보: <b>${game.combo}</b>
           `;
           gameOverScreen.classList.remove("hide");
@@ -1069,10 +1167,11 @@
         const roll = Math.random();
 
         if (!forceType) {
-          if (game.time > 18 && roll < 0.16) type = "runner";
-          else if (game.time > 30 && roll < 0.3) type = "brute";
-          else if (game.time > 42 && roll < 0.42) type = "bomber";
-          else if (game.time > 55 && roll < 0.52) type = "mask";
+          const s = game.stage;
+          if (s >= 2 && roll < 0.2) type = "runner";
+          else if (s >= 3 && roll < 0.36) type = "brute";
+          else if (s >= 4 && roll < 0.5) type = "bomber";
+          else if (s >= 5 && roll < 0.62) type = "mask";
         }
 
         const side = Math.random() < 0.5 ? -1 : 1;
@@ -1094,16 +1193,16 @@
           rot: 0,
           flash: 0,
           phase: rand(0, 10),
-          r: 24,
-          hp: 7,
-          maxHp: 7,
-          speed: 78,
-          damage: 7,
-          score: 16,
-          xp: 10,
+          r: 30,
+          hp: 12,
+          maxHp: 12,
+          speed: 112,
+          damage: 10,
+          score: 18,
+          xp: 0,
           ult: 5,
-          attackRange: 52,
-          windup: 0.44,
+          attackRange: 68,
+          windup: 0.34,
           attackTime: 0.16,
           recovery: 0.34,
           aiThink: rand(0.05, 0.18),
@@ -1113,61 +1212,61 @@
         };
 
         if (type === "runner") {
-          enemy.r = 18;
-          enemy.y = FLOOR_Y - 18;
-          enemy.hp = enemy.maxHp = 5;
-          enemy.speed = 138;
-          enemy.damage = 5;
-          enemy.score = 20;
-          enemy.xp = 12;
-          enemy.attackRange = 44;
-          enemy.windup = 0.26;
+          enemy.r = 24;
+          enemy.y = FLOOR_Y - 23;
+          enemy.hp = enemy.maxHp = 9;
+          enemy.speed = 190;
+          enemy.damage = 8;
+          enemy.score = 24;
+          enemy.xp = 0;
+          enemy.attackRange = 58;
+          enemy.windup = 0.2;
           enemy.attackTime = 0.12;
           enemy.recovery = 0.22;
           enemy.eye = "#75ecff";
         }
 
         if (type === "brute") {
-          enemy.r = 34;
-          enemy.y = FLOOR_Y - 30;
-          enemy.hp = enemy.maxHp = 18;
-          enemy.speed = 54;
-          enemy.damage = 15;
-          enemy.score = 48;
-          enemy.xp = 30;
+          enemy.r = 44;
+          enemy.y = FLOOR_Y - 39;
+          enemy.hp = enemy.maxHp = 30;
+          enemy.speed = 78;
+          enemy.damage = 22;
+          enemy.score = 56;
+          enemy.xp = 0;
           enemy.ult = 11;
-          enemy.attackRange = 70;
-          enemy.windup = 0.72;
+          enemy.attackRange = 92;
+          enemy.windup = 0.58;
           enemy.attackTime = 0.22;
           enemy.recovery = 0.5;
           enemy.eye = "#ff6b6b";
         }
 
         if (type === "bomber") {
-          enemy.r = 22;
-          enemy.y = FLOOR_Y - 22;
-          enemy.hp = enemy.maxHp = 7;
-          enemy.speed = 84;
-          enemy.damage = 22;
-          enemy.score = 34;
-          enemy.xp = 22;
-          enemy.attackRange = 48;
-          enemy.windup = 0.58;
+          enemy.r = 30;
+          enemy.y = FLOOR_Y - 30;
+          enemy.hp = enemy.maxHp = 14;
+          enemy.speed = 125;
+          enemy.damage = 30;
+          enemy.score = 38;
+          enemy.xp = 0;
+          enemy.attackRange = 64;
+          enemy.windup = 0.46;
           enemy.attackTime = 0.1;
           enemy.recovery = 0.38;
           enemy.eye = "#ff3232";
         }
 
         if (type === "mask") {
-          enemy.r = 25;
-          enemy.y = FLOOR_Y - 24;
-          enemy.hp = enemy.maxHp = 11;
-          enemy.speed = 92;
-          enemy.damage = 10;
-          enemy.score = 42;
-          enemy.xp = 26;
-          enemy.attackRange = 60;
-          enemy.windup = 0.34;
+          enemy.r = 33;
+          enemy.y = FLOOR_Y - 32;
+          enemy.hp = enemy.maxHp = 18;
+          enemy.speed = 140;
+          enemy.damage = 14;
+          enemy.score = 48;
+          enemy.xp = 0;
+          enemy.attackRange = 76;
+          enemy.windup = 0.27;
           enemy.attackTime = 0.18;
           enemy.recovery = 0.32;
           enemy.eye = "#d6b8ff";
@@ -1241,6 +1340,7 @@
         player.counterReady = Math.max(0, player.counterReady - dt);
         player.invuln = Math.max(0, player.invuln - dt);
         player.lastA += dt;
+        player.lastB += dt;
         player.lastDash += dt;
 
         if (player.lastA > 0.62) player.comboStage = 0;
@@ -1263,7 +1363,8 @@
         const moveX = right - left;
         const wantJump = keys.ArrowUp;
         const wantFastFall = keys.ArrowDown;
-        const speed = player.moveSpeed * b.move;
+        const actionPenalty = player.attackCooldown > 0 && game.limit <= 0 ? 0.42 : 1;
+        const speed = player.moveSpeed * b.move * actionPenalty;
 
         if (moveX !== 0) {
           player.face = moveX;
@@ -1318,24 +1419,29 @@
       }
 
       function updateSpawning(dt) {
+        if (game.stageCleared) return;
+
         game.spawnTimer -= dt;
 
-        if (game.spawnTimer <= 0) {
+        if (game.stageSpawned < game.stageSpawnCap && game.spawnTimer <= 0) {
           spawnEnemy();
-          const interval = clamp(1.2 - game.time * 0.006, 0.32, 1.2);
-          game.spawnTimer = rand(interval * 0.6, interval * 1.05);
+          game.stageSpawned += 1;
+          const interval = clamp(1.05 - game.stage * 0.08, 0.34, 1.05);
+          game.spawnTimer = rand(interval * 0.55, interval * 0.95);
         }
 
-        game.bossTimer += dt;
-        if (game.time > 45 && game.bossTimer > 48) {
-          game.bossTimer = 0;
-          spawnEnemy("brute");
-          spawnEnemy("mask");
-          addText(W / 2, 92, "그림자 무리 접근!", "#ff6b6b", 1);
+        if (game.stage >= 4 && game.stageSpawned < game.stageSpawnCap - 1) {
+          game.bossTimer += dt;
+          if (game.bossTimer > Math.max(14, 28 - game.stage * 2)) {
+            game.bossTimer = 0;
+            spawnEnemy(game.stage % 2 === 0 ? "brute" : "mask");
+            game.stageSpawned += 1;
+            addText(W / 2, 92, "강한 그림자 접근!", "#ff6b6b", 1);
+          }
         }
 
         game.orbTimer -= dt;
-        if (game.time > 18 && game.orbTimer <= 0) {
+        if (game.stage >= 2 && game.orbTimer <= 0) {
           game.orbTimer = rand(26, 36);
           game.orbs.push({
             x: rand(150, W - 150),
@@ -1347,6 +1453,8 @@
           });
           addText(W / 2, 122, "금빛 불꽃 출현!", "#ffd84a", 1);
         }
+
+        checkStageClear();
       }
 
       function updateEnemies(dt) {
@@ -1396,9 +1504,7 @@
             const absDx = Math.abs(dx);
             const dirX = dx < 0 ? -1 : 1;
             const verticalGap = Math.abs(dy);
-            const idealRange = enemy.attackRange * enemy.retreatBias;
-            const tooClose = absDx < enemy.attackRange * 0.45;
-            const inAttackRange = absDx < enemy.attackRange && verticalGap < 55;
+            const inAttackRange = absDx < enemy.attackRange && verticalGap < 72;
 
             enemy.attackDir = norm(dx, clamp(dy, -36, 36));
             enemy.side = dirX < 0 ? -1 : 1;
@@ -1420,10 +1526,6 @@
               });
             } else {
               let moveX = dirX;
-
-              if (tooClose && enemy.type !== "brute") {
-                moveX = -dirX;
-              }
 
               const crowdLeft = game.enemies.some((other) =>
                 other !== enemy && !other.dead && other.state !== "dying" &&
@@ -1457,8 +1559,8 @@
               enemy.state = "attack";
               enemy.timer = enemy.attackTime;
               enemy.hasHit = false;
-              enemy.vx += enemy.attackDir.x * (enemy.type === "runner" ? 240 : enemy.type === "brute" ? 135 : 150);
-              enemy.vy += enemy.attackDir.y * 95;
+              enemy.vx += enemy.attackDir.x * (enemy.type === "runner" ? 330 : enemy.type === "brute" ? 190 : 230);
+              enemy.vy += enemy.attackDir.y * 115;
             }
           } else if (enemy.state === "attack") {
             enemy.timer -= dt;
@@ -1513,6 +1615,7 @@
         }
 
         game.enemies = game.enemies.filter((enemy) => !enemy.dead);
+        checkStageClear();
       }
 
       function updateOrbs(dt) {
@@ -1975,8 +2078,8 @@
         ctx.fillText("HP", 28, 38);
         drawBar(64, 23, 190, 16, player.hp / player.maxHp, "#ff5b5b");
 
-        ctx.fillText("Lv." + game.level, 28, 68);
-        drawBar(80, 53, 174, 16, game.xp / game.nextXp, "#69e36d");
+        ctx.fillText("STAGE " + game.stage, 28, 68);
+        drawBar(118, 53, 136, 16, game.stageKills / game.stageGoal, "#69e36d");
 
         ctx.fillText("점수 " + game.score, 286, 38);
         ctx.fillText("F", 286, 68);
@@ -1984,10 +2087,10 @@
 
         ctx.fillStyle = "#d7e3ff";
         ctx.font = "800 13px system-ui";
-        ctx.fillText("방향키 이동 · A 콤보 · S 스핀킥 · D 패링 · Space 대쉬 · Space+A", 480, 38);
+        ctx.fillText("방향키 이동 · A 손공격 · B 발공격 · D 패링 · Space 대쉬 · Space+A", 480, 38);
 
         const p = game.player;
-        drawCooldownBox(704, 64, "S", p.spinCooldown, 1.4, "스핀");
+        drawCooldownBox(704, 64, "B", p.spinCooldown, 0.92, "발공격");
         drawCooldownBox(762, 64, "D", p.parryCooldown, 0.52, "패링");
         drawCooldownBox(820, 64, "Sp", p.dashCooldown, 0.58, "대쉬");
         drawCooldownBox(878, 64, "F", 100 - game.ult, 100, "필살");
