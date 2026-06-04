@@ -154,9 +154,13 @@ function resetGame() {
   ceilingY = START_CEILING_Y;
 
   createWalls();
+
+  // seedInitialBubbles() 안에서 updateHud()가 호출될 수 있으므로
+  // nextBubbleInfo를 먼저 만들어둬야 함
+  nextBubbleInfo = createRandomBubbleInfo();
+
   seedInitialBubbles();
 
-  nextBubbleInfo = createRandomBubbleInfo();
   updateHud();
   statusText.textContent = "조준 후 클릭/터치로 발사";
 }
