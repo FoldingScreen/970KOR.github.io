@@ -26,12 +26,20 @@ const WALL_SPEED_KEEP = 0.92;
 const BASE_RADIUS = 22;
 const POP_COUNT = 6;
 
-const CEILING_DROP_SPEED = 1.15; // px/sec
+const CEILING_DROP_SPEED = 1.15;
 const CEILING_RISE_BASE = 18;
 const CEILING_RISE_PER_EXTRA = 3;
 
 const SPECIAL_CLEAR_COLOR_CHANCE = 0.03;
 const SPECIAL_LINE_CHANCE = 0.05;
+
+// 충돌 시에만 출렁이게 하는 값
+const WOBBLE_MAX = 0.95;
+const WOBBLE_DECAY = 0.0019;
+
+// 고립 버블이 물속 거품처럼 위로 떠오르는 값
+const FLOAT_LIFE_MS = 2600;
+const FLOAT_UP_SPEED = 2.2;
 
 const BUBBLE_COLORS = [
   { key: "sky", name: "하늘", hue: 196, stroke: "rgba(61, 185, 255, 0.78)" },
@@ -155,8 +163,7 @@ function resetGame() {
 
   createWalls();
 
-  // seedInitialBubbles() 안에서 updateHud()가 호출될 수 있으므로
-  // nextBubbleInfo를 먼저 만들어둬야 함
+  // seedInitialBubbles() 안에서 updateHud()가 호출될 수 있으므로 먼저 생성
   nextBubbleInfo = createRandomBubbleInfo();
 
   seedInitialBubbles();
@@ -243,9 +250,9 @@ function createBubble(x, y, info) {
   const body = Bodies.circle(x, y, BASE_RADIUS, {
     label: "bubble",
     restitution: 0,
-    friction: 0.35,
-    frictionAir: 0.032,
-    density: 0.0024,
+    friction: 0.55,
+    frictionAir: 0.018,
+    density: 0.0032,
     slop: 0.01
   });
 
@@ -255,9 +262,16 @@ function createBubble(x, y, info) {
   body.isInitial = Boolean(info.isInitial);
   body.isAttached = false;
   body.isPopping = false;
+  body.isFloating = false;
+  body.floatLife = 0;
   body.groupSize = 1;
   body.spawnedAt = performance.now();
   body.lastShotDir = { x: 0, y: -1 };
+
+  // 평소에는 0. 충돌 순간에만 올라가고, 시간이 지나면 줄어듦
+  body.wobblePower = 0;
+  body.wobblePhase = 0;
+  body.wobbleDir = { x: 0, y: -1 };
 
   bubbles.add(body);
   World.add(world, body);
@@ -324,14 +338,20 @@ function handleCollisionStart(event) {
 }
 
 function handleBubbleWallContact(bubble, wall) {
-  if (!bubbles.has(bubble) || bubble.isPopping) return;
+  if (!bubbles.has(bubble) || bubble.isPopping || bubble.isFloating) return;
 
   if (wall.label === "wall-left" || wall.label === "wall-right") {
+    const normal = wall.label === "wall-left"
+      ? { x: 1, y: 0 }
+      : { x: -1, y: 0 };
+
+    applyBubbleImpact(bubble, normal, Math.hypot(bubble.velocity.x, bubble.velocity.y));
     reflectBubbleFromSideWall(bubble, wall);
     return;
   }
 
   if (wall.label === "wall-top") {
+    applyBubbleImpact(bubble, { x: 0, y: 1 }, Math.hypot(bubble.velocity.x, bubble.velocity.y));
     attachBubbleToCeiling(bubble);
   }
 }
@@ -362,7 +382,7 @@ function reflectBubbleFromSideWall(bubble, wall) {
 }
 
 function attachBubbleToCeiling(bubble) {
-  if (!bubbles.has(bubble) || bubble.isPopping) return;
+  if (!bubbles.has(bubble) || bubble.isPopping || bubble.isFloating) return;
 
   const key = `c:${bubble.gameId}`;
   if (bondKeys.has(key)) return;
@@ -377,8 +397,8 @@ function attachBubbleToCeiling(bubble) {
     bodyB: bubble,
     pointB: { x: 0, y: 0 },
     length,
-    stiffness: 0.16,
-    damping: 0.28,
+    stiffness: 0.42,
+    damping: 0.72,
     render: { visible: false }
   });
 
@@ -398,6 +418,7 @@ function attachBubbleToCeiling(bubble) {
 function addBubbleBond(a, b) {
   if (!bubbles.has(a) || !bubbles.has(b)) return;
   if (a.isPopping || b.isPopping) return;
+  if (a.isFloating || b.isFloating) return;
 
   const key = makeBondKey(a, b);
   if (bondKeys.has(key)) return;
@@ -405,13 +426,18 @@ function addBubbleBond(a, b) {
   const dx = b.position.x - a.position.x;
   const dy = b.position.y - a.position.y;
   const distance = Math.max(10, Math.sqrt(dx * dx + dy * dy));
+  const normal = normalizeVector({ x: dx, y: dy });
+  const relativeSpeed = Math.hypot(a.velocity.x - b.velocity.x, a.velocity.y - b.velocity.y);
+
+  applyBubbleImpact(a, { x: normal.x, y: normal.y }, relativeSpeed);
+  applyBubbleImpact(b, { x: -normal.x, y: -normal.y }, relativeSpeed);
 
   const constraint = Constraint.create({
     bodyA: a,
     bodyB: b,
     length: distance,
-    stiffness: 0.13,
-    damping: 0.24,
+    stiffness: 0.38,
+    damping: 0.68,
     render: { visible: false }
   });
 
@@ -430,6 +456,17 @@ function addBubbleBond(a, b) {
   onBubbleAttached(b);
 }
 
+function applyBubbleImpact(bubble, direction, speed) {
+  if (!bubble || bubble.isPopping || bubble.isFloating) return;
+
+  const dir = normalizeVector(direction);
+  const powerBySpeed = Math.min(WOBBLE_MAX, Math.max(0.22, speed / 18));
+
+  bubble.wobblePower = Math.min(WOBBLE_MAX, Math.max(bubble.wobblePower || 0, powerBySpeed));
+  bubble.wobblePhase = 0;
+  bubble.wobbleDir = dir;
+}
+
 function makeBondKey(a, b) {
   const first = Math.min(a.gameId, b.gameId);
   const second = Math.max(a.gameId, b.gameId);
@@ -437,6 +474,19 @@ function makeBondKey(a, b) {
 }
 
 function onBubbleAttached(bubble) {
+  if (!bubble || bubble.isFloating) return;
+
+  // 접착 이후엔 빠르게 안정되도록 감속 강화
+  bubble.frictionAir = 0.18;
+  bubble.restitution = 0;
+
+  Body.setVelocity(bubble, {
+    x: bubble.velocity.x * 0.42,
+    y: bubble.velocity.y * 0.42
+  });
+
+  Body.setAngularVelocity(bubble, bubble.angularVelocity * 0.25);
+
   recomputeAnchoredState();
   scheduleGroupCheck();
 
@@ -487,13 +537,18 @@ function findSameColorGroups() {
   const adjacency = new Map();
 
   for (const bubble of bubbles) {
+    if (bubble.isFloating || bubble.isPopping) continue;
     adjacency.set(bubble, []);
   }
 
   for (const bond of bonds) {
     if (bond.type !== "bubble") continue;
     if (!bubbles.has(bond.a) || !bubbles.has(bond.b)) continue;
+    if (bond.a.isFloating || bond.b.isFloating) continue;
     if (bond.a.colorIndex !== bond.b.colorIndex) continue;
+
+    if (!adjacency.has(bond.a)) adjacency.set(bond.a, []);
+    if (!adjacency.has(bond.b)) adjacency.set(bond.b, []);
 
     adjacency.get(bond.a).push(bond.b);
     adjacency.get(bond.b).push(bond.a);
@@ -502,7 +557,7 @@ function findSameColorGroups() {
   const visited = new Set();
   const groups = [];
 
-  for (const bubble of bubbles) {
+  for (const bubble of adjacency.keys()) {
     if (visited.has(bubble)) continue;
 
     const group = [];
@@ -549,7 +604,9 @@ function popGroup(group) {
     triggerSpecialBubble(specialBubble, baseColorIndex);
   }
 
-  removeUnanchoredBubbles();
+  // 일반 팝은 해당 색 그룹만 터짐.
+  // 연결이 끊긴 다른 색 버블은 제거하지 않고 위로 떠오르게 처리.
+  floatUnanchoredBubbles();
   recomputeAnchoredState();
 
   if (score > bestScore) {
@@ -573,7 +630,7 @@ function triggerSpecialBubble(specialBubble, poppedColorIndex) {
 }
 
 function clearAllBubblesOfColor(colorIndex) {
-  const targets = Array.from(bubbles).filter((bubble) => bubble.colorIndex === colorIndex);
+  const targets = Array.from(bubbles).filter((bubble) => bubble.colorIndex === colorIndex && !bubble.isFloating);
   if (targets.length === 0) return;
 
   const center = getBodiesCenter(targets);
@@ -589,6 +646,8 @@ function clearBubblesOnLine(origin, direction) {
   const lineWidth = BASE_RADIUS * 0.95;
 
   for (const bubble of bubbles) {
+    if (bubble.isFloating) continue;
+
     const dx = bubble.position.x - origin.x;
     const dy = bubble.position.y - origin.y;
     const cross = Math.abs(dx * dir.y - dy * dir.x);
@@ -612,14 +671,38 @@ function clearBubblesOnLine(origin, direction) {
   removeBubbles(targets);
 }
 
-function removeUnanchoredBubbles() {
+function floatUnanchoredBubbles() {
   recomputeAnchoredState();
 
-  const targets = Array.from(bubbles).filter((bubble) => !bubble.isAttached && bubble !== activeBubble);
-  if (targets.length === 0) return;
+  const targets = Array.from(bubbles).filter((bubble) => {
+    if (bubble === activeBubble) return false;
+    if (bubble.isFloating || bubble.isPopping) return false;
+    return !bubble.isAttached;
+  });
 
-  score += targets.length * 25;
-  removeBubbles(targets);
+  for (const bubble of targets) {
+    startFloatingBubble(bubble);
+  }
+}
+
+function startFloatingBubble(bubble) {
+  if (!bubble || !bubbles.has(bubble)) return;
+
+  removeBondsForBubble(bubble);
+
+  bubble.isFloating = true;
+  bubble.isAttached = false;
+  bubble.groupSize = 1;
+  bubble.floatLife = FLOAT_LIFE_MS;
+  bubble.frictionAir = 0.012;
+  bubble.collisionFilter.mask = 0;
+
+  Body.setVelocity(bubble, {
+    x: (Math.random() - 0.5) * 0.8,
+    y: -FLOAT_UP_SPEED - Math.random() * 0.7
+  });
+
+  Body.setAngularVelocity(bubble, (Math.random() - 0.5) * 0.025);
 }
 
 function recomputeAnchoredState() {
@@ -628,15 +711,27 @@ function recomputeAnchoredState() {
 
   for (const bubble of bubbles) {
     bubble.isAttached = false;
-    adjacency.set(bubble, []);
+
+    if (!bubble.isFloating && !bubble.isPopping) {
+      adjacency.set(bubble, []);
+    }
   }
 
   for (const bond of bonds) {
-    if (bond.type === "ceiling" && bubbles.has(bond.b)) {
+    if (bond.type === "ceiling" && bubbles.has(bond.b) && !bond.b.isFloating) {
       roots.push(bond.b);
     }
 
-    if (bond.type === "bubble" && bubbles.has(bond.a) && bubbles.has(bond.b)) {
+    if (
+      bond.type === "bubble" &&
+      bubbles.has(bond.a) &&
+      bubbles.has(bond.b) &&
+      !bond.a.isFloating &&
+      !bond.b.isFloating
+    ) {
+      if (!adjacency.has(bond.a)) adjacency.set(bond.a, []);
+      if (!adjacency.has(bond.b)) adjacency.set(bond.b, []);
+
       adjacency.get(bond.a).push(bond.b);
       adjacency.get(bond.b).push(bond.a);
     }
@@ -665,9 +760,7 @@ function removeBubbles(list) {
   }
 }
 
-function removeBubble(bubble) {
-  if (!bubble) return;
-
+function removeBondsForBubble(bubble) {
   const nextBonds = [];
 
   for (const bond of bonds) {
@@ -682,6 +775,12 @@ function removeBubble(bubble) {
   }
 
   bonds = nextBonds;
+}
+
+function removeBubble(bubble) {
+  if (!bubble) return;
+
+  removeBondsForBubble(bubble);
 
   if (activeBubble === bubble) {
     activeBubble = null;
@@ -719,6 +818,7 @@ function checkGameOver() {
 
   for (const bubble of bubbles) {
     if (bubble === activeBubble) continue;
+    if (bubble.isFloating) continue;
     if (!bubble.isAttached) continue;
 
     if (bubble.position.y + BASE_RADIUS > DANGER_Y) {
@@ -769,12 +869,51 @@ function loop(now) {
   if (!gameOver) {
     lowerCeiling(delta);
     Engine.update(engine, delta);
+    updateBubbleDynamics(delta);
     checkGameOver();
   }
 
   updateEffects(delta);
   draw(now);
   requestAnimationFrame(loop);
+}
+
+function updateBubbleDynamics(delta) {
+  for (const bubble of Array.from(bubbles)) {
+    if (!bubble) continue;
+
+    if (bubble.wobblePower > 0) {
+      bubble.wobblePhase += delta * 0.018;
+      bubble.wobblePower = Math.max(0, bubble.wobblePower - delta * WOBBLE_DECAY);
+    }
+
+    if (bubble.isAttached && !bubble.isFloating && bubble !== activeBubble) {
+      Body.setVelocity(bubble, {
+        x: bubble.velocity.x * 0.94,
+        y: bubble.velocity.y * 0.94
+      });
+
+      Body.setAngularVelocity(bubble, bubble.angularVelocity * 0.92);
+
+      const speed = Math.hypot(bubble.velocity.x, bubble.velocity.y);
+      if (speed < 0.025) {
+        Body.setVelocity(bubble, { x: 0, y: 0 });
+      }
+    }
+
+    if (bubble.isFloating) {
+      bubble.floatLife -= delta;
+
+      Body.setVelocity(bubble, {
+        x: bubble.velocity.x * 0.995,
+        y: Math.max(bubble.velocity.y - 0.012, -3.3)
+      });
+
+      if (bubble.position.y < -BASE_RADIUS - 50 || bubble.floatLife <= 0) {
+        removeBubble(bubble);
+      }
+    }
+  }
 }
 
 function updateEffects(delta) {
@@ -914,6 +1053,7 @@ function drawBonds() {
   for (const bond of bonds) {
     if (bond.type !== "bubble") continue;
     if (!bubbles.has(bond.a) || !bubbles.has(bond.b)) continue;
+    if (bond.a.isFloating || bond.b.isFloating) continue;
 
     ctx.beginPath();
     ctx.moveTo(bond.a.position.x, bond.a.position.y);
@@ -939,24 +1079,30 @@ function drawSoapBubble(bubble, now) {
   const visualRadius = BASE_RADIUS * (1 + growthStep * 0.038);
   const borderWidth = Math.max(0.9, 4.2 - growthStep * 0.62);
   const wobbleSeed = bubble.gameId * 0.73;
+  const floatAlpha = bubble.isFloating
+    ? Math.max(0, Math.min(1, bubble.floatLife / FLOAT_LIFE_MS)) * 0.72
+    : 1;
 
   ctx.save();
+  ctx.globalAlpha = floatAlpha;
   ctx.translate(bubble.position.x, bubble.position.y);
   ctx.rotate(bubble.angle * 0.08);
 
-  drawWobblyBubbleShape(visualRadius, color, borderWidth, now, wobbleSeed);
+  drawWobblyBubbleShape(visualRadius, color, borderWidth, now, wobbleSeed, bubble);
   drawBubbleHighlights(visualRadius, now, wobbleSeed);
 
-  if (bubble.item) {
+  if (bubble.item && !bubble.isFloating) {
     drawSpecialIcon(bubble.item, visualRadius, color);
   }
 
   ctx.restore();
 }
 
-function drawWobblyBubbleShape(radius, color, borderWidth, now, seed) {
-  const time = now / 520;
-  const points = 44;
+function drawWobblyBubbleShape(radius, color, borderWidth, now, seed, bubble) {
+  const points = 52;
+  const power = Math.max(0, bubble.wobblePower || 0);
+  const phase = bubble.wobblePhase || 0;
+  const dir = normalizeVector(bubble.wobbleDir || { x: 0, y: -1 });
 
   const fillGradient = ctx.createRadialGradient(
     -radius * 0.28,
@@ -976,12 +1122,24 @@ function drawWobblyBubbleShape(radius, color, borderWidth, now, seed) {
 
   for (let i = 0; i <= points; i++) {
     const t = (i / points) * Math.PI * 2;
-    const wobble =
-      Math.sin(t * 3 + time + seed) * 0.9 +
-      Math.cos(t * 5 - time * 0.7 + seed) * 0.45;
-    const r = radius + wobble;
-    const x = Math.cos(t) * r;
-    const y = Math.sin(t) * r;
+    const px = Math.cos(t);
+    const py = Math.sin(t);
+
+    let r = radius;
+
+    if (power > 0.001) {
+      const dot = px * dir.x + py * dir.y;
+      const side = 1 - dot * dot;
+
+      const squash = -radius * 0.16 * power * dot * dot;
+      const sideBulge = radius * 0.10 * power * side;
+      const ripple = radius * 0.026 * power * Math.sin(t * 5 - phase * 2 + seed);
+
+      r = radius + squash + sideBulge + ripple;
+    }
+
+    const x = px * r;
+    const y = py * r;
 
     if (i === 0) {
       ctx.moveTo(x, y);
@@ -1077,7 +1235,11 @@ function drawCannon(now) {
     gameId: 9999,
     colorIndex: nextBubbleInfo.colorIndex,
     item: nextBubbleInfo.item,
-    groupSize: 1
+    groupSize: 1,
+    wobblePower: 0,
+    wobblePhase: 0,
+    wobbleDir: { x: 0, y: -1 },
+    isFloating: false
   };
 
   drawSoapBubble(previewBody, now);
