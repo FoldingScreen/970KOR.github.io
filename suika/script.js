@@ -16,9 +16,7 @@ const CANNON = {
   y: HEIGHT - 44
 };
 
-const MIN_CEILING_Y = 48;
 const START_CEILING_Y = 72;
-const DANGER_Y = HEIGHT - 118;
 
 const SHOT_POWER = 18.8;
 const WALL_SPEED_KEEP = 0.92;
@@ -26,19 +24,24 @@ const WALL_SPEED_KEEP = 0.92;
 const BASE_RADIUS = 22;
 const POP_COUNT = 6;
 
-const CEILING_DROP_SPEED = 1.15;
-const CEILING_RISE_BASE = 18;
-const CEILING_RISE_PER_EXTRA = 3;
+// 제한시간 방식
+const START_TIME_MS = 60000;
+const MAX_TIME_MS = 90000;
+const POP_TIME_BONUS_BASE = 4500;
+const POP_TIME_BONUS_PER_EXTRA = 700;
 
 const SPECIAL_CLEAR_COLOR_CHANCE = 0.03;
 const SPECIAL_LINE_CHANCE = 0.05;
 
-// 충돌 시에만 출렁이게 하는 값
-const WOBBLE_MAX = 0.95;
-const WOBBLE_DECAY = 0.0019;
+// 평소에는 원형, 충돌 순간에만 강하게 출렁임
+const WOBBLE_MAX = 1.45;
+const WOBBLE_DECAY = 0.00115;
 
-// 고립 버블이 물속 거품처럼 위로 떠오르는 값
-const FLOAT_LIFE_MS = 2600;
+// 접착 후 실제 물리 이동이 멎는 시간
+const SETTLE_FREEZE_MS = 520;
+
+// 고립 버블 부력
+const FLOAT_UP_SPEED = 2.2;
 
 const BUBBLE_COLORS = [
   { key: "sky", name: "하늘", hue: 196, stroke: "rgba(61, 185, 255, 0.78)" },
@@ -87,6 +90,7 @@ let canShoot = true;
 let gameOver = false;
 let aimAngle = -Math.PI / 2;
 let ceilingY = START_CEILING_Y;
+let timeLeftMs = START_TIME_MS;
 let bodyId = 1;
 let pendingGroupCheck = false;
 
@@ -159,12 +163,11 @@ function resetGame() {
   activeBubble = null;
   pendingGroupCheck = false;
   ceilingY = START_CEILING_Y;
+  timeLeftMs = START_TIME_MS;
 
   createWalls();
 
-  // seedInitialBubbles() 안에서 updateHud()가 호출될 수 있으므로 먼저 생성
   nextBubbleInfo = createRandomBubbleInfo();
-
   seedInitialBubbles();
 
   updateHud();
@@ -222,6 +225,7 @@ function seedInitialBubbles() {
     });
 
     attachBubbleToCeiling(body);
+    settleBubble(body);
   }
 
   recomputeAnchoredState();
@@ -249,9 +253,9 @@ function createBubble(x, y, info) {
   const body = Bodies.circle(x, y, BASE_RADIUS, {
     label: "bubble",
     restitution: 0,
-    friction: 0.55,
+    friction: 0.62,
     frictionAir: 0.018,
-    density: 0.0032,
+    density: 0.0034,
     slop: 0.01
   });
 
@@ -262,15 +266,15 @@ function createBubble(x, y, info) {
   body.isAttached = false;
   body.isPopping = false;
   body.isFloating = false;
-  body.floatLife = 0;
+  body.isSettled = false;
   body.groupSize = 1;
   body.spawnedAt = performance.now();
   body.lastShotDir = { x: 0, y: -1 };
 
-  // 평소에는 0. 충돌 순간에만 올라가고, 시간이 지나면 줄어듦
   body.wobblePower = 0;
   body.wobblePhase = 0;
   body.wobbleDir = { x: 0, y: -1 };
+  body.settleTimer = null;
 
   bubbles.add(body);
   World.add(world, body);
@@ -337,7 +341,7 @@ function handleCollisionStart(event) {
 }
 
 function handleBubbleWallContact(bubble, wall) {
-  if (!bubbles.has(bubble) || bubble.isPopping || bubble.isFloating) return;
+  if (!bubbles.has(bubble) || bubble.isPopping) return;
 
   if (wall.label === "wall-left" || wall.label === "wall-right") {
     const normal = wall.label === "wall-left"
@@ -350,6 +354,7 @@ function handleBubbleWallContact(bubble, wall) {
   }
 
   if (wall.label === "wall-top") {
+    stopFloatingBubble(bubble);
     applyBubbleImpact(bubble, { x: 0, y: 1 }, Math.hypot(bubble.velocity.x, bubble.velocity.y));
     attachBubbleToCeiling(bubble);
   }
@@ -381,7 +386,9 @@ function reflectBubbleFromSideWall(bubble, wall) {
 }
 
 function attachBubbleToCeiling(bubble) {
-  if (!bubbles.has(bubble) || bubble.isPopping || bubble.isFloating) return;
+  if (!bubbles.has(bubble) || bubble.isPopping) return;
+
+  stopFloatingBubble(bubble);
 
   const key = `c:${bubble.gameId}`;
   if (bondKeys.has(key)) return;
@@ -396,8 +403,8 @@ function attachBubbleToCeiling(bubble) {
     bodyB: bubble,
     pointB: { x: 0, y: 0 },
     length,
-    stiffness: 0.42,
-    damping: 0.72,
+    stiffness: 0.72,
+    damping: 0.92,
     render: { visible: false }
   });
 
@@ -417,7 +424,9 @@ function attachBubbleToCeiling(bubble) {
 function addBubbleBond(a, b) {
   if (!bubbles.has(a) || !bubbles.has(b)) return;
   if (a.isPopping || b.isPopping) return;
-  if (a.isFloating || b.isFloating) return;
+
+  stopFloatingBubble(a);
+  stopFloatingBubble(b);
 
   const key = makeBondKey(a, b);
   if (bondKeys.has(key)) return;
@@ -435,8 +444,8 @@ function addBubbleBond(a, b) {
     bodyA: a,
     bodyB: b,
     length: distance,
-    stiffness: 0.38,
-    damping: 0.68,
+    stiffness: 0.68,
+    damping: 0.9,
     render: { visible: false }
   });
 
@@ -456,10 +465,10 @@ function addBubbleBond(a, b) {
 }
 
 function applyBubbleImpact(bubble, direction, speed) {
-  if (!bubble || bubble.isPopping || bubble.isFloating) return;
+  if (!bubble || bubble.isPopping) return;
 
   const dir = normalizeVector(direction);
-  const powerBySpeed = Math.min(WOBBLE_MAX, Math.max(0.22, speed / 18));
+  const powerBySpeed = Math.min(WOBBLE_MAX, Math.max(0.42, speed / 13));
 
   bubble.wobblePower = Math.min(WOBBLE_MAX, Math.max(bubble.wobblePower || 0, powerBySpeed));
   bubble.wobblePhase = 0;
@@ -475,16 +484,21 @@ function makeBondKey(a, b) {
 function onBubbleAttached(bubble) {
   if (!bubble || bubble.isFloating) return;
 
-  // 접착 이후엔 빠르게 안정되도록 감속 강화
-  bubble.frictionAir = 0.18;
+  bubble.frictionAir = 0.34;
   bubble.restitution = 0;
 
-  Body.setVelocity(bubble, {
-    x: bubble.velocity.x * 0.42,
-    y: bubble.velocity.y * 0.42
-  });
+  if (!bubble.isSettled) {
+    Body.setStatic(bubble, false);
 
-  Body.setAngularVelocity(bubble, bubble.angularVelocity * 0.25);
+    Body.setVelocity(bubble, {
+      x: bubble.velocity.x * 0.24,
+      y: bubble.velocity.y * 0.24
+    });
+
+    Body.setAngularVelocity(bubble, bubble.angularVelocity * 0.18);
+
+    scheduleBubbleSettle(bubble);
+  }
 
   recomputeAnchoredState();
   scheduleGroupCheck();
@@ -498,6 +512,49 @@ function onBubbleAttached(bubble) {
       }
     }, 360);
   }
+}
+
+function scheduleBubbleSettle(bubble) {
+  if (!bubble || bubble.isSettled || bubble.isFloating) return;
+
+  if (bubble.settleTimer) {
+    clearTimeout(bubble.settleTimer);
+  }
+
+  bubble.settleTimer = setTimeout(() => {
+    if (!bubbles.has(bubble)) return;
+    if (bubble.isFloating || bubble.isPopping) return;
+    if (bubble === activeBubble) return;
+
+    settleBubble(bubble);
+  }, SETTLE_FREEZE_MS);
+}
+
+function settleBubble(bubble) {
+  if (!bubble || !bubbles.has(bubble)) return;
+  if (bubble.isFloating || bubble.isPopping) return;
+
+  Body.setVelocity(bubble, { x: 0, y: 0 });
+  Body.setAngularVelocity(bubble, 0);
+  Body.setStatic(bubble, true);
+
+  bubble.isSettled = true;
+  bubble.frictionAir = 1;
+}
+
+function unSettleBubble(bubble) {
+  if (!bubble || !bubbles.has(bubble)) return;
+
+  if (bubble.settleTimer) {
+    clearTimeout(bubble.settleTimer);
+    bubble.settleTimer = null;
+  }
+
+  if (bubble.isSettled) {
+    Body.setStatic(bubble, false);
+  }
+
+  bubble.isSettled = false;
 }
 
 function scheduleGroupCheck() {
@@ -594,7 +651,7 @@ function popGroup(group) {
   }
 
   score += uniqueGroup.length * 80 + extraCount * 35;
-  riseCeiling(CEILING_RISE_BASE + extraCount * CEILING_RISE_PER_EXTRA);
+  addTimeBonus(POP_TIME_BONUS_BASE + extraCount * POP_TIME_BONUS_PER_EXTRA);
 
   addPopEffect(center.x, center.y, uniqueGroup.length);
   removeBubbles(uniqueGroup);
@@ -603,8 +660,6 @@ function popGroup(group) {
     triggerSpecialBubble(specialBubble, baseColorIndex);
   }
 
-  // 일반 팝은 해당 색 그룹만 터짐.
-  // 연결이 끊긴 다른 색 버블은 제거하지 않고 위로 떠오르게 처리.
   floatUnanchoredBubbles();
   recomputeAnchoredState();
 
@@ -688,13 +743,12 @@ function startFloatingBubble(bubble) {
   if (!bubble || !bubbles.has(bubble)) return;
 
   removeBondsForBubble(bubble);
+  unSettleBubble(bubble);
 
   bubble.isFloating = true;
   bubble.isAttached = false;
   bubble.groupSize = 1;
-
-  // 사라지는 버블이 아니라, 물속 거품처럼 위로 떠오르는 버블
-  bubble.frictionAir = 0.025;
+  bubble.frictionAir = 0.018;
   bubble.collisionFilter.mask = 0xFFFFFFFF;
 
   Body.setVelocity(bubble, {
@@ -703,6 +757,22 @@ function startFloatingBubble(bubble) {
   });
 
   Body.setAngularVelocity(bubble, (Math.random() - 0.5) * 0.018);
+}
+
+function stopFloatingBubble(bubble) {
+  if (!bubble || !bubbles.has(bubble)) return;
+  if (!bubble.isFloating) return;
+
+  bubble.isFloating = false;
+  bubble.frictionAir = 0.34;
+  bubble.collisionFilter.mask = 0xFFFFFFFF;
+
+  Body.setVelocity(bubble, {
+    x: bubble.velocity.x * 0.28,
+    y: bubble.velocity.y * 0.28
+  });
+
+  scheduleBubbleSettle(bubble);
 }
 
 function recomputeAnchoredState() {
@@ -780,7 +850,13 @@ function removeBondsForBubble(bubble) {
 function removeBubble(bubble) {
   if (!bubble) return;
 
+  if (bubble.settleTimer) {
+    clearTimeout(bubble.settleTimer);
+    bubble.settleTimer = null;
+  }
+
   removeBondsForBubble(bubble);
+  unSettleBubble(bubble);
 
   if (activeBubble === bubble) {
     activeBubble = null;
@@ -791,40 +867,26 @@ function removeBubble(bubble) {
   bubbles.delete(bubble);
 }
 
-function riseCeiling(amount) {
-  ceilingY = Math.max(MIN_CEILING_Y, ceilingY - amount);
-  updateCeilingBody();
+function updateTimeLimit(delta) {
+  timeLeftMs = Math.max(0, timeLeftMs - delta);
 }
 
-function updateCeilingBody() {
-  if (!ceilingBody) return;
+function addTimeBonus(amount) {
+  timeLeftMs = Math.min(MAX_TIME_MS, timeLeftMs + amount);
 
-  Body.setPosition(ceilingBody, {
+  popEffects.push({
     x: WIDTH / 2,
-    y: ceilingY - 20
+    y: 104,
+    count: `+${(amount / 1000).toFixed(1)}s`,
+    life: 620,
+    maxLife: 620,
+    isTimeBonus: true
   });
 }
 
-function lowerCeiling(delta) {
-  ceilingY += CEILING_DROP_SPEED * (delta / 1000);
-  updateCeilingBody();
-}
-
 function checkGameOver() {
-  if (ceilingY >= DANGER_Y - 70) {
+  if (timeLeftMs <= 0) {
     endGame();
-    return;
-  }
-
-  for (const bubble of bubbles) {
-    if (bubble === activeBubble) continue;
-    if (bubble.isFloating) continue;
-    if (!bubble.isAttached) continue;
-
-    if (bubble.position.y + BASE_RADIUS > DANGER_Y) {
-      endGame();
-      return;
-    }
   }
 }
 
@@ -867,7 +929,7 @@ function loop(now) {
   lastTime = now;
 
   if (!gameOver) {
-    lowerCeiling(delta);
+    updateTimeLimit(delta);
     Engine.update(engine, delta);
     updateBubbleDynamics(delta);
     checkGameOver();
@@ -883,31 +945,30 @@ function updateBubbleDynamics(delta) {
     if (!bubble) continue;
 
     if (bubble.wobblePower > 0) {
-      bubble.wobblePhase += delta * 0.018;
+      bubble.wobblePhase += delta * 0.024;
       bubble.wobblePower = Math.max(0, bubble.wobblePower - delta * WOBBLE_DECAY);
     }
 
-    if (bubble.isAttached && !bubble.isFloating && bubble !== activeBubble) {
+    if (bubble.isAttached && !bubble.isFloating && !bubble.isSettled && bubble !== activeBubble) {
       Body.setVelocity(bubble, {
-        x: bubble.velocity.x * 0.94,
-        y: bubble.velocity.y * 0.94
+        x: bubble.velocity.x * 0.86,
+        y: bubble.velocity.y * 0.86
       });
 
-      Body.setAngularVelocity(bubble, bubble.angularVelocity * 0.92);
+      Body.setAngularVelocity(bubble, bubble.angularVelocity * 0.82);
 
       const speed = Math.hypot(bubble.velocity.x, bubble.velocity.y);
-      if (speed < 0.025) {
-        Body.setVelocity(bubble, { x: 0, y: 0 });
+      if (speed < 0.035) {
+        settleBubble(bubble);
       }
     }
 
     if (bubble.isFloating) {
       Body.setVelocity(bubble, {
-        x: bubble.velocity.x * 0.995,
-        y: Math.max(bubble.velocity.y - 0.012, -3.3)
+        x: bubble.velocity.x * 0.996,
+        y: Math.max(bubble.velocity.y - 0.012, -3.35)
       });
 
-      // 화면 위로 완전히 나가지 않도록 천장 근처에서 살짝 붙잡음
       if (bubble.position.y < ceilingY + BASE_RADIUS + 4) {
         Body.setPosition(bubble, {
           x: bubble.position.x,
@@ -915,11 +976,11 @@ function updateBubbleDynamics(delta) {
         });
 
         Body.setVelocity(bubble, {
-          x: bubble.velocity.x * 0.35,
+          x: bubble.velocity.x * 0.25,
           y: 0
         });
 
-        bubble.isFloating = false;
+        stopFloatingBubble(bubble);
         attachBubbleToCeiling(bubble);
       }
     }
@@ -955,7 +1016,7 @@ function updateHud() {
 function draw(now) {
   drawBackground();
   drawCeiling(now);
-  drawDangerLine(now);
+  drawTimeBar();
   drawAimLine();
   drawBonds();
   drawBubbles(now);
@@ -1007,30 +1068,49 @@ function drawCeiling(now) {
   ctx.fillStyle = "rgba(77, 44, 24, 0.75)";
   ctx.font = "800 12px system-ui, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("하강 벽", WIDTH / 2, ceilingY - 28);
+  ctx.fillText("접착 벽", WIDTH / 2, ceilingY - 28);
 
   ctx.restore();
 }
 
-function drawDangerLine(now) {
-  const blink = 0.23 + Math.sin(now / 220) * 0.08;
+function drawTimeBar() {
+  const ratio = Math.max(0, Math.min(1, timeLeftMs / MAX_TIME_MS));
+  const seconds = Math.ceil(timeLeftMs / 1000);
+
+  const barX = 28;
+  const barY = 24;
+  const barW = WIDTH - 56;
+  const barH = 15;
 
   ctx.save();
-  ctx.globalAlpha = blink;
-  ctx.strokeStyle = "#e43625";
-  ctx.lineWidth = 4;
-  ctx.setLineDash([12, 10]);
+
+  ctx.fillStyle = "rgba(255,255,255,0.58)";
   ctx.beginPath();
-  ctx.moveTo(18, DANGER_Y);
-  ctx.lineTo(WIDTH - 18, DANGER_Y);
+  ctx.roundRect(barX, barY, barW, barH, 999);
+  ctx.fill();
+
+  const gradient = ctx.createLinearGradient(barX, barY, barX + barW, barY);
+  gradient.addColorStop(0, "#76e7ff");
+  gradient.addColorStop(0.5, "#b7ffcf");
+  gradient.addColorStop(1, "#ffe27a");
+
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.roundRect(barX, barY, barW * ratio, barH, 999);
+  ctx.fill();
+
+  ctx.strokeStyle = "rgba(54, 80, 97, 0.45)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(barX, barY, barW, barH, 999);
   ctx.stroke();
 
-  ctx.setLineDash([]);
-  ctx.globalAlpha = 0.85;
-  ctx.fillStyle = "#b62218";
-  ctx.font = "800 12px system-ui, sans-serif";
+  ctx.fillStyle = "#284253";
+  ctx.font = "900 12px system-ui, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("위험선", WIDTH / 2, DANGER_Y - 8);
+  ctx.textBaseline = "middle";
+  ctx.fillText(`${seconds}s`, WIDTH / 2, barY + barH / 2 + 0.5);
+
   ctx.restore();
 }
 
@@ -1089,9 +1169,7 @@ function drawSoapBubble(bubble, now) {
   const visualRadius = BASE_RADIUS * (1 + growthStep * 0.038);
   const borderWidth = Math.max(0.9, 4.2 - growthStep * 0.62);
   const wobbleSeed = bubble.gameId * 0.73;
-  const floatAlpha = bubble.isFloating
-    ? Math.max(0, Math.min(1, bubble.floatLife / FLOAT_LIFE_MS)) * 0.72
-    : 1;
+  const floatAlpha = bubble.isFloating ? 0.82 : 1;
 
   ctx.save();
   ctx.globalAlpha = floatAlpha;
@@ -1099,7 +1177,7 @@ function drawSoapBubble(bubble, now) {
   ctx.rotate(bubble.angle * 0.08);
 
   drawWobblyBubbleShape(visualRadius, color, borderWidth, now, wobbleSeed, bubble);
-  drawBubbleHighlights(visualRadius, now, wobbleSeed);
+  drawBubbleHighlights(visualRadius, now, wobbleSeed, bubble);
 
   if (bubble.item && !bubble.isFloating) {
     drawSpecialIcon(bubble.item, visualRadius, color);
@@ -1109,7 +1187,7 @@ function drawSoapBubble(bubble, now) {
 }
 
 function drawWobblyBubbleShape(radius, color, borderWidth, now, seed, bubble) {
-  const points = 52;
+  const points = 64;
   const power = Math.max(0, bubble.wobblePower || 0);
   const phase = bubble.wobblePhase || 0;
   const dir = normalizeVector(bubble.wobbleDir || { x: 0, y: -1 });
@@ -1120,13 +1198,14 @@ function drawWobblyBubbleShape(radius, color, borderWidth, now, seed, bubble) {
     radius * 0.12,
     0,
     0,
-    radius * 1.08
+    radius * 1.1
   );
 
-  fillGradient.addColorStop(0, "rgba(255,255,255,0.72)");
-  fillGradient.addColorStop(0.38, `hsla(${color.hue}, 95%, 76%, 0.20)`);
-  fillGradient.addColorStop(0.72, `hsla(${color.hue}, 96%, 62%, 0.24)`);
-  fillGradient.addColorStop(1, `hsla(${color.hue + 35}, 95%, 74%, 0.42)`);
+  fillGradient.addColorStop(0, "rgba(255,255,255,0.78)");
+  fillGradient.addColorStop(0.28, `hsla(${color.hue}, 96%, 82%, 0.18)`);
+  fillGradient.addColorStop(0.58, `hsla(${color.hue + 80}, 96%, 75%, 0.16)`);
+  fillGradient.addColorStop(0.78, `hsla(${color.hue}, 96%, 62%, 0.25)`);
+  fillGradient.addColorStop(1, `hsla(${color.hue + 35}, 95%, 72%, 0.44)`);
 
   ctx.beginPath();
 
@@ -1141,9 +1220,11 @@ function drawWobblyBubbleShape(radius, color, borderWidth, now, seed, bubble) {
       const dot = px * dir.x + py * dir.y;
       const side = 1 - dot * dot;
 
-      const squash = -radius * 0.16 * power * dot * dot;
-      const sideBulge = radius * 0.10 * power * side;
-      const ripple = radius * 0.026 * power * Math.sin(t * 5 - phase * 2 + seed);
+      const squash = -radius * 0.28 * power * dot * dot;
+      const sideBulge = radius * 0.22 * power * side;
+      const ripple =
+        radius * 0.06 * power * Math.sin(t * 4 - phase * 2.2 + seed) +
+        radius * 0.035 * power * Math.sin(t * 7 + phase * 1.4 + seed);
 
       r = radius + squash + sideBulge + ripple;
     }
@@ -1166,32 +1247,48 @@ function drawWobblyBubbleShape(radius, color, borderWidth, now, seed, bubble) {
   ctx.strokeStyle = color.stroke;
   ctx.stroke();
 
-  ctx.lineWidth = Math.max(0.8, borderWidth * 0.42);
-  ctx.strokeStyle = "rgba(255,255,255,0.65)";
+  ctx.lineWidth = Math.max(0.8, borderWidth * 0.45);
+  ctx.strokeStyle = "rgba(255,255,255,0.72)";
   ctx.stroke();
 
   ctx.save();
-  ctx.globalAlpha = 0.34;
-  ctx.strokeStyle = `hsla(${color.hue + 120}, 95%, 72%, 0.75)`;
-  ctx.lineWidth = 1.2;
+  ctx.globalAlpha = 0.42;
+  ctx.strokeStyle = `hsla(${color.hue + 120}, 95%, 74%, 0.82)`;
+  ctx.lineWidth = 1.3;
   ctx.beginPath();
   ctx.arc(0, 0, radius * 0.82, -0.25 * Math.PI, 0.38 * Math.PI);
+  ctx.stroke();
+
+  ctx.strokeStyle = `hsla(${color.hue - 95}, 95%, 78%, 0.52)`;
+  ctx.beginPath();
+  ctx.arc(0, 0, radius * 0.72, 0.62 * Math.PI, 1.05 * Math.PI);
   ctx.stroke();
   ctx.restore();
 }
 
-function drawBubbleHighlights(radius, now, seed) {
-  const shiftX = Math.sin(now / 700 + seed) * radius * 0.08;
-  const shiftY = Math.cos(now / 760 + seed) * radius * 0.07;
+function drawBubbleHighlights(radius, now, seed, bubble) {
+  const power = Math.max(0, bubble.wobblePower || 0);
+  const extra = power * radius * 0.1;
 
-  ctx.fillStyle = "rgba(255,255,255,0.72)";
+  const shiftX = Math.sin(now / 700 + seed) * radius * 0.06;
+  const shiftY = Math.cos(now / 760 + seed) * radius * 0.05;
+
+  ctx.fillStyle = "rgba(255,255,255,0.76)";
   ctx.beginPath();
-  ctx.ellipse(-radius * 0.34 + shiftX, -radius * 0.38 + shiftY, radius * 0.22, radius * 0.12, -0.55, 0, Math.PI * 2);
+  ctx.ellipse(
+    -radius * 0.34 + shiftX,
+    -radius * 0.38 + shiftY,
+    radius * 0.23 + extra,
+    radius * 0.12,
+    -0.55,
+    0,
+    Math.PI * 2
+  );
   ctx.fill();
 
-  ctx.fillStyle = "rgba(255,255,255,0.46)";
+  ctx.fillStyle = "rgba(255,255,255,0.5)";
   ctx.beginPath();
-  ctx.arc(radius * 0.27 - shiftX * 0.5, -radius * 0.18, radius * 0.08, 0, Math.PI * 2);
+  ctx.arc(radius * 0.27 - shiftX * 0.5, -radius * 0.18, radius * 0.08 + extra * 0.25, 0, Math.PI * 2);
   ctx.fill();
 }
 
@@ -1292,11 +1389,11 @@ function drawEffects() {
   for (const effect of popEffects) {
     const alpha = Math.max(0, effect.life / effect.maxLife);
     ctx.globalAlpha = alpha;
-    ctx.fillStyle = "#2d6a85";
+    ctx.fillStyle = effect.isTimeBonus ? "#14925b" : "#2d6a85";
     ctx.font = "900 21px system-ui, sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(`POP x${effect.count}`, effect.x, effect.y);
+    ctx.fillText(effect.isTimeBonus ? effect.count : `POP x${effect.count}`, effect.x, effect.y);
   }
 
   ctx.restore();
@@ -1338,7 +1435,8 @@ function addPopEffect(x, y, count) {
     y,
     count,
     life: 620,
-    maxLife: 620
+    maxLife: 620,
+    isTimeBonus: false
   });
 }
 
