@@ -667,7 +667,9 @@ function updateActiveBubble(delta) {
       });
     }
 
-    checkObstacleCollision();
+    if (checkObstacleCollision()) {
+      return;
+    }
 
     if (activeBubble.y <= GRID_TOP - SLOT_RADIUS * 0.2) {
       placeActiveBubble();
@@ -682,8 +684,8 @@ function updateActiveBubble(delta) {
 }
 
 function checkObstacleCollision() {
-  if (!activeBubble) return;
-  if (activeBubble.obstacleCooldownMs > 0) return;
+  if (!activeBubble) return false;
+  if (activeBubble.obstacleCooldownMs > 0) return false;
 
   const obstacles = getCurrentStage().obstacles || [];
 
@@ -701,15 +703,24 @@ function checkObstacleCollision() {
       const hit = circleSegmentHit(activeBubble.x, activeBubble.y, SLOT_RADIUS, a, b);
       if (!hit) continue;
 
-      reflectActiveBubbleFromNormal(hit.normal);
-      activeBubble.x += hit.normal.x * (hit.overlap + 1.5);
-      activeBubble.y += hit.normal.y * (hit.overlap + 1.5);
-      activeBubble.obstacleCooldownMs = 90;
-      activeBubble.wobblePower = WOBBLE_MAX;
-      activeBubble.wobbleDir = hit.normal;
-      return;
+      burstActiveBubbleOnObstacle();
+      return true;
     }
   }
+
+  return false;
+}
+
+function burstActiveBubbleOnObstacle() {
+  if (!activeBubble) return;
+
+  addPopEffect(activeBubble.x, activeBubble.y, "MISS");
+
+  activeBubble = null;
+  canShoot = true;
+
+  statusText.textContent = `${getCurrentStage().name} · 삼각형에 닿아 터짐 · ←/→ 조준, Space 발사`;
+  updateHud();
 }
 
 function reflectActiveBubbleFromNormal(normal) {
