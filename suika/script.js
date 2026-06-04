@@ -74,6 +74,12 @@ let bubbleId = 1;
 let popEffects = [];
 let laserEffects = [];
 
+let keys = {
+  left: false,
+  right: false,
+  slow: false
+};
+
 let lastTime = performance.now();
 
 init();
@@ -97,20 +103,43 @@ function setupCanvas() {
 function bindEvents() {
   restartBtn.addEventListener("click", resetGame);
 
-  canvas.addEventListener("pointermove", (event) => {
-    updateAimFromEvent(event);
+  window.addEventListener("keydown", (event) => {
+    if (event.code === "ArrowLeft" || event.code === "KeyA") {
+      keys.left = true;
+      event.preventDefault();
+    }
+
+    if (event.code === "ArrowRight" || event.code === "KeyD") {
+      keys.right = true;
+      event.preventDefault();
+    }
+
+    if (event.code === "ShiftLeft" || event.code === "ShiftRight") {
+      keys.slow = true;
+      event.preventDefault();
+    }
+
+    if (event.code === "Space" || event.code === "Enter") {
+      event.preventDefault();
+      shoot();
+    }
   });
 
-  canvas.addEventListener("pointerdown", (event) => {
-    event.preventDefault();
-    canvas.setPointerCapture(event.pointerId);
-    updateAimFromEvent(event);
-  });
+  window.addEventListener("keyup", (event) => {
+    if (event.code === "ArrowLeft" || event.code === "KeyA") {
+      keys.left = false;
+      event.preventDefault();
+    }
 
-  canvas.addEventListener("pointerup", (event) => {
-    event.preventDefault();
-    updateAimFromEvent(event);
-    shoot();
+    if (event.code === "ArrowRight" || event.code === "KeyD") {
+      keys.right = false;
+      event.preventDefault();
+    }
+
+    if (event.code === "ShiftLeft" || event.code === "ShiftRight") {
+      keys.slow = false;
+      event.preventDefault();
+    }
   });
 
   window.addEventListener("resize", setupCanvas);
@@ -135,7 +164,7 @@ function resetGame() {
   updateAllGroupSizes();
   updateHud();
 
-  statusText.textContent = "조준 후 클릭/터치로 발사";
+  statusText.textContent = "←/→ 조준, Space 발사";
 }
 
 function createEmptyGrid() {
@@ -248,6 +277,7 @@ function loop(now) {
   lastTime = now;
 
   if (!gameOver) {
+    updateKeyboardAim(delta);
     updateTimeLimit(delta);
     updateActiveBubble(delta);
     updateWobbles(delta);
@@ -260,434 +290,25 @@ function loop(now) {
   requestAnimationFrame(loop);
 }
 
-function updateTimeLimit(delta) {
-  timeLeftMs = Math.max(0, timeLeftMs - delta);
-}
+function updateKeyboardAim(delta) {
+  if (activeBubble) return;
 
-function updateActiveBubble(delta) {
-  if (!activeBubble) return;
+  const normalSpeed = 0.0027;
+  const slowSpeed = 0.0011;
+  const speed = keys.slow ? slowSpeed : normalSpeed;
 
-  const speed = Math.hypot(activeBubble.vx, activeBubble.vy);
-  const scaledMove = speed * (delta / 16.67);
-  const steps = Math.max(1, Math.ceil(scaledMove / (SLOT_RADIUS * 0.75)));
-  const stepScale = (delta / 16.67) / steps;
+  const minAngle = -Math.PI + 0.18;
+  const maxAngle = -0.18;
 
-  for (let i = 0; i < steps; i++) {
-    activeBubble.x += activeBubble.vx * stepScale;
-    activeBubble.y += activeBubble.vy * stepScale;
-
-    if (activeBubble.x - SLOT_RADIUS <= 0) {
-      activeBubble.x = SLOT_RADIUS;
-      activeBubble.vx = Math.abs(activeBubble.vx) * WALL_SPEED_KEEP;
-      activeBubble.lastShotDir = normalizeVector({
-        x: activeBubble.vx,
-        y: activeBubble.vy
-      });
-    }
-
-    if (activeBubble.x + SLOT_RADIUS >= WIDTH) {
-      activeBubble.x = WIDTH - SLOT_RADIUS;
-      activeBubble.vx = -Math.abs(activeBubble.vx) * WALL_SPEED_KEEP;
-      activeBubble.lastShotDir = normalizeVector({
-        x: activeBubble.vx,
-        y: activeBubble.vy
-      });
-    }
-
-    if (activeBubble.y <= GRID_TOP - SLOT_RADIUS * 0.2) {
-      placeActiveBubble();
-      return;
-    }
-
-    if (checkActiveCollisionWithGrid()) {
-      placeActiveBubble();
-      return;
-    }
-  }
-}
-
-function checkActiveCollisionWithGrid() {
-  if (!activeBubble) return false;
-
-  const threshold = SLOT_RADIUS * 2 - 1.2;
-
-  for (let row = 0; row < ROWS; row++) {
-    for (let col = 0; col < COLS; col++) {
-      const bubble = grid[row][col];
-      if (!bubble) continue;
-
-      const center = getSlotCenter(row, col);
-      const dx = activeBubble.x - center.x;
-      const dy = activeBubble.y - center.y;
-      const dist = Math.hypot(dx, dy);
-
-      if (dist <= threshold) {
-        activeBubble.wobblePower = WOBBLE_MAX;
-        activeBubble.wobbleDir = normalizeVector({ x: dx, y: dy });
-        return true;
-      }
-    }
+  if (keys.left) {
+    aimAngle -= speed * delta;
   }
 
-  return false;
-}
-
-function placeActiveBubble() {
-  if (!activeBubble) return;
-
-  const slot = findNearestOpenAttachableSlot(activeBubble.x, activeBubble.y);
-
-  if (!slot) {
-    endGame();
-    return;
+  if (keys.right) {
+    aimAngle += speed * delta;
   }
 
-  const bubble = createGridBubble({
-    row: slot.row,
-    col: slot.col,
-    colorIndex: activeBubble.colorIndex,
-    item: activeBubble.item,
-    lastShotDir: activeBubble.lastShotDir
-  });
-
-  bubble.wobblePower = WOBBLE_MAX;
-  bubble.wobbleDir = normalizeVector({
-    x: activeBubble.vx,
-    y: activeBubble.vy
-  });
-
-  grid[slot.row][slot.col] = bubble;
-  activeBubble = null;
-
-  const group = findSameColorGroup(slot.row, slot.col);
-  updateAllGroupSizes();
-
-  if (group.length >= POP_COUNT) {
-    popGroup(group);
-  } else {
-    canShoot = true;
-    statusText.textContent = "조준 후 클릭/터치로 발사";
-  }
-
-  updateHud();
-}
-
-function findNearestOpenAttachableSlot(x, y) {
-  let best = null;
-  let bestDist = Infinity;
-
-  for (let row = 0; row < ROWS; row++) {
-    for (let col = 0; col < COLS; col++) {
-      if (grid[row][col]) continue;
-      if (!isSlotAttachable(row, col)) continue;
-
-      const center = getSlotCenter(row, col);
-      const dx = center.x - x;
-      const dy = center.y - y;
-      const dist = Math.hypot(dx, dy);
-
-      if (dist < bestDist) {
-        bestDist = dist;
-        best = { row, col };
-      }
-    }
-  }
-
-  return best;
-}
-
-function isSlotAttachable(row, col) {
-  if (row === 0) return true;
-
-  const neighbors = getNeighbors(row, col);
-
-  return neighbors.some(([nr, nc]) => {
-    return inBounds(nr, nc) && grid[nr][nc];
-  });
-}
-
-function getSlotCenter(row, col) {
-  const offset = row % 2 === 0 ? 0 : COL_GAP / 2;
-
-  return {
-    x: GRID_LEFT + col * COL_GAP + offset,
-    y: GRID_TOP + row * ROW_GAP
-  };
-}
-
-function getNeighbors(row, col) {
-  if (row % 2 === 0) {
-    return [
-      [row, col - 1],
-      [row, col + 1],
-      [row - 1, col - 1],
-      [row - 1, col],
-      [row + 1, col - 1],
-      [row + 1, col]
-    ];
-  }
-
-  return [
-    [row, col - 1],
-    [row, col + 1],
-    [row - 1, col],
-    [row - 1, col + 1],
-    [row + 1, col],
-    [row + 1, col + 1]
-  ];
-}
-
-function inBounds(row, col) {
-  return row >= 0 && row < ROWS && col >= 0 && col < COLS;
-}
-
-function findSameColorGroup(startRow, startCol) {
-  const start = grid[startRow]?.[startCol];
-  if (!start) return [];
-
-  const colorIndex = start.colorIndex;
-  const visited = new Set();
-  const stack = [[startRow, startCol]];
-  const group = [];
-
-  visited.add(`${startRow}:${startCol}`);
-
-  while (stack.length > 0) {
-    const [row, col] = stack.pop();
-    const bubble = grid[row][col];
-
-    if (!bubble || bubble.colorIndex !== colorIndex) continue;
-
-    group.push({ row, col, bubble });
-
-    for (const [nr, nc] of getNeighbors(row, col)) {
-      if (!inBounds(nr, nc)) continue;
-      if (visited.has(`${nr}:${nc}`)) continue;
-
-      const next = grid[nr][nc];
-      if (!next || next.colorIndex !== colorIndex) continue;
-
-      visited.add(`${nr}:${nc}`);
-      stack.push([nr, nc]);
-    }
-  }
-
-  return group;
-}
-
-function updateAllGroupSizes() {
-  const visited = new Set();
-
-  for (let row = 0; row < ROWS; row++) {
-    for (let col = 0; col < COLS; col++) {
-      const bubble = grid[row][col];
-      if (!bubble) continue;
-      if (visited.has(`${row}:${col}`)) continue;
-
-      const group = findSameColorGroup(row, col);
-
-      for (const item of group) {
-        visited.add(`${item.row}:${item.col}`);
-      }
-
-      for (const item of group) {
-        item.bubble.groupSize = group.length;
-      }
-    }
-  }
-}
-
-function popGroup(group) {
-  if (!group || group.length === 0) return;
-
-  const unique = group.filter((item) => {
-    return grid[item.row]?.[item.col] === item.bubble;
-  });
-
-  if (unique.length === 0) return;
-
-  const specialBubbles = unique
-    .map((item) => item.bubble)
-    .filter((bubble) => bubble.item);
-
-  const baseColorIndex = unique[0].bubble.colorIndex;
-  const center = getGroupCenter(unique);
-  const extraCount = Math.max(0, unique.length - POP_COUNT);
-
-  for (const item of unique) {
-    grid[item.row][item.col] = null;
-  }
-
-  score += unique.length * 80 + extraCount * 35;
-  addTimeBonus(POP_TIME_BONUS_BASE + extraCount * POP_TIME_BONUS_PER_EXTRA);
-  addPopEffect(center.x, center.y, unique.length);
-
-  for (const bubble of specialBubbles) {
-    triggerSpecialBubble(bubble, baseColorIndex, center);
-  }
-
-  updateAllGroupSizes();
-
-  if (score > bestScore) {
-    bestScore = score;
-    localStorage.setItem("soapBubbleBestScore", String(bestScore));
-  }
-
-  canShoot = true;
-  statusText.textContent = "조준 후 클릭/터치로 발사";
-  updateHud();
-}
-
-function triggerSpecialBubble(bubble, colorIndex, fallbackCenter) {
-  if (!bubble.item) return;
-
-  if (bubble.item === "clearColor") {
-    clearAllBubblesOfColor(colorIndex);
-  }
-
-  if (bubble.item === "line") {
-    clearBubblesOnLine(fallbackCenter, bubble.lastShotDir);
-  }
-}
-
-function clearAllBubblesOfColor(colorIndex) {
-  const targets = [];
-
-  for (let row = 0; row < ROWS; row++) {
-    for (let col = 0; col < COLS; col++) {
-      const bubble = grid[row][col];
-      if (!bubble) continue;
-      if (bubble.colorIndex !== colorIndex) continue;
-
-      targets.push({ row, col, bubble });
-    }
-  }
-
-  if (targets.length === 0) return;
-
-  const center = getGroupCenter(targets);
-
-  for (const item of targets) {
-    grid[item.row][item.col] = null;
-  }
-
-  score += targets.length * 55;
-  addPopEffect(center.x, center.y, targets.length);
-  updateAllGroupSizes();
-}
-
-function clearBubblesOnLine(origin, direction) {
-  const dir = normalizeVector(direction || { x: 0, y: -1 });
-  const targets = [];
-  const lineWidth = SLOT_RADIUS * 1.05;
-
-  for (let row = 0; row < ROWS; row++) {
-    for (let col = 0; col < COLS; col++) {
-      const bubble = grid[row][col];
-      if (!bubble) continue;
-
-      const center = getSlotCenter(row, col);
-      const dx = center.x - origin.x;
-      const dy = center.y - origin.y;
-      const cross = Math.abs(dx * dir.y - dy * dir.x);
-
-      if (cross <= lineWidth) {
-        targets.push({ row, col, bubble });
-      }
-    }
-  }
-
-  if (targets.length === 0) return;
-
-  for (const item of targets) {
-    grid[item.row][item.col] = null;
-  }
-
-  score += targets.length * 65;
-
-  laserEffects.push({
-    x: origin.x,
-    y: origin.y,
-    dx: dir.x,
-    dy: dir.y,
-    life: 360,
-    maxLife: 360
-  });
-
-  updateAllGroupSizes();
-}
-
-function getGroupCenter(group) {
-  if (!group || group.length === 0) {
-    return { x: WIDTH / 2, y: HEIGHT / 2 };
-  }
-
-  let x = 0;
-  let y = 0;
-
-  for (const item of group) {
-    const center = getSlotCenter(item.row, item.col);
-    x += center.x;
-    y += center.y;
-  }
-
-  return {
-    x: x / group.length,
-    y: y / group.length
-  };
-}
-
-function addTimeBonus(amount) {
-  timeLeftMs = Math.min(MAX_TIME_MS, timeLeftMs + amount);
-
-  popEffects.push({
-    x: WIDTH / 2,
-    y: 106,
-    count: `+${(amount / 1000).toFixed(1)}s`,
-    life: 620,
-    maxLife: 620,
-    isTimeBonus: true
-  });
-}
-
-function checkGameOver() {
-  if (timeLeftMs <= 0) {
-    endGame();
-    return;
-  }
-
-  for (let col = 0; col < COLS; col++) {
-    if (grid[ROWS - 1][col]) {
-      endGame();
-      return;
-    }
-  }
-}
-
-function endGame() {
-  gameOver = true;
-  canShoot = false;
-  activeBubble = null;
-  statusText.textContent = "게임 오버! 새 게임을 눌러 다시 시작";
-}
-
-function updateWobbles(delta) {
-  for (let row = 0; row < ROWS; row++) {
-    for (let col = 0; col < COLS; col++) {
-      const bubble = grid[row][col];
-      if (!bubble) continue;
-
-      if (bubble.wobblePower > 0) {
-        bubble.wobblePhase += delta * 0.024;
-        bubble.wobblePower = Math.max(0, bubble.wobblePower - delta * WOBBLE_DECAY);
-      }
-    }
-  }
-
-  if (activeBubble && activeBubble.wobblePower > 0) {
-    activeBubble.wobblePhase += delta * 0.024;
-    activeBubble.wobblePower = Math.max(0, activeBubble.wobblePower - delta * WOBBLE_DECAY);
-  }
+  aimAngle = Math.max(minAngle, Math.min(maxAngle, aimAngle));
 }
 
 function updateEffects(delta) {
