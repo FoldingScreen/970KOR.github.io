@@ -13,8 +13,6 @@ const ROWS = 12;
 const COL_GAP = 48;
 const ROW_GAP = 41;
 const GRID_TOP = 92;
-
-// 홀수 줄이 오른쪽으로 반 칸 밀리므로, 그 폭까지 고려해서 가운데 정렬
 const GRID_LEFT = (WIDTH - ((COLS - 1) * COL_GAP + COL_GAP / 2)) / 2;
 
 const SHOT_POWER = 18.5;
@@ -51,6 +49,131 @@ const SPECIAL_ITEMS = {
   }
 };
 
+const STAGES = [
+  {
+    name: "1. 기본 훈련",
+    aimLine: true,
+    aimLineLength: 255,
+    previewCount: 1,
+    hidePreviewAfterMs: null,
+    targetPop: 24,
+    initialRows: 4,
+    timeMs: 180000,
+    maxTimeMs: 240000,
+    obstacles: [],
+    virus: null
+  },
+  {
+    name: "2. 짧은 조준선",
+    aimLine: true,
+    aimLineLength: 120,
+    previewCount: 1,
+    hidePreviewAfterMs: null,
+    targetPop: 28,
+    initialRows: 5,
+    timeMs: 170000,
+    maxTimeMs: 230000,
+    obstacles: [],
+    virus: null
+  },
+  {
+    name: "3. 역삼각 쿠션",
+    aimLine: true,
+    aimLineLength: 190,
+    previewCount: 1,
+    hidePreviewAfterMs: null,
+    targetPop: 30,
+    initialRows: 5,
+    timeMs: 170000,
+    maxTimeMs: 230000,
+    obstacles: [
+      { type: "invertedTriangle", cx: WIDTH / 2, cy: 315, w: 170, h: 104 }
+    ],
+    virus: null
+  },
+  {
+    name: "4. 감각 조준",
+    aimLine: false,
+    aimLineLength: 0,
+    previewCount: 1,
+    hidePreviewAfterMs: null,
+    targetPop: 30,
+    initialRows: 5,
+    timeMs: 160000,
+    maxTimeMs: 220000,
+    obstacles: [],
+    virus: null
+  },
+  {
+    name: "5. 기억 사격",
+    aimLine: true,
+    aimLineLength: 160,
+    previewCount: 5,
+    hidePreviewAfterMs: 2600,
+    targetPop: 32,
+    initialRows: 5,
+    timeMs: 170000,
+    maxTimeMs: 230000,
+    obstacles: [],
+    virus: null
+  },
+  {
+    name: "6. 기억 쿠션",
+    aimLine: false,
+    aimLineLength: 0,
+    previewCount: 5,
+    hidePreviewAfterMs: 2200,
+    targetPop: 34,
+    initialRows: 5,
+    timeMs: 170000,
+    maxTimeMs: 230000,
+    obstacles: [
+      { type: "invertedTriangle", cx: WIDTH / 2, cy: 310, w: 180, h: 110 }
+    ],
+    virus: null
+  },
+  {
+    name: "7. 오염 시작",
+    aimLine: true,
+    aimLineLength: 150,
+    previewCount: 1,
+    hidePreviewAfterMs: null,
+    targetPop: 32,
+    initialRows: 5,
+    timeMs: 180000,
+    maxTimeMs: 240000,
+    obstacles: [],
+    virus: {
+      count: 1,
+      hp: 1,
+      attachMs: 5500,
+      cooldownMs: 11500,
+      spreadCount: 1
+    }
+  },
+  {
+    name: "8. 오염 확산",
+    aimLine: true,
+    aimLineLength: 120,
+    previewCount: 1,
+    hidePreviewAfterMs: null,
+    targetPop: 36,
+    initialRows: 5,
+    timeMs: 170000,
+    maxTimeMs: 230000,
+    obstacles: [
+      { type: "invertedTriangle", cx: WIDTH / 2, cy: 318, w: 175, h: 110 }
+    ],
+    virus: {
+      count: 1,
+      hp: 2,
+      attachMs: 4500,
+      cooldownMs: 9000,
+      spreadCount: 2
+    }
+  }
+];
+
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
@@ -62,12 +185,17 @@ const restartBtn = document.getElementById("restartBtn");
 
 let grid = [];
 let activeBubble = null;
-let nextBubbleInfo = null;
+let previewQueue = [];
+let previewRevealUntil = 0;
 
 let score = 0;
 let bestScore = Number(localStorage.getItem("soapBubbleBestScore") || 0);
 
+let currentStageIndex = 0;
+let stagePoppedCount = 0;
 let timeLeftMs = START_TIME_MS;
+let stageMaxTimeMs = MAX_TIME_MS;
+
 let canShoot = true;
 let gameOver = false;
 let aimAngle = -Math.PI / 2;
@@ -148,44 +276,57 @@ function bindEvents() {
 }
 
 function resetGame() {
-  grid = createEmptyGrid();
-
-  activeBubble = null;
-  nextBubbleInfo = createRandomBubbleInfo();
-
   score = 0;
-  timeLeftMs = START_TIME_MS;
+  bubbleId = 1;
+  currentStageIndex = 0;
+  gameOver = false;
+  startStage(currentStageIndex);
+}
+
+function startStage(index) {
+  currentStageIndex = Math.max(0, Math.min(index, STAGES.length - 1));
+  const stage = getCurrentStage();
+
+  grid = createEmptyGrid();
+  activeBubble = null;
+  previewQueue = [];
+  stagePoppedCount = 0;
+  timeLeftMs = stage.timeMs;
+  stageMaxTimeMs = stage.maxTimeMs;
   canShoot = true;
   gameOver = false;
-  bubbleId = 1;
-
+  aimAngle = -Math.PI / 2;
   popEffects = [];
   laserEffects = [];
 
-  seedInitialBubbles();
+  seedInitialBubbles(stage.initialRows);
+  seedStageViruses(stage);
   updateAllGroupSizes();
+  refillPreviewQueue(true);
   updateHud();
 
-  statusText.textContent = "←/→ 조준, Space 발사";
+  statusText.textContent = `${stage.name} · ←/→ 조준, Space 발사`;
+}
+
+function getCurrentStage() {
+  return STAGES[currentStageIndex] || STAGES[STAGES.length - 1];
 }
 
 function createEmptyGrid() {
   return Array.from({ length: ROWS }, () => Array(COLS).fill(null));
 }
 
-function seedInitialBubbles() {
-  const initialRows = 5;
-
+function seedInitialBubbles(initialRows) {
   for (let row = 0; row < initialRows; row++) {
     for (let col = 0; col < COLS; col++) {
       const skipEdge =
-        row >= 3 &&
+        row >= Math.max(2, initialRows - 2) &&
         (col === 0 || col === COLS - 1) &&
-        Math.random() < 0.55;
+        Math.random() < 0.4;
 
       const skipRandom =
-        row === 4 &&
-        Math.random() < 0.28;
+        row === initialRows - 1 &&
+        Math.random() < 0.2;
 
       if (skipEdge || skipRandom) continue;
 
@@ -194,6 +335,7 @@ function seedInitialBubbles() {
       grid[row][col] = createGridBubble({
         row,
         col,
+        type: "normal",
         colorIndex,
         item: null
       });
@@ -211,6 +353,33 @@ function pickInitialColor(row, col) {
   return Math.floor(Math.random() * BUBBLE_COLORS.length);
 }
 
+function seedStageViruses(stage) {
+  if (!stage.virus) return;
+
+  for (let i = 0; i < stage.virus.count; i++) {
+    const candidates = getNormalBubbleCells().filter((cell) => !cell.bubble.virusState);
+    if (candidates.length === 0) return;
+
+    const picked = candidates[Math.floor(Math.random() * candidates.length)];
+    attachVirusToBubble(picked.bubble, stage.virus, "attached");
+  }
+}
+
+function getNormalBubbleCells() {
+  const cells = [];
+
+  for (let row = 0; row < ROWS; row++) {
+    for (let col = 0; col < COLS; col++) {
+      const bubble = grid[row][col];
+      if (!bubble) continue;
+      if (bubble.type !== "normal") continue;
+      cells.push({ row, col, bubble });
+    }
+  }
+
+  return cells;
+}
+
 function createRandomBubbleInfo() {
   const colorIndex = Math.floor(Math.random() * BUBBLE_COLORS.length);
   const roll = Math.random();
@@ -224,19 +393,29 @@ function createRandomBubbleInfo() {
   }
 
   return {
+    type: "normal",
     colorIndex,
     item
   };
 }
 
-function createGridBubble({ row, col, colorIndex, item, lastShotDir }) {
+function createGridBubble({ row, col, type, colorIndex, item, lastShotDir }) {
   return {
     id: bubbleId++,
     row,
     col,
-    colorIndex,
+    type: type || "normal",
+    colorIndex: type === "black" ? null : colorIndex,
     item: item || null,
     groupSize: 1,
+    infectionLevel: type === "black" ? 3 : 0,
+    blackHp: type === "black" ? 3 : 0,
+    virusState: null,
+    virusHp: 0,
+    virusTimerMs: 0,
+    virusCooldownMs: 0,
+    virusAttachMs: 0,
+    virusSpreadCount: 1,
     wobblePower: 0,
     wobblePhase: 0,
     wobbleDir: { x: 0, y: -1 },
@@ -244,8 +423,26 @@ function createGridBubble({ row, col, colorIndex, item, lastShotDir }) {
   };
 }
 
+function refillPreviewQueue(forceReveal) {
+  const stage = getCurrentStage();
+
+  if (previewQueue.length > 0) return;
+
+  for (let i = 0; i < stage.previewCount; i++) {
+    previewQueue.push(createRandomBubbleInfo());
+  }
+
+  if (forceReveal || stage.hidePreviewAfterMs) {
+    previewRevealUntil = performance.now() + (stage.hidePreviewAfterMs || 999999999);
+  }
+}
+
 function shoot() {
   if (gameOver || !canShoot || activeBubble) return;
+
+  refillPreviewQueue(false);
+  const info = previewQueue.shift();
+  refillPreviewQueue(false);
 
   const dir = normalizeVector({
     x: Math.cos(aimAngle),
@@ -258,20 +455,24 @@ function shoot() {
     y: CANNON.y + dir.y * (SLOT_RADIUS + 14),
     vx: dir.x * SHOT_POWER,
     vy: dir.y * SHOT_POWER,
-    colorIndex: nextBubbleInfo.colorIndex,
-    item: nextBubbleInfo.item,
+    type: "normal",
+    colorIndex: info.colorIndex,
+    item: info.item,
     groupSize: 1,
+    infectionLevel: 0,
+    blackHp: 0,
+    virusState: null,
     wobblePower: 0,
     wobblePhase: 0,
     wobbleDir: { x: 0, y: -1 },
-    lastShotDir: dir
+    lastShotDir: dir,
+    obstacleCooldownMs: 0
   };
 
-  nextBubbleInfo = createRandomBubbleInfo();
   canShoot = false;
 
   updateHud();
-  statusText.textContent = "비눗방울 비행 중";
+  statusText.textContent = `${getCurrentStage().name} · 비눗방울 비행 중`;
 }
 
 function loop(now) {
@@ -281,6 +482,7 @@ function loop(now) {
   if (!gameOver) {
     updateKeyboardAim(delta);
     updateTimeLimit(delta);
+    updateVirusTimers(delta);
     updateActiveBubble(delta);
     updateWobbles(delta);
     checkGameOver();
@@ -295,9 +497,6 @@ function loop(now) {
 function updateKeyboardAim(delta) {
   if (activeBubble) return;
 
-  // 조준 감도
-  // normalSpeed: 일반 회전 속도
-  // slowSpeed: Shift 누른 상태 미세 조준 속도
   const normalSpeed = 0.0018;
   const slowSpeed = 0.00065;
   const speed = keys.slow ? slowSpeed : normalSpeed;
@@ -320,8 +519,126 @@ function updateTimeLimit(delta) {
   timeLeftMs = Math.max(0, timeLeftMs - delta);
 }
 
+function updateVirusTimers(delta) {
+  const cells = [];
+
+  for (let row = 0; row < ROWS; row++) {
+    for (let col = 0; col < COLS; col++) {
+      const bubble = grid[row][col];
+      if (!bubble || !bubble.virusState) continue;
+      cells.push({ row, col, bubble });
+    }
+  }
+
+  for (const cell of cells) {
+    const bubble = grid[cell.row]?.[cell.col];
+    if (bubble !== cell.bubble) continue;
+    if (!bubble.virusState) continue;
+
+    bubble.virusTimerMs -= delta;
+
+    if (bubble.virusTimerMs > 0) continue;
+
+    if (bubble.virusState === "attached") {
+      bubble.virusState = "active";
+      bubble.virusTimerMs = bubble.virusCooldownMs;
+      bubble.wobblePower = WOBBLE_MAX;
+      continue;
+    }
+
+    if (bubble.virusState === "active") {
+      spreadVirusFrom(cell.row, cell.col, bubble);
+    }
+  }
+}
+
+function spreadVirusFrom(row, col, virusBubble) {
+  const candidates = [];
+
+  for (const [nr, nc] of getNeighbors(row, col)) {
+    if (!inBounds(nr, nc)) continue;
+
+    const target = grid[nr][nc];
+    if (!target) continue;
+    if (target.virusState) continue;
+    if (target.type !== "normal") continue;
+
+    candidates.push({ row: nr, col: nc, bubble: target });
+  }
+
+  if (candidates.length === 0) {
+    virusBubble.virusTimerMs = virusBubble.virusCooldownMs;
+    return;
+  }
+
+  shuffleArray(candidates);
+  const affected = candidates.slice(0, Math.min(virusBubble.virusSpreadCount, candidates.length));
+
+  for (const target of affected) {
+    increaseInfection(target.bubble);
+  }
+
+  const moveTarget = affected[Math.floor(Math.random() * affected.length)];
+  const stageVirus = getCurrentStage().virus || {
+    hp: 1,
+    attachMs: 4500,
+    cooldownMs: 10000,
+    spreadCount: 1
+  };
+
+  virusBubble.virusState = null;
+  virusBubble.virusHp = 0;
+  virusBubble.virusTimerMs = 0;
+  virusBubble.virusCooldownMs = 0;
+
+  makeBlackBubble(virusBubble);
+  attachVirusToBubble(moveTarget.bubble, stageVirus, "active");
+  moveTarget.bubble.virusTimerMs = moveTarget.bubble.virusCooldownMs;
+  moveTarget.bubble.wobblePower = WOBBLE_MAX;
+}
+
+function attachVirusToBubble(bubble, config, state) {
+  if (!bubble) return;
+
+  bubble.virusState = state || "attached";
+  bubble.virusHp = config.hp;
+  bubble.virusAttachMs = config.attachMs;
+  bubble.virusCooldownMs = config.cooldownMs;
+  bubble.virusSpreadCount = config.spreadCount;
+  bubble.virusTimerMs = bubble.virusState === "attached"
+    ? bubble.virusAttachMs
+    : bubble.virusCooldownMs;
+}
+
+function increaseInfection(bubble) {
+  if (!bubble || bubble.type !== "normal") return;
+  if (bubble.virusState) return;
+
+  bubble.infectionLevel += 1;
+  bubble.wobblePower = Math.max(bubble.wobblePower || 0, WOBBLE_MAX * 0.55);
+
+  if (bubble.infectionLevel >= 3) {
+    makeBlackBubble(bubble);
+  }
+}
+
+function makeBlackBubble(bubble) {
+  if (!bubble) return;
+
+  bubble.type = "black";
+  bubble.colorIndex = null;
+  bubble.item = null;
+  bubble.infectionLevel = 3;
+  bubble.blackHp = 3;
+  bubble.groupSize = 1;
+}
+
 function updateActiveBubble(delta) {
   if (!activeBubble) return;
+
+  if (activeBubble.obstacleCooldownMs > 0) {
+    activeBubble.obstacleCooldownMs = Math.max(0, activeBubble.obstacleCooldownMs - delta);
+  }
 
   const speed = Math.hypot(activeBubble.vx, activeBubble.vy);
   const scaledMove = speed * (delta / 16.67);
@@ -350,6 +667,8 @@ function updateActiveBubble(delta) {
       });
     }
 
+    checkObstacleCollision();
+
     if (activeBubble.y <= GRID_TOP - SLOT_RADIUS * 0.2) {
       placeActiveBubble();
       return;
@@ -360,6 +679,88 @@ function updateActiveBubble(delta) {
       return;
     }
   }
+}
+
+function checkObstacleCollision() {
+  if (!activeBubble) return;
+  if (activeBubble.obstacleCooldownMs > 0) return;
+
+  const obstacles = getCurrentStage().obstacles || [];
+
+  for (const obstacle of obstacles) {
+    if (obstacle.type !== "invertedTriangle") continue;
+
+    const points = getTrianglePoints(obstacle);
+    const edges = [
+      [points[0], points[1]],
+      [points[1], points[2]],
+      [points[2], points[0]]
+    ];
+
+    for (const [a, b] of edges) {
+      const hit = circleSegmentHit(activeBubble.x, activeBubble.y, SLOT_RADIUS, a, b);
+      if (!hit) continue;
+
+      reflectActiveBubbleFromNormal(hit.normal);
+      activeBubble.x += hit.normal.x * (hit.overlap + 1.5);
+      activeBubble.y += hit.normal.y * (hit.overlap + 1.5);
+      activeBubble.obstacleCooldownMs = 90;
+      activeBubble.wobblePower = WOBBLE_MAX;
+      activeBubble.wobbleDir = hit.normal;
+      return;
+    }
+  }
+}
+
+function reflectActiveBubbleFromNormal(normal) {
+  const n = normalizeVector(normal);
+  const dot = activeBubble.vx * n.x + activeBubble.vy * n.y;
+
+  activeBubble.vx = (activeBubble.vx - 2 * dot * n.x) * WALL_SPEED_KEEP;
+  activeBubble.vy = (activeBubble.vy - 2 * dot * n.y) * WALL_SPEED_KEEP;
+  activeBubble.lastShotDir = normalizeVector({
+    x: activeBubble.vx,
+    y: activeBubble.vy
+  });
+}
+
+function circleSegmentHit(cx, cy, radius, a, b) {
+  const abx = b.x - a.x;
+  const aby = b.y - a.y;
+  const acx = cx - a.x;
+  const acy = cy - a.y;
+  const abLenSq = abx * abx + aby * aby;
+
+  if (abLenSq <= 0.0001) return null;
+
+  const t = Math.max(0, Math.min(1, (acx * abx + acy * aby) / abLenSq));
+  const px = a.x + abx * t;
+  const py = a.y + aby * t;
+  const dx = cx - px;
+  const dy = cy - py;
+  const dist = Math.hypot(dx, dy);
+
+  if (dist > radius) return null;
+
+  let normal;
+  if (dist <= 0.0001) {
+    normal = normalizeVector({ x: -aby, y: abx });
+  } else {
+    normal = { x: dx / dist, y: dy / dist };
+  }
+
+  return {
+    normal,
+    overlap: radius - dist
+  };
+}
+
+function getTrianglePoints(obstacle) {
+  return [
+    { x: obstacle.cx - obstacle.w / 2, y: obstacle.cy - obstacle.h / 2 },
+    { x: obstacle.cx + obstacle.w / 2, y: obstacle.cy - obstacle.h / 2 },
+    { x: obstacle.cx, y: obstacle.cy + obstacle.h / 2 }
+  ];
 }
 
 function checkActiveCollisionWithGrid() {
@@ -401,6 +802,7 @@ function placeActiveBubble() {
   const bubble = createGridBubble({
     row: slot.row,
     col: slot.col,
+    type: "normal",
     colorIndex: activeBubble.colorIndex,
     item: activeBubble.item,
     lastShotDir: activeBubble.lastShotDir
@@ -422,7 +824,7 @@ function placeActiveBubble() {
     popGroup(group);
   } else {
     canShoot = true;
-    statusText.textContent = "←/→ 조준, Space 발사";
+    statusText.textContent = `${getCurrentStage().name} · ←/→ 조준, Space 발사`;
   }
 
   updateHud();
@@ -499,7 +901,7 @@ function inBounds(row, col) {
 
 function findSameColorGroup(startRow, startCol) {
   const start = grid[startRow]?.[startCol];
-  if (!start) return [];
+  if (!isColorPopBubble(start)) return [];
 
   const colorIndex = start.colorIndex;
   const visited = new Set();
@@ -512,7 +914,7 @@ function findSameColorGroup(startRow, startCol) {
     const [row, col] = stack.pop();
     const bubble = grid[row][col];
 
-    if (!bubble || bubble.colorIndex !== colorIndex) continue;
+    if (!isColorPopBubble(bubble) || bubble.colorIndex !== colorIndex) continue;
 
     group.push({ row, col, bubble });
 
@@ -521,7 +923,7 @@ function findSameColorGroup(startRow, startCol) {
       if (visited.has(`${nr}:${nc}`)) continue;
 
       const next = grid[nr][nc];
-      if (!next || next.colorIndex !== colorIndex) continue;
+      if (!isColorPopBubble(next) || next.colorIndex !== colorIndex) continue;
 
       visited.add(`${nr}:${nc}`);
       stack.push([nr, nc]);
@@ -531,6 +933,13 @@ function findSameColorGroup(startRow, startCol) {
   return group;
 }
 
+function isColorPopBubble(bubble) {
+  if (!bubble) return false;
+  if (bubble.type !== "normal") return false;
+  if (bubble.infectionLevel >= 3) return false;
+  return typeof bubble.colorIndex === "number";
+}
+
 function updateAllGroupSizes() {
   const visited = new Set();
 
@@ -538,6 +947,12 @@ function updateAllGroupSizes() {
     for (let col = 0; col < COLS; col++) {
       const bubble = grid[row][col];
       if (!bubble) continue;
+
+      if (!isColorPopBubble(bubble)) {
+        bubble.groupSize = 1;
+        continue;
+      }
+
       if (visited.has(`${row}:${col}`)) continue;
 
       const group = findSameColorGroup(row, col);
@@ -575,8 +990,11 @@ function popGroup(group) {
   }
 
   score += unique.length * 80 + extraCount * 35;
+  stagePoppedCount += unique.length;
+
   addTimeBonus(POP_TIME_BONUS_BASE + extraCount * POP_TIME_BONUS_PER_EXTRA);
   addPopEffect(center.x, center.y, unique.length);
+  damageAdjacentHazards(unique);
 
   for (const bubble of specialBubbles) {
     triggerSpecialBubble(bubble, baseColorIndex, center);
@@ -589,9 +1007,85 @@ function popGroup(group) {
     localStorage.setItem("soapBubbleBestScore", String(bestScore));
   }
 
+  if (stagePoppedCount >= getCurrentStage().targetPop) {
+    advanceStage();
+    return;
+  }
+
   canShoot = true;
-  statusText.textContent = "←/→ 조준, Space 발사";
+  statusText.textContent = `${getCurrentStage().name} · ←/→ 조준, Space 발사`;
   updateHud();
+}
+
+function damageAdjacentHazards(poppedCells) {
+  const damaged = new Set();
+
+  for (const item of poppedCells) {
+    for (const [nr, nc] of getNeighbors(item.row, item.col)) {
+      if (!inBounds(nr, nc)) continue;
+      const key = `${nr}:${nc}`;
+      if (damaged.has(key)) continue;
+
+      const target = grid[nr][nc];
+      if (!target) continue;
+
+      let didDamage = false;
+
+      if (target.virusState) {
+        target.virusHp -= 1;
+        target.virusTimerMs = target.virusCooldownMs;
+        target.wobblePower = WOBBLE_MAX;
+        didDamage = true;
+
+        if (target.virusHp <= 0) {
+          target.virusState = null;
+          target.virusHp = 0;
+          target.virusTimerMs = 0;
+          target.virusCooldownMs = 0;
+          score += 150;
+        }
+      }
+
+      if (target.type === "black") {
+        target.blackHp -= 1;
+        target.wobblePower = WOBBLE_MAX;
+        didDamage = true;
+
+        if (target.blackHp <= 0) {
+          grid[nr][nc] = null;
+          score += 90;
+          const center = getSlotCenter(nr, nc);
+          addPopEffect(center.x, center.y, "정화");
+        }
+      }
+
+      if (didDamage) {
+        damaged.add(key);
+      }
+    }
+  }
+}
+
+function advanceStage() {
+  const nextIndex = currentStageIndex + 1;
+
+  if (nextIndex >= STAGES.length) {
+    statusText.textContent = "모든 스테이지 클리어! 계속 플레이합니다.";
+    currentStageIndex = STAGES.length - 1;
+    stagePoppedCount = 0;
+    timeLeftMs = Math.min(stageMaxTimeMs, timeLeftMs + 30000);
+    canShoot = true;
+    updateHud();
+    return;
+  }
+
+  statusText.textContent = `${STAGES[nextIndex].name} 진입!`;
+
+  setTimeout(() => {
+    if (!gameOver) {
+      startStage(nextIndex);
+    }
+  }, 900);
 }
 
 function triggerSpecialBubble(bubble, colorIndex, fallbackCenter) {
@@ -612,7 +1106,7 @@ function clearAllBubblesOfColor(colorIndex) {
   for (let row = 0; row < ROWS; row++) {
     for (let col = 0; col < COLS; col++) {
       const bubble = grid[row][col];
-      if (!bubble) continue;
+      if (!isColorPopBubble(bubble)) continue;
       if (bubble.colorIndex !== colorIndex) continue;
 
       targets.push({ row, col, bubble });
@@ -628,7 +1122,9 @@ function clearAllBubblesOfColor(colorIndex) {
   }
 
   score += targets.length * 55;
+  stagePoppedCount += targets.length;
   addPopEffect(center.x, center.y, targets.length);
+  damageAdjacentHazards(targets);
   updateAllGroupSizes();
 }
 
@@ -660,6 +1156,7 @@ function clearBubblesOnLine(origin, direction) {
   }
 
   score += targets.length * 65;
+  stagePoppedCount += targets.length;
 
   laserEffects.push({
     x: origin.x,
@@ -694,7 +1191,7 @@ function getGroupCenter(group) {
 }
 
 function addTimeBonus(amount) {
-  timeLeftMs = Math.min(MAX_TIME_MS, timeLeftMs + amount);
+  timeLeftMs = Math.min(stageMaxTimeMs, timeLeftMs + amount);
 
   popEffects.push({
     x: WIDTH / 2,
@@ -765,46 +1262,26 @@ function updateHud() {
   scoreText.textContent = String(score);
   bestText.textContent = String(bestScore);
 
-  const color = BUBBLE_COLORS[nextBubbleInfo.colorIndex];
+  const stage = getCurrentStage();
+  const previewHidden = Boolean(stage.hidePreviewAfterMs) && performance.now() > previewRevealUntil;
 
-  nextDrinkText.textContent = nextBubbleInfo.item
-    ? SPECIAL_ITEMS[nextBubbleInfo.item].icon
-    : "●";
+  nextDrinkText.innerHTML = previewQueue.map((info) => {
+    if (previewHidden) {
+      return `<span style="color:#9aa3aa; margin:0 1px;">●</span>`;
+    }
 
-  nextDrinkText.style.color = `hsl(${color.hue}, 90%, 56%)`;
-}
-
-function updateAimFromEvent(event) {
-  const point = getCanvasPoint(event);
-
-  const dx = point.x - CANNON.x;
-  const dy = point.y - CANNON.y;
-
-  const minAngle = -Math.PI + 0.18;
-  const maxAngle = -0.18;
-
-  if (dy >= -6) {
-    aimAngle = dx < 0 ? minAngle : maxAngle;
-    return;
-  }
-
-  const rawAngle = Math.atan2(dy, dx);
-  aimAngle = Math.max(minAngle, Math.min(maxAngle, rawAngle));
-}
-
-function getCanvasPoint(event) {
-  const rect = canvas.getBoundingClientRect();
-
-  return {
-    x: ((event.clientX - rect.left) / rect.width) * WIDTH,
-    y: ((event.clientY - rect.top) / rect.height) * HEIGHT
-  };
+    const color = BUBBLE_COLORS[info.colorIndex];
+    const label = info.item ? SPECIAL_ITEMS[info.item].icon : "●";
+    return `<span style="color:hsl(${color.hue}, 90%, 56%); margin:0 1px;">${label}</span>`;
+  }).join("");
 }
 
 function draw(now) {
   drawBackground();
   drawTimeBar();
+  drawStageInfo();
   drawSlotGuide();
+  drawObstacles();
   drawAimLine();
   drawGridBubbles(now);
   drawActiveBubble(now);
@@ -837,7 +1314,7 @@ function drawBackground() {
 }
 
 function drawTimeBar() {
-  const ratio = Math.max(0, Math.min(1, timeLeftMs / MAX_TIME_MS));
+  const ratio = Math.max(0, Math.min(1, timeLeftMs / stageMaxTimeMs));
   const seconds = Math.ceil(timeLeftMs / 1000);
 
   const barX = 28;
@@ -877,17 +1354,33 @@ function drawTimeBar() {
   ctx.restore();
 }
 
+function drawStageInfo() {
+  const stage = getCurrentStage();
+  const progress = Math.min(stage.targetPop, stagePoppedCount);
+
+  ctx.save();
+  ctx.fillStyle = "rgba(255,255,255,0.62)";
+  ctx.beginPath();
+  ctx.roundRect(26, 46, WIDTH - 52, 25, 999);
+  ctx.fill();
+
+  ctx.fillStyle = "#284253";
+  ctx.font = "800 12px system-ui, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(`${stage.name}  ${progress}/${stage.targetPop}`, WIDTH / 2, 58.5);
+  ctx.restore();
+}
+
 function drawSlotGuide() {
   ctx.save();
-
-  ctx.fillStyle = "rgba(255,255,255,0.16)";
+  ctx.fillStyle = "rgba(255,255,255,0.12)";
 
   for (let row = 0; row < ROWS; row++) {
     for (let col = 0; col < COLS; col++) {
       if (grid[row][col]) continue;
 
       const center = getSlotCenter(row, col);
-
       if (center.x < SLOT_RADIUS || center.x > WIDTH - SLOT_RADIUS) continue;
 
       ctx.beginPath();
@@ -899,13 +1392,46 @@ function drawSlotGuide() {
   ctx.restore();
 }
 
+function drawObstacles() {
+  const obstacles = getCurrentStage().obstacles || [];
+
+  ctx.save();
+
+  for (const obstacle of obstacles) {
+    if (obstacle.type !== "invertedTriangle") continue;
+
+    const points = getTrianglePoints(obstacle);
+
+    const gradient = ctx.createLinearGradient(obstacle.cx, obstacle.cy - obstacle.h / 2, obstacle.cx, obstacle.cy + obstacle.h / 2);
+    gradient.addColorStop(0, "rgba(92, 111, 130, 0.82)");
+    gradient.addColorStop(1, "rgba(52, 72, 94, 0.92)");
+
+    ctx.fillStyle = gradient;
+    ctx.strokeStyle = "rgba(255,255,255,0.55)";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    ctx.lineTo(points[1].x, points[1].y);
+    ctx.lineTo(points[2].x, points[2].y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
 function drawAimLine() {
+  const stage = getCurrentStage();
+
+  if (!stage.aimLine) return;
   if (gameOver || !canShoot || activeBubble) return;
 
   const startX = CANNON.x;
   const startY = CANNON.y;
-  const endX = startX + Math.cos(aimAngle) * 255;
-  const endY = startY + Math.sin(aimAngle) * 255;
+  const length = stage.aimLineLength || 255;
+  const endX = startX + Math.cos(aimAngle) * length;
+  const endY = startY + Math.sin(aimAngle) * length;
 
   ctx.save();
   ctx.strokeStyle = "rgba(64, 86, 112, 0.42)";
@@ -934,11 +1460,15 @@ function drawGridBubbles(now) {
 
 function drawActiveBubble(now) {
   if (!activeBubble) return;
-
   drawSoapBubble(activeBubble.x, activeBubble.y, activeBubble, now);
 }
 
 function drawSoapBubble(x, y, bubble, now) {
+  if (bubble.type === "black") {
+    drawBlackBubble(x, y, bubble, now);
+    return;
+  }
+
   const color = BUBBLE_COLORS[bubble.colorIndex];
   const groupSize = Math.max(1, bubble.groupSize || 1);
   const growthStep = Math.min(groupSize - 1, POP_COUNT - 1);
@@ -951,6 +1481,14 @@ function drawSoapBubble(x, y, bubble, now) {
 
   drawWobblyBubbleShape(visualRadius, color, borderWidth, now, wobbleSeed, bubble);
   drawBubbleHighlights(visualRadius, now, wobbleSeed, bubble);
+
+  if (bubble.infectionLevel > 0) {
+    drawInfectionOverlay(visualRadius, bubble.infectionLevel, now, wobbleSeed);
+  }
+
+  if (bubble.virusState) {
+    drawVirusOverlay(visualRadius, bubble, now);
+  }
 
   if (bubble.item) {
     drawSpecialIcon(bubble.item, visualRadius, color);
@@ -1065,6 +1603,112 @@ function drawBubbleHighlights(radius, now, seed, bubble) {
   ctx.fill();
 }
 
+function drawInfectionOverlay(radius, level, now, seed) {
+  ctx.save();
+  ctx.globalAlpha = level === 1 ? 0.28 : 0.48;
+  ctx.fillStyle = "rgba(20, 14, 28, 0.72)";
+
+  const spotCount = level === 1 ? 3 : 6;
+  for (let i = 0; i < spotCount; i++) {
+    const angle = (i / spotCount) * Math.PI * 2 + Math.sin(now / 600 + seed + i) * 0.4;
+    const dist = radius * (0.38 + 0.18 * Math.sin(i + seed));
+    const size = radius * (0.10 + 0.035 * level);
+
+    ctx.beginPath();
+    ctx.arc(Math.cos(angle) * dist, Math.sin(angle) * dist, size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+function drawVirusOverlay(radius, bubble, now) {
+  ctx.save();
+
+  const pulse = 1 + Math.sin(now / 180) * 0.1;
+  const y = bubble.virusState === "attached" ? -radius * 0.86 : 0;
+  const r = bubble.virusState === "attached" ? radius * 0.25 : radius * 0.36;
+
+  ctx.fillStyle = "rgba(35, 9, 48, 0.92)";
+  ctx.strokeStyle = "rgba(166, 255, 91, 0.86)";
+  ctx.lineWidth = 2;
+
+  ctx.beginPath();
+  ctx.arc(0, y, r * pulse, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = "rgba(166, 255, 91, 0.9)";
+  for (let i = 0; i < 7; i++) {
+    const a = (i / 7) * Math.PI * 2 + now / 420;
+    ctx.beginPath();
+    ctx.arc(Math.cos(a) * r * 0.85, y + Math.sin(a) * r * 0.85, r * 0.13, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  if (bubble.virusHp > 1) {
+    ctx.fillStyle = "#ffffff";
+    ctx.font = `900 ${Math.floor(radius * 0.42)}px system-ui, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(String(bubble.virusHp), 0, y + 0.5);
+  }
+
+  ctx.restore();
+}
+
+function drawBlackBubble(x, y, bubble, now) {
+  const radius = VISUAL_RADIUS;
+  const hpRatio = Math.max(0, Math.min(1, bubble.blackHp / 3));
+
+  ctx.save();
+  ctx.translate(x, y);
+
+  const gradient = ctx.createRadialGradient(-radius * 0.25, -radius * 0.35, radius * 0.1, 0, 0, radius * 1.1);
+  gradient.addColorStop(0, "rgba(115, 92, 140, 0.85)");
+  gradient.addColorStop(0.55, "rgba(18, 16, 24, 0.96)");
+  gradient.addColorStop(1, "rgba(0, 0, 0, 0.98)");
+
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.arc(0, 0, radius, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = "rgba(181, 92, 255, 0.72)";
+  ctx.lineWidth = 2.4;
+  ctx.stroke();
+
+  ctx.strokeStyle = "rgba(255,255,255,0.72)";
+  ctx.lineWidth = 1.2;
+
+  if (bubble.blackHp <= 2) {
+    ctx.beginPath();
+    ctx.moveTo(-radius * 0.35, -radius * 0.45);
+    ctx.lineTo(radius * 0.05, -radius * 0.05);
+    ctx.lineTo(-radius * 0.14, radius * 0.45);
+    ctx.stroke();
+  }
+
+  if (bubble.blackHp <= 1) {
+    ctx.beginPath();
+    ctx.moveTo(radius * 0.34, -radius * 0.36);
+    ctx.lineTo(radius * 0.02, radius * 0.08);
+    ctx.lineTo(radius * 0.42, radius * 0.38);
+    ctx.stroke();
+
+    ctx.fillStyle = `rgba(255,255,255,${0.35 + (1 - hpRatio) * 0.25})`;
+    ctx.beginPath();
+    ctx.arc(0, 0, radius * 0.25, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  if (bubble.virusState) {
+    drawVirusOverlay(radius, bubble, now);
+  }
+
+  ctx.restore();
+}
+
 function drawSpecialIcon(item, radius, color) {
   const itemInfo = SPECIAL_ITEMS[item];
   if (!itemInfo) return;
@@ -1106,14 +1750,19 @@ function drawCannon(now) {
 
   ctx.restore();
 
+  refillPreviewQueue(false);
+  const nextInfo = previewQueue[0];
+
   const previewX = CANNON.x + Math.cos(aimAngle) * 43;
   const previewY = CANNON.y + Math.sin(aimAngle) * 43;
 
   const previewBubble = {
     id: 9999,
-    colorIndex: nextBubbleInfo.colorIndex,
-    item: nextBubbleInfo.item,
+    type: "normal",
+    colorIndex: nextInfo.colorIndex,
+    item: nextInfo.item,
     groupSize: 1,
+    infectionLevel: 0,
     wobblePower: 0,
     wobblePhase: 0,
     wobbleDir: { x: 0, y: -1 }
@@ -1224,4 +1873,13 @@ function normalizeVector(vector) {
     x: vector.x / length,
     y: vector.y / length
   };
+}
+
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+
+  return array;
 }
