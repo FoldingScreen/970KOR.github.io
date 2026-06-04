@@ -178,6 +178,7 @@
 
       const rand = (min, max) => Math.random() * (max - min) + min;
       const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+      const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 
       function norm(x, y) {
         const d = Math.hypot(x, y) || 1;
@@ -233,8 +234,11 @@
             dir: { x: 1, y: 0 },
             pose: "idle",
 
-            moveSpeed: 265,
+            moveSpeed: 285,
             dashSpeed: 780,
+            jumpPower: 560,
+            gravity: 1650,
+            onGround: true,
             dashCooldown: 0,
             dashTimer: 0,
             invuln: 0,
@@ -247,9 +251,9 @@
 
             maxCombo: 3,
             damage: 2,
-            range: 76,
+            range: 82,
             width: 30,
-            lunge: 470,
+            lunge: 170,
             track: 165,
 
             spinCooldown: 0,
@@ -579,6 +583,7 @@
         let move = player.lunge;
         let cooldown = player.attackBaseCooldown;
         let killStyle = "burn";
+        let dir = null;
 
         if (stage === 2) {
           name = "연환권";
@@ -622,7 +627,7 @@
         strike({
           name,
           pose,
-          dir: aim(player.track, false),
+          dir: dir || aim(player.track, false),
           damage,
           range,
           width,
@@ -806,8 +811,21 @@
 
         player.face = dir.x < -0.15 ? -1 : dir.x > 0.15 ? 1 : player.face;
         player.dir = dir;
-        player.vx = dir.x * config.move * b.move;
-        player.vy = dir.y * config.move * b.move * 0.65;
+
+        const moveScale =
+          config.source === "dash" ? 1.0 :
+          config.source === "counter" ? 0.62 :
+          config.stage >= 4 ? 0.46 :
+          0.34;
+
+        player.vx += dir.x * config.move * b.move * moveScale;
+
+        if (dir.y < -0.35) {
+          player.vy = Math.min(player.vy, -150 * b.move);
+        } else if (dir.y > 0.45 && !player.onGround) {
+          player.vy += 160 * b.move;
+        }
+
         player.attackCooldown = config.cooldown * b.speed;
         setPose(config.pose, dir);
         addGhost(0.24);
@@ -1060,7 +1078,7 @@
         const side = Math.random() < 0.5 ? -1 : 1;
         const enemy = {
           x: side < 0 ? -40 : W + 40,
-          y: rand(MIN_Y + 15, FLOOR_Y - 10),
+          y: FLOOR_Y - 22,
           vx: 0,
           vy: 0,
           side,
@@ -1077,75 +1095,81 @@
           flash: 0,
           phase: rand(0, 10),
           r: 24,
-          hp: 4,
-          maxHp: 4,
-          speed: 72,
+          hp: 7,
+          maxHp: 7,
+          speed: 78,
           damage: 7,
-          score: 12,
-          xp: 8,
+          score: 16,
+          xp: 10,
           ult: 5,
-          attackRange: 48,
-          windup: 0.45,
+          attackRange: 52,
+          windup: 0.44,
           attackTime: 0.16,
           recovery: 0.34,
+          aiThink: rand(0.05, 0.18),
+          retreatBias: rand(0.7, 1.25),
           color: "#0c0b13",
           eye: "#ffe066"
         };
 
         if (type === "runner") {
           enemy.r = 18;
-          enemy.hp = enemy.maxHp = 3;
-          enemy.speed = 125;
+          enemy.y = FLOOR_Y - 18;
+          enemy.hp = enemy.maxHp = 5;
+          enemy.speed = 138;
           enemy.damage = 5;
-          enemy.score = 16;
-          enemy.xp = 10;
-          enemy.attackRange = 42;
-          enemy.windup = 0.28;
+          enemy.score = 20;
+          enemy.xp = 12;
+          enemy.attackRange = 44;
+          enemy.windup = 0.26;
           enemy.attackTime = 0.12;
-          enemy.recovery = 0.24;
+          enemy.recovery = 0.22;
           enemy.eye = "#75ecff";
         }
 
         if (type === "brute") {
           enemy.r = 34;
-          enemy.hp = enemy.maxHp = 10;
-          enemy.speed = 45;
+          enemy.y = FLOOR_Y - 30;
+          enemy.hp = enemy.maxHp = 18;
+          enemy.speed = 54;
           enemy.damage = 15;
-          enemy.score = 38;
-          enemy.xp = 24;
-          enemy.ult = 10;
-          enemy.attackRange = 62;
-          enemy.windup = 0.78;
+          enemy.score = 48;
+          enemy.xp = 30;
+          enemy.ult = 11;
+          enemy.attackRange = 70;
+          enemy.windup = 0.72;
           enemy.attackTime = 0.22;
-          enemy.recovery = 0.52;
+          enemy.recovery = 0.5;
           enemy.eye = "#ff6b6b";
         }
 
         if (type === "bomber") {
           enemy.r = 22;
-          enemy.hp = enemy.maxHp = 4;
-          enemy.speed = 72;
+          enemy.y = FLOOR_Y - 22;
+          enemy.hp = enemy.maxHp = 7;
+          enemy.speed = 84;
           enemy.damage = 22;
-          enemy.score = 28;
-          enemy.xp = 18;
-          enemy.attackRange = 46;
-          enemy.windup = 0.62;
+          enemy.score = 34;
+          enemy.xp = 22;
+          enemy.attackRange = 48;
+          enemy.windup = 0.58;
           enemy.attackTime = 0.1;
-          enemy.recovery = 0.4;
+          enemy.recovery = 0.38;
           enemy.eye = "#ff3232";
         }
 
         if (type === "mask") {
           enemy.r = 25;
-          enemy.hp = enemy.maxHp = 6;
-          enemy.speed = 82;
-          enemy.damage = 9;
-          enemy.score = 32;
-          enemy.xp = 21;
-          enemy.attackRange = 56;
-          enemy.windup = 0.38;
+          enemy.y = FLOOR_Y - 24;
+          enemy.hp = enemy.maxHp = 11;
+          enemy.speed = 92;
+          enemy.damage = 10;
+          enemy.score = 42;
+          enemy.xp = 26;
+          enemy.attackRange = 60;
+          enemy.windup = 0.34;
           enemy.attackTime = 0.18;
-          enemy.recovery = 0.34;
+          enemy.recovery = 0.32;
           enemy.eye = "#d6b8ff";
         }
 
@@ -1206,7 +1230,6 @@
       function updatePlayer(dt) {
         const player = game.player;
         const b = buff();
-        const move = inputDir();
 
         player.attackCooldown = Math.max(0, player.attackCooldown - dt);
         player.dashCooldown = Math.max(0, player.dashCooldown - dt);
@@ -1235,21 +1258,50 @@
           }
         }
 
-        if (move) {
-          player.face = move.x < -0.15 ? -1 : move.x > 0.15 ? 1 : player.face;
-          player.dir = move;
+        const left = keys.ArrowLeft ? 1 : 0;
+        const right = keys.ArrowRight ? 1 : 0;
+        const moveX = right - left;
+        const wantJump = keys.ArrowUp;
+        const wantFastFall = keys.ArrowDown;
+        const speed = player.moveSpeed * b.move;
+
+        if (moveX !== 0) {
+          player.face = moveX;
+          player.dir = { x: moveX, y: 0 };
         }
 
-        const speed = player.moveSpeed * b.move;
-        player.x += (move ? move.x * speed : 0) * dt + player.vx * dt;
-        player.y += (move ? move.y * speed * 0.62 : 0) * dt + player.vy * dt;
-        player.vx *= Math.pow(0.06, dt);
-        player.vy *= Math.pow(0.06, dt);
+        if (wantJump && player.onGround && player.parryRecovery <= 0) {
+          player.vy = -player.jumpPower * (game.limit > 0 ? 1.08 : 1);
+          player.onGround = false;
+          addParticles(player.x, FLOOR_Y - 20, 8, "#d7e3ff", 1.2);
+        }
+
+        if (wantFastFall && !player.onGround) {
+          player.vy += player.gravity * 0.9 * dt;
+        }
+
+        player.x += (moveX * speed + player.vx) * dt;
+        player.y += player.vy * dt;
+        player.vy += player.gravity * dt;
+
+        player.vx *= Math.pow(0.08, dt);
 
         player.x = clamp(player.x, 42, W - 42);
-        player.y = clamp(player.y, MIN_Y, FLOOR_Y - 18);
 
-        if ((move || Math.abs(player.vx) + Math.abs(player.vy) > 230 || game.limit > 0) && player.pose !== "parry") {
+        if (player.y >= FLOOR_Y - 18) {
+          player.y = FLOOR_Y - 18;
+          player.vy = 0;
+          player.onGround = true;
+        } else {
+          player.onGround = false;
+        }
+
+        if (player.y < MIN_Y) {
+          player.y = MIN_Y;
+          if (player.vy < 0) player.vy = 0;
+        }
+
+        if ((moveX !== 0 || Math.abs(player.vx) > 230 || game.limit > 0) && player.pose !== "parry") {
           addGhost(0.12);
         }
 
@@ -1310,7 +1362,7 @@
           if (enemy.state === "dying") {
             enemy.x += enemy.vx * dt;
             enemy.y += enemy.vy * dt;
-            enemy.vy += 320 * dt;
+            enemy.vy += 1450 * dt;
             enemy.vx *= Math.pow(0.95, dt);
             enemy.deadTimer -= dt;
 
@@ -1327,50 +1379,92 @@
             enemy.timer -= dt;
             enemy.x += enemy.vx * dt;
             enemy.y += enemy.vy * dt;
+            enemy.vy += 1200 * dt;
             enemy.vx *= Math.pow(0.12, dt);
-            enemy.vy *= Math.pow(0.12, dt);
+
+            if (enemy.y >= FLOOR_Y - enemy.r * 0.35) {
+              enemy.y = FLOOR_Y - enemy.r * 0.35;
+              if (enemy.vy > 0) enemy.vy = 0;
+            }
 
             if (enemy.timer <= 0) {
               enemy.state = "move";
             }
           } else if (enemy.state === "move") {
-            const dir = norm(player.x - enemy.x, player.y - enemy.y);
-            enemy.attackDir = dir;
-            enemy.x += dir.x * enemy.speed * dt;
-            enemy.y += dir.y * enemy.speed * 0.68 * dt;
-            enemy.side = dir.x < 0 ? -1 : 1;
+            const dx = player.x - enemy.x;
+            const dy = player.y - enemy.y;
+            const absDx = Math.abs(dx);
+            const dirX = dx < 0 ? -1 : 1;
+            const verticalGap = Math.abs(dy);
+            const idealRange = enemy.attackRange * enemy.retreatBias;
+            const tooClose = absDx < enemy.attackRange * 0.45;
+            const inAttackRange = absDx < enemy.attackRange && verticalGap < 55;
 
-            if (Math.hypot(player.x - enemy.x, player.y - enemy.y) < enemy.attackRange) {
+            enemy.attackDir = norm(dx, clamp(dy, -36, 36));
+            enemy.side = dirX < 0 ? -1 : 1;
+
+            if (inAttackRange) {
               enemy.state = "windup";
               enemy.timer = enemy.windup;
               enemy.hasHit = false;
-              enemy.attackDir = norm(player.x - enemy.x, player.y - enemy.y);
+              enemy.attackDir = norm(player.x - enemy.x, clamp(player.y - enemy.y, -42, 42));
               game.dangerLines.push({
                 x: enemy.x,
                 y: enemy.y,
                 dx: enemy.attackDir.x,
                 dy: enemy.attackDir.y,
-                length: enemy.attackRange + 24,
+                length: enemy.attackRange + 26,
                 timer: enemy.windup,
                 maxTimer: enemy.windup,
                 color: enemy.type === "brute" ? "#ff4d4d" : "#ff8787"
               });
+            } else {
+              let moveX = dirX;
+
+              if (tooClose && enemy.type !== "brute") {
+                moveX = -dirX;
+              }
+
+              const crowdLeft = game.enemies.some((other) =>
+                other !== enemy && !other.dead && other.state !== "dying" &&
+                Math.abs(other.x - enemy.x) < enemy.r * 1.4 && Math.abs(other.y - enemy.y) < enemy.r
+              );
+
+              if (crowdLeft) {
+                moveX *= 0.55;
+              }
+
+              enemy.x += moveX * enemy.speed * dt;
+
+              if ((enemy.type === "runner" || enemy.type === "mask") && player.y < enemy.y - 46 && Math.random() < 0.012) {
+                enemy.vy = -430;
+              }
             }
+
+            enemy.y += enemy.vy * dt;
+            enemy.vy += 1450 * dt;
           } else if (enemy.state === "windup") {
             enemy.timer -= dt;
-            enemy.attackDir = norm(player.x - enemy.x, player.y - enemy.y);
+
+            const lockWeight = enemy.timer / enemy.windup;
+            const freshDir = norm(player.x - enemy.x, clamp(player.y - enemy.y, -42, 42));
+            enemy.attackDir = norm(
+              enemy.attackDir.x * 0.82 + freshDir.x * 0.18 * lockWeight,
+              enemy.attackDir.y * 0.82 + freshDir.y * 0.18 * lockWeight
+            );
 
             if (enemy.timer <= 0) {
               enemy.state = "attack";
               enemy.timer = enemy.attackTime;
               enemy.hasHit = false;
-              enemy.vx += enemy.attackDir.x * (enemy.type === "runner" ? 180 : 90);
-              enemy.vy += enemy.attackDir.y * 65;
+              enemy.vx += enemy.attackDir.x * (enemy.type === "runner" ? 240 : enemy.type === "brute" ? 135 : 150);
+              enemy.vy += enemy.attackDir.y * 95;
             }
           } else if (enemy.state === "attack") {
             enemy.timer -= dt;
             enemy.x += enemy.vx * dt;
             enemy.y += enemy.vy * dt;
+            enemy.vy += 900 * dt;
             enemy.vx *= Math.pow(0.35, dt);
             enemy.vy *= Math.pow(0.35, dt);
 
@@ -1400,13 +1494,22 @@
             }
           } else if (enemy.state === "recovery") {
             enemy.timer -= dt;
+            enemy.y += enemy.vy * dt;
+            enemy.vy += 1200 * dt;
+
             if (enemy.timer <= 0) {
               enemy.state = "move";
             }
           }
 
-          enemy.x = clamp(enemy.x, 18, W - 18);
-          enemy.y = clamp(enemy.y, MIN_Y - 10, FLOOR_Y + 12);
+          if (enemy.state !== "dying") {
+            if (enemy.y >= FLOOR_Y - enemy.r * 0.35) {
+              enemy.y = FLOOR_Y - enemy.r * 0.35;
+              if (enemy.vy > 0) enemy.vy = 0;
+            }
+            enemy.x = clamp(enemy.x, 18, W - 18);
+            enemy.y = clamp(enemy.y, MIN_Y - 10, FLOOR_Y + 12);
+          }
         }
 
         game.enemies = game.enemies.filter((enemy) => !enemy.dead);
@@ -1476,25 +1579,9 @@
         for (const enemy of game.enemies) drawEnemy(enemy);
         for (const hit of game.hits) drawHit(hit);
         for (const effect of game.effects) drawEffect(effect);
-        for (const ghost of game.ghosts) {
-          drawStickman(
-            ghost.x,
-            ghost.y,
-            ghost.pose,
-            ghost.dir,
-            clamp(ghost.timer / ghost.maxTimer, 0, 1) * 0.28,
-            ghost.gold ? "#ffd84a" : "#9de1ff"
-          );
-        }
+        for (const ghost of game.ghosts) drawStickman(ghost.x, ghost.y, ghost.pose, ghost.dir, clamp(ghost.timer / ghost.maxTimer, 0, 1) * 0.28, ghost.gold ? "#ffd84a" : "#9de1ff");
 
-        drawStickman(
-          game.player.x,
-          game.player.y,
-          game.player.pose,
-          game.player.dir,
-          game.player.invuln > 0 ? 0.62 + Math.sin(game.time * 48) * 0.22 : 1,
-          game.limit > 0 ? "#ffd84a" : "#fff"
-        );
+        drawStickman(game.player.x, game.player.y, game.player.pose, game.player.dir, game.player.invuln > 0 ? 0.62 + Math.sin(game.time * 48) * 0.22 : 1, game.limit > 0 ? "#ffd84a" : "#fff");
 
         for (const text of game.texts) drawText(text);
 
