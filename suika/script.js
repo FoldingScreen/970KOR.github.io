@@ -16,7 +16,9 @@ const CANNON = {
   y: HEIGHT - 44
 };
 
-const START_CEILING_Y = 72;
+// 보이지 않는 상단 경계선.
+// 첫 버블이 붙을 기준만 필요하고, 화면에는 표시하지 않는다.
+const TOP_LIMIT_Y = 58;
 
 const SHOT_POWER = 18.8;
 const WALL_SPEED_KEEP = 0.92;
@@ -24,24 +26,24 @@ const WALL_SPEED_KEEP = 0.92;
 const BASE_RADIUS = 22;
 const POP_COUNT = 6;
 
-// 제한시간 방식
-const START_TIME_MS = 60000;
-const MAX_TIME_MS = 90000;
-const POP_TIME_BONUS_BASE = 4500;
-const POP_TIME_BONUS_PER_EXTRA = 700;
+// 시간 제한 방식
+const START_TIME_MS = 120000;
+const MAX_TIME_MS = 180000;
+const POP_TIME_BONUS_BASE = 9000;
+const POP_TIME_BONUS_PER_EXTRA = 1200;
 
 const SPECIAL_CLEAR_COLOR_CHANCE = 0.03;
 const SPECIAL_LINE_CHANCE = 0.05;
 
-// 평소에는 원형, 충돌 순간에만 강하게 출렁임
-const WOBBLE_MAX = 1.45;
-const WOBBLE_DECAY = 0.00115;
+// 평소에는 원형, 충돌 순간에만 출렁
+const WOBBLE_MAX = 1.65;
+const WOBBLE_DECAY = 0.00105;
 
-// 접착 후 실제 물리 이동이 멎는 시간
-const SETTLE_FREEZE_MS = 520;
+// 접착 후 실제 좌표 안정 시간
+const SETTLE_FREEZE_MS = 260;
 
 // 고립 버블 부력
-const FLOAT_UP_SPEED = 2.2;
+const FLOAT_UP_SPEED = 2.25;
 
 const BUBBLE_COLORS = [
   { key: "sky", name: "하늘", hue: 196, stroke: "rgba(61, 185, 255, 0.78)" },
@@ -73,11 +75,12 @@ const restartBtn = document.getElementById("restartBtn");
 
 let engine;
 let world;
-let ceilingBody;
+let topWall;
 
 let bubbles = new Set();
 let bonds = [];
 let bondKeys = new Set();
+
 let popEffects = [];
 let laserEffects = [];
 
@@ -89,7 +92,6 @@ let activeBubble = null;
 let canShoot = true;
 let gameOver = false;
 let aimAngle = -Math.PI / 2;
-let ceilingY = START_CEILING_Y;
 let timeLeftMs = START_TIME_MS;
 let bodyId = 1;
 let pendingGroupCheck = false;
@@ -162,13 +164,12 @@ function resetGame() {
   canShoot = true;
   activeBubble = null;
   pendingGroupCheck = false;
-  ceilingY = START_CEILING_Y;
   timeLeftMs = START_TIME_MS;
 
   createWalls();
 
+  // 초기 버블 배치 없음
   nextBubbleInfo = createRandomBubbleInfo();
-  seedInitialBubbles();
 
   updateHud();
   statusText.textContent = "조준 후 클릭/터치로 발사";
@@ -177,7 +178,6 @@ function resetGame() {
 function createWalls() {
   const sideOptions = {
     isStatic: true,
-    label: "side-wall",
     restitution: 1,
     friction: 0
   };
@@ -192,44 +192,16 @@ function createWalls() {
     label: "wall-right"
   });
 
-  ceilingBody = Bodies.rectangle(WIDTH / 2, ceilingY - 20, WIDTH + 80, 40, {
+  // 화면에 보이지 않는 상단 접착 경계.
+  // 첫 버블이 붙을 기준만 담당한다.
+  topWall = Bodies.rectangle(WIDTH / 2, TOP_LIMIT_Y - 24, WIDTH + 80, 48, {
     isStatic: true,
     label: "wall-top",
     restitution: 0,
     friction: 1
   });
 
-  World.add(world, [leftWall, rightWall, ceilingBody]);
-}
-
-function seedInitialBubbles() {
-  const positions = [
-    [82, ceilingY + 32, 0],
-    [132, ceilingY + 34, 1],
-    [184, ceilingY + 32, 2],
-    [236, ceilingY + 35, 3],
-    [288, ceilingY + 33, 4],
-    [338, ceilingY + 34, 0],
-    [108, ceilingY + 82, 1],
-    [162, ceilingY + 86, 2],
-    [216, ceilingY + 84, 3],
-    [270, ceilingY + 86, 4],
-    [324, ceilingY + 82, 0]
-  ];
-
-  for (const [x, y, colorIndex] of positions) {
-    const body = createBubble(x, y, {
-      colorIndex,
-      item: null,
-      isInitial: true
-    });
-
-    attachBubbleToCeiling(body);
-    settleBubble(body);
-  }
-
-  recomputeAnchoredState();
-  processColorGroups();
+  World.add(world, [leftWall, rightWall, topWall]);
 }
 
 function createRandomBubbleInfo() {
@@ -237,6 +209,7 @@ function createRandomBubbleInfo() {
   const roll = Math.random();
 
   let item = null;
+
   if (roll < SPECIAL_CLEAR_COLOR_CHANCE) {
     item = "clearColor";
   } else if (roll < SPECIAL_CLEAR_COLOR_CHANCE + SPECIAL_LINE_CHANCE) {
@@ -253,20 +226,21 @@ function createBubble(x, y, info) {
   const body = Bodies.circle(x, y, BASE_RADIUS, {
     label: "bubble",
     restitution: 0,
-    friction: 0.62,
-    frictionAir: 0.018,
-    density: 0.0034,
+    friction: 0.85,
+    frictionAir: 0.016,
+    density: 0.0038,
     slop: 0.01
   });
 
   body.gameId = bodyId++;
   body.colorIndex = info.colorIndex;
   body.item = info.item || null;
-  body.isInitial = Boolean(info.isInitial);
+
   body.isAttached = false;
   body.isPopping = false;
   body.isFloating = false;
   body.isSettled = false;
+
   body.groupSize = 1;
   body.spawnedAt = performance.now();
   body.lastShotDir = { x: 0, y: -1 };
@@ -286,10 +260,12 @@ function shoot() {
   if (gameOver || !canShoot || activeBubble) return;
 
   const info = nextBubbleInfo;
+
   const startX = CANNON.x + Math.cos(aimAngle) * (BASE_RADIUS + 14);
   const startY = CANNON.y + Math.sin(aimAngle) * (BASE_RADIUS + 14);
 
   const body = createBubble(startX, startY, info);
+
   const dir = normalizeVector({
     x: Math.cos(aimAngle),
     y: Math.sin(aimAngle)
@@ -307,6 +283,7 @@ function shoot() {
 
   nextBubbleInfo = createRandomBubbleInfo();
   canShoot = false;
+
   updateHud();
   statusText.textContent = "비눗방울 비행 중";
 }
@@ -355,12 +332,15 @@ function handleBubbleWallContact(bubble, wall) {
 
   if (wall.label === "wall-top") {
     stopFloatingBubble(bubble);
+
     applyBubbleImpact(bubble, { x: 0, y: 1 }, Math.hypot(bubble.velocity.x, bubble.velocity.y));
-    attachBubbleToCeiling(bubble);
+    attachBubbleToTop(bubble);
   }
 }
 
 function reflectBubbleFromSideWall(bubble, wall) {
+  if (!bubbles.has(bubble) || bubble.isPopping) return;
+
   const vx = bubble.velocity.x;
   const vy = bubble.velocity.y;
 
@@ -375,6 +355,7 @@ function reflectBubbleFromSideWall(bubble, wall) {
   }
 
   const speed = Math.hypot(nextVx, vy);
+
   if (speed > 0.001) {
     bubble.lastShotDir = normalizeVector({ x: nextVx, y: vy });
   }
@@ -385,39 +366,43 @@ function reflectBubbleFromSideWall(bubble, wall) {
   });
 }
 
-function attachBubbleToCeiling(bubble) {
+function attachBubbleToTop(bubble) {
   if (!bubbles.has(bubble) || bubble.isPopping) return;
 
   stopFloatingBubble(bubble);
 
-  const key = `c:${bubble.gameId}`;
+  const key = `top:${bubble.gameId}`;
   if (bondKeys.has(key)) return;
 
-  const anchorX = bubble.position.x - ceilingBody.position.x;
-  const anchorY = 20;
-  const length = Math.max(6, bubble.position.y - ceilingY);
+  unSettleBubble(bubble);
+
+  const anchorX = bubble.position.x - topWall.position.x;
+  const anchorY = 24;
+  const length = Math.max(4, bubble.position.y - TOP_LIMIT_Y);
 
   const constraint = Constraint.create({
-    bodyA: ceilingBody,
+    bodyA: topWall,
     pointA: { x: anchorX, y: anchorY },
     bodyB: bubble,
     pointB: { x: 0, y: 0 },
     length,
-    stiffness: 0.72,
-    damping: 0.92,
+    stiffness: 0.98,
+    damping: 1,
     render: { visible: false }
   });
 
   bondKeys.add(key);
   bonds.push({
     key,
-    type: "ceiling",
+    type: "top",
     a: null,
     b: bubble,
     constraint
   });
 
   World.add(world, constraint);
+
+  killBounce(bubble, 0.04);
   onBubbleAttached(bubble);
 }
 
@@ -433,19 +418,31 @@ function addBubbleBond(a, b) {
 
   const dx = b.position.x - a.position.x;
   const dy = b.position.y - a.position.y;
-  const distance = Math.max(10, Math.sqrt(dx * dx + dy * dy));
+  const distance = Math.max(8, Math.sqrt(dx * dx + dy * dy));
   const normal = normalizeVector({ x: dx, y: dy });
-  const relativeSpeed = Math.hypot(a.velocity.x - b.velocity.x, a.velocity.y - b.velocity.y);
+
+  const relativeSpeed = Math.hypot(
+    a.velocity.x - b.velocity.x,
+    a.velocity.y - b.velocity.y
+  );
 
   applyBubbleImpact(a, { x: normal.x, y: normal.y }, relativeSpeed);
   applyBubbleImpact(b, { x: -normal.x, y: -normal.y }, relativeSpeed);
+
+  // 기존에 정착된 버블은 그대로 기준점처럼 두고,
+  // 새로 닿은 버블의 반발 속도를 즉시 죽인다.
+  const aWasSettled = a.isSettled;
+  const bWasSettled = b.isSettled;
+
+  if (!aWasSettled) unSettleBubble(a);
+  if (!bWasSettled) unSettleBubble(b);
 
   const constraint = Constraint.create({
     bodyA: a,
     bodyB: b,
     length: distance,
-    stiffness: 0.68,
-    damping: 0.9,
+    stiffness: 0.98,
+    damping: 1,
     render: { visible: false }
   });
 
@@ -460,15 +457,54 @@ function addBubbleBond(a, b) {
 
   World.add(world, constraint);
 
+  killPairBounce(a, b, aWasSettled, bWasSettled);
+
   onBubbleAttached(a);
   onBubbleAttached(b);
+}
+
+function killPairBounce(a, b, aWasSettled, bWasSettled) {
+  if (aWasSettled && !bWasSettled) {
+    killBounce(b, 0.03);
+    return;
+  }
+
+  if (bWasSettled && !aWasSettled) {
+    killBounce(a, 0.03);
+    return;
+  }
+
+  const avgX = (a.velocity.x + b.velocity.x) * 0.025;
+  const avgY = (a.velocity.y + b.velocity.y) * 0.025;
+
+  if (!aWasSettled) {
+    Body.setVelocity(a, { x: avgX, y: avgY });
+    Body.setAngularVelocity(a, a.angularVelocity * 0.05);
+  }
+
+  if (!bWasSettled) {
+    Body.setVelocity(b, { x: avgX, y: avgY });
+    Body.setAngularVelocity(b, b.angularVelocity * 0.05);
+  }
+}
+
+function killBounce(bubble, ratio) {
+  if (!bubble || !bubbles.has(bubble)) return;
+  if (bubble.isSettled) return;
+
+  Body.setVelocity(bubble, {
+    x: bubble.velocity.x * ratio,
+    y: bubble.velocity.y * ratio
+  });
+
+  Body.setAngularVelocity(bubble, bubble.angularVelocity * ratio);
 }
 
 function applyBubbleImpact(bubble, direction, speed) {
   if (!bubble || bubble.isPopping) return;
 
   const dir = normalizeVector(direction);
-  const powerBySpeed = Math.min(WOBBLE_MAX, Math.max(0.42, speed / 13));
+  const powerBySpeed = Math.min(WOBBLE_MAX, Math.max(0.5, speed / 11));
 
   bubble.wobblePower = Math.min(WOBBLE_MAX, Math.max(bubble.wobblePower || 0, powerBySpeed));
   bubble.wobblePhase = 0;
@@ -484,19 +520,10 @@ function makeBondKey(a, b) {
 function onBubbleAttached(bubble) {
   if (!bubble || bubble.isFloating) return;
 
-  bubble.frictionAir = 0.34;
+  bubble.frictionAir = 0.6;
   bubble.restitution = 0;
 
   if (!bubble.isSettled) {
-    Body.setStatic(bubble, false);
-
-    Body.setVelocity(bubble, {
-      x: bubble.velocity.x * 0.24,
-      y: bubble.velocity.y * 0.24
-    });
-
-    Body.setAngularVelocity(bubble, bubble.angularVelocity * 0.18);
-
     scheduleBubbleSettle(bubble);
   }
 
@@ -505,12 +532,13 @@ function onBubbleAttached(bubble) {
 
   if (bubble === activeBubble) {
     activeBubble = null;
+
     setTimeout(() => {
       if (!gameOver) {
         canShoot = true;
         statusText.textContent = "조준 후 클릭/터치로 발사";
       }
-    }, 360);
+    }, 280);
   }
 }
 
@@ -561,6 +589,7 @@ function scheduleGroupCheck() {
   if (pendingGroupCheck) return;
 
   pendingGroupCheck = true;
+
   setTimeout(() => {
     pendingGroupCheck = false;
     processColorGroups();
@@ -684,7 +713,10 @@ function triggerSpecialBubble(specialBubble, poppedColorIndex) {
 }
 
 function clearAllBubblesOfColor(colorIndex) {
-  const targets = Array.from(bubbles).filter((bubble) => bubble.colorIndex === colorIndex && !bubble.isFloating);
+  const targets = Array.from(bubbles).filter((bubble) => {
+    return bubble.colorIndex === colorIndex && !bubble.isFloating;
+  });
+
   if (targets.length === 0) return;
 
   const center = getBodiesCenter(targets);
@@ -692,6 +724,9 @@ function clearAllBubblesOfColor(colorIndex) {
   score += targets.length * 55;
   addPopEffect(center.x, center.y, targets.length);
   removeBubbles(targets);
+
+  floatUnanchoredBubbles();
+  recomputeAnchoredState();
 }
 
 function clearBubblesOnLine(origin, direction) {
@@ -714,6 +749,7 @@ function clearBubblesOnLine(origin, direction) {
   if (targets.length === 0) return;
 
   score += targets.length * 65;
+
   laserEffects.push({
     x: origin.x,
     y: origin.y,
@@ -722,7 +758,11 @@ function clearBubblesOnLine(origin, direction) {
     life: 360,
     maxLife: 360
   });
+
   removeBubbles(targets);
+
+  floatUnanchoredBubbles();
+  recomputeAnchoredState();
 }
 
 function floatUnanchoredBubbles() {
@@ -764,12 +804,12 @@ function stopFloatingBubble(bubble) {
   if (!bubble.isFloating) return;
 
   bubble.isFloating = false;
-  bubble.frictionAir = 0.34;
+  bubble.frictionAir = 0.6;
   bubble.collisionFilter.mask = 0xFFFFFFFF;
 
   Body.setVelocity(bubble, {
-    x: bubble.velocity.x * 0.28,
-    y: bubble.velocity.y * 0.28
+    x: bubble.velocity.x * 0.18,
+    y: bubble.velocity.y * 0.18
   });
 
   scheduleBubbleSettle(bubble);
@@ -788,7 +828,7 @@ function recomputeAnchoredState() {
   }
 
   for (const bond of bonds) {
-    if (bond.type === "ceiling" && bubbles.has(bond.b) && !bond.b.isFloating) {
+    if (bond.type === "top" && bubbles.has(bond.b) && !bond.b.isFloating) {
       roots.push(bond.b);
     }
 
@@ -951,14 +991,14 @@ function updateBubbleDynamics(delta) {
 
     if (bubble.isAttached && !bubble.isFloating && !bubble.isSettled && bubble !== activeBubble) {
       Body.setVelocity(bubble, {
-        x: bubble.velocity.x * 0.86,
-        y: bubble.velocity.y * 0.86
+        x: bubble.velocity.x * 0.78,
+        y: bubble.velocity.y * 0.78
       });
 
-      Body.setAngularVelocity(bubble, bubble.angularVelocity * 0.82);
+      Body.setAngularVelocity(bubble, bubble.angularVelocity * 0.72);
 
       const speed = Math.hypot(bubble.velocity.x, bubble.velocity.y);
-      if (speed < 0.035) {
+      if (speed < 0.05) {
         settleBubble(bubble);
       }
     }
@@ -969,19 +1009,19 @@ function updateBubbleDynamics(delta) {
         y: Math.max(bubble.velocity.y - 0.012, -3.35)
       });
 
-      if (bubble.position.y < ceilingY + BASE_RADIUS + 4) {
+      if (bubble.position.y < TOP_LIMIT_Y + BASE_RADIUS + 4) {
         Body.setPosition(bubble, {
           x: bubble.position.x,
-          y: ceilingY + BASE_RADIUS + 4
+          y: TOP_LIMIT_Y + BASE_RADIUS + 4
         });
 
         Body.setVelocity(bubble, {
-          x: bubble.velocity.x * 0.25,
+          x: bubble.velocity.x * 0.16,
           y: 0
         });
 
         stopFloatingBubble(bubble);
-        attachBubbleToCeiling(bubble);
+        attachBubbleToTop(bubble);
       }
     }
   }
@@ -1015,7 +1055,6 @@ function updateHud() {
 
 function draw(now) {
   drawBackground();
-  drawCeiling(now);
   drawTimeBar();
   drawAimLine();
   drawBonds();
@@ -1046,31 +1085,6 @@ function drawBackground() {
     ctx.arc(WIDTH - 36, y + 22, 4, 0, Math.PI * 2);
     ctx.fill();
   }
-}
-
-function drawCeiling(now) {
-  ctx.save();
-
-  const pulse = 0.55 + Math.sin(now / 480) * 0.12;
-
-  ctx.fillStyle = "rgba(102, 69, 43, 0.88)";
-  ctx.beginPath();
-  ctx.roundRect(18, ceilingY - 22, WIDTH - 36, 20, 10);
-  ctx.fill();
-
-  ctx.strokeStyle = `rgba(255,255,255,${pulse})`;
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(26, ceilingY);
-  ctx.lineTo(WIDTH - 26, ceilingY);
-  ctx.stroke();
-
-  ctx.fillStyle = "rgba(77, 44, 24, 0.75)";
-  ctx.font = "800 12px system-ui, sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText("접착 벽", WIDTH / 2, ceilingY - 28);
-
-  ctx.restore();
 }
 
 function drawTimeBar() {
@@ -1137,7 +1151,7 @@ function drawAimLine() {
 
 function drawBonds() {
   ctx.save();
-  ctx.strokeStyle = "rgba(255,255,255,0.18)";
+  ctx.strokeStyle = "rgba(255,255,255,0.12)";
   ctx.lineWidth = 1;
 
   for (const bond of bonds) {
@@ -1370,6 +1384,7 @@ function drawEffects() {
   for (const effect of laserEffects) {
     const alpha = Math.max(0, effect.life / effect.maxLife);
     ctx.globalAlpha = alpha;
+
     ctx.strokeStyle = "rgba(255,255,255,0.92)";
     ctx.lineWidth = 14;
     ctx.lineCap = "round";
