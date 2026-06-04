@@ -4,18 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>메테오 파이터</title>
-
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
       overflow: hidden;
       background: #050713;
       color: white;
-      font-family: system-ui;
+      font-family: system-ui, sans-serif;
     }
 
     #wrap {
@@ -23,14 +20,15 @@
       height: 100vh;
       display: grid;
       place-items: center;
-      background: radial-gradient(circle at 50% 110%, #303a68, #050713 55%);
+      background: radial-gradient(circle at 50% 50%, #1f2746 0%, #050713 70%);
     }
 
     canvas {
-      width: min(100vw, 66.66vh);
-      height: min(150vw, 100vh);
-      max-width: 480px;
-      max-height: 720px;
+      width: min(100vw, 177.77vh);
+      height: min(56.25vw, 100vh);
+      max-width: 960px;
+      max-height: 540px;
+      display: block;
     }
 
     .screen {
@@ -47,7 +45,7 @@
     }
 
     .box {
-      width: min(420px, calc(100vw - 28px));
+      width: min(520px, calc(100vw - 28px));
       padding: 25px;
       border-radius: 22px;
       background: #10162fee;
@@ -56,14 +54,14 @@
     }
 
     .title {
-      font-size: 38px;
+      font-size: 40px;
       font-weight: 950;
       margin-bottom: 10px;
     }
 
     .sub {
-      line-height: 1.6;
-      opacity: 0.86;
+      line-height: 1.65;
+      opacity: 0.88;
     }
 
     button {
@@ -116,18 +114,17 @@
     }
   </style>
 </head>
-
 <body>
   <div id="wrap">
-    <canvas id="c" width="480" height="720"></canvas>
+    <canvas id="c" width="960" height="540"></canvas>
 
     <div id="start" class="screen">
       <div class="box">
         <div class="title">메테오 파이터</div>
         <div class="sub">
-          방향키는 이동이 아니라 <b>공격 방향</b>.<br>
-          A 연타로 권각 콤보, Space 대쉬, Space+A 대쉬공격.<br>
-          금빛 구슬을 먹으면 한계돌파.
+          중앙의 <b>지구</b>를 지켜라.<br>
+          방향키로 자유 이동, A 연타로 격투 콤보, Space 대쉬, Space+A 대쉬공격.<br>
+          사방에서 몰려오는 운석을 하데스 느낌으로 파괴하는 구조다.
         </div>
         <button id="go">게임 시작</button>
       </div>
@@ -162,10 +159,11 @@
       const go = document.getElementById("go");
       const again = document.getElementById("again");
 
-      const W = 480;
-      const H = 720;
-      const GROUND = 635;
-      const PLAYER_GROUND = 601;
+      const W = 960;
+      const H = 540;
+      const CENTER = { x: W / 2, y: H / 2 };
+      const ARENA_R = 215;
+      const EARTH_R = 46;
 
       let keys = {};
       let game;
@@ -177,13 +175,17 @@
         return Math.random() * (max - min) + min;
       }
 
-      function clamp(value, min, max) {
-        return Math.max(min, Math.min(max, value));
+      function clamp(v, min, max) {
+        return Math.max(min, Math.min(max, v));
       }
 
       function norm(x, y) {
         const d = Math.hypot(x, y) || 1;
         return { x: x / d, y: y / d };
+      }
+
+      function dist(a, b) {
+        return Math.hypot(a.x - b.x, a.y - b.y);
       }
 
       function newGame() {
@@ -193,17 +195,18 @@
           score: 0,
           level: 1,
           xp: 0,
-          nextXp: 26,
-          hp: 10,
-          maxHp: 10,
+          nextXp: 28,
+
+          earthHp: 16,
+          earthMaxHp: 16,
 
           combo: 0,
           comboTimer: 0,
           ult: 0,
 
           spawnTimer: 0,
-          orbTimer: rand(18, 27),
           bossTimer: 0,
+          orbTimer: rand(18, 26),
 
           hitStop: 0,
           shake: 0,
@@ -219,22 +222,23 @@
           dead: false,
 
           meteors: [],
+          hits: [],
           effects: [],
           texts: [],
-          hits: [],
-          orbs: [],
           ghosts: [],
+          orbs: [],
 
           player: {
-            x: 240,
-            y: PLAYER_GROUND,
+            x: CENTER.x,
+            y: CENTER.y + 115,
             vx: 0,
             vy: 0,
             face: 1,
-            dir: { x: 0, y: -1 },
+            dir: { x: 1, y: 0 },
 
             pose: "idle",
 
+            moveSpeed: 260,
             attackCooldown: 0,
             dashCooldown: 0,
             dashTimer: 0,
@@ -245,20 +249,23 @@
 
             maxCombo: 1,
             damage: 1,
-            range: 68,
-            width: 25,
-            track: 145,
-            lunge: 520,
-            dashSpeed: 720,
+            range: 78,
+            width: 28,
+            track: 175,
+            lunge: 540,
+            dashSpeed: 820,
 
             dashReset: false,
             shock: 0,
             preview: false,
             limitExtend: false,
-            attackBaseCooldown: 0.17
+            attackBaseCooldown: 0.16
           }
         };
       }
+
+      go.onclick = startGame;
+      again.onclick = startGame;
 
       function startGame() {
         newGame();
@@ -271,9 +278,6 @@
         lastTime = performance.now();
         rafId = requestAnimationFrame(loop);
       }
-
-      go.onclick = startGame;
-      again.onclick = startGame;
 
       window.addEventListener("keydown", (e) => {
         keys[e.code] = true;
@@ -322,13 +326,13 @@
         },
         {
           name: "올려차기",
-          desc: "A 콤보 4타 해금. 위쪽 처리 강화.",
+          desc: "A 콤보 4타 해금. 넓은 각 타격.",
           condition: (p) => p.maxCombo >= 3 && p.maxCombo < 4,
           apply: (p) => p.maxCombo = 4
         },
         {
           name: "파쇄권",
-          desc: "A 콤보 5타 해금. 막타 충격파.",
+          desc: "A 콤보 5타 해금. 막타 폭발.",
           condition: (p) => p.maxCombo >= 4 && p.maxCombo < 5,
           apply: (p) => p.maxCombo = 5
         },
@@ -343,10 +347,11 @@
         },
         {
           name: "무영보",
-          desc: "공격 이동속도와 대쉬속도 증가",
+          desc: "이동속도, 공격 전진력, 대쉬속도 증가",
           condition: () => true,
           apply: (p) => {
-            p.lunge *= 1.13;
+            p.moveSpeed *= 1.12;
+            p.lunge *= 1.12;
             p.dashSpeed *= 1.12;
           }
         },
@@ -360,7 +365,7 @@
           name: "연타 호흡",
           desc: "공격 쿨타임 감소",
           condition: () => true,
-          apply: (p) => p.attackBaseCooldown *= 0.86
+          apply: (p) => p.attackBaseCooldown *= 0.88
         },
         {
           name: "연쇄돌파",
@@ -375,10 +380,13 @@
           apply: (p) => p.shock += 1
         },
         {
-          name: "낙하 예측",
-          desc: "착탄 지점 표시",
-          condition: (p) => !p.preview,
-          apply: (p) => p.preview = true
+          name: "지구 보강",
+          desc: "지구 체력 +3",
+          condition: () => true,
+          apply: () => {
+            game.earthMaxHp += 3;
+            game.earthHp = Math.min(game.earthMaxHp, game.earthHp + 3);
+          }
         },
         {
           name: "폭주 연장",
@@ -414,7 +422,6 @@
 
       function pickUpgrade(index) {
         if (!picks[index]) return;
-
         picks[index].apply(game.player);
         game.choosing = false;
         selectScreen.classList.add("hide");
@@ -424,9 +431,9 @@
         if (game.limit > 0) {
           return {
             speed: 0.38,
-            move: 2.25,
+            move: 2.2,
             damage: 3,
-            range: 1.85,
+            range: 1.8,
             track: 2,
             gold: true
           };
@@ -457,7 +464,6 @@
 
       function findTarget(dir, range, free) {
         const p = game.player;
-
         let best = null;
         let bestScore = Infinity;
 
@@ -474,12 +480,10 @@
 
           if (dir) {
             dot = (dx / (d || 1)) * dir.x + (dy / (d || 1)) * dir.y;
-
-            if (dot < 0.25 && !free) continue;
+            if (dot < 0.2 && !free) continue;
           }
 
-          const urgency = m.y / GROUND;
-          const score = d - urgency * 90 - dot * 40;
+          const score = d - dot * 50 + Math.hypot(m.x - CENTER.x, m.y - CENTER.y) * -0.08;
 
           if (score < bestScore) {
             bestScore = score;
@@ -509,7 +513,7 @@
           return norm(autoTarget.x - p.x, autoTarget.y - p.y);
         }
 
-        return { x: p.face, y: -0.2 };
+        return { x: p.face, y: 0 };
       }
 
       function setPose(name, dir) {
@@ -523,17 +527,13 @@
 
         if (p.dashCooldown > 0 && game.limit <= 0) return;
 
-        const dir = inputDir() || aim(p.track * 1.2, true);
+        const dir = inputDir() || aim(p.track * 1.3, true);
 
         p.face = dir.x < -0.15 ? -1 : dir.x > 0.15 ? 1 : p.face;
         p.dir = dir;
 
         p.vx = dir.x * p.dashSpeed * b.move;
         p.vy = dir.y * p.dashSpeed * b.move;
-
-        if (dir.y >= -0.15 && p.y >= PLAYER_GROUND - 3) {
-          p.vy -= 80 * b.move;
-        }
 
         p.dashCooldown = 0.72 * b.speed;
         p.dashTimer = 0.15;
@@ -575,29 +575,29 @@
 
         if (stage === 2) {
           name = "연속정권";
-          damage += 0.5;
-          move *= 1.1;
+          damage += 0.6;
+          move *= 1.08;
           cooldown *= 0.88;
         }
 
         if (stage === 3) {
           name = "붕권";
           pose = "big";
-          damage += 1.5;
-          range *= 1.25;
-          width *= 1.15;
-          move *= 1.28;
+          damage += 1.6;
+          range *= 1.22;
+          width *= 1.16;
+          move *= 1.24;
         }
 
         if (stage === 4) {
           name = "올려차기";
           pose = "kick";
-          damage += 1.2;
+          damage += 1.3;
           range *= 1.34;
-          width *= 1.25;
+          width *= 1.22;
 
-          const a = aim(p.track * 1.4, true);
-          dir = norm(a.x * 0.55, -1);
+          const a = aim(p.track * 1.35, true);
+          dir = norm(a.x * 0.9, a.y * 0.9 - 0.25);
         }
 
         if (stage === 5) {
@@ -605,65 +605,32 @@
           pose = "big";
           damage += 3;
           range *= 1.45;
-          width *= 1.45;
+          width *= 1.4;
         }
 
-        strike(
-          name,
-          pose,
-          dir || aim(p.track, false),
-          damage,
-          range,
-          width,
-          move,
-          cooldown,
-          "combo",
-          stage
-        );
+        strike(name, pose, dir || aim(p.track, false), damage, range, width, move, cooldown, "combo", stage);
       }
 
       function dashAttack() {
         const p = game.player;
-
         const input = inputDir();
-        let dir = aim(p.track * 1.8, true);
+        let dir = aim(p.track * 1.9, true);
 
         let name = "대쉬정권";
         let pose = "dashPunch";
-        let damage = p.damage + 1.4;
-        let range = p.range * 1.55;
-        let width = p.width * 1.2;
+        let damage = p.damage + 1.5;
+        let range = p.range * 1.6;
+        let width = p.width * 1.22;
         let move = p.lunge * 1.45;
 
-        if (input && input.y < -0.55) {
+        if (input && input.y < -0.45) {
           name = "비연각";
           pose = "kick";
-          dir = norm(dir.x * 0.45 + input.x * 0.22, dir.y * 0.45 - 0.55);
-          range *= 1.18;
+          dir = norm(dir.x * 0.55 + input.x * 0.22, dir.y * 0.55 + input.y * 0.65);
+          range *= 1.16;
         }
 
-        if (input && input.y > 0.55 && p.y < PLAYER_GROUND - 15) {
-          name = "급강하각";
-          pose = "down";
-          dir = norm(dir.x * 0.35 + input.x * 0.25, 1);
-          damage += 1.3;
-          width *= 1.25;
-        }
-
-        p.lastA = 0;
-
-        strike(
-          name,
-          pose,
-          dir,
-          damage,
-          range,
-          width,
-          move,
-          p.attackBaseCooldown * 1.04,
-          "dash",
-          0
-        );
+        strike(name, pose, dir, damage, range, width, move, p.attackBaseCooldown * 1.04, "dash", 0);
       }
 
       function strike(name, pose, dir, damage, range, width, move, cooldown, source, stage) {
@@ -678,17 +645,14 @@
         p.vx = dir.x * move * b.move;
         p.vy = dir.y * move * b.move;
 
-        if (dir.y < -0.25) p.vy -= 90 * b.move;
-        if (dir.y > 0.3 && p.y >= PLAYER_GROUND - 3) p.vy = -120;
-
         p.attackCooldown = cooldown * b.speed;
         setPose(pose, dir);
 
-        addText(p.x, p.y - 72, name, b.gold ? "#ffd84a" : "#fff", 0.45);
+        addText(p.x, p.y - 54, name, b.gold ? "#ffd84a" : "#fff", 0.42);
         addGhost(0.22);
 
         const sx = p.x;
-        const sy = p.y - 24;
+        const sy = p.y - 18;
         const ex = sx + dir.x * range * b.range;
         const ey = sy + dir.y * range * b.range;
 
@@ -713,15 +677,8 @@
           if (d <= m.r + width * b.range * 0.5) {
             hit = true;
 
-            const didKill = hurtMeteor(
-              m,
-              Math.ceil(damage * b.damage),
-              dir,
-              source,
-              stage
-            );
-
-            if (didKill) killed = true;
+            const dead = hurtMeteor(m, Math.ceil(damage * b.damage), dir, source, stage);
+            if (dead) killed = true;
           }
         }
 
@@ -732,7 +689,7 @@
 
         if (killed && source === "dash" && p.dashReset) {
           p.dashCooldown = 0;
-          addText(p.x, p.y - 100, "연쇄돌파!", "#9de1ff", 0.55);
+          addText(p.x, p.y - 86, "연쇄돌파!", "#9de1ff", 0.55);
         }
 
         if (killed && game.limit > 0 && p.limitExtend && game.limit < 8) {
@@ -742,22 +699,15 @@
 
       function hurtMeteor(m, damage, dir, source, stage) {
         m.hp -= damage;
-        m.vx += dir.x * 80;
-        m.vy += dir.y * 55 - 25;
+        m.vx += dir.x * 90;
+        m.vy += dir.y * 90;
         m.flash = 0.12;
 
-        addParticles(
-          m.x,
-          m.y,
-          12 + Math.min(14, damage * 2),
-          game.limit > 0 ? "#ffd84a" : "#fff0a8",
-          2.5
-        );
-
+        addParticles(m.x, m.y, 12 + Math.min(14, damage * 2), game.limit > 0 ? "#ffd84a" : "#fff0a8", 2.5);
         addText(m.x, m.y - m.r, "-" + damage, "#fff3a8", 0.5);
 
         if (game.limit > 0 || stage === 5) {
-          explosion(m.x, m.y, game.limit > 0 ? 54 : 42, Math.max(1, Math.floor(damage * 0.45)));
+          explosion(m.x, m.y, game.limit > 0 ? 56 : 42, Math.max(1, Math.floor(damage * 0.45)));
         }
 
         if (m.hp <= 0) {
@@ -772,7 +722,6 @@
         if (m.dead) return;
 
         m.dead = true;
-
         game.score += m.score;
         game.combo += 1;
         game.comboTimer = 1.15;
@@ -790,8 +739,8 @@
         addParticles(m.x, m.y, 28, m.color, 3.5);
 
         if (m.type === "big") {
-          addMeteor(m.x - 10, m.y, -70, true);
-          addMeteor(m.x + 10, m.y, 70, true);
+          addMeteor("fragment", m.x - 10, m.y, -70);
+          addMeteor("fragment", m.x + 10, m.y, 70);
         }
 
         if (m.type === "bomb") {
@@ -816,38 +765,58 @@
         for (const m of game.meteors) {
           if (m.dead) continue;
 
-          const d = Math.hypot(m.x - x, m.y - y);
-
-          if (d <= radius + m.r) {
+          if (Math.hypot(m.x - x, m.y - y) <= radius + m.r) {
             m.hp -= damage;
-
-            if (m.hp <= 0) {
-              killMeteor(m);
-            }
+            if (m.hp <= 0) killMeteor(m);
           }
         }
       }
 
-      function addMeteor(x = rand(38, W - 38), y = -42, vx = rand(-18, 18), fragment = false, boss = false) {
-        let type = fragment ? "fragment" : "normal";
-        const roll = Math.random();
+      function spawnFromEdge() {
+        const edge = Math.floor(rand(0, 4));
+        let x, y;
 
-        if (!fragment && !boss) {
-          if (game.time > 15 && roll < 0.13) type = "fast";
-          else if (game.time > 25 && roll < 0.27) type = "big";
-          else if (game.time > 36 && roll < 0.39) type = "steel";
-          else if (game.time > 45 && roll < 0.48) type = "bomb";
+        if (edge === 0) {
+          x = rand(-40, W + 40);
+          y = -40;
+        } else if (edge === 1) {
+          x = W + 40;
+          y = rand(-40, H + 40);
+        } else if (edge === 2) {
+          x = rand(-40, W + 40);
+          y = H + 40;
+        } else {
+          x = -40;
+          y = rand(-40, H + 40);
+        }
+
+        return { x, y };
+      }
+
+      function addMeteor(forceType = null, fx = null, fy = null, forcedVx = null) {
+        let type = forceType || "normal";
+
+        if (!forceType) {
+          const roll = Math.random();
+
+          if (game.time > 14 && roll < 0.12) type = "fast";
+          else if (game.time > 24 && roll < 0.26) type = "big";
+          else if (game.time > 34 && roll < 0.38) type = "steel";
+          else if (game.time > 44 && roll < 0.48) type = "bomb";
           else if (roll > 0.92) type = "crystal";
         }
 
-        if (boss) type = "boss";
+        if (forceType === "boss") type = "boss";
+
+        const spawn = (fx == null || fy == null) ? spawnFromEdge() : { x: fx, y: fy };
+        const toEarth = norm(CENTER.x - spawn.x, CENTER.y - spawn.y);
 
         const m = {
-          x,
-          y,
-          vx,
-          vy: rand(55, 90) * (1 + game.time / 68),
-          r: 21,
+          x: spawn.x,
+          y: spawn.y,
+          vx: toEarth.x * (55 + game.time * 0.7),
+          vy: toEarth.y * (55 + game.time * 0.7),
+          r: 18,
           hp: 1,
           maxHp: 1,
           score: 10,
@@ -858,47 +827,53 @@
           rot: rand(0, 7),
           vr: rand(-2, 2),
           flash: 0,
+          orbit: rand(-0.5, 0.5),
           shape: Array.from({ length: 9 }, () => rand(0.78, 1.22))
         };
 
         if (type === "fragment") {
-          m.r = 14;
-          m.vy = rand(80, 120);
+          m.r = 13;
           m.score = 8;
           m.xp = 5;
           m.color = "#bd8a5b";
+          if (forcedVx != null) {
+            m.vx += forcedVx;
+          }
         }
 
         if (type === "fast") {
-          m.r = 16;
-          m.vy *= 1.55;
+          m.r = 15;
+          m.vx *= 1.5;
+          m.vy *= 1.5;
           m.score = 16;
           m.xp = 10;
           m.color = "#ff644d";
         }
 
         if (type === "big") {
-          m.r = 34;
+          m.r = 28;
           m.hp = 3;
           m.maxHp = 3;
-          m.vy *= 0.82;
+          m.vx *= 0.86;
+          m.vy *= 0.86;
           m.score = 30;
           m.xp = 18;
           m.color = "#b17a4c";
         }
 
         if (type === "steel") {
-          m.r = 25;
+          m.r = 22;
           m.hp = 5;
           m.maxHp = 5;
-          m.vy *= 0.86;
+          m.vx *= 0.9;
+          m.vy *= 0.9;
           m.score = 36;
           m.xp = 22;
           m.color = "#92a0b0";
         }
 
         if (type === "bomb") {
-          m.r = 24;
+          m.r = 21;
           m.hp = 2;
           m.maxHp = 2;
           m.score = 34;
@@ -907,23 +882,26 @@
         }
 
         if (type === "crystal") {
-          m.r = 22;
+          m.r = 19;
           m.score = 20;
           m.xp = 28;
           m.color = "#75ecff";
         }
 
         if (type === "boss") {
-          m.x = rand(110, W - 110);
-          m.y = -90;
-          m.r = 58;
-          m.vx = rand(-12, 12);
-          m.vy = 42 + game.time * 0.08;
+          const s = spawnFromEdge();
+          const t = norm(CENTER.x - s.x, CENTER.y - s.y);
+
+          m.x = s.x;
+          m.y = s.y;
+          m.r = 46;
           m.hp = 18 + game.level * 4;
           m.maxHp = m.hp;
           m.score = 260;
           m.xp = 90;
           m.color = "#d9554e";
+          m.vx = t.x * (40 + game.time * 0.4);
+          m.vy = t.y * (40 + game.time * 0.4);
         }
 
         game.meteors.push(m);
@@ -936,10 +914,15 @@
         game.flash = 0.35;
         game.shake = 16;
 
-        addText(W / 2, 140, "유성난무!", "#9de1ff", 1);
+        addText(CENTER.x, 110, "유성난무!", "#9de1ff", 1);
 
         for (const m of game.meteors) {
-          killMeteor(m);
+          if (m.type === "boss") {
+            m.hp -= 12 + game.player.damage * 2;
+            if (m.hp <= 0) killMeteor(m);
+          } else {
+            killMeteor(m);
+          }
         }
       }
 
@@ -1001,6 +984,7 @@
         if (game.shake > 0) game.shake -= 30 * dt;
 
         const p = game.player;
+        const b = buff();
 
         p.attackCooldown = Math.max(0, p.attackCooldown - dt);
         p.dashCooldown = Math.max(0, p.dashCooldown - dt);
@@ -1010,16 +994,11 @@
 
         if (game.overheat > 0) game.overheat -= dt;
 
-        if (p.lastA > 0.62) {
-          p.comboStage = 0;
-        }
+        if (p.lastA > 0.62) p.comboStage = 0;
 
         if (game.comboTimer > 0) {
           game.comboTimer -= dt;
-
-          if (game.comboTimer <= 0) {
-            game.combo = 0;
-          }
+          if (game.comboTimer <= 0) game.combo = 0;
         }
 
         if (game.limit > 0) {
@@ -1031,67 +1010,63 @@
           }
         }
 
-        p.x += p.vx * dt;
-        p.y += p.vy * dt;
+        const moveDir = inputDir();
+        const moveSpeed = p.moveSpeed * b.move;
+
+        if (moveDir) {
+          p.face = moveDir.x < -0.15 ? -1 : moveDir.x > 0.15 ? 1 : p.face;
+          p.dir = moveDir;
+        }
+
+        p.x += (moveDir ? moveDir.x * moveSpeed : 0) * dt + p.vx * dt;
+        p.y += (moveDir ? moveDir.y * moveSpeed : 0) * dt + p.vy * dt;
 
         p.vx *= Math.pow(0.05, dt);
-        p.vy += 980 * dt;
+        p.vy *= Math.pow(0.05, dt);
 
-        p.x = clamp(p.x, 28, W - 28);
+        const dx = p.x - CENTER.x;
+        const dy = p.y - CENTER.y;
+        const d = Math.hypot(dx, dy);
 
-        if (p.y > PLAYER_GROUND) {
-          p.y = PLAYER_GROUND;
-
-          if (p.vy > 0) {
-            p.vy = 0;
-          }
+        if (d < EARTH_R + 16) {
+          const out = norm(dx, dy);
+          p.x = CENTER.x + out.x * (EARTH_R + 16);
+          p.y = CENTER.y + out.y * (EARTH_R + 16);
         }
 
-        if (p.y < 130) {
-          p.y = 130;
+        p.x = clamp(p.x, 30, W - 30);
+        p.y = clamp(p.y, 30, H - 30);
 
-          if (p.vy < 0) {
-            p.vy *= -0.15;
-          }
-        }
-
-        if (Math.abs(p.vx) + Math.abs(p.vy) > 260 || game.limit > 0) {
-          addGhost(0.16);
+        if (Math.abs(p.vx) + Math.abs(p.vy) > 260 || game.limit > 0 || moveDir) {
+          addGhost(0.14);
         }
 
         game.spawnTimer -= dt;
-
         if (game.spawnTimer <= 0) {
           addMeteor();
-
-          const interval = clamp(1.02 - game.time * 0.0065, 0.34, 1.02);
-          game.spawnTimer = rand(interval * 0.58, interval * 1.1);
+          const interval = clamp(0.85 - game.time * 0.0045, 0.18, 0.85);
+          game.spawnTimer = rand(interval * 0.55, interval * 1.06);
         }
 
         game.bossTimer += dt;
-
-        if (game.time > 32 && game.bossTimer > 45) {
+        if (game.time > 30 && game.bossTimer > 45) {
           game.bossTimer = 0;
-          addMeteor(0, 0, 0, false, true);
-          addText(W / 2, 118, "거대 운석 접근!", "#ff6a6a", 1);
+          addMeteor("boss");
+          addText(CENTER.x, 78, "거대 운석 접근!", "#ff6a6a", 1);
         }
 
         game.orbTimer -= dt;
-
         if (game.time > 15 && game.orbTimer <= 0) {
           game.orbTimer = rand(24, 34);
-
           game.orbs.push({
-            x: rand(55, W - 55),
-            y: -35,
-            vy: 46,
+            x: rand(120, W - 120),
+            y: rand(100, H - 100),
             r: 15,
             spin: 0,
             life: 8,
             dead: false
           });
-
-          addText(W / 2, 122, "금빛 구슬 출현!", "#ffd84a", 1);
+          addText(CENTER.x, 92, "금빛 구슬 출현!", "#ffd84a", 1);
         }
 
         updateMeteors(dt);
@@ -1103,33 +1078,34 @@
         for (const m of game.meteors) {
           const slow = game.limit > 0 ? 0.82 : 1;
 
+          const toEarth = norm(CENTER.x - m.x, CENTER.y - m.y);
+          m.vx += toEarth.x * 8 * dt;
+          m.vy += toEarth.y * 8 * dt;
+
           m.x += m.vx * dt * slow;
           m.y += m.vy * dt * slow;
           m.rot += m.vr * dt;
           m.flash = Math.max(0, m.flash - dt);
 
-          if (m.x < m.r || m.x > W - m.r) {
-            m.vx *= -0.8;
-          }
-
-          m.x = clamp(m.x, m.r, W - m.r);
-
-          if (m.y + m.r >= GROUND) {
+          if (Math.hypot(m.x - CENTER.x, m.y - CENTER.y) <= EARTH_R + m.r) {
             m.dead = true;
 
             let damage = 1;
-
             if (m.type === "bomb") damage = 3;
             if (m.type === "big" || m.type === "steel") damage = 2;
             if (m.type === "boss") damage = 5;
 
-            game.hp -= damage;
+            game.earthHp -= damage;
             game.combo = 0;
-            game.shake = 10;
+            game.shake = 12;
 
-            addText(m.x, GROUND - 24, "-" + damage + " HP", "#ff5b5b", 0.8);
+            addText(CENTER.x, CENTER.y - 58, "-" + damage + " HP", "#ff5b5b", 0.8);
 
-            if (game.hp <= 0) {
+            if (m.type === "bomb") {
+              addParticles(CENTER.x, CENTER.y, 26, "#ff9d25", 4);
+            }
+
+            if (game.earthHp <= 0) {
               game.dead = true;
               game.run = false;
 
@@ -1151,16 +1127,15 @@
         const p = game.player;
 
         for (const o of game.orbs) {
-          o.y += o.vy * dt;
           o.spin += dt * 4;
           o.life -= dt;
 
-          if (Math.hypot(o.x - p.x, o.y - (p.y - 28)) < o.r + 28) {
+          if (Math.hypot(o.x - p.x, o.y - (p.y - 18)) < o.r + 24) {
             o.dead = true;
             startLimitBreak();
           }
 
-          if (o.y > GROUND + 40 || o.life <= 0) {
+          if (o.life <= 0) {
             o.dead = true;
           }
         }
@@ -1169,10 +1144,7 @@
       }
 
       function updateVisuals(dt) {
-        for (const h of game.hits) {
-          h.timer -= dt;
-        }
-
+        for (const h of game.hits) h.timer -= dt;
         game.hits = game.hits.filter((h) => h.timer > 0);
 
         for (const f of game.effects) {
@@ -1181,20 +1153,15 @@
           f.vy += 240 * dt;
           f.timer -= dt;
         }
-
         game.effects = game.effects.filter((f) => f.timer > 0);
 
         for (const t of game.texts) {
           t.y -= 34 * dt;
           t.timer -= dt;
         }
-
         game.texts = game.texts.filter((t) => t.timer > 0);
 
-        for (const gh of game.ghosts) {
-          gh.timer -= dt;
-        }
-
+        for (const gh of game.ghosts) gh.timer -= dt;
         game.ghosts = game.ghosts.filter((gh) => gh.timer > 0);
       }
 
@@ -1207,10 +1174,8 @@
         }
 
         drawBackground();
-
-        if (game.player.preview) {
-          drawPreviews();
-        }
+        drawArena();
+        if (game.player.preview) drawPreviews();
 
         for (const o of game.orbs) drawOrb(o);
         for (const m of game.meteors) drawMeteor(m);
@@ -1231,7 +1196,7 @@
             gh.y,
             gh.pose,
             gh.dir,
-            clamp(gh.timer / gh.maxTimer, 0, 1) * 0.32,
+            clamp(gh.timer / gh.maxTimer, 0, 1) * 0.28,
             gh.gold ? "#ffd84a" : "#9de1ff"
           );
         }
@@ -1264,38 +1229,69 @@
         const gr = ctx.createLinearGradient(0, 0, 0, H);
         gr.addColorStop(0, "#060817");
         gr.addColorStop(0.58, "#101936");
-        gr.addColorStop(1, "#22283d");
+        gr.addColorStop(1, "#1a1f34");
 
         ctx.fillStyle = gr;
         ctx.fillRect(0, 0, W, H);
 
-        ctx.globalAlpha = 0.45;
+        ctx.globalAlpha = 0.4;
         ctx.fillStyle = "#fff";
 
-        for (let i = 0; i < 75; i++) {
+        for (let i = 0; i < 90; i++) {
           ctx.beginPath();
-          ctx.arc((i * 97.3) % W, (i * 53.1) % 390, (i % 3) * 0.55 + 0.8, 0, Math.PI * 2);
+          ctx.arc((i * 97.3) % W, (i * 53.1) % H, (i % 3) * 0.55 + 0.8, 0, Math.PI * 2);
           ctx.fill();
         }
 
         ctx.globalAlpha = 1;
+      }
 
-        ctx.fillStyle = "#20273a";
-        ctx.fillRect(0, GROUND, W, H - GROUND);
+      function drawArena() {
+        ctx.save();
 
-        ctx.fillStyle = "#334062";
-        ctx.fillRect(0, GROUND, W, 8);
+        ctx.strokeStyle = "rgba(255,255,255,0.08)";
+        ctx.lineWidth = 2;
+
+        ctx.beginPath();
+        ctx.arc(CENTER.x, CENTER.y, ARENA_R, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(CENTER.x, CENTER.y, ARENA_R * 0.65, 0, Math.PI * 2);
+        ctx.stroke();
+
+        const earthGrad = ctx.createRadialGradient(CENTER.x, CENTER.y, 8, CENTER.x, CENTER.y, EARTH_R);
+        earthGrad.addColorStop(0, "#6de4ff");
+        earthGrad.addColorStop(0.6, "#2a7df7");
+        earthGrad.addColorStop(1, "#0f2f73");
+
+        ctx.fillStyle = earthGrad;
+        ctx.beginPath();
+        ctx.arc(CENTER.x, CENTER.y, EARTH_R, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = "#ffffff55";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        ctx.fillStyle = "#ffffff18";
+        ctx.beginPath();
+        ctx.arc(CENTER.x - 12, CENTER.y - 14, 14, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
       }
 
       function drawPreviews() {
         for (const m of game.meteors) {
-          const t = (GROUND - m.y) / Math.max(1, m.vy);
-          const px = clamp(m.x + m.vx * t, m.r, W - m.r);
+          const toEarth = norm(CENTER.x - m.x, CENTER.y - m.y);
+          const futureX = m.x + (m.vx + toEarth.x * 8) * 1.2;
+          const futureY = m.y + (m.vy + toEarth.y * 8) * 1.2;
 
-          ctx.globalAlpha = 0.32;
+          ctx.globalAlpha = 0.3;
           ctx.fillStyle = "#ffd84a";
           ctx.beginPath();
-          ctx.ellipse(px, GROUND + 6, m.r * 0.7, 5, 0, 0, Math.PI * 2);
+          ctx.arc(futureX, futureY, Math.max(5, m.r * 0.22), 0, Math.PI * 2);
           ctx.fill();
           ctx.globalAlpha = 1;
         }
@@ -1334,16 +1330,13 @@
         ctx.lineWidth = 2;
 
         ctx.beginPath();
-
         m.shape.forEach((q, i) => {
           const a = Math.PI * 2 * i / m.shape.length;
           const x = Math.cos(a) * m.r * q;
           const y = Math.sin(a) * m.r * q;
-
           if (i === 0) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
         });
-
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
@@ -1394,22 +1387,24 @@
       }
 
       function drawStickman(px, py, pose, dir, alpha, color) {
-        dir = norm(dir.x || 0, dir.y || -1);
+        dir = norm(dir.x || 0, dir.y || 0);
+        if (!isFinite(dir.x)) dir = { x: 1, y: 0 };
 
         const side = Math.abs(dir.x) > 0.15 ? Math.sign(dir.x) : game.player.face;
         const perp = { x: -dir.y, y: dir.x };
 
-        let neck = { x: px, y: py - 44 };
-        let hip = { x: px, y: py - 8 };
-        let head = { x: px, y: py - 59 };
+        let neck = { x: px, y: py - 28 };
+        let hip = { x: px, y: py + 6 };
+        let head = { x: px, y: py - 43 };
 
         let armA = { x: neck.x + side * 20, y: neck.y + 8 };
         let armB = { x: neck.x - side * 18, y: neck.y + 13 };
-        let legA = { x: hip.x + side * 18, y: hip.y + 34 };
-        let legB = { x: hip.x - side * 18, y: hip.y + 34 };
+        let legA = { x: hip.x + side * 16, y: hip.y + 28 };
+        let legB = { x: hip.x - side * 16, y: hip.y + 28 };
 
         if (pose === "punch") {
           neck.x += dir.x * 8;
+          neck.y += dir.y * 4;
           armA = { x: neck.x + dir.x * 48, y: neck.y + dir.y * 48 };
           armB = {
             x: neck.x - dir.x * 18 - perp.x * 12,
@@ -1418,59 +1413,45 @@
         }
 
         if (pose === "big" || pose === "dashPunch") {
-          neck.x += dir.x * 16;
+          neck.x += dir.x * 15;
+          neck.y += dir.y * 8;
 
-          armA = { x: neck.x + dir.x * 62, y: neck.y + dir.y * 62 };
+          armA = { x: neck.x + dir.x * 60, y: neck.y + dir.y * 60 };
           armB = {
-            x: neck.x - dir.x * 25 - perp.x * 12,
-            y: neck.y - dir.y * 25 - perp.y * 12
+            x: neck.x - dir.x * 24 - perp.x * 12,
+            y: neck.y - dir.y * 24 - perp.y * 12
           };
 
           legA = {
-            x: hip.x - dir.x * 30 + perp.x * 16,
-            y: hip.y - dir.y * 30 + perp.y * 16 + 27
+            x: hip.x - dir.x * 26 + perp.x * 14,
+            y: hip.y - dir.y * 26 + perp.y * 14 + 22
           };
 
           legB = {
-            x: hip.x - dir.x * 24 - perp.x * 16,
-            y: hip.y - dir.y * 24 - perp.y * 16 + 29
+            x: hip.x - dir.x * 18 - perp.x * 14,
+            y: hip.y - dir.y * 18 - perp.y * 14 + 24
           };
         }
 
         if (pose === "kick") {
-          const up = norm(dir.x * 0.55, -1);
-
-          armA = { x: neck.x + up.x * 25 + side * 12, y: neck.y + up.y * 25 };
-          legA = { x: hip.x + up.x * 20 + side * 6, y: hip.y + up.y * 52 };
-          legB = { x: hip.x - side * 22, y: hip.y + 32 };
-        }
-
-        if (pose === "down") {
-          legA = { x: hip.x + dir.x * 28, y: hip.y + 54 };
-          legB = { x: hip.x - side * 20, y: hip.y + 18 };
+          const up = norm(dir.x * 0.8, dir.y - 0.5);
+          armA = { x: neck.x + up.x * 18 + side * 8, y: neck.y + up.y * 18 };
+          legA = { x: hip.x + up.x * 16, y: hip.y + up.y * 52 };
+          legB = { x: hip.x - side * 18, y: hip.y + 24 };
         }
 
         if (pose === "dash") {
           neck.x += dir.x * 16;
+          neck.y += dir.y * 10;
 
           armA = {
-            x: neck.x - dir.x * 24 + perp.x * 9,
-            y: neck.y - dir.y * 24 + perp.y * 9
+            x: neck.x - dir.x * 24 + perp.x * 8,
+            y: neck.y - dir.y * 24 + perp.y * 8
           };
 
           armB = {
-            x: neck.x - dir.x * 30 - perp.x * 9,
-            y: neck.y - dir.y * 30 - perp.y * 9
-          };
-
-          legA = {
-            x: hip.x - dir.x * 28 + perp.x * 14,
-            y: hip.y - dir.y * 28 + perp.y * 14 + 26
-          };
-
-          legB = {
-            x: hip.x - dir.x * 16 - perp.x * 14,
-            y: hip.y - dir.y * 16 - perp.y * 14 + 30
+            x: neck.x - dir.x * 28 - perp.x * 8,
+            y: neck.y - dir.y * 28 - perp.y * 8
           };
         }
 
@@ -1481,21 +1462,21 @@
 
           armA = { x: neck.x + 24, y: neck.y + 32 };
           armB = { x: neck.x - 24, y: neck.y + 32 };
-          legA = { x: hip.x + 25, y: hip.y + 30 };
-          legB = { x: hip.x - 25, y: hip.y + 30 };
+          legA = { x: hip.x + 25, y: hip.y + 28 };
+          legB = { x: hip.x - 25, y: hip.y + 28 };
 
           ctx.globalAlpha = 0.45;
           ctx.strokeStyle = "#ffd84a";
           ctx.lineWidth = 4;
           ctx.beginPath();
-          ctx.arc(px, py - 32, 70, 0, Math.PI * 2);
+          ctx.arc(px, py - 12, 60, 0, Math.PI * 2);
           ctx.stroke();
         }
 
         if (pose === "over") {
-          neck.y += 16;
+          neck.y += 12;
           hip.y += 10;
-          head.y += 14;
+          head.y += 12;
         }
 
         ctx.save();
@@ -1527,41 +1508,41 @@
 
       function drawUI() {
         ctx.fillStyle = "#0006";
-        ctx.fillRect(12, 12, W - 24, 86);
+        ctx.fillRect(12, 12, W - 24, 80);
 
         ctx.fillStyle = "#fff";
         ctx.font = "900 18px system-ui";
         ctx.textAlign = "left";
 
         ctx.fillText("점수 " + game.score, 24, 38);
-        ctx.fillText("Lv." + game.level, 24, 66);
+        ctx.fillText("Lv." + game.level, 24, 64);
 
-        ctx.fillText("방어선", 104, 38);
-        drawBar(174, 23, 132, 16, game.hp / game.maxHp, "#ff5c5c");
+        ctx.fillText("지구", 128, 38);
+        drawBar(176, 24, 150, 16, game.earthHp / game.earthMaxHp, "#5ec7ff");
 
-        ctx.fillText("경험치", 104, 66);
-        drawBar(174, 51, 132, 16, game.xp / game.nextXp, "#69e36d");
+        ctx.fillText("경험치", 128, 64);
+        drawBar(176, 50, 150, 16, game.xp / game.nextXp, "#69e36d");
 
-        ctx.fillText("F", 326, 38);
-        drawBar(350, 23, 92, 16, game.ult / 100, "#9de1ff");
+        ctx.fillText("F", 360, 38);
+        drawBar(386, 24, 110, 16, game.ult / 100, "#9de1ff");
 
         ctx.fillStyle = "#d7e3ff";
         ctx.font = "800 13px system-ui";
-        ctx.fillText("A 콤보 · Space 대쉬 · Space+A", 24, 88);
+        ctx.fillText("방향키 이동 · A 콤보 · Space 대쉬 · Space+A", 24, 86);
 
         if (game.combo > 1) {
           ctx.fillStyle = "#ffd84a";
-          ctx.font = "950 30px system-ui";
+          ctx.font = "950 28px system-ui";
           ctx.textAlign = "center";
-          ctx.fillText(game.combo + " COMBO", W / 2, 130);
+          ctx.fillText(game.combo + " COMBO", W / 2, 122);
         }
 
         if (game.limit > 0) {
           ctx.fillStyle = "#ffd84a";
           ctx.font = "950 18px system-ui";
           ctx.textAlign = "center";
-          ctx.fillText("한계돌파", W / 2, 164);
-          drawBar(112, 174, 256, 12, game.limit / 5, "#ffd84a");
+          ctx.fillText("한계돌파", W / 2, 152);
+          drawBar(W / 2 - 128, 160, 256, 12, game.limit / 5, "#ffd84a");
         }
       }
 
@@ -1601,7 +1582,7 @@
           ctx.fillStyle = game.cutType === "start" ? "#ffd84a" : "#ddd";
           ctx.font = "950 42px system-ui";
           ctx.textAlign = "center";
-          ctx.fillText(game.cutType === "start" ? "한계돌파" : "과부하", W / 2, 245);
+          ctx.fillText(game.cutType === "start" ? "한계돌파" : "과부하", W / 2, 220);
         }
       }
 
@@ -1637,10 +1618,7 @@
       function addGhost(timer) {
         const p = game.player;
 
-        if (
-          game.ghosts[0] &&
-          Math.hypot(game.ghosts[0].x - p.x, game.ghosts[0].y - p.y) < 6
-        ) {
+        if (game.ghosts[0] && Math.hypot(game.ghosts[0].x - p.x, game.ghosts[0].y - p.y) < 6) {
           return;
         }
 
