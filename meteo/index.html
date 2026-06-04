@@ -322,7 +322,7 @@
 
         if (event.code === "Space") dash();
         if (event.code === "KeyA") attack();
-        if (event.code === "KeyB") kickAttack();
+        if (event.code === "KeyS") kickAttack();
         if (event.code === "KeyD") parry();
         if (event.code === "KeyF") ultimate();
       });
@@ -340,7 +340,7 @@
         },
         {
           name: "화염각",
-          desc: "B 발 콤보 2타 해금. 발에도 불꽃이 붙고 발차기 연출이 강화된다.",
+          desc: "S 발 콤보 2타 해금. 발에도 불꽃이 붙고 발차기 연출이 강화된다.",
           condition: (p) => !p.fireFeet,
           apply: (p) => {
             p.maxKickCombo = 3;
@@ -2087,10 +2087,10 @@
 
         ctx.fillStyle = "#d7e3ff";
         ctx.font = "800 13px system-ui";
-        ctx.fillText("방향키 이동 · A 손공격 · B 발공격 · D 패링 · Space 대쉬 · Space+A", 480, 38);
+        ctx.fillText("방향키 이동 · A 손공격 · S 발공격 · D 패링 · Space 대쉬 · Space+A", 480, 38);
 
         const p = game.player;
-        drawCooldownBox(704, 64, "B", p.spinCooldown, 0.92, "발공격");
+        drawCooldownBox(704, 64, "S", p.spinCooldown, 0.92, "발공격");
         drawCooldownBox(762, 64, "D", p.parryCooldown, 0.52, "패링");
         drawCooldownBox(820, 64, "Sp", p.dashCooldown, 0.58, "대쉬");
         drawCooldownBox(878, 64, "F", 100 - game.ult, 100, "필살");
