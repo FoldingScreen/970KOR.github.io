@@ -4,7 +4,8 @@ const {
   Bodies,
   Body,
   Events,
-  Composite
+  Composite,
+  Constraint
 } = Matter;
 
 const WIDTH = 420;
@@ -15,28 +16,41 @@ const CANNON = {
   y: HEIGHT - 44
 };
 
-const DANGER_Y = HEIGHT - 125;
-const DANGER_LIMIT_MS = 2200;
-const SHOT_POWER = 23.5;
-// 벽 반사 시 속도 유지율
-// 1.0 = 입사각/반사각 동일 + 속도 유지
-// 0.8 = 각도는 유지하되 속도만 80%로 감소
-const WALL_SPEED_KEEP = 0.8;
+const MIN_CEILING_Y = 48;
+const START_CEILING_Y = 72;
+const DANGER_Y = HEIGHT - 118;
 
-// 실제로 보이는 크기보다 충돌 판정을 조금 크게 잡음
-// 값이 클수록 더 빡빡하고 어려워짐
-const HITBOX_SCALE = 1.00;
+const SHOT_POWER = 18.8;
+const WALL_SPEED_KEEP = 0.92;
 
-const DRINKS = [
-  { name: "물컵", emoji: "💧", radius: 20, score: 10, color: "#9ad8ff" },
-  { name: "탄산", emoji: "🥤", radius: 24, score: 25, color: "#ffd36f" },
-  { name: "주스", emoji: "🧃", radius: 29, score: 60, color: "#ff9f73" },
-  { name: "커피", emoji: "☕", radius: 35, score: 140, color: "#b17a56" },
-  { name: "버블티", emoji: "🧋", radius: 42, score: 320, color: "#d6a6ff" },
-  { name: "에이드", emoji: "🍹", radius: 50, score: 750, color: "#72efd0" },
-  { name: "프라페", emoji: "🍧", radius: 59, score: 1500, color: "#ff9fd1" },
-  { name: "전설음료", emoji: "🏆", radius: 69, score: 3500, color: "#ffe66d" }
+const BASE_RADIUS = 22;
+const POP_COUNT = 6;
+
+const CEILING_DROP_SPEED = 1.15; // px/sec
+const CEILING_RISE_BASE = 18;
+const CEILING_RISE_PER_EXTRA = 3;
+
+const SPECIAL_CLEAR_COLOR_CHANCE = 0.03;
+const SPECIAL_LINE_CHANCE = 0.05;
+
+const BUBBLE_COLORS = [
+  { key: "sky", name: "하늘", hue: 196, stroke: "rgba(61, 185, 255, 0.78)" },
+  { key: "pink", name: "분홍", hue: 332, stroke: "rgba(255, 98, 177, 0.78)" },
+  { key: "mint", name: "민트", hue: 154, stroke: "rgba(66, 230, 169, 0.78)" },
+  { key: "violet", name: "보라", hue: 266, stroke: "rgba(166, 117, 255, 0.78)" },
+  { key: "gold", name: "노랑", hue: 45, stroke: "rgba(255, 207, 73, 0.78)" }
 ];
+
+const SPECIAL_ITEMS = {
+  clearColor: {
+    name: "동일색 제거",
+    icon: "✦"
+  },
+  line: {
+    name: "직선 제거",
+    icon: "↯"
+  }
+};
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
@@ -49,23 +63,27 @@ const restartBtn = document.getElementById("restartBtn");
 
 let engine;
 let world;
+let ceilingBody;
 
-let drinks = new Set();
-let effects = [];
+let bubbles = new Set();
+let bonds = [];
+let bondKeys = new Set();
+let popEffects = [];
+let laserEffects = [];
 
 let score = 0;
-let bestScore = Number(localStorage.getItem("mergeDrinkBestScore") || 0);
+let bestScore = Number(localStorage.getItem("soapBubbleBestScore") || 0);
 
-let currentLevel = 0;
-let nextLevel = 0;
-
+let nextBubbleInfo = null;
+let activeBubble = null;
 let canShoot = true;
 let gameOver = false;
 let aimAngle = -Math.PI / 2;
-let dangerSince = null;
+let ceilingY = START_CEILING_Y;
+let bodyId = 1;
+let pendingGroupCheck = false;
 
 let lastTime = performance.now();
-let bodyId = 1;
 
 init();
 
@@ -93,15 +111,9 @@ function setupMatter() {
   engine.gravity.x = 0;
   engine.gravity.y = 0;
 
-  // 센서 원은 본체 음료를 따라다니기만 함
-  Events.on(engine, "beforeUpdate", syncMagnetSensors);
-
-  // 실제 음료 충돌/벽 반사/합체
   Events.on(engine, "collisionStart", handleCollisionStart);
-
-  // 보이지 않는 센서끼리 겹칠 때만 자석 효과
-  Events.on(engine, "collisionActive", handleMagnetSensorCollision);
 }
+
 function bindEvents() {
   restartBtn.addEventListener("click", resetGame);
 
@@ -128,143 +140,154 @@ function resetGame() {
   Composite.clear(world, false);
   Engine.clear(engine);
 
-  drinks.clear();
-  effects = [];
+  bubbles.clear();
+  bonds = [];
+  bondKeys.clear();
+  popEffects = [];
+  laserEffects = [];
 
   score = 0;
   gameOver = false;
   canShoot = true;
-  dangerSince = null;
-
-  currentLevel = getRandomLaunchLevel();
-  nextLevel = getRandomLaunchLevel();
+  activeBubble = null;
+  pendingGroupCheck = false;
+  ceilingY = START_CEILING_Y;
 
   createWalls();
-  updateHud();
+  seedInitialBubbles();
 
+  nextBubbleInfo = createRandomBubbleInfo();
+  updateHud();
   statusText.textContent = "조준 후 클릭/터치로 발사";
 }
 
 function createWalls() {
-  const wallOptions = {
+  const sideOptions = {
     isStatic: true,
+    label: "side-wall",
     restitution: 1,
     friction: 0
   };
 
-  const leftWall = Bodies.rectangle(-18, HEIGHT / 2, 36, HEIGHT + 120, {
-    ...wallOptions,
+  const leftWall = Bodies.rectangle(-18, HEIGHT / 2, 36, HEIGHT + 140, {
+    ...sideOptions,
     label: "wall-left"
   });
 
-  const rightWall = Bodies.rectangle(WIDTH + 18, HEIGHT / 2, 36, HEIGHT + 120, {
-    ...wallOptions,
+  const rightWall = Bodies.rectangle(WIDTH + 18, HEIGHT / 2, 36, HEIGHT + 140, {
+    ...sideOptions,
     label: "wall-right"
   });
 
-  const topWall = Bodies.rectangle(WIDTH / 2, -18, WIDTH + 60, 36, {
-    ...wallOptions,
-    label: "wall-top"
+  ceilingBody = Bodies.rectangle(WIDTH / 2, ceilingY - 20, WIDTH + 80, 40, {
+    isStatic: true,
+    label: "wall-top",
+    restitution: 0,
+    friction: 1
   });
 
-  const bottomWall = Bodies.rectangle(WIDTH / 2, HEIGHT + 36, WIDTH + 60, 72, {
-    ...wallOptions,
-    label: "wall-bottom"
-  });
-
-  World.add(world, [leftWall, rightWall, topWall, bottomWall]);
+  World.add(world, [leftWall, rightWall, ceilingBody]);
 }
 
-function createDrink(x, y, level) {
-  const drink = DRINKS[level];
+function seedInitialBubbles() {
+  const positions = [
+    [82, ceilingY + 32, 0],
+    [132, ceilingY + 34, 1],
+    [184, ceilingY + 32, 2],
+    [236, ceilingY + 35, 3],
+    [288, ceilingY + 33, 4],
+    [338, ceilingY + 34, 0],
+    [108, ceilingY + 82, 1],
+    [162, ceilingY + 86, 2],
+    [216, ceilingY + 84, 3],
+    [270, ceilingY + 86, 4],
+    [324, ceilingY + 82, 0]
+  ];
 
-  const hitRadius = drink.radius * HITBOX_SCALE;
+  for (const [x, y, colorIndex] of positions) {
+    const body = createBubble(x, y, {
+      colorIndex,
+      item: null,
+      isInitial: true
+    });
 
-  const body = Bodies.circle(x, y, hitRadius, {
-    label: "drink",
+    attachBubbleToCeiling(body);
+  }
 
-    // 음료끼리는 너무 튀지 않게
-    restitution: 0.12,
-    friction: 0.24,
-    frictionAir: 0.022 + level * 0.003,
-    density: 0.0028 + level * 0.00055,
+  recomputeAnchoredState();
+  processColorGroups();
+}
 
+function createRandomBubbleInfo() {
+  const colorIndex = Math.floor(Math.random() * BUBBLE_COLORS.length);
+  const roll = Math.random();
+
+  let item = null;
+  if (roll < SPECIAL_CLEAR_COLOR_CHANCE) {
+    item = "clearColor";
+  } else if (roll < SPECIAL_CLEAR_COLOR_CHANCE + SPECIAL_LINE_CHANCE) {
+    item = "line";
+  }
+
+  return {
+    colorIndex,
+    item
+  };
+}
+
+function createBubble(x, y, info) {
+  const body = Bodies.circle(x, y, BASE_RADIUS, {
+    label: "bubble",
+    restitution: 0,
+    friction: 0.35,
+    frictionAir: 0.032,
+    density: 0.0024,
     slop: 0.01
   });
 
-  body.drinkLevel = level;
   body.gameId = bodyId++;
-  body.isMerging = false;
+  body.colorIndex = info.colorIndex;
+  body.item = info.item || null;
+  body.isInitial = Boolean(info.isInitial);
+  body.isAttached = false;
+  body.isPopping = false;
+  body.groupSize = 1;
   body.spawnedAt = performance.now();
+  body.lastShotDir = { x: 0, y: -1 };
 
-  // 실제 히트박스보다 살짝 큰 보이지 않는 센서
-  // +5면 양쪽 합쳐서 약 10px 거리 안에서만 자석 효과 발생
-  const sensorRadius = hitRadius + 5;
-
-  const magnetSensor = Bodies.circle(x, y, sensorRadius, {
-    label: "magnet-sensor",
-    isSensor: true,
-    frictionAir: 1,
-    density: 0.000001
-  });
-
-  magnetSensor.ownerDrink = body;
-  body.magnetSensor = magnetSensor;
-
-  drinks.add(body);
-  World.add(world, [body, magnetSensor]);
+  bubbles.add(body);
+  World.add(world, body);
 
   return body;
 }
 
 function shoot() {
-  if (gameOver || !canShoot) return;
+  if (gameOver || !canShoot || activeBubble) return;
 
-  const level = currentLevel;
-  const drink = DRINKS[level];
+  const info = nextBubbleInfo;
+  const startX = CANNON.x + Math.cos(aimAngle) * (BASE_RADIUS + 14);
+  const startY = CANNON.y + Math.sin(aimAngle) * (BASE_RADIUS + 14);
 
-  const startX = CANNON.x + Math.cos(aimAngle) * (drink.radius + 16);
-  const startY = CANNON.y + Math.sin(aimAngle) * (drink.radius + 16);
-
-  const body = createDrink(startX, startY, level);
-
-  Body.setVelocity(body, {
-    x: Math.cos(aimAngle) * SHOT_POWER,
-    y: Math.sin(aimAngle) * SHOT_POWER
+  const body = createBubble(startX, startY, info);
+  const dir = normalizeVector({
+    x: Math.cos(aimAngle),
+    y: Math.sin(aimAngle)
   });
 
-  Body.setAngularVelocity(body, 0.12 * Math.sign(Math.cos(aimAngle)));
+  body.lastShotDir = dir;
+  activeBubble = body;
 
-  currentLevel = nextLevel;
-  nextLevel = getRandomLaunchLevel();
+  Body.setVelocity(body, {
+    x: dir.x * SHOT_POWER,
+    y: dir.y * SHOT_POWER
+  });
 
+  Body.setAngularVelocity(body, 0.04 * Math.sign(dir.x));
+
+  nextBubbleInfo = createRandomBubbleInfo();
   canShoot = false;
   updateHud();
-
-  setTimeout(() => {
-    if (!gameOver) canShoot = true;
-  }, 620);
-}
-
-function getRandomLaunchLevel() {
-  const roll = Math.random();
-
-  if (score >= 5000) {
-    if (roll < 0.45) return 0;
-    if (roll < 0.78) return 1;
-    if (roll < 0.95) return 2;
-    return 3;
-  }
-
-  if (score >= 1800) {
-    if (roll < 0.50) return 0;
-    if (roll < 0.84) return 1;
-    return 2;
-  }
-
-  if (roll < 0.58) return 0;
-  if (roll < 0.90) return 1;
-  return 2;
+  statusText.textContent = "비눗방울 비행 중";
 }
 
 function handleCollisionStart(event) {
@@ -274,211 +297,440 @@ function handleCollisionStart(event) {
     const a = pair.bodyA;
     const b = pair.bodyB;
 
-    const aIsDrink = a.label === "drink";
-    const bIsDrink = b.label === "drink";
+    const aIsBubble = a.label === "bubble";
+    const bIsBubble = b.label === "bubble";
     const aIsWall = a.label && a.label.startsWith("wall-");
     const bIsWall = b.label && b.label.startsWith("wall-");
 
-    // 벽 충돌은 직접 거울 반사 처리
-    if (aIsDrink && bIsWall) {
-      reflectDrinkFromWall(a, b);
+    if (aIsBubble && bIsWall) {
+      handleBubbleWallContact(a, b);
       continue;
     }
 
-    if (bIsDrink && aIsWall) {
-      reflectDrinkFromWall(b, a);
+    if (bIsBubble && aIsWall) {
+      handleBubbleWallContact(b, a);
       continue;
     }
 
-    // 센서는 합체 판정에서 제외
-    if (a.label === "magnet-sensor" || b.label === "magnet-sensor") {
+    if (aIsBubble && bIsBubble) {
+      addBubbleBond(a, b);
       continue;
     }
-
-    // 아래부터는 실제 음료끼리 닿았을 때만 합체
-    if (!aIsDrink || !bIsDrink) continue;
-    if (!drinks.has(a) || !drinks.has(b)) continue;
-    if (a.isMerging || b.isMerging) continue;
-    if (a.drinkLevel !== b.drinkLevel) continue;
-
-    const next = a.drinkLevel + 1;
-    if (next >= DRINKS.length) continue;
-
-    a.isMerging = true;
-    b.isMerging = true;
-
-    setTimeout(() => {
-      mergeDrinks(a, b);
-    }, 0);
   }
 }
 
-function handleMagnetSensorCollision(event) {
-  if (gameOver) return;
+function handleBubbleWallContact(bubble, wall) {
+  if (!bubbles.has(bubble) || bubble.isPopping) return;
 
-  for (const pair of event.pairs) {
-    const a = pair.bodyA;
-    const b = pair.bodyB;
+  if (wall.label === "wall-left" || wall.label === "wall-right") {
+    reflectBubbleFromSideWall(bubble, wall);
+    return;
+  }
 
-    if (a.label !== "magnet-sensor" || b.label !== "magnet-sensor") continue;
-
-    applyMagnetFromSensorPair(a, b);
+  if (wall.label === "wall-top") {
+    attachBubbleToCeiling(bubble);
   }
 }
 
-function syncMagnetSensors() {
-  for (const drink of drinks) {
-    if (!drink || !drink.magnetSensor) continue;
-
-    Body.setPosition(drink.magnetSensor, {
-      x: drink.position.x,
-      y: drink.position.y
-    });
-
-    Body.setVelocity(drink.magnetSensor, {
-      x: drink.velocity.x,
-      y: drink.velocity.y
-    });
-  }
-}
-
-function applyMagnetFromSensorPair(sensorA, sensorB) {
-  const a = sensorA.ownerDrink;
-  const b = sensorB.ownerDrink;
-
-  if (!a || !b) return;
-  if (!drinks.has(a) || !drinks.has(b)) return;
-  if (a.isMerging || b.isMerging) return;
-  if (a.drinkLevel !== b.drinkLevel) return;
-
-  const nextLevel = a.drinkLevel + 1;
-  if (nextLevel >= DRINKS.length) return;
-
-  const hitRadiusA = DRINKS[a.drinkLevel].radius * HITBOX_SCALE;
-  const hitRadiusB = DRINKS[b.drinkLevel].radius * HITBOX_SCALE;
-
-  const dx = b.position.x - a.position.x;
-  const dy = b.position.y - a.position.y;
-  const distSq = dx * dx + dy * dy;
-
-  if (distSq <= 0.0001) return;
-
-  const dist = Math.sqrt(distSq);
-  const touchDistance = hitRadiusA + hitRadiusB;
-  const gap = dist - touchDistance;
-
-  // 이미 실제 히트박스가 닿은 상태면 자석이 아니라 합체 로직에 맡김
-  if (gap <= 0) return;
-
-  // 센서가 양쪽 +5px이므로 실제로는 약 10px 이내에서만 작동
-  const magnetRange = 10;
-  if (gap > magnetRange) return;
-
-  const closeness = 1 - gap / magnetRange;
-
-  // 진짜 약한 자석 힘
-  const magnetForce = 0.000055 * closeness;
-
-  const nx = dx / dist;
-  const ny = dy / dist;
-
-  Body.applyForce(a, a.position, {
-    x: nx * magnetForce * a.mass,
-    y: ny * magnetForce * a.mass
-  });
-
-  Body.applyForce(b, b.position, {
-    x: -nx * magnetForce * b.mass,
-    y: -ny * magnetForce * b.mass
-  });
-}
-
-function reflectDrinkFromWall(drink, wall) {
-  if (!drinks.has(drink) || drink.isMerging) return;
-
-  const vx = drink.velocity.x;
-  const vy = drink.velocity.y;
+function reflectBubbleFromSideWall(bubble, wall) {
+  const vx = bubble.velocity.x;
+  const vy = bubble.velocity.y;
 
   let nextVx = vx;
-  let nextVy = vy;
 
   if (wall.label === "wall-left") {
     nextVx = Math.abs(vx);
-    nextVy = vy;
   }
 
   if (wall.label === "wall-right") {
     nextVx = -Math.abs(vx);
-    nextVy = vy;
   }
 
-  if (wall.label === "wall-top") {
-    nextVx = vx;
-    nextVy = Math.abs(vy);
+  const speed = Math.hypot(nextVx, vy);
+  if (speed > 0.001) {
+    bubble.lastShotDir = normalizeVector({ x: nextVx, y: vy });
   }
 
-  if (wall.label === "wall-bottom") {
-    nextVx = vx;
-    nextVy = -Math.abs(vy);
-  }
-
-  Body.setVelocity(drink, {
+  Body.setVelocity(bubble, {
     x: nextVx * WALL_SPEED_KEEP,
-    y: nextVy * WALL_SPEED_KEEP
+    y: vy * WALL_SPEED_KEEP
   });
 }
 
-function removeDrink(body) {
-  if (!body) return;
+function attachBubbleToCeiling(bubble) {
+  if (!bubbles.has(bubble) || bubble.isPopping) return;
 
-  if (body.magnetSensor) {
-    body.magnetSensor.ownerDrink = null;
-    World.remove(world, body.magnetSensor);
+  const key = `c:${bubble.gameId}`;
+  if (bondKeys.has(key)) return;
+
+  const anchorX = bubble.position.x - ceilingBody.position.x;
+  const anchorY = 20;
+  const length = Math.max(6, bubble.position.y - ceilingY);
+
+  const constraint = Constraint.create({
+    bodyA: ceilingBody,
+    pointA: { x: anchorX, y: anchorY },
+    bodyB: bubble,
+    pointB: { x: 0, y: 0 },
+    length,
+    stiffness: 0.16,
+    damping: 0.28,
+    render: { visible: false }
+  });
+
+  bondKeys.add(key);
+  bonds.push({
+    key,
+    type: "ceiling",
+    a: null,
+    b: bubble,
+    constraint
+  });
+
+  World.add(world, constraint);
+  onBubbleAttached(bubble);
+}
+
+function addBubbleBond(a, b) {
+  if (!bubbles.has(a) || !bubbles.has(b)) return;
+  if (a.isPopping || b.isPopping) return;
+
+  const key = makeBondKey(a, b);
+  if (bondKeys.has(key)) return;
+
+  const dx = b.position.x - a.position.x;
+  const dy = b.position.y - a.position.y;
+  const distance = Math.max(10, Math.sqrt(dx * dx + dy * dy));
+
+  const constraint = Constraint.create({
+    bodyA: a,
+    bodyB: b,
+    length: distance,
+    stiffness: 0.13,
+    damping: 0.24,
+    render: { visible: false }
+  });
+
+  bondKeys.add(key);
+  bonds.push({
+    key,
+    type: "bubble",
+    a,
+    b,
+    constraint
+  });
+
+  World.add(world, constraint);
+
+  onBubbleAttached(a);
+  onBubbleAttached(b);
+}
+
+function makeBondKey(a, b) {
+  const first = Math.min(a.gameId, b.gameId);
+  const second = Math.max(a.gameId, b.gameId);
+  return `${first}:${second}`;
+}
+
+function onBubbleAttached(bubble) {
+  recomputeAnchoredState();
+  scheduleGroupCheck();
+
+  if (bubble === activeBubble) {
+    activeBubble = null;
+    setTimeout(() => {
+      if (!gameOver) {
+        canShoot = true;
+        statusText.textContent = "조준 후 클릭/터치로 발사";
+      }
+    }, 360);
+  }
+}
+
+function scheduleGroupCheck() {
+  if (pendingGroupCheck) return;
+
+  pendingGroupCheck = true;
+  setTimeout(() => {
+    pendingGroupCheck = false;
+    processColorGroups();
+  }, 130);
+}
+
+function processColorGroups() {
+  if (gameOver) return;
+
+  const groups = findSameColorGroups();
+  let poppedAny = false;
+
+  for (const group of groups) {
+    for (const bubble of group) {
+      bubble.groupSize = group.length;
+    }
+
+    if (group.length >= POP_COUNT) {
+      popGroup(group);
+      poppedAny = true;
+    }
   }
 
-  World.remove(world, body);
-  drinks.delete(body);
+  if (!poppedAny) {
+    updateHud();
+  }
 }
 
-function mergeDrinks(a, b) {
-  if (!drinks.has(a) || !drinks.has(b)) return;
+function findSameColorGroups() {
+  const adjacency = new Map();
 
-  const nextLevel = a.drinkLevel + 1;
-  if (nextLevel >= DRINKS.length) return;
+  for (const bubble of bubbles) {
+    adjacency.set(bubble, []);
+  }
 
-  const x = (a.position.x + b.position.x) / 2;
-  const y = (a.position.y + b.position.y) / 2;
+  for (const bond of bonds) {
+    if (bond.type !== "bubble") continue;
+    if (!bubbles.has(bond.a) || !bubbles.has(bond.b)) continue;
+    if (bond.a.colorIndex !== bond.b.colorIndex) continue;
 
-  const vx = (a.velocity.x + b.velocity.x) * 0.22;
-  const vy = (a.velocity.y + b.velocity.y) * 0.22;
+    adjacency.get(bond.a).push(bond.b);
+    adjacency.get(bond.b).push(bond.a);
+  }
 
-  removeDrink(a);
-  removeDrink(b);
+  const visited = new Set();
+  const groups = [];
 
-  const merged = createDrink(x, y, nextLevel);
+  for (const bubble of bubbles) {
+    if (visited.has(bubble)) continue;
 
-  Body.setVelocity(merged, {
-    x: vx,
-    y: vy
-  });
+    const group = [];
+    const stack = [bubble];
+    visited.add(bubble);
 
-  score += DRINKS[nextLevel].score;
+    while (stack.length > 0) {
+      const current = stack.pop();
+      group.push(current);
+
+      for (const next of adjacency.get(current) || []) {
+        if (visited.has(next)) continue;
+        visited.add(next);
+        stack.push(next);
+      }
+    }
+
+    groups.push(group);
+  }
+
+  return groups;
+}
+
+function popGroup(group) {
+  const uniqueGroup = Array.from(new Set(group)).filter((bubble) => bubbles.has(bubble));
+  if (uniqueGroup.length === 0) return;
+
+  const specialBubbles = uniqueGroup.filter((bubble) => bubble.item);
+  const baseColorIndex = uniqueGroup[0].colorIndex;
+  const center = getBodiesCenter(uniqueGroup);
+  const extraCount = Math.max(0, uniqueGroup.length - POP_COUNT);
+
+  for (const bubble of uniqueGroup) {
+    bubble.isPopping = true;
+  }
+
+  score += uniqueGroup.length * 80 + extraCount * 35;
+  riseCeiling(CEILING_RISE_BASE + extraCount * CEILING_RISE_PER_EXTRA);
+
+  addPopEffect(center.x, center.y, uniqueGroup.length);
+  removeBubbles(uniqueGroup);
+
+  for (const specialBubble of specialBubbles) {
+    triggerSpecialBubble(specialBubble, baseColorIndex);
+  }
+
+  removeUnanchoredBubbles();
+  recomputeAnchoredState();
 
   if (score > bestScore) {
     bestScore = score;
-    localStorage.setItem("mergeDrinkBestScore", String(bestScore));
+    localStorage.setItem("soapBubbleBestScore", String(bestScore));
   }
-
-  effects.push({
-    x,
-    y,
-    text: `+${DRINKS[nextLevel].score}`,
-    life: 560,
-    maxLife: 560
-  });
 
   updateHud();
 }
+
+function triggerSpecialBubble(specialBubble, poppedColorIndex) {
+  if (!specialBubble.item) return;
+
+  if (specialBubble.item === "clearColor") {
+    clearAllBubblesOfColor(poppedColorIndex);
+  }
+
+  if (specialBubble.item === "line") {
+    clearBubblesOnLine(specialBubble.position, specialBubble.lastShotDir);
+  }
+}
+
+function clearAllBubblesOfColor(colorIndex) {
+  const targets = Array.from(bubbles).filter((bubble) => bubble.colorIndex === colorIndex);
+  if (targets.length === 0) return;
+
+  const center = getBodiesCenter(targets);
+
+  score += targets.length * 55;
+  addPopEffect(center.x, center.y, targets.length);
+  removeBubbles(targets);
+}
+
+function clearBubblesOnLine(origin, direction) {
+  const dir = normalizeVector(direction || { x: 0, y: -1 });
+  const targets = [];
+  const lineWidth = BASE_RADIUS * 0.95;
+
+  for (const bubble of bubbles) {
+    const dx = bubble.position.x - origin.x;
+    const dy = bubble.position.y - origin.y;
+    const cross = Math.abs(dx * dir.y - dy * dir.x);
+
+    if (cross <= lineWidth + BASE_RADIUS * 0.35) {
+      targets.push(bubble);
+    }
+  }
+
+  if (targets.length === 0) return;
+
+  score += targets.length * 65;
+  laserEffects.push({
+    x: origin.x,
+    y: origin.y,
+    dx: dir.x,
+    dy: dir.y,
+    life: 360,
+    maxLife: 360
+  });
+  removeBubbles(targets);
+}
+
+function removeUnanchoredBubbles() {
+  recomputeAnchoredState();
+
+  const targets = Array.from(bubbles).filter((bubble) => !bubble.isAttached && bubble !== activeBubble);
+  if (targets.length === 0) return;
+
+  score += targets.length * 25;
+  removeBubbles(targets);
+}
+
+function recomputeAnchoredState() {
+  const adjacency = new Map();
+  const roots = [];
+
+  for (const bubble of bubbles) {
+    bubble.isAttached = false;
+    adjacency.set(bubble, []);
+  }
+
+  for (const bond of bonds) {
+    if (bond.type === "ceiling" && bubbles.has(bond.b)) {
+      roots.push(bond.b);
+    }
+
+    if (bond.type === "bubble" && bubbles.has(bond.a) && bubbles.has(bond.b)) {
+      adjacency.get(bond.a).push(bond.b);
+      adjacency.get(bond.b).push(bond.a);
+    }
+  }
+
+  const stack = [...roots];
+
+  for (const root of roots) {
+    root.isAttached = true;
+  }
+
+  while (stack.length > 0) {
+    const current = stack.pop();
+
+    for (const next of adjacency.get(current) || []) {
+      if (next.isAttached) continue;
+      next.isAttached = true;
+      stack.push(next);
+    }
+  }
+}
+
+function removeBubbles(list) {
+  for (const bubble of Array.from(new Set(list))) {
+    removeBubble(bubble);
+  }
+}
+
+function removeBubble(bubble) {
+  if (!bubble) return;
+
+  const nextBonds = [];
+
+  for (const bond of bonds) {
+    const related = bond.b === bubble || bond.a === bubble;
+
+    if (related) {
+      bondKeys.delete(bond.key);
+      World.remove(world, bond.constraint);
+    } else {
+      nextBonds.push(bond);
+    }
+  }
+
+  bonds = nextBonds;
+
+  if (activeBubble === bubble) {
+    activeBubble = null;
+    canShoot = true;
+  }
+
+  World.remove(world, bubble);
+  bubbles.delete(bubble);
+}
+
+function riseCeiling(amount) {
+  ceilingY = Math.max(MIN_CEILING_Y, ceilingY - amount);
+  updateCeilingBody();
+}
+
+function updateCeilingBody() {
+  if (!ceilingBody) return;
+
+  Body.setPosition(ceilingBody, {
+    x: WIDTH / 2,
+    y: ceilingY - 20
+  });
+}
+
+function lowerCeiling(delta) {
+  ceilingY += CEILING_DROP_SPEED * (delta / 1000);
+  updateCeilingBody();
+}
+
+function checkGameOver() {
+  if (ceilingY >= DANGER_Y - 70) {
+    endGame();
+    return;
+  }
+
+  for (const bubble of bubbles) {
+    if (bubble === activeBubble) continue;
+    if (!bubble.isAttached) continue;
+
+    if (bubble.position.y + BASE_RADIUS > DANGER_Y) {
+      endGame();
+      return;
+    }
+  }
+}
+
+function endGame() {
+  gameOver = true;
+  canShoot = false;
+  activeBubble = null;
+  statusText.textContent = "게임 오버! 새 게임을 눌러 다시 시작";
+}
+
 function updateAimFromEvent(event) {
   const point = getCanvasPoint(event);
 
@@ -511,84 +763,50 @@ function loop(now) {
   lastTime = now;
 
   if (!gameOver) {
+    lowerCeiling(delta);
     Engine.update(engine, delta);
-    checkDanger(now);
+    checkGameOver();
   }
 
   updateEffects(delta);
   draw(now);
-
   requestAnimationFrame(loop);
 }
 
-function checkDanger(now) {
-  let hasDanger = false;
-
-  for (const body of drinks) {
-    if (body.isMerging) continue;
-
-    const drink = DRINKS[body.drinkLevel];
-    const age = now - body.spawnedAt;
-    const speed = Math.hypot(body.velocity.x, body.velocity.y);
-
-    const isOldEnough = age > 1300;
-    const isLowEnough = body.position.y + drink.radius > DANGER_Y;
-    const isSlowEnough = speed < 1.4;
-
-    if (isOldEnough && isLowEnough && isSlowEnough) {
-      hasDanger = true;
-      break;
-    }
-  }
-
-  if (hasDanger) {
-    if (!dangerSince) dangerSince = now;
-
-    const passed = now - dangerSince;
-    const remain = Math.max(0, Math.ceil((DANGER_LIMIT_MS - passed) / 1000));
-
-    statusText.textContent = `위험! 발사선 근처 음료를 밀어내세요. ${remain}`;
-
-    if (passed >= DANGER_LIMIT_MS) {
-      endGame();
-    }
-  } else {
-    dangerSince = null;
-    if (!gameOver) {
-      statusText.textContent = canShoot
-        ? "조준 후 클릭/터치로 발사"
-        : "다음 음료 준비 중";
-    }
-  }
-}
-
-function endGame() {
-  gameOver = true;
-  canShoot = false;
-  statusText.textContent = "게임 오버! 새 게임을 눌러 다시 시작";
-}
-
 function updateEffects(delta) {
-  for (const effect of effects) {
+  for (const effect of popEffects) {
     effect.life -= delta;
-    effect.y -= delta * 0.045;
+    effect.y -= delta * 0.035;
   }
 
-  effects = effects.filter((effect) => effect.life > 0);
+  popEffects = popEffects.filter((effect) => effect.life > 0);
+
+  for (const effect of laserEffects) {
+    effect.life -= delta;
+  }
+
+  laserEffects = laserEffects.filter((effect) => effect.life > 0);
 }
 
 function updateHud() {
   scoreText.textContent = String(score);
   bestText.textContent = String(bestScore);
-  nextDrinkText.textContent = DRINKS[nextLevel].emoji;
+
+  const color = BUBBLE_COLORS[nextBubbleInfo.colorIndex];
+  nextDrinkText.textContent = nextBubbleInfo.item
+    ? SPECIAL_ITEMS[nextBubbleInfo.item].icon
+    : "●";
+  nextDrinkText.style.color = `hsl(${color.hue}, 90%, 56%)`;
 }
 
 function draw(now) {
   drawBackground();
+  drawCeiling(now);
   drawDangerLine(now);
   drawAimLine();
-  drawDrinks();
-  drawCannon();
+  drawBonds();
+  drawBubbles(now);
+  drawCannon(now);
   drawEffects();
 
   if (gameOver) {
@@ -600,26 +818,51 @@ function drawBackground() {
   ctx.clearRect(0, 0, WIDTH, HEIGHT);
 
   const gradient = ctx.createLinearGradient(0, 0, 0, HEIGHT);
-  gradient.addColorStop(0, "#fff8df");
-  gradient.addColorStop(1, "#ffd08a");
+  gradient.addColorStop(0, "#eaf9ff");
+  gradient.addColorStop(0.55, "#fff8ef");
+  gradient.addColorStop(1, "#ffcf9c");
 
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-  ctx.fillStyle = "rgba(255,255,255,0.42)";
-  for (let y = 28; y < HEIGHT; y += 44) {
+  ctx.fillStyle = "rgba(255,255,255,0.34)";
+  for (let y = 24; y < HEIGHT; y += 48) {
     ctx.beginPath();
     ctx.arc(32, y, 5, 0, Math.PI * 2);
-    ctx.arc(WIDTH - 32, y + 20, 5, 0, Math.PI * 2);
+    ctx.arc(WIDTH - 36, y + 22, 4, 0, Math.PI * 2);
     ctx.fill();
   }
 }
 
-function drawDangerLine(now) {
-  const blink = dangerSince ? 0.45 + Math.sin(now / 90) * 0.25 : 0.25;
-
+function drawCeiling(now) {
   ctx.save();
 
+  const pulse = 0.55 + Math.sin(now / 480) * 0.12;
+
+  ctx.fillStyle = "rgba(102, 69, 43, 0.88)";
+  ctx.beginPath();
+  ctx.roundRect(18, ceilingY - 22, WIDTH - 36, 20, 10);
+  ctx.fill();
+
+  ctx.strokeStyle = `rgba(255,255,255,${pulse})`;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(26, ceilingY);
+  ctx.lineTo(WIDTH - 26, ceilingY);
+  ctx.stroke();
+
+  ctx.fillStyle = "rgba(77, 44, 24, 0.75)";
+  ctx.font = "800 12px system-ui, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("하강 벽", WIDTH / 2, ceilingY - 28);
+
+  ctx.restore();
+}
+
+function drawDangerLine(now) {
+  const blink = 0.23 + Math.sin(now / 220) * 0.08;
+
+  ctx.save();
   ctx.globalAlpha = blink;
   ctx.strokeStyle = "#e43625";
   ctx.lineWidth = 4;
@@ -630,27 +873,24 @@ function drawDangerLine(now) {
   ctx.stroke();
 
   ctx.setLineDash([]);
-  ctx.globalAlpha = 1;
+  ctx.globalAlpha = 0.85;
   ctx.fillStyle = "#b62218";
-  ctx.font = "800 13px system-ui, sans-serif";
+  ctx.font = "800 12px system-ui, sans-serif";
   ctx.textAlign = "center";
   ctx.fillText("위험선", WIDTH / 2, DANGER_Y - 8);
-
   ctx.restore();
 }
 
 function drawAimLine() {
-  if (gameOver || !canShoot) return;
+  if (gameOver || !canShoot || activeBubble) return;
 
   const startX = CANNON.x;
   const startY = CANNON.y;
-
-  const endX = startX + Math.cos(aimAngle) * 250;
-  const endY = startY + Math.sin(aimAngle) * 250;
+  const endX = startX + Math.cos(aimAngle) * 255;
+  const endY = startY + Math.sin(aimAngle) * 255;
 
   ctx.save();
-
-  ctx.strokeStyle = "rgba(88, 52, 24, 0.45)";
+  ctx.strokeStyle = "rgba(64, 86, 112, 0.42)";
   ctx.lineWidth = 4;
   ctx.setLineDash([8, 10]);
   ctx.lineCap = "round";
@@ -658,26 +898,166 @@ function drawAimLine() {
   ctx.moveTo(startX, startY);
   ctx.lineTo(endX, endY);
   ctx.stroke();
-
   ctx.setLineDash([]);
   ctx.restore();
 }
 
-function drawCannon() {
-  const level = currentLevel;
-  const drink = DRINKS[level];
+function drawBonds() {
+  ctx.save();
+  ctx.strokeStyle = "rgba(255,255,255,0.18)";
+  ctx.lineWidth = 1;
+
+  for (const bond of bonds) {
+    if (bond.type !== "bubble") continue;
+    if (!bubbles.has(bond.a) || !bubbles.has(bond.b)) continue;
+
+    ctx.beginPath();
+    ctx.moveTo(bond.a.position.x, bond.a.position.y);
+    ctx.lineTo(bond.b.position.x, bond.b.position.y);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+function drawBubbles(now) {
+  const sorted = Array.from(bubbles).sort((a, b) => a.position.y - b.position.y);
+
+  for (const bubble of sorted) {
+    drawSoapBubble(bubble, now);
+  }
+}
+
+function drawSoapBubble(bubble, now) {
+  const color = BUBBLE_COLORS[bubble.colorIndex];
+  const groupSize = Math.max(1, bubble.groupSize || 1);
+  const growthStep = Math.min(groupSize - 1, POP_COUNT - 1);
+  const visualRadius = BASE_RADIUS * (1 + growthStep * 0.038);
+  const borderWidth = Math.max(0.9, 4.2 - growthStep * 0.62);
+  const wobbleSeed = bubble.gameId * 0.73;
 
   ctx.save();
+  ctx.translate(bubble.position.x, bubble.position.y);
+  ctx.rotate(bubble.angle * 0.08);
 
+  drawWobblyBubbleShape(visualRadius, color, borderWidth, now, wobbleSeed);
+  drawBubbleHighlights(visualRadius, now, wobbleSeed);
+
+  if (bubble.item) {
+    drawSpecialIcon(bubble.item, visualRadius, color);
+  }
+
+  ctx.restore();
+}
+
+function drawWobblyBubbleShape(radius, color, borderWidth, now, seed) {
+  const time = now / 520;
+  const points = 44;
+
+  const fillGradient = ctx.createRadialGradient(
+    -radius * 0.28,
+    -radius * 0.35,
+    radius * 0.12,
+    0,
+    0,
+    radius * 1.08
+  );
+
+  fillGradient.addColorStop(0, "rgba(255,255,255,0.72)");
+  fillGradient.addColorStop(0.38, `hsla(${color.hue}, 95%, 76%, 0.20)`);
+  fillGradient.addColorStop(0.72, `hsla(${color.hue}, 96%, 62%, 0.24)`);
+  fillGradient.addColorStop(1, `hsla(${color.hue + 35}, 95%, 74%, 0.42)`);
+
+  ctx.beginPath();
+
+  for (let i = 0; i <= points; i++) {
+    const t = (i / points) * Math.PI * 2;
+    const wobble =
+      Math.sin(t * 3 + time + seed) * 0.9 +
+      Math.cos(t * 5 - time * 0.7 + seed) * 0.45;
+    const r = radius + wobble;
+    const x = Math.cos(t) * r;
+    const y = Math.sin(t) * r;
+
+    if (i === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  }
+
+  ctx.closePath();
+  ctx.fillStyle = fillGradient;
+  ctx.fill();
+
+  ctx.lineWidth = borderWidth;
+  ctx.strokeStyle = color.stroke;
+  ctx.stroke();
+
+  ctx.lineWidth = Math.max(0.8, borderWidth * 0.42);
+  ctx.strokeStyle = "rgba(255,255,255,0.65)";
+  ctx.stroke();
+
+  ctx.save();
+  ctx.globalAlpha = 0.34;
+  ctx.strokeStyle = `hsla(${color.hue + 120}, 95%, 72%, 0.75)`;
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.arc(0, 0, radius * 0.82, -0.25 * Math.PI, 0.38 * Math.PI);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawBubbleHighlights(radius, now, seed) {
+  const shiftX = Math.sin(now / 700 + seed) * radius * 0.08;
+  const shiftY = Math.cos(now / 760 + seed) * radius * 0.07;
+
+  ctx.fillStyle = "rgba(255,255,255,0.72)";
+  ctx.beginPath();
+  ctx.ellipse(-radius * 0.34 + shiftX, -radius * 0.38 + shiftY, radius * 0.22, radius * 0.12, -0.55, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "rgba(255,255,255,0.46)";
+  ctx.beginPath();
+  ctx.arc(radius * 0.27 - shiftX * 0.5, -radius * 0.18, radius * 0.08, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawSpecialIcon(item, radius, color) {
+  const itemInfo = SPECIAL_ITEMS[item];
+  if (!itemInfo) return;
+
+  ctx.save();
+  ctx.fillStyle = "rgba(255,255,255,0.62)";
+  ctx.beginPath();
+  ctx.arc(0, 0, radius * 0.38, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = `hsla(${color.hue}, 95%, 45%, 0.62)`;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  ctx.fillStyle = `hsla(${color.hue}, 95%, 36%, 0.92)`;
+  ctx.font = `900 ${Math.floor(radius * 0.68)}px system-ui, sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(itemInfo.icon, 0, 1);
+  ctx.restore();
+}
+
+function drawCannon(now) {
+  const color = BUBBLE_COLORS[nextBubbleInfo.colorIndex];
+
+  ctx.save();
   ctx.translate(CANNON.x, CANNON.y);
   ctx.rotate(aimAngle + Math.PI / 2);
 
-  ctx.fillStyle = "#7b4b27";
+  ctx.fillStyle = "#5c6f82";
   ctx.beginPath();
-  ctx.roundRect(-12, -52, 24, 58, 12);
+  ctx.roundRect(-11, -54, 22, 58, 12);
   ctx.fill();
 
-  ctx.fillStyle = "#b86c2f";
+  ctx.fillStyle = "#8fb2c9";
   ctx.beginPath();
   ctx.roundRect(-18, -34, 36, 44, 15);
   ctx.fill();
@@ -687,87 +1067,60 @@ function drawCannon() {
   const previewX = CANNON.x + Math.cos(aimAngle) * 46;
   const previewY = CANNON.y + Math.sin(aimAngle) * 46;
 
-  drawDrinkBubble(previewX, previewY, drink.radius, drink.color, drink.emoji, false);
+  const previewBody = {
+    position: { x: previewX, y: previewY },
+    angle: 0,
+    gameId: 9999,
+    colorIndex: nextBubbleInfo.colorIndex,
+    item: nextBubbleInfo.item,
+    groupSize: 1
+  };
+
+  drawSoapBubble(previewBody, now);
 
   ctx.save();
-  ctx.fillStyle = "#5b3419";
+  ctx.fillStyle = "#405166";
   ctx.beginPath();
   ctx.arc(CANNON.x, CANNON.y + 12, 26, Math.PI, 0);
   ctx.fill();
 
-  ctx.fillStyle = "#f6b44f";
+  ctx.fillStyle = "#c4edf8";
   ctx.beginPath();
   ctx.arc(CANNON.x, CANNON.y + 12, 17, Math.PI, 0);
   ctx.fill();
-
-  ctx.restore();
-}
-
-function drawDrinks() {
-  const sorted = Array.from(drinks).sort((a, b) => a.position.y - b.position.y);
-
-  for (const body of sorted) {
-    const drink = DRINKS[body.drinkLevel];
-
-    drawDrinkBubble(
-      body.position.x,
-      body.position.y,
-      drink.radius,
-      drink.color,
-      drink.emoji,
-      true,
-      body.angle
-    );
-  }
-}
-
-function drawDrinkBubble(x, y, radius, color, emoji, shadow, angle = 0) {
-  ctx.save();
-
-  ctx.translate(x, y);
-  ctx.rotate(angle * 0.15);
-
-  if (shadow) {
-    ctx.shadowColor = "rgba(70, 38, 12, 0.23)";
-    ctx.shadowBlur = 8;
-    ctx.shadowOffsetY = 4;
-  }
-
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.arc(0, 0, radius, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.shadowColor = "transparent";
-  ctx.lineWidth = Math.max(3, radius * 0.09);
-  ctx.strokeStyle = "rgba(87, 51, 25, 0.42)";
-  ctx.stroke();
-
-  ctx.fillStyle = "rgba(255,255,255,0.55)";
-  ctx.beginPath();
-  ctx.arc(-radius * 0.32, -radius * 0.34, radius * 0.22, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.font = `${Math.floor(radius * 1.08)}px "Apple Color Emoji", "Segoe UI Emoji", system-ui`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(emoji, 0, radius * 0.02);
-
   ctx.restore();
 }
 
 function drawEffects() {
   ctx.save();
 
-  for (const effect of effects) {
+  for (const effect of laserEffects) {
     const alpha = Math.max(0, effect.life / effect.maxLife);
-
     ctx.globalAlpha = alpha;
-    ctx.fillStyle = "#b63e17";
-    ctx.font = "900 22px system-ui, sans-serif";
+    ctx.strokeStyle = "rgba(255,255,255,0.92)";
+    ctx.lineWidth = 14;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(effect.x - effect.dx * 900, effect.y - effect.dy * 900);
+    ctx.lineTo(effect.x + effect.dx * 900, effect.y + effect.dy * 900);
+    ctx.stroke();
+
+    ctx.strokeStyle = "rgba(96,202,255,0.68)";
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(effect.x - effect.dx * 900, effect.y - effect.dy * 900);
+    ctx.lineTo(effect.x + effect.dx * 900, effect.y + effect.dy * 900);
+    ctx.stroke();
+  }
+
+  for (const effect of popEffects) {
+    const alpha = Math.max(0, effect.life / effect.maxLife);
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = "#2d6a85";
+    ctx.font = "900 21px system-ui, sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(effect.text, effect.x, effect.y);
+    ctx.fillText(`POP x${effect.count}`, effect.x, effect.y);
   }
 
   ctx.restore();
@@ -776,19 +1129,19 @@ function drawEffects() {
 function drawGameOver() {
   ctx.save();
 
-  ctx.fillStyle = "rgba(38, 22, 10, 0.58)";
+  ctx.fillStyle = "rgba(22, 34, 48, 0.58)";
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-  ctx.fillStyle = "#fff8df";
+  ctx.fillStyle = "#f4fcff";
   ctx.beginPath();
   ctx.roundRect(42, 238, WIDTH - 84, 162, 24);
   ctx.fill();
 
-  ctx.strokeStyle = "#7b4b27";
+  ctx.strokeStyle = "#4e7187";
   ctx.lineWidth = 4;
   ctx.stroke();
 
-  ctx.fillStyle = "#2b1b10";
+  ctx.fillStyle = "#193142";
   ctx.textAlign = "center";
 
   ctx.font = "900 34px system-ui, sans-serif";
@@ -801,4 +1154,46 @@ function drawGameOver() {
   ctx.fillText("새 게임 버튼으로 다시 시작", WIDTH / 2, 362);
 
   ctx.restore();
+}
+
+function addPopEffect(x, y, count) {
+  popEffects.push({
+    x,
+    y,
+    count,
+    life: 620,
+    maxLife: 620
+  });
+}
+
+function getBodiesCenter(list) {
+  if (!list || list.length === 0) {
+    return { x: WIDTH / 2, y: HEIGHT / 2 };
+  }
+
+  let x = 0;
+  let y = 0;
+
+  for (const body of list) {
+    x += body.position.x;
+    y += body.position.y;
+  }
+
+  return {
+    x: x / list.length,
+    y: y / list.length
+  };
+}
+
+function normalizeVector(vector) {
+  const length = Math.hypot(vector.x, vector.y);
+
+  if (length <= 0.0001) {
+    return { x: 0, y: -1 };
+  }
+
+  return {
+    x: vector.x / length,
+    y: vector.y / length
+  };
 }
