@@ -692,16 +692,17 @@ function startFloatingBubble(bubble) {
   bubble.isFloating = true;
   bubble.isAttached = false;
   bubble.groupSize = 1;
-  bubble.floatLife = FLOAT_LIFE_MS;
-  bubble.frictionAir = 0.012;
-  bubble.collisionFilter.mask = 0;
+
+  // 사라지는 버블이 아니라, 물속 거품처럼 위로 떠오르는 버블
+  bubble.frictionAir = 0.025;
+  bubble.collisionFilter.mask = 0xFFFFFFFF;
 
   Body.setVelocity(bubble, {
-    x: (Math.random() - 0.5) * 0.8,
-    y: -FLOAT_UP_SPEED - Math.random() * 0.7
+    x: (Math.random() - 0.5) * 0.55,
+    y: -FLOAT_UP_SPEED - Math.random() * 0.6
   });
 
-  Body.setAngularVelocity(bubble, (Math.random() - 0.5) * 0.025);
+  Body.setAngularVelocity(bubble, (Math.random() - 0.5) * 0.018);
 }
 
 function recomputeAnchoredState() {
@@ -901,15 +902,25 @@ function updateBubbleDynamics(delta) {
     }
 
     if (bubble.isFloating) {
-      bubble.floatLife -= delta;
-
       Body.setVelocity(bubble, {
         x: bubble.velocity.x * 0.995,
         y: Math.max(bubble.velocity.y - 0.012, -3.3)
       });
 
-      if (bubble.position.y < -BASE_RADIUS - 50 || bubble.floatLife <= 0) {
-        removeBubble(bubble);
+      // 화면 위로 완전히 나가지 않도록 천장 근처에서 살짝 붙잡음
+      if (bubble.position.y < ceilingY + BASE_RADIUS + 4) {
+        Body.setPosition(bubble, {
+          x: bubble.position.x,
+          y: ceilingY + BASE_RADIUS + 4
+        });
+
+        Body.setVelocity(bubble, {
+          x: bubble.velocity.x * 0.35,
+          y: 0
+        });
+
+        bubble.isFloating = false;
+        attachBubbleToCeiling(bubble);
       }
     }
   }
