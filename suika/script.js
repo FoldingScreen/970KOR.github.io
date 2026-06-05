@@ -1894,3 +1894,259 @@ function shuffleArray(array) {
 
   return array;
 }
+
+/* =========================================================
+   전체 랭킹 시스템
+   - 한 사람이 여러 기록 저장 가능
+   - 게임오버마다 새 문서 추가
+   - 전체 상위 30개 실시간 표시
+========================================================= */
+
+const bubbleFirebaseConfig = {
+  apiKey: "AIzaSyBu2RrQn8cAwwWaLtw5O8Omwn4-NzHWuc0",
+  authDomain: "kor-app-fa47e.firebaseapp.com",
+  projectId: "kor-app-fa47e",
+  storageBucket: "kor-app-fa47e.firebasestorage.app",
+  messagingSenderId: "397749083935",
+  appId: "1:397749083935:web:51c7c"
+};
+
+if (!firebase.apps.length) {
+  firebase.initializeApp(bubbleFirebaseConfig);
+}
+
+const bubbleDb = firebase.firestore();
+
+const bubbleRankingRef = bubbleDb
+  .collection("events")
+  .doc("bubble_shooter")
+  .collection("rankings");
+
+const BUBBLE_RANKING_LIMIT = 30;
+
+const rankingList = document.getElementById("rankingList");
+const rankingStatusText = document.getElementById("rankingStatusText");
+
+let rankSubmittedThisGame = false;
+let rankingUnsubscribe = null;
+
+function getSavedRankingNickname() {
+  return String(
+    localStorage.getItem("partyAppUser") ||
+    localStorage.getItem("bubbleShooterNickname") ||
+    ""
+  ).trim();
+}
+
+function getRankingNickname() {
+  const savedName = getSavedRankingNickname();
+
+  if (savedName) {
+    return savedName;
+  }
+
+  const inputName = String(
+    prompt("랭킹에 등록할 닉네임을 입력하세요.") || ""
+  ).trim();
+
+  if (inputName) {
+    localStorage.setItem("bubbleShooterNickname", inputName);
+  }
+
+  return inputName;
+}
+
+async function submitBubbleRanking() {
+  if (rankSubmittedThisGame) return;
+
+  rankSubmittedThisGame = true;
+
+  const nickname = getRankingNickname();
+
+  if (!nickname) {
+    if (rankingStatusText) {
+      rankingStatusText.textContent = "닉네임이 없어 기록하지 않았습니다.";
+    }
+
+    return;
+  }
+
+  if (rankingStatusText) {
+    rankingStatusText.textContent = "기록 저장 중...";
+  }
+
+  try {
+    await bubbleRankingRef.add({
+      nickname,
+      score: Number(score) || 0,
+
+      stageNumber: currentStageIndex + 1,
+      stageName: getCurrentStage()?.name || "",
+      stageProgress: Number(stagePoppedCount) || 0,
+
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      clientCreatedAt: Date.now()
+    });
+
+    if (rankingStatusText) {
+      rankingStatusText.textContent = "새 기록이 저장되었습니다.";
+    }
+  } catch (error) {
+    console.error("랭킹 저장 실패:", error);
+
+    if (rankingStatusText) {
+      rankingStatusText.textContent = "랭킹 저장에 실패했습니다.";
+    }
+  }
+}
+
+function subscribeBubbleRanking() {
+  if (rankingUnsubscribe) {
+    rankingUnsubscribe();
+    rankingUnsubscribe = null;
+  }
+
+  if (rankingStatusText) {
+    rankingStatusText.textContent = "랭킹 불러오는 중...";
+  }
+
+  rankingUnsubscribe = bubbleRankingRef
+    .orderBy("score", "desc")
+    .limit(BUBBLE_RANKING_LIMIT)
+    .onSnapshot(
+      (snapshot) => {
+        const records = snapshot.docs.map((doc) => {
+          return {
+            id: doc.id,
+            ...doc.data()
+          };
+        });
+
+        renderBubbleRanking(records);
+
+        if (rankingStatusText) {
+          rankingStatusText.textContent = `상위 ${records.length}개 기록`;
+        }
+      },
+      (error) => {
+        console.error("랭킹 불러오기 실패:", error);
+
+        if (rankingStatusText) {
+          rankingStatusText.textContent = "랭킹을 불러오지 못했습니다.";
+        }
+
+        if (rankingList) {
+          rankingList.innerHTML = `
+            <div class="ranking-empty">
+              랭킹을 불러오지 못했습니다.
+            </div>
+          `;
+        }
+      }
+    );
+}
+
+function renderBubbleRanking(records) {
+  if (!rankingList) return;
+
+  if (!records.length) {
+    rankingList.innerHTML = `
+      <div class="ranking-empty">
+        아직 등록된 기록이 없습니다.
+      </div>
+    `;
+
+    return;
+  }
+
+  const myNickname = getSavedRankingNickname();
+
+  rankingList.innerHTML = records.map((record, index) => {
+    const nickname = String(record.nickname || "익명");
+    const isMine = myNickname && nickname === myNickname;
+
+    return `
+      <div class="ranking-row ${isMine ? "mine" : ""}">
+        <strong class="ranking-number">${getRankingMedal(index)}</strong>
+
+        <span class="ranking-nickname">
+          ${escapeRankingHtml(nickname)}
+          ${isMine ? `<small>내 기록</small>` : ""}
+        </span>
+
+        <strong class="ranking-score">
+          ${Number(record.score || 0).toLocaleString()}
+        </strong>
+
+        <span class="ranking-stage">
+          ${Number(record.stageNumber || 1)}
+        </span>
+
+        <span class="ranking-date">
+          ${formatRankingDate(record.createdAt, record.clientCreatedAt)}
+        </span>
+      </div>
+    `;
+  }).join("");
+}
+
+function getRankingMedal(index) {
+  if (index === 0) return "🥇";
+  if (index === 1) return "🥈";
+  if (index === 2) return "🥉";
+
+  return String(index + 1);
+}
+
+function formatRankingDate(createdAt, clientCreatedAt) {
+  let date = null;
+
+  if (createdAt && typeof createdAt.toDate === "function") {
+    date = createdAt.toDate();
+  } else if (clientCreatedAt) {
+    date = new Date(clientCreatedAt);
+  }
+
+  if (!date || Number.isNaN(date.getTime())) {
+    return "-";
+  }
+
+  return new Intl.DateTimeFormat("ko-KR", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(date);
+}
+
+function escapeRankingHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/*
+기존 endGame()을 감싸서
+게임오버가 발생할 때마다 랭킹을 한 번 저장한다.
+*/
+const originalBubbleEndGame = endGame;
+
+endGame = function () {
+  if (gameOver) return;
+
+  originalBubbleEndGame();
+  void submitBubbleRanking();
+};
+
+/*
+새 게임 버튼을 누르면
+다음 게임 기록을 다시 저장할 수 있도록 초기화한다.
+*/
+restartBtn.addEventListener("click", () => {
+  rankSubmittedThisGame = false;
+});
+
+subscribeBubbleRanking();
