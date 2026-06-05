@@ -38,12 +38,35 @@
       </div>
 
       <div class="status-row">
-        <span id="statusText">조준 후 클릭/터치로 발사</span>
+        <span id="statusText">←/→ 조준, Space 발사</span>
       </div>
+
+      <section class="ranking-card">
+        <div class="ranking-title-row">
+          <h2>전체 랭킹</h2>
+          <span id="rankingStatusText">랭킹 불러오는 중...</span>
+        </div>
+
+        <div class="ranking-table-head">
+          <span>순위</span>
+          <span>닉네임</span>
+          <span>점수</span>
+          <span>스테이지</span>
+          <span>기록일</span>
+        </div>
+
+        <div id="rankingList" class="ranking-list">
+          <div class="ranking-empty">랭킹 불러오는 중...</div>
+        </div>
+      </section>
     </section>
   </main>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
   <script src="./script.js"></script>
 </body>
 </html>
