@@ -174,3 +174,134 @@ body {
     font-size: 20px;
   }
 }
+
+
+/* ===== 비눗방울 슈터 전체 랭킹 ===== */
+
+.ranking-card {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid rgba(72, 111, 135, 0.2);
+  box-shadow: 0 10px 26px rgba(60, 92, 112, 0.12);
+}
+
+.ranking-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.ranking-title-row h2 {
+  margin: 0;
+  font-size: 19px;
+  color: #29475b;
+}
+
+#rankingStatusText {
+  font-size: 12px;
+  color: #698392;
+}
+
+.ranking-table-head,
+.ranking-row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 72px 58px 92px;
+  align-items: center;
+  gap: 6px;
+}
+
+.ranking-table-head {
+  padding: 8px 10px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #718794;
+  text-align: center;
+}
+
+.ranking-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.ranking-row {
+  min-height: 42px;
+  padding: 7px 10px;
+  border-radius: 12px;
+  background: rgba(244, 251, 255, 0.9);
+  border: 1px solid rgba(92, 130, 151, 0.13);
+  color: #2b4758;
+}
+
+.ranking-row.mine {
+  background: rgba(255, 239, 170, 0.75);
+  border-color: rgba(225, 173, 54, 0.45);
+}
+
+.ranking-number,
+.ranking-score,
+.ranking-stage,
+.ranking-date {
+  text-align: center;
+}
+
+.ranking-nickname {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 800;
+}
+
+.ranking-nickname small {
+  margin-left: 4px;
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: rgba(255, 187, 46, 0.28);
+  font-size: 9px;
+  color: #987018;
+}
+
+.ranking-score {
+  color: #236d91;
+}
+
+.ranking-stage,
+.ranking-date {
+  font-size: 11px;
+  color: #718794;
+}
+
+.ranking-empty {
+  padding: 26px 12px;
+  text-align: center;
+  color: #718794;
+}
+
+@media (max-width: 520px) {
+  .ranking-card {
+    padding: 12px;
+  }
+
+  .ranking-table-head,
+  .ranking-row {
+    grid-template-columns: 36px minmax(0, 1fr) 66px 45px;
+  }
+
+  .ranking-table-head span:last-child,
+  .ranking-date {
+    display: none;
+  }
+
+  .ranking-title-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+  }
+}
