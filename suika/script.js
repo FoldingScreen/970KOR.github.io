@@ -49,6 +49,23 @@ const SPECIAL_ITEMS = {
   }
 };
 
+function makeTriangle(cx = WIDTH / 2, cy = 315, w = 170, h = 104) {
+  return {
+    type: "invertedTriangle",
+    cx,
+    cy,
+    w,
+    h
+  };
+}
+
+function makeDoubleTriangles() {
+  return [
+    makeTriangle(118, 320, 108, 82),
+    makeTriangle(302, 320, 108, 82)
+  ];
+}
+
 const STAGES = [
   {
     name: "1. 기본 훈련",
@@ -56,7 +73,7 @@ const STAGES = [
     aimLineLength: 255,
     previewCount: 1,
     hidePreviewAfterMs: null,
-    targetPop: 24,
+    targetPop: 18,
     initialRows: 4,
     timeMs: 180000,
     maxTimeMs: 240000,
@@ -66,29 +83,27 @@ const STAGES = [
   {
     name: "2. 짧은 조준선",
     aimLine: true,
-    aimLineLength: 120,
+    aimLineLength: 150,
     previewCount: 1,
     hidePreviewAfterMs: null,
-    targetPop: 28,
-    initialRows: 5,
-    timeMs: 170000,
-    maxTimeMs: 230000,
+    targetPop: 20,
+    initialRows: 4,
+    timeMs: 180000,
+    maxTimeMs: 240000,
     obstacles: [],
     virus: null
   },
   {
-    name: "3. 역삼각 쿠션",
+    name: "3. 역삼각 우회",
     aimLine: true,
-    aimLineLength: 190,
+    aimLineLength: 210,
     previewCount: 1,
     hidePreviewAfterMs: null,
-    targetPop: 30,
-    initialRows: 5,
-    timeMs: 170000,
-    maxTimeMs: 230000,
-    obstacles: [
-      { type: "invertedTriangle", cx: WIDTH / 2, cy: 315, w: 170, h: 104 }
-    ],
+    targetPop: 22,
+    initialRows: 4,
+    timeMs: 180000,
+    maxTimeMs: 240000,
+    obstacles: [makeTriangle()],
     virus: null
   },
   {
@@ -97,45 +112,202 @@ const STAGES = [
     aimLineLength: 0,
     previewCount: 1,
     hidePreviewAfterMs: null,
-    targetPop: 30,
-    initialRows: 5,
-    timeMs: 160000,
-    maxTimeMs: 220000,
+    targetPop: 22,
+    initialRows: 4,
+    timeMs: 175000,
+    maxTimeMs: 235000,
     obstacles: [],
     virus: null
   },
   {
     name: "5. 기억 사격",
     aimLine: true,
-    aimLineLength: 160,
+    aimLineLength: 180,
     previewCount: 5,
     hidePreviewAfterMs: 2600,
-    targetPop: 32,
-    initialRows: 5,
-    timeMs: 170000,
-    maxTimeMs: 230000,
+    targetPop: 24,
+    initialRows: 4,
+    timeMs: 180000,
+    maxTimeMs: 240000,
     obstacles: [],
     virus: null
   },
   {
     name: "6. 기억 쿠션",
-    aimLine: false,
-    aimLineLength: 0,
+    aimLine: true,
+    aimLineLength: 150,
     previewCount: 5,
     hidePreviewAfterMs: 2200,
-    targetPop: 34,
+    targetPop: 24,
     initialRows: 5,
-    timeMs: 170000,
-    maxTimeMs: 230000,
-    obstacles: [
-      { type: "invertedTriangle", cx: WIDTH / 2, cy: 310, w: 180, h: 110 }
-    ],
+    timeMs: 180000,
+    maxTimeMs: 240000,
+    obstacles: [makeTriangle(WIDTH / 2, 315, 180, 108)],
     virus: null
   },
   {
     name: "7. 오염 시작",
     aimLine: true,
+    aimLineLength: 190,
+    previewCount: 1,
+    hidePreviewAfterMs: null,
+    targetPop: 24,
+    initialRows: 5,
+    timeMs: 180000,
+    maxTimeMs: 240000,
+    obstacles: [],
+    virus: {
+      count: 1,
+      hp: 1,
+      attachMs: 6000,
+      cooldownMs: 12000,
+      spreadCount: 1
+    }
+  },
+  {
+    name: "8. 빠른 감염",
+    aimLine: true,
+    aimLineLength: 160,
+    previewCount: 1,
+    hidePreviewAfterMs: null,
+    targetPop: 26,
+    initialRows: 5,
+    timeMs: 175000,
+    maxTimeMs: 235000,
+    obstacles: [],
+    virus: {
+      count: 1,
+      hp: 1,
+      attachMs: 5000,
+      cooldownMs: 10000,
+      spreadCount: 1
+    }
+  },
+  {
+    name: "9. 오염된 우회로",
+    aimLine: true,
+    aimLineLength: 170,
+    previewCount: 1,
+    hidePreviewAfterMs: null,
+    targetPop: 26,
+    initialRows: 5,
+    timeMs: 175000,
+    maxTimeMs: 235000,
+    obstacles: [makeTriangle()],
+    virus: {
+      count: 1,
+      hp: 1,
+      attachMs: 5000,
+      cooldownMs: 10000,
+      spreadCount: 1
+    }
+  },
+  {
+    name: "10. 보이지 않는 감염",
+    aimLine: false,
+    aimLineLength: 0,
+    previewCount: 1,
+    hidePreviewAfterMs: null,
+    targetPop: 28,
+    initialRows: 5,
+    timeMs: 180000,
+    maxTimeMs: 240000,
+    obstacles: [],
+    virus: {
+      count: 1,
+      hp: 1,
+      attachMs: 5000,
+      cooldownMs: 9500,
+      spreadCount: 1
+    }
+  },
+  {
+    name: "11. 순서 기억",
+    aimLine: true,
+    aimLineLength: 140,
+    previewCount: 5,
+    hidePreviewAfterMs: 2200,
+    targetPop: 28,
+    initialRows: 5,
+    timeMs: 175000,
+    maxTimeMs: 235000,
+    obstacles: [],
+    virus: null
+  },
+  {
+    name: "12. 이중 역삼각",
+    aimLine: true,
+    aimLineLength: 160,
+    previewCount: 1,
+    hidePreviewAfterMs: null,
+    targetPop: 30,
+    initialRows: 5,
+    timeMs: 180000,
+    maxTimeMs: 240000,
+    obstacles: makeDoubleTriangles(),
+    virus: null
+  },
+  {
+    name: "13. 내성 바이러스",
+    aimLine: true,
     aimLineLength: 150,
+    previewCount: 1,
+    hidePreviewAfterMs: null,
+    targetPop: 30,
+    initialRows: 5,
+    timeMs: 180000,
+    maxTimeMs: 240000,
+    obstacles: [],
+    virus: {
+      count: 1,
+      hp: 2,
+      attachMs: 5000,
+      cooldownMs: 10000,
+      spreadCount: 1
+    }
+  },
+  {
+    name: "14. 감염 순서 기억",
+    aimLine: true,
+    aimLineLength: 140,
+    previewCount: 5,
+    hidePreviewAfterMs: 2100,
+    targetPop: 30,
+    initialRows: 5,
+    timeMs: 180000,
+    maxTimeMs: 240000,
+    obstacles: [],
+    virus: {
+      count: 1,
+      hp: 1,
+      attachMs: 4500,
+      cooldownMs: 9500,
+      spreadCount: 2
+    }
+  },
+  {
+    name: "15. 암흑 오염 쿠션",
+    aimLine: false,
+    aimLineLength: 0,
+    previewCount: 1,
+    hidePreviewAfterMs: null,
+    targetPop: 32,
+    initialRows: 5,
+    timeMs: 180000,
+    maxTimeMs: 240000,
+    obstacles: [makeTriangle(WIDTH / 2, 315, 180, 110)],
+    virus: {
+      count: 1,
+      hp: 2,
+      attachMs: 4500,
+      cooldownMs: 9500,
+      spreadCount: 1
+    }
+  },
+  {
+    name: "16. 쌍둥이 바이러스",
+    aimLine: true,
+    aimLineLength: 140,
     previewCount: 1,
     hidePreviewAfterMs: null,
     targetPop: 32,
@@ -144,32 +316,253 @@ const STAGES = [
     maxTimeMs: 240000,
     obstacles: [],
     virus: {
-      count: 1,
+      count: 2,
       hp: 1,
-      attachMs: 5500,
-      cooldownMs: 11500,
+      attachMs: 4500,
+      cooldownMs: 10000,
       spreadCount: 1
     }
   },
   {
-    name: "8. 오염 확산",
+    name: "17. 순간 기억",
+    aimLine: true,
+    aimLineLength: 120,
+    previewCount: 5,
+    hidePreviewAfterMs: 1600,
+    targetPop: 32,
+    initialRows: 6,
+    timeMs: 175000,
+    maxTimeMs: 235000,
+    obstacles: [],
+    virus: null
+  },
+  {
+    name: "18. 암흑 이중 우회",
+    aimLine: false,
+    aimLineLength: 0,
+    previewCount: 1,
+    hidePreviewAfterMs: null,
+    targetPop: 34,
+    initialRows: 6,
+    timeMs: 175000,
+    maxTimeMs: 235000,
+    obstacles: makeDoubleTriangles(),
+    virus: null
+  },
+  {
+    name: "19. 확산 변이",
+    aimLine: true,
+    aimLineLength: 130,
+    previewCount: 1,
+    hidePreviewAfterMs: null,
+    targetPop: 34,
+    initialRows: 6,
+    timeMs: 180000,
+    maxTimeMs: 240000,
+    obstacles: [],
+    virus: {
+      count: 1,
+      hp: 2,
+      attachMs: 4000,
+      cooldownMs: 9000,
+      spreadCount: 2
+    }
+  },
+  {
+    name: "20. 1차 보스",
     aimLine: true,
     aimLineLength: 120,
     previewCount: 1,
     hidePreviewAfterMs: null,
     targetPop: 36,
-    initialRows: 5,
-    timeMs: 170000,
-    maxTimeMs: 230000,
-    obstacles: [
-      { type: "invertedTriangle", cx: WIDTH / 2, cy: 318, w: 175, h: 110 }
-    ],
+    initialRows: 6,
+    timeMs: 190000,
+    maxTimeMs: 250000,
+    obstacles: [makeTriangle(WIDTH / 2, 315, 180, 112)],
+    virus: {
+      count: 2,
+      hp: 2,
+      attachMs: 4000,
+      cooldownMs: 9000,
+      spreadCount: 2
+    }
+  },
+  {
+    name: "21. 보이지 않는 순서",
+    aimLine: false,
+    aimLineLength: 0,
+    previewCount: 5,
+    hidePreviewAfterMs: 2000,
+    targetPop: 36,
+    initialRows: 6,
+    timeMs: 175000,
+    maxTimeMs: 235000,
+    obstacles: [],
+    virus: null
+  },
+  {
+    name: "22. 감염 이중 관문",
+    aimLine: true,
+    aimLineLength: 110,
+    previewCount: 1,
+    hidePreviewAfterMs: null,
+    targetPop: 36,
+    initialRows: 6,
+    timeMs: 180000,
+    maxTimeMs: 240000,
+    obstacles: makeDoubleTriangles(),
     virus: {
       count: 1,
       hp: 2,
-      attachMs: 4500,
-      cooldownMs: 9000,
+      attachMs: 4000,
+      cooldownMs: 8500,
       spreadCount: 2
+    }
+  },
+  {
+    name: "23. 쌍둥이 암흑 감염",
+    aimLine: false,
+    aimLineLength: 0,
+    previewCount: 1,
+    hidePreviewAfterMs: null,
+    targetPop: 38,
+    initialRows: 6,
+    timeMs: 180000,
+    maxTimeMs: 240000,
+    obstacles: [],
+    virus: {
+      count: 2,
+      hp: 2,
+      attachMs: 4000,
+      cooldownMs: 8500,
+      spreadCount: 2
+    }
+  },
+  {
+    name: "24. 기억 오염전",
+    aimLine: false,
+    aimLineLength: 0,
+    previewCount: 5,
+    hidePreviewAfterMs: 1800,
+    targetPop: 38,
+    initialRows: 6,
+    timeMs: 185000,
+    maxTimeMs: 245000,
+    obstacles: [],
+    virus: {
+      count: 1,
+      hp: 2,
+      attachMs: 3800,
+      cooldownMs: 8500,
+      spreadCount: 2
+    }
+  },
+  {
+    name: "25. 변종 바이러스",
+    aimLine: true,
+    aimLineLength: 100,
+    previewCount: 1,
+    hidePreviewAfterMs: null,
+    targetPop: 40,
+    initialRows: 6,
+    timeMs: 185000,
+    maxTimeMs: 245000,
+    obstacles: [],
+    virus: {
+      count: 1,
+      hp: 3,
+      attachMs: 3800,
+      cooldownMs: 8000,
+      spreadCount: 2
+    }
+  },
+  {
+    name: "26. 암흑 이중 관문",
+    aimLine: false,
+    aimLineLength: 0,
+    previewCount: 1,
+    hidePreviewAfterMs: null,
+    targetPop: 40,
+    initialRows: 6,
+    timeMs: 180000,
+    maxTimeMs: 240000,
+    obstacles: makeDoubleTriangles(),
+    virus: null
+  },
+  {
+    name: "27. 쌍둥이 변종",
+    aimLine: true,
+    aimLineLength: 90,
+    previewCount: 1,
+    hidePreviewAfterMs: null,
+    targetPop: 42,
+    initialRows: 6,
+    timeMs: 190000,
+    maxTimeMs: 250000,
+    obstacles: [],
+    virus: {
+      count: 2,
+      hp: 3,
+      attachMs: 3500,
+      cooldownMs: 8500,
+      spreadCount: 2
+    }
+  },
+  {
+    name: "28. 기억 감염 쿠션",
+    aimLine: true,
+    aimLineLength: 90,
+    previewCount: 5,
+    hidePreviewAfterMs: 1500,
+    targetPop: 44,
+    initialRows: 6,
+    timeMs: 190000,
+    maxTimeMs: 250000,
+    obstacles: [makeTriangle(WIDTH / 2, 315, 185, 112)],
+    virus: {
+      count: 2,
+      hp: 2,
+      attachMs: 3500,
+      cooldownMs: 8000,
+      spreadCount: 2
+    }
+  },
+  {
+    name: "29. 최종 전야",
+    aimLine: false,
+    aimLineLength: 0,
+    previewCount: 1,
+    hidePreviewAfterMs: null,
+    targetPop: 46,
+    initialRows: 7,
+    timeMs: 200000,
+    maxTimeMs: 260000,
+    obstacles: makeDoubleTriangles(),
+    virus: {
+      count: 2,
+      hp: 3,
+      attachMs: 3200,
+      cooldownMs: 7500,
+      spreadCount: 2
+    }
+  },
+  {
+    name: "30. 최종 정화",
+    aimLine: false,
+    aimLineLength: 0,
+    previewCount: 5,
+    hidePreviewAfterMs: 1400,
+    targetPop: 50,
+    initialRows: 7,
+    timeMs: 210000,
+    maxTimeMs: 270000,
+    obstacles: [makeTriangle(WIDTH / 2, 315, 190, 116)],
+    virus: {
+      count: 2,
+      hp: 3,
+      attachMs: 3000,
+      cooldownMs: 7000,
+      spreadCount: 3
     }
   }
 ];
@@ -1081,15 +1474,18 @@ function advanceStage() {
   const nextIndex = currentStageIndex + 1;
 
   if (nextIndex >= STAGES.length) {
-    statusText.textContent = "모든 스테이지 클리어! 계속 플레이합니다.";
-    currentStageIndex = STAGES.length - 1;
-    stagePoppedCount = 0;
-    timeLeftMs = Math.min(stageMaxTimeMs, timeLeftMs + 30000);
-    canShoot = true;
-    updateHud();
+    stagePoppedCount = getCurrentStage().targetPop;
+
+    endGame();
+
+    statusText.textContent =
+      "30탄 최종 정화 완료! 모든 스테이지를 클리어했습니다.";
+
     return;
   }
 
+  canShoot = false;
+  activeBubble = null;
   statusText.textContent = `${STAGES[nextIndex].name} 진입!`;
 
   setTimeout(() => {
@@ -1833,31 +2229,70 @@ function drawEffects() {
 }
 
 function drawGameOver() {
+  const finalStage = STAGES[STAGES.length - 1];
+
+  const isFinalClear =
+    currentStageIndex === STAGES.length - 1 &&
+    stagePoppedCount >= finalStage.targetPop;
+
   ctx.save();
 
-  ctx.fillStyle = "rgba(22, 34, 48, 0.58)";
+  ctx.fillStyle = isFinalClear
+    ? "rgba(16, 48, 58, 0.62)"
+    : "rgba(22, 34, 48, 0.58)";
+
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-  ctx.fillStyle = "#f4fcff";
+  ctx.fillStyle = isFinalClear ? "#efffff" : "#f4fcff";
   ctx.beginPath();
-  ctx.roundRect(42, 238, WIDTH - 84, 162, 24);
+  ctx.roundRect(32, 218, WIDTH - 64, 210, 26);
   ctx.fill();
 
-  ctx.strokeStyle = "#4e7187";
+  ctx.strokeStyle = isFinalClear ? "#39b7a2" : "#4e7187";
   ctx.lineWidth = 4;
   ctx.stroke();
 
   ctx.fillStyle = "#193142";
   ctx.textAlign = "center";
 
-  ctx.font = "900 34px system-ui, sans-serif";
-  ctx.fillText("게임 오버", WIDTH / 2, 292);
+  ctx.font = "900 32px system-ui, sans-serif";
+  ctx.fillText(
+    isFinalClear ? "ALL CLEAR!" : "게임 오버",
+    WIDTH / 2,
+    274
+  );
 
-  ctx.font = "800 18px system-ui, sans-serif";
-  ctx.fillText(`점수 ${score}`, WIDTH / 2, 330);
+  ctx.font = "800 17px system-ui, sans-serif";
+  ctx.fillText(
+    isFinalClear
+      ? "30개의 스테이지를 모두 정화했습니다."
+      : `${currentStageIndex + 1}탄에서 종료`,
+    WIDTH / 2,
+    310
+  );
+
+  ctx.font = "900 22px system-ui, sans-serif";
+  ctx.fillText(
+    `최종 점수 ${score.toLocaleString()}`,
+    WIDTH / 2,
+    348
+  );
 
   ctx.font = "700 14px system-ui, sans-serif";
-  ctx.fillText("새 게임 버튼으로 다시 시작", WIDTH / 2, 362);
+  ctx.fillText(
+    isFinalClear
+      ? "최종 클리어 기록이 랭킹에 저장됩니다."
+      : "게임오버 기록이 랭킹에 저장됩니다.",
+    WIDTH / 2,
+    382
+  );
+
+  ctx.font = "700 13px system-ui, sans-serif";
+  ctx.fillText(
+    "새 게임 버튼으로 다시 시작",
+    WIDTH / 2,
+    406
+  );
 
   ctx.restore();
 }
@@ -1932,26 +2367,27 @@ let rankingUnsubscribe = null;
 
 function getSavedRankingNickname() {
   return String(
-    localStorage.getItem("partyAppUser") ||
     localStorage.getItem("bubbleShooterNickname") ||
+    localStorage.getItem("partyAppUser") ||
     ""
   ).trim();
 }
 
 function getRankingNickname() {
-  const savedName = getSavedRankingNickname();
-
-  if (savedName) {
-    return savedName;
-  }
+  const previousName = getSavedRankingNickname();
 
   const inputName = String(
-    prompt("랭킹에 등록할 닉네임을 입력하세요.") || ""
+    prompt(
+      "랭킹에 등록할 닉네임을 입력하세요.",
+      previousName
+    ) || ""
   ).trim();
 
-  if (inputName) {
-    localStorage.setItem("bubbleShooterNickname", inputName);
+  if (!inputName) {
+    return "";
   }
+
+  localStorage.setItem("bubbleShooterNickname", inputName);
 
   return inputName;
 }
