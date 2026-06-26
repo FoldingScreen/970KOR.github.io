@@ -3897,3 +3897,48 @@ textarea.text-input{
   white-space:nowrap;
   flex:0 0 auto;
 }
+
+.ruins-deadline-countdown{
+  display:inline-flex;
+  align-items:center;
+  width:max-content;
+  max-width:100%;
+  margin-bottom:8px;
+  padding:5px 10px;
+  border-radius:999px;
+  background:#102545;
+  border:1px solid #315a93;
+  color:#dbeafe;
+  font-size:13px;
+  font-weight:900;
+  letter-spacing:-.2px;
+}
+
+.ruins-deadline-countdown.warn{
+  background:#3a2f0b;
+  border-color:#facc15;
+  color:#fef3c7;
+}
+
+.ruins-deadline-countdown.danger{
+  background:#3b1111;
+  border-color:#f97316;
+  color:#ffedd5;
+}
+
+.ruins-deadline-countdown.closed{
+  background:#1f2937;
+  border-color:#4b5563;
+  color:#cbd5e1;
+}
+
+.inline-input-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.inline-input-row input{
+  width:90px;
+  text-align:center;
+}
