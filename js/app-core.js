@@ -184,6 +184,7 @@ const el={
   utcMonth:document.getElementById("utcMonth"),
   utcDay:document.getElementById("utcDay"),
   utcHour:document.getElementById("utcHour"),
+  ruinsDeadlineMinutesInput:document.getElementById("ruinsDeadlineMinutesInput"),
 
   rearrangeModal:document.getElementById("rearrangeModal"),
   rearrangeModalTitle:document.getElementById("rearrangeModalTitle"),
@@ -1344,6 +1345,7 @@ function subscribeParties(){
         rallyCategory:d.rallyCategory||"etc",
         memberHeroes:d.memberHeroes||{},
         timeUTC:d.timeUTC||null,
+        deadlineMinutesBefore:Number(d.deadlineMinutesBefore!==undefined?d.deadlineMinutesBefore:10),
         maxMembers:Number(d.maxMembers||0),
         type:d.type||"",
         isFirstGroup:!!d.isFirstGroup,
