@@ -1,7 +1,37 @@
+function getRuinsDeadlineMinutes(p){
+  const n=Number(p?.deadlineMinutesBefore!==undefined?p.deadlineMinutesBefore:10);
+  return Number.isFinite(n)&&n>=0?Math.floor(n):10;
+}
+
+function getRuinsDeadlineMs(p){
+  const d=toDate(p?.timeUTC);
+  if(!d)return 0;
+
+  return d.getTime()-getRuinsDeadlineMinutes(p)*60*1000;
+}
+
+function formatRuinsDeadlineText(deadlineMs){
+  if(!deadlineMs)return"신청 마감: -";
+
+  const diffMs=deadlineMs-Date.now();
+
+  if(diffMs<=0)return"신청 마감됨";
+
+  const totalSeconds=Math.floor(diffMs/1000);
+  const minutes=Math.floor(totalSeconds/60);
+  const seconds=totalSeconds%60;
+
+  return`신청 마감: ${String(minutes).padStart(2,"0")}분 ${String(seconds).padStart(2,"0")}초 전`;
+}
+
 function renderRuinsCard(p){
+  setTimeout(startRuinsCountdownTimer,0);
+
   const members=[...p.members].sort((a,b)=>a===p.rallyLeader?-1:b===p.rallyLeader?1:a.localeCompare(b,"ko"));
   const meJoined=members.includes(state.currentUser);
   const power=calcPower(members.length).toLocaleString("ko-KR");
+  const deadlineMs=getRuinsDeadlineMs(p);
+  const isDeadlineClosed=deadlineMs>0&&deadlineMs-Date.now()<=0;
 
   const membersHtml=members.map(name=>`
     <div class="member-line">
@@ -15,20 +45,65 @@ function renderRuinsCard(p){
 
   return`
     <div class="party-card">
+      <div
+        class="ruins-deadline-countdown"
+        data-party-id="${escapeHtml(p.id)}"
+        data-deadline-ms="${deadlineMs}"
+      >${escapeHtml(formatRuinsDeadlineText(deadlineMs))}</div>
+
       <div class="party-title">유적명: ${escapeHtml(p.ruinName||p.name)}</div>
       <div class="party-sub">시간: ${formatKST(p.timeUTC)}</div>
       <div class="party-sub">UTC ${formatUTC(p.timeUTC)}</div>
+      <div class="party-sub">신청마감: ${getRuinsDeadlineMinutes(p)}분 전까지</div>
       <div class="party-sub">병력수: ${power}명</div>
       <div class="party-sub">인원: ${members.length}/15</div>
       <div class="member-list compact">${membersHtml||'<div class="member-line"><span>참가자가 없습니다.</span></div>'}</div>
       <div class="card-actions">
-        ${!meJoined&&members.length<15?`<button onclick="joinParty('${escapeJs(p.id)}')">참가</button>`:""}
+        ${!meJoined&&members.length<15?`<button class="ruins-join-btn" data-party-id="${escapeHtml(p.id)}" onclick="joinParty('${escapeJs(p.id)}')" ${isDeadlineClosed?"disabled":""}>${isDeadlineClosed?"신청 마감":"참가"}</button>`:""}
         ${meJoined?`<button onclick="leaveParty('${escapeJs(p.id)}')">취소</button>`:""}
         ${state.isAdmin?`<button onclick="openRuinsEditModal('${escapeJs(p.id)}')">수정</button><button onclick="deleteParty('${escapeJs(p.id)}')">삭제</button>`:""}
         <button onclick="copyRuinsNotice('${escapeJs(p.id)}')">복사</button>
       </div>
     </div>
   `;
+}
+
+let ruinsCountdownTimer=null;
+
+function updateRuinsCountdowns(){
+  document.querySelectorAll(".ruins-deadline-countdown").forEach(item=>{
+    const deadlineMs=Number(item.dataset.deadlineMs||0);
+    const diffMs=deadlineMs-Date.now();
+
+    item.textContent=formatRuinsDeadlineText(deadlineMs);
+    item.classList.toggle("closed",deadlineMs>0&&diffMs<=0);
+    item.classList.toggle("danger",deadlineMs>0&&diffMs>0&&diffMs<=60000);
+    item.classList.toggle("warn",deadlineMs>0&&diffMs>60000&&diffMs<=300000);
+
+    const card=item.closest(".party-card");
+    const joinBtn=card?.querySelector(".ruins-join-btn");
+
+    if(joinBtn&&deadlineMs>0&&diffMs<=0){
+      joinBtn.disabled=true;
+      joinBtn.textContent="신청 마감";
+    }
+  });
+}
+
+function startRuinsCountdownTimer(){
+  updateRuinsCountdowns();
+
+  if(ruinsCountdownTimer)return;
+
+  ruinsCountdownTimer=setInterval(()=>{
+    if(state.currentEventId!=="ruins"){
+      clearInterval(ruinsCountdownTimer);
+      ruinsCountdownTimer=null;
+      return;
+    }
+
+    updateRuinsCountdowns();
+  },1000);
 }
 
 function resetPartyFormCommon(){
@@ -47,6 +122,8 @@ function openRuinsCreateModal(){
   el.ruinsSubmitBtn.textContent="생성";
 
   if(el.ruinNameInput)el.ruinNameInput.value="";
+  if(el.ruinsDeadlineMinutesInput)el.ruinsDeadlineMinutesInput.value="10";
+  document.getElementById("ruinsDeadlineWrap")?.classList.remove("hidden");
 
   document.getElementById("ruinNameWrap")?.classList.remove("hidden");
   document.getElementById("holySwordSideWrap")?.classList.add("hidden");
@@ -80,6 +157,7 @@ window.openRuinsEditModal=async function(partyId){
     document.getElementById("ruinNameWrap")?.classList.add("hidden");
     document.getElementById("holySwordSideWrap")?.classList.remove("hidden");
     document.getElementById("firstGroupWrap")?.classList.remove("hidden");
+    document.getElementById("ruinsDeadlineWrap")?.classList.add("hidden");
 
     if(el.firstGroupCheckbox)el.firstGroupCheckbox.checked=!!p.isFirstGroup;
 
@@ -99,8 +177,11 @@ window.openRuinsEditModal=async function(partyId){
     el.ruinsModalTitle.textContent="유적 파티 수정";
     document.getElementById("ruinNameWrap")?.classList.remove("hidden");
     document.getElementById("holySwordSideWrap")?.classList.add("hidden");
+    document.getElementById("ruinsDeadlineWrap")?.classList.remove("hidden");
     resetPartyFormCommon();
+    document.getElementById("ruinsDeadlineWrap")?.classList.remove("hidden");
     el.ruinNameInput.value=p.ruinName||p.name||"";
+    if(el.ruinsDeadlineMinutesInput)el.ruinsDeadlineMinutesInput.value=String(getRuinsDeadlineMinutes(p));
   }
 
   const d=toDate(p.timeUTC);
@@ -142,6 +223,15 @@ window.submitRuinsParty=async function(){
 
   const year=new Date().getUTCFullYear();
   const utcDate=new Date(Date.UTC(year,m-1,d,h,0,0,0));
+
+  const deadlineMinutesBefore=Number(el.ruinsDeadlineMinutesInput?.value||10);
+
+  if(state.currentEventId==="ruins"){
+    if(!Number.isInteger(deadlineMinutesBefore)||deadlineMinutesBefore<0){
+      alert("신청마감 시간은 0 이상의 정수로 입력하세요.");
+      return;
+    }
+  }
 
   if(state.currentEventId==="holy_sword"||state.currentEventId==="triple_alliance"){
     const side=document.getElementById("holySwordSideSelect")?.value||"KOR";
@@ -187,8 +277,12 @@ window.submitRuinsParty=async function(){
   }
 
   if(state.editingRuinsPartyId){
-    await partiesRef("ruins").doc(state.editingRuinsPartyId).update({name:ruinName,ruinName,timeUTC:utcDate});
-  }else{
+    await partiesRef("ruins").doc(state.editingRuinsPartyId).update({
+      name:ruinName,
+      ruinName,
+      timeUTC:utcDate,
+      deadlineMinutesBefore
+    });  }else{
     await partiesRef("ruins").add({
       type:"ruins",
       event:"ruins",
@@ -199,6 +293,7 @@ window.submitRuinsParty=async function(){
       rallyLeader:"",
       maxMembers:15,
       timeUTC:utcDate,
+      deadlineMinutesBefore,
       createdAt:firebase.firestore.FieldValue.serverTimestamp()
     });
   }
