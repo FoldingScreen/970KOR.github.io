@@ -18,10 +18,11 @@ function formatRuinsDeadlineText(deadlineMs){
   if(diffMs<=0)return"신청 마감됨";
 
   const totalSeconds=Math.floor(diffMs/1000);
-  const minutes=Math.floor(totalSeconds/60);
+  const hours=Math.floor(totalSeconds/3600);
+  const minutes=Math.floor((totalSeconds%3600)/60);
   const seconds=totalSeconds%60;
 
-  return`신청 마감: ${String(minutes).padStart(2,"0")}분 ${String(seconds).padStart(2,"0")}초 전`;
+  return`신청 마감: ${String(hours).padStart(2,"0")}시간 ${String(minutes).padStart(2,"0")}분 ${String(seconds).padStart(2,"0")}초 전`;
 }
 
 function renderRuinsCard(p){
@@ -54,7 +55,6 @@ function renderRuinsCard(p){
       <div class="party-title">유적명: ${escapeHtml(p.ruinName||p.name)}</div>
       <div class="party-sub">시간: ${formatKST(p.timeUTC)}</div>
       <div class="party-sub">UTC ${formatUTC(p.timeUTC)}</div>
-      <div class="party-sub">신청마감: ${getRuinsDeadlineMinutes(p)}분 전까지</div>
       <div class="party-sub">병력수: ${power}명</div>
       <div class="party-sub">인원: ${members.length}/15</div>
       <div class="member-list compact">${membersHtml||'<div class="member-line"><span>참가자가 없습니다.</span></div>'}</div>
