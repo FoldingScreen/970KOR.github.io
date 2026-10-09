@@ -25,10 +25,6 @@ function formatRuinsDeadlineText(deadlineMs){
   return`신청 마감: ${String(hours).padStart(2,"0")}시간 ${String(minutes).padStart(2,"0")}분 ${String(seconds).padStart(2,"0")}초 전`;
 }
 
-function canProxyRegisterRuinsMember(){
-  return state.currentUser==="ILLUSION";
-}
-
 function renderRuinsCard(p){
   setTimeout(startRuinsCountdownTimer,0);
 
@@ -37,7 +33,7 @@ function renderRuinsCard(p){
   const power=calcPower(members.length).toLocaleString("ko-KR");
   const deadlineMs=getRuinsDeadlineMs(p);
   const isDeadlineClosed=deadlineMs>0&&deadlineMs-Date.now()<=0;
-  const canProxyRegister=canProxyRegisterRuinsMember()&&members.length<15&&!isDeadlineClosed;
+  const canProxyJoin=state.isAdmin&&members.length<15;
 
   const membersHtml=members.map(name=>`
     <div class="member-line">
@@ -65,7 +61,7 @@ function renderRuinsCard(p){
       <div class="member-list compact">${membersHtml||'<div class="member-line"><span>참가자가 없습니다.</span></div>'}</div>
       <div class="card-actions">
         ${!meJoined&&members.length<15?`<button class="ruins-join-btn" data-party-id="${escapeHtml(p.id)}" onclick="joinParty('${escapeJs(p.id)}')" ${isDeadlineClosed?"disabled":""}>${isDeadlineClosed?"신청 마감":"참가"}</button>`:""}
-        ${canProxyRegister?`<button class="ruins-proxy-join-btn" onclick="addRuinsMemberForOther('${escapeJs(p.id)}')">대신 등록</button>`:""}
+        ${canProxyJoin?`<button class="ruins-proxy-join-btn" data-party-id="${escapeHtml(p.id)}" onclick="joinRuinsPartyAs('${escapeJs(p.id)}')" ${isDeadlineClosed?"disabled":""}>${isDeadlineClosed?"신청 마감":"대신등록"}</button>`:""}
         ${meJoined?`<button onclick="leaveParty('${escapeJs(p.id)}')">취소</button>`:""}
         ${state.isAdmin?`<button onclick="openRuinsEditModal('${escapeJs(p.id)}')">수정</button><button onclick="deleteParty('${escapeJs(p.id)}')">삭제</button>`:""}
         <button onclick="copyRuinsNotice('${escapeJs(p.id)}')">복사</button>
@@ -87,17 +83,13 @@ function updateRuinsCountdowns(){
     item.classList.toggle("warn",deadlineMs>0&&diffMs>60000&&diffMs<=300000);
 
     const card=item.closest(".party-card");
-    const joinBtn=card?.querySelector(".ruins-join-btn");
-    const proxyBtn=card?.querySelector(".ruins-proxy-join-btn");
+    const actionBtns=card?.querySelectorAll(".ruins-join-btn,.ruins-proxy-join-btn")||[];
 
-    if(joinBtn&&deadlineMs>0&&diffMs<=0){
-      joinBtn.disabled=true;
-      joinBtn.textContent="신청 마감";
-    }
-
-    if(proxyBtn&&deadlineMs>0&&diffMs<=0){
-      proxyBtn.disabled=true;
-      proxyBtn.textContent="신청 마감";
+    if(deadlineMs>0&&diffMs<=0){
+      actionBtns.forEach(btn=>{
+        btn.disabled=true;
+        btn.textContent="신청 마감";
+      });
     }
   });
 }
@@ -314,45 +306,40 @@ window.submitRuinsParty=async function(){
   closeRuinsCreateModal();
 };
 
-window.addRuinsMemberForOther=async function(id){
-  if(!canProxyRegisterRuinsMember()){
-    alert("권한이 없습니다.");
+window.joinRuinsPartyAs=async function(id){
+  if(!state.isAdmin){
+    alert("운영진만 대신 등록할 수 있습니다.");
     return;
   }
 
-  const input=prompt("대신 등록할 닉네임을 입력하세요.");
-  const name=String(input||"").trim();
+  const p=state.parties.find(v=>v.id===id);
+  if(!p){
+    alert("파티를 찾을 수 없습니다.");
+    return;
+  }
 
+  const deadlineMs=getRuinsDeadlineMs(p);
+  if(deadlineMs>0&&deadlineMs-Date.now()<=0){
+    alert("신청 마감된 유적입니다.");
+    return;
+  }
+
+  const members=normalizeMembers(p.members);
+  if(members.length>=15){
+    alert("유적 파티는 최대 15명입니다.");
+    return;
+  }
+
+  const name=String(prompt("대신 등록할 닉네임을 입력하세요.")||"").trim();
   if(!name)return;
 
-  const ref=partiesRef("ruins").doc(id);
-
-  try{
-    await db.runTransaction(async tx=>{
-      const snap=await tx.get(ref);
-      if(!snap.exists)throw new Error("not-found");
-
-      const d=snap.data()||{};
-      const members=normalizeMembers(d.members);
-      const deadlineMs=getRuinsDeadlineMs(d);
-
-      if(deadlineMs>0&&deadlineMs-Date.now()<=0)throw new Error("deadline-closed");
-      if(members.includes(name))throw new Error("already-joined");
-      if(members.length>=15)throw new Error("full");
-
-      members.push(name);
-      tx.update(ref,{members});
-    });
-  }catch(err){
-    if(err.message==="not-found")alert("파티를 찾을 수 없습니다.");
-    else if(err.message==="deadline-closed")alert("신청이 마감되었습니다.");
-    else if(err.message==="already-joined")alert("이미 등록된 닉네임입니다.");
-    else if(err.message==="full")alert("유적 파티는 최대 15명입니다.");
-    else{
-      console.error(err);
-      alert("대신 등록 중 오류가 발생했습니다.");
-    }
+  if(members.includes(name)){
+    alert("이미 참가 중인 닉네임입니다.");
+    return;
   }
+
+  members.push(name);
+  await partiesRef("ruins").doc(id).update({members});
 };
 
 window.setRallyLeader=async function(id,name){
